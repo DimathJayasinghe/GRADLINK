@@ -1,9 +1,16 @@
 CREATE TABLE Users (
-    id INT AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
-    age INT NOT NULL,
-    PRIMARY KEY (id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-INSERT INTO Users (name, age) VALUES ('John Doe', 30);
-INSERT INTO Users (name, age) VALUES ('Asela', 21);
-INSERT INTO Users (name, age) VALUES ('Dimath', 22);
+
+CREATE TABLE Posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+);

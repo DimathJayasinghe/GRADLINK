@@ -1,3 +1,6 @@
+/* Component stylings */
+@import url('components/topnavbar_styles.css');
+
 h1{
     color: #000000;
     font-size: 2em;
@@ -5,7 +8,7 @@ h1{
     margin-top: 20px;
 }
 body{
-    background-color: rgb(133, 186, 233);
+    background-color: rgb(133, 233, 220);
 }
 .user-card{
     background-color: #ffffff;
