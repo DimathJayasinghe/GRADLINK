@@ -22,6 +22,23 @@
 
                 // Instantiate the controller class
                 $this->currentContoller = new $this->currentContoller;
+
+                // Check weather the method exists in the controller or not
+                if (isset($url[1])){
+                    if (method_exists($this->currentContoller, $url[1])) {
+                        // If method exists, set as current method
+                        $this->currentMethod = $url[1];
+
+                        // Unset the method from the URL
+                        unset($url[1]);
+                    }
+                }
+
+                // Get the parameters
+                $this->params = $url ? array_values($url) : [];
+
+                // Call the current method with the parameters
+                call_user_func_array([$this->currentContoller, $this->currentMethod], $this->params);
             }
         }
 
