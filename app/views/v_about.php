@@ -1,5 +1,5 @@
 <?php require APPROOT . '/views/inc/header.php';?>
-
+<h1>ABOUT</h1>
 <?php foreach ($data['users'] as $user): ?>
     <div class="user-card">
         <h1>USER</h1>
