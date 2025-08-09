@@ -19,6 +19,10 @@
                     
                     // Unset the controller from the URL
                     unset($url[0]);
+                } else {
+                    // Controller not found, show 404
+                    $this->show404();
+                    return;
                 }
             }
 
@@ -28,7 +32,7 @@
             // Instantiate the controller class
             $this->currentContoller = new $this->currentContoller;
 
-            // Check weather the method exists in the controller or not
+            // Check whether the method exists in the controller or not
             if ($url && isset($url[1])){
                 if (method_exists($this->currentContoller, $url[1])) {
                     // If method exists, set as current method
@@ -36,6 +40,10 @@
 
                     // Unset the method from the URL
                     unset($url[1]);
+                } else {
+                    // Method not found, show 404
+                    $this->show404();
+                    return;
                 }
             }
 
@@ -55,6 +63,23 @@
                 return $url;
             }
             return null; // Explicitly return null when no URL parameter
+        }
+
+        private function show404() {
+            // Set HTTP 404 status code
+            http_response_code(404);
+            
+            // Check if 404 view file exists
+            if(file_exists('../app/views/_404.php')) {
+                require_once '../app/views/_404.php';
+            } else {
+                // Fallback if 404 view doesn't exist
+                echo "<h1>404 - Page Not Found</h1>";
+                echo "<p>The page you are looking for could not be found.</p>";
+            }
+            
+            // Stop execution
+            exit();
         }
     }
 ?>
