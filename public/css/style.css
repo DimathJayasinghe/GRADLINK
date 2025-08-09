@@ -31,3 +31,22 @@ body{
     width: 300px;
     text-align: center;
 }
+.hide{
+    display: none;
+}
+
+.form-invalid{
+    border: 2px solid red;
+    background-color: #ffe6e6;
+    color: red;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.card-container{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+}

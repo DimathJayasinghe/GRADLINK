@@ -1,6 +1,6 @@
 <div class="topnav">
-    <a href="#home" class="active">Home</a>
-    <a href="#news">Login</a>
-    <a href="#Contact">Register</a>
-    <!-- <a href="#about">Logout</a> -->
+    <a href="<?php echo URLROOT; ?>/" class="active">Home</a>
+    <a href="<?php echo URLROOT; ?>/users/login">Login</a>
+    <a href="<?php echo URLROOT; ?>/users/signup">Signup</a>
+    <a href="<?php echo URLROOT; ?>/users/logout">Logout</a>
 </div>
