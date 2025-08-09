@@ -1,6 +1,13 @@
 /* Component stylings */
-@import url('components/topnavbar_styles.css');
+@import url('./components/topnavbar_styles.css');
+@import url('./components/form_styles.css');
 
+
+/* FONTS */
+@font-face {
+    font-family: Poppins-Regular;
+    src: url(fonts/Poppins-Regular.ttf);
+}
 h1{
     color: #000000;
     font-size: 2em;
@@ -8,7 +15,12 @@ h1{
     margin-top: 20px;
 }
 body{
+    margin: 0;
+    font-family: Poppins-Regular;
+    font-size: small;
+    text-align: left;
     background-color: rgb(133, 233, 220);
+    color: #000000;
 }
 .user-card{
     background-color: #ffffff;

@@ -12,9 +12,9 @@
             $this->view('v_about', $data);
         }
 
-        public function signin(){
+        public function signup(){
             $data = [];
-            $this->view('users/v_signin', $data);
+            $this->view('users/v_signup', $data);
         }
     }
 ?>

@@ -19,7 +19,7 @@
 <h2 class="text-4xl font-light text-gray-800 mt-4">This Page Not Found!</h2>
 <p class="text-gray-500 mt-4">The link might be corrupted,</p>
 <p class="text-gray-500">or the page may have been removed</p>
-<a class="mt-8 bg-gray-800 text-white py-2 px-6 text-sm font-semibold rounded-full hover:bg-gray-700 transition duration-300" href="#">
+<a class="mt-8 bg-gray-800 text-white py-2 px-6 text-sm font-semibold rounded-full hover:bg-gray-700 transition duration-300" href="<?php echo URLROOT; ?>">
                 GO BACK HOME
             </a>
 </main>

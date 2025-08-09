@@ -1,7 +1,7 @@
 <?php
     class Core {
         // URL format --> /controller/method/params
-        protected $currentContoller ="Pages";
+        protected $currentContoller ="Hero"; // Default controller
         protected $currentMethod = "index";
         protected $params = [];
 
@@ -19,10 +19,9 @@
                     
                     // Unset the controller from the URL
                     unset($url[0]);
-                } else {
-                    // Controller not found, show 404
+                }else {
                     $this->show404();
-                    return;
+                    return; // Stop further execution if controller not found
                 }
             }
 
@@ -53,6 +52,7 @@
             // Call the current method with the parameters
             call_user_func_array([$this->currentContoller, $this->currentMethod], $this->params);
         }
+
 
         public function getUrl() {
             if (isset($_GET['url'])){

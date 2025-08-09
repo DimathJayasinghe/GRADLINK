@@ -1,5 +1,5 @@
 <?php
-class M_pages {
+class M_hero {
     private $db;
 
     public function __construct() {
