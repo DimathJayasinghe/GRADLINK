@@ -8,7 +8,7 @@
     define('APPROOT', dirname(dirname(__FILE__)));
 
     // URL_ROOT
-    define('URLROOT', 'http://localhost/SimpleMVC');
+    define('URLROOT', 'http://localhost/gradlink');
 
     // WEBSITE_NAME
     define('SITENAME', 'GRADLINK');

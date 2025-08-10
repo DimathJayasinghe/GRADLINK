@@ -314,7 +314,7 @@ function joinNetwork() {
     setTimeout(() => {
         button.style.transform = 'scale(1)';
         // Here you can add navigation logic or show a modal
-        window.location.href = 'http://localhost/Simplemvc/users'; // Example redirect
+        window.location.href = '<?php echo URLROOT?>/users'; // Example redirect
     }, 150);
 }
 
