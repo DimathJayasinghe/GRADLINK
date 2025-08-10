@@ -120,7 +120,7 @@ It aims to:
   Special thanks to: (need editing)
 
     Dr. Ajantha Athukorale (Supervisor)
-    Mrs. [] (Co-supervisor)
+    Mrs. Yohan Wanigasuriya (Co-supervisor)
     UCSC Administration
     UCSC Alumni Association
     UCSC Student Union
