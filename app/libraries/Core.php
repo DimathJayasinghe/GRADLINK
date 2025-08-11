@@ -64,7 +64,6 @@
             }
             return null; // Explicitly return null when no URL parameter
         }
-
         private function show404() {
             // Set HTTP 404 status code
             http_response_code(404);
