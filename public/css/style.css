@@ -1,42 +1,47 @@
 /* Component stylings */
 @import url('./components/topnavbar_styles.css');
 @import url('./components/form_styles.css');
-
+@import url('./auth/login_styles.css');
 
 /* FONTS */
 @font-face {
     font-family: Poppins-Regular;
     src: url(fonts/Poppins-Regular.ttf);
 }
+
 h1{
-    color: #000000;
+    color: var(--text);
     font-size: 2em;
     text-align: center;
     margin-top: 20px;
 }
+
 body{
     margin: 0;
-    font-family: Poppins-Regular;
+    font-family: Poppins-Regular, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     font-size: small;
     text-align: left;
-    background-color: rgb(133, 233, 220);
-    color: #000000;
+    background-color: var(--bg);
+    color: var(--text);
 }
+
 .user-card{
-    background-color: #ffffff;
+    background-color: var(--card);
+    color: var(--text);
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-1);
     padding: 20px;
     margin: 20px auto;
     width: 300px;
     text-align: center;
 }
+
 .hide{
     display: none;
 }
 
 .button{
-
+    /* adopt tokens here if you style buttons */
 }
 
 .form-invalid{
