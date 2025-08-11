@@ -98,16 +98,25 @@
         // Login handler method > for processing login
         public function loginHandler(){
             if ($_SERVER['REQUEST_METHOD'] === 'POST'){
-                // Sanatize and validate input
                 $_POST = Sanitizer::sanitizeArray($_POST);
+
+                $allowedRoles = ['undergrad','alumni'];
+                $role = $_POST['role'] ?? '';
+
                 $data = [
-                    'email' => $_POST['email'] ?? '',
-                    'password' => $_POST['password'] ?? '',
-                    'remember_me' => isset($_POST['remember_me']),
-                    'errors' => []
+                    'userRole'   => $role,
+                    'email'      => $_POST['email'] ?? '',
+                    'password'   => $_POST['password'] ?? '',
+                    'remember_me'=> isset($_POST['remember_me']),
+                    'errors'     => []
                 ];
 
                 // Validate input
+                if (Sanitizer::isEmpty($data['userRole'])) {
+                    $data['errors'][] = 'Role is required';
+                } elseif (!in_array($data['userRole'], $allowedRoles, true)) {
+                    $data['errors'][] = 'Invalid user role';
+                }
                 if (Sanitizer::isEmpty($data['email'])) {
                     $data['errors'][] = 'Email is required';
                 }
@@ -145,5 +154,18 @@
             }
         }
         /////////////////////////////////////////////////////////////
+
+        public function logout(){
+            // Clear session data
+            session_unset();
+            session_destroy();
+
+            // Delete remember me cookie if it exists
+            Cookie::delete('remember_token');
+
+            // Redirect to login page after logout
+            header('Location: ' . URLROOT . '/auth/login');
+            exit();
+        }
     }
 ?>
