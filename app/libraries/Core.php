@@ -64,14 +64,13 @@
             }
             return null; // Explicitly return null when no URL parameter
         }
-
         private function show404() {
             // Set HTTP 404 status code
             http_response_code(404);
             
             // Check if 404 view file exists
-            if(file_exists('../app/views/_404.php')) {
-                require_once '../app/views/_404.php';
+            if(file_exists('../app/views/errors/_404.php')) {
+                require_once '../app/views/errors/_404.php';
             } else {
                 // Fallback if 404 view doesn't exist
                 echo "<h1>404 - Page Not Found</h1>";
