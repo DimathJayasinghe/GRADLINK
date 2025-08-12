@@ -1,0 +1,38 @@
+/* Global color palette — derived from the provided design screenshot */
+:root {
+  /* Base surfaces */
+  --bg: #0f1518;        /* App background */
+  --card: #1f2429;      /* Card background */
+  --input: #2b3237;     /* Input background */
+
+  /* Text */
+  --text: #e8eef2;      /* Primary text */
+  --muted: #cbb8a3;     /* Muted/secondary text */
+
+  /* Actions */
+  --btn: #6f7b85;       /* Button background */
+  --btn-text: #ffffff;  /* Button label */
+
+  /* Links & accents */
+  --link: #9ed4dc;
+  --link-hover: #b8e3e9;
+
+  /* Misc tokens */
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow-1: 0 0px 50px rgba(0, 0, 0, .12), 0 0 80px rgba(0, 0, 0, .15);
+  --radius-lg: 20px;
+}
+
+/* Optional: light mode tokens for future use */
+[data-theme="light"] {
+  --bg: #f3f3f4;
+  --card: #e7e7e8;
+  --input: #cfcfd2;
+  --text: #111111;
+  --muted: #6b7280;
+  --btn: #7a6f6d;
+  --btn-text: #ffffff;
+  --link: #0ea5b9;
+  --link-hover: #14b8c4;
+  --border: rgba(0, 0, 0, 0.1);
+}
