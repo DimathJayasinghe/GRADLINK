@@ -8,5 +8,10 @@ class Profile extends Controller{
         $data = [];
         $this->view('_404', $data);
     }
+
+    public function undergraduateProfile() {
+        $data = [];
+        $this->view('Undergraduate/v_profile', $data);
+    }
 }
 ?>
