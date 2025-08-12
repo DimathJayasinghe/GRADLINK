@@ -19,7 +19,7 @@
             }
         }
         ?>
-        <form class="form" method="post" action="<?php echo URLROOT; ?>/auth/loginHandler">
+        <form class="form" method="post" action="<?php echo URLROOT; ?>/auth/login">
             <label class="field">
                 <span class="sr-only">Select Your Role</span>
                 <select name="role" class="input select" required>
@@ -41,7 +41,7 @@
             </label>
 
             <div class="actions">
-                <button class="btn-next" type="submit">Login</button>
+                <button class="btn btn-primary" type="submit">Login</button>
             </div>
         </form>
 

@@ -314,7 +314,7 @@ function joinNetwork() {
     setTimeout(() => {
         button.style.transform = 'scale(1)';
         // Here you can add navigation logic or show a modal
-        window.location.href = '<?php echo URLROOT?>/users'; // Example redirect
+        window.location.href = '<?php echo URLROOT?>/auth'; // Example redirect
     }, 150);
 }
 
