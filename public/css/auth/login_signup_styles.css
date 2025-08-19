@@ -1,0 +1,330 @@
+/* GRADLINK Login Page Styles */
+/* Uses global CSS variables from color-pallate.css */
+
+* {
+  box-sizing: border-box
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg) !important;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg) !important;
+  color: var(--text);
+}
+
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 4rem;
+  padding: 3rem clamp(1rem, 4vw, 4rem);
+}
+
+/* Brand side */
+.brand {
+  width: 40vw;
+  text-align: center;
+  margin-top: -30px;
+}
+
+.logo-mark {
+  max-width: 320px;
+  margin: 0 auto 1.25rem;
+}
+
+.logo-mark img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.brand-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: 1px;
+  margin: 0.5rem 0 0.75rem;
+  font-weight: 800;
+}
+
+.brand-copy {
+  max-width: 330px;
+  margin: 0 auto;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* Auth Card - Dynamic Height */
+.auth-card {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: var(--shadow-1);
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  
+  /* Dynamic height based on content */
+  min-height: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  
+  /* Smooth transitions for content changes */
+  transition: all 0.3s ease;
+}
+
+.card-close {
+  position: absolute;
+  right: 16px;
+  top: 12px;
+  border: 0;
+  background: transparent;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);
+  z-index: 10;
+  transition: color 0.2s ease;
+}
+
+.card-close:hover {
+  color: var(--text);
+}
+
+.card-title {
+  text-align: center;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 1rem 0 2rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* Dynamic content area */
+.auth-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 300px;
+}
+
+.alert {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: .75rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  color: #ff6b6b;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex: 1;
+  padding: 0 1rem;
+}
+
+.field {
+  position: relative;
+  margin: 5px;
+}
+
+.field p {
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.sr-only {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.input {
+  width: 100%;
+  padding: 1rem;
+  background: var(--input);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  outline: none;
+  font-size: 0.95rem;
+  color: var(--text);
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus {
+  border-color: var(--link);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
+.chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 18px;
+  color: var(--text);
+  opacity: 0.8;
+}
+
+/* REMOVE button styles duplicated here (they live in style.css):
+   - .btn, variants (.btn-primary/.secondary/.success/.link)
+   - .btn:hover/.btn:active/.btn:disabled
+   - .btn-hidden
+   - .btn-next
+*/
+.btn, .btn-primary, .btn-secondary, .btn-success, .btn-link { /* removed */ }
+.btn:hover, .btn:active, .btn:disabled { /* removed */ }
+.btn-hidden { /* removed */ }
+.btn-next { /* removed */ }
+
+/* Keep auth-only styles below */
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding: 1rem 0;
+  gap: 1rem;
+  min-height: 60px;
+}
+
+/* Slides + transitions (auth-only) */
+.slide {
+  display: none;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide.active { display: block; opacity: 1; transform: translateX(0); }
+
+@keyframes slideInRight { from { opacity:0; transform:translateX(30px) } to { opacity:1; transform:translateX(0) } }
+@keyframes slideInLeft  { from { opacity:0; transform:translateX(-30px)} to { opacity:1; transform:translateX(0) } }
+.slide.slide-in-right { animation: slideInRight .4s cubic-bezier(0.4,0,0.2,1) }
+.slide.slide-in-left  { animation: slideInLeft  .4s cubic-bezier(0.4,0,0.2,1) }
+
+/* Loading State */
+.loading-state { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem; color:var(--muted); }
+.loading-spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--border);
+  border-top: 3px solid var(--link);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Desktop-only positioning */
+@media (min-width: 1000px) {
+  .auth-card {
+    transform: translateX(-60px);
+  }
+}
+
+/* Animation for content transitions */
+.auth-card.transitioning {
+  opacity: 0.7;
+  transform: translateX(-60px) scale(0.98);
+}
+
+.auth-card.content-loaded {
+  opacity: 1;
+  transform: translateX(-60px) scale(1);
+}
+
+/* Responsive Design */
+@media (max-width: 1000px) {
+  .page {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 1rem;
+  }
+
+  .brand {
+    order: 2;
+    width: 100%;
+    padding-bottom: 1.5rem;
+  }
+
+  .auth-card {
+    order: 1;
+    max-width: 100%;
+    margin: 0;
+    padding: 1.5rem;
+  }
+
+  .logo-mark {
+    max-width: 260px;
+  }
+
+  .form {
+    padding: 0;
+    gap: 1.25rem;
+  }
+
+  .actions {
+    padding: 1rem 0 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-card {
+    padding: 1rem;
+    min-height: 350px;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    margin: 0.5rem 0 1.5rem;
+  }
+
+  .input {
+    padding: 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-next {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .form {
+    gap: 1rem;
+  }
+}
