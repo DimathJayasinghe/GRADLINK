@@ -87,9 +87,6 @@
                         </div>
                     </div>
 
-                    <div class="post-media">
-                        <img src="<?php echo URLROOT; ?>/img/posts/sample_post.png" alt="Post image">
-                    </div>
 
                     <div class="post-actions">
                         <div class="comment-btn" data-post-id="post-9012"><i class="far fa-comment"></i> <?= rand(15, 45) ?></div>
