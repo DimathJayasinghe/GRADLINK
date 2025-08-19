@@ -10,8 +10,8 @@
     </section>
 
     <section class="auth-card">
-        <button class="card-close" aria-label="Close">×</button>
-        <h2 class="card-title">Login</h2>
+        <a href="<?php echo URLROOT;?>/auth"><button class="card-close" aria-label="Close">×</button></a>
+        <h2 class="card-title">UNDERGRAD LOGIN</h2>
         <?php
         if (isset($data['errors']) && !empty($data['errors'])) {
             foreach ($data['errors'] as $error) {
@@ -19,20 +19,12 @@
             }
         }
         ?>
-        <form class="form" method="post" action="<?php echo URLROOT; ?>/auth/loginHandler">
-            <label class="field">
-                <span class="sr-only">Select Your Role</span>
-                <select name="role" class="input select" required>
-                    <option value="" disabled selected>Select Your Role</option>
-                    <option value="undergrad">Undergrad</option>
-                    <option value="alumni">Alumni</option>
-                </select>
-                <span class="chevron">▾</span>
-            </label>
-
+        <form class="form" method="post" action="<?php echo URLROOT; ?>/login/undergrad">
             <label class="field">
                 <span class="sr-only">Email</span>
-                <input type="email" name="email" class="input" placeholder="Email" required />
+                <input type="email" name="email" class="input" 
+                       value="<?php echo htmlspecialchars($data['email'] ?? ''); ?>" 
+                       placeholder="Email" required />
             </label>
 
             <label class="field">
@@ -41,7 +33,7 @@
             </label>
 
             <div class="actions">
-                <button class="btn-next" type="submit">Login</button>
+                <button class="btn btn-primary" type="submit">Login</button>
             </div>
         </form>
 

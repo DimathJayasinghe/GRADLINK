@@ -1,12 +1,201 @@
+/* Import color palette FIRST */
+@import url('./color-pallate.css');
+
 /* Component stylings */
 @import url('./components/topnavbar_styles.css');
 @import url('./components/form_styles.css');
-@import url('./auth/login_styles.css');
+@import url('./auth/login_signup_styles.css');
 
 /* FONTS */
 @font-face {
-    font-family: Poppins-Regular;
-    src: url(fonts/Poppins-Regular.ttf);
+  font-family: 'Poppins-Regular';
+  src: url('./fonts/Poppins-Regular.ttf');
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('./fonts/Poppins-Regular.ttf');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('./fonts/Poppins-Medium.ttf');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('./fonts/Poppins-SemiBold.ttf');
+  font-weight: 600;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Poppins';
+  src: url('./fonts/Poppins-Bold.ttf');
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* COMMON BUTTON STYLES */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2rem;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: inherit;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  white-space: nowrap;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Button variants */
+.btn{
+  border: 1px solid transparent;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.btn-primary {
+  background: var(--btn);
+  color: var(--btn-text);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+  background: var(--muted);
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: var(--input);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+  background: var(--input);
+  border-color: var(--muted);
+}
+
+.btn-link {
+  background: transparent;
+  color: var(--link);
+  padding: 0.5rem 1rem;
+  min-width: auto;
+}
+
+.btn-link:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+  transform: none;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+/* Button sizes */
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  min-width: 80px;
+}
+
+.btn-lg {
+  padding: 1.25rem 2.5rem;
+  font-size: 1.125rem;
+  min-width: 150px;
+}
+
+.btn-xl {
+  padding: 1.5rem 3rem;
+  font-size: 1.25rem;
+  min-width: 180px;
+}
+
+/* Button states */
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+.btn-hidden {
+  display: none !important;
+}
+
+/* Provide @keyframes used by buttons and auth loader */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive button adjustments */
+@media (max-width: 640px) {
+  .btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9rem;
+    min-width: 100px;
+  }
+  
+  .btn-sm {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+    min-width: 70px;
+  }
+  
+  .btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    min-width: 120px;
+  }
 }
 
 h1{
@@ -18,7 +207,8 @@ h1{
 
 body{
     margin: 0;
-    font-family: Poppins-Regular, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-weight: bold;
     font-size: small;
     text-align: left;
     background-color: var(--bg);
@@ -38,10 +228,6 @@ body{
 
 .hide{
     display: none;
-}
-
-.button{
-    /* adopt tokens here if you style buttons */
 }
 
 .form-invalid{

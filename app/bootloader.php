@@ -7,5 +7,6 @@
     require_once 'libraries/Controller.php';
     require_once 'libraries/Database.php';
     require_once 'libraries/Sanitizer.php';
-    require_once 'libraries/cookie.php';
+    require_once 'helpers/SessionManager.php';
+    require_once 'libraries/Cookie.php';
 ?>
