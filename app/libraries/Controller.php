@@ -17,5 +17,11 @@
                 die('View does not exist: ' . $view);
             }
         }
+
+        public function redirect($to){
+            // Redirect to auth page after logout
+            header('Location: ' . URLROOT . $to);
+            exit();
+        }
     }
 ?>

@@ -1,17 +1,17 @@
 /* Global color palette — derived from the provided design screenshot */
 :root {
   /* Base surfaces */
-  --bg: #0f1518;        /* App background */
-  --card: #1f2429;      /* Card background */
-  --input: #2b3237;     /* Input background */
+  --bg: #0f1518;
+  --card: #1f2429;
+  --input: #2b3237;
 
   /* Text */
-  --text: #e8eef2;      /* Primary text */
-  --muted: #cbb8a3;     /* Muted/secondary text */
+  --text: #e8eef2;
+  --muted: #cbb8a3;
 
   /* Actions */
-  --btn: #6f7b85;       /* Button background */
-  --btn-text: #ffffff;  /* Button label */
+  --btn: #6f7b85;
+  --btn-text: #ffffff;
 
   /* Links & accents */
   --link: #9ed4dc;
@@ -21,6 +21,61 @@
   --border: rgba(255, 255, 255, 0.08);
   --shadow-1: 0 0px 50px rgba(0, 0, 0, .12), 0 0 80px rgba(0, 0, 0, .15);
   --radius-lg: 20px;
+
+  /* NEW: Surfaces (subtle elevation steps) */
+  --surface-0: var(--bg);
+  --surface-1: #151b1f;
+  --surface-2: #1b2126;
+  --surface-3: #232a30;
+  --surface-4: #2a3239;
+
+  /* NEW: Semantic colors (dark theme tuned) */
+  --primary: #9ed4dc;     /* matches link */
+  --primary-600: #8fcbd4;
+  --primary-700: #7fbfc9;
+  --primary-800: #6eb2bc;
+
+  --secondary: #cbb8a3;   /* matches muted */
+  --secondary-600: #bfae9b;
+  --secondary-700: #b2a490;
+
+  --success: #16a34a;
+  --success-700: #12893e;
+  --warning: #f59e0b;
+  --warning-700: #d97706;
+  --danger: #dc2626;
+  --danger-700: #b91c1c;
+  --info: #60a5fa;
+
+  /* NEW: States */
+  --focus: #b8e3e9;                  /* soft accent focus */
+  --ring: rgba(158, 212, 220, 0.45); /* ring around focus */
+  --ring-offset: rgba(0, 0, 0, 0.35);
+
+  --disabled-bg: #3a4247;
+  --disabled-text: rgba(232, 238, 242, 0.5);
+
+  /* NEW: Overlays */
+  --overlay-1: rgba(0, 0, 0, 0.35);
+  --overlay-2: rgba(0, 0, 0, 0.5);
+  --overlay-3: rgba(0, 0, 0, 0.65);
+
+  /* NEW: Borders (subtle variants) */
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+
+  /* NEW: Selections / highlights */
+  --selection-bg: rgba(158, 212, 220, 0.25);
+  --selection-text: var(--text);
+  --highlight: rgba(255, 255, 255, 0.06);
+
+  /* NEW: Shadows */
+  --shadow-2: 0 12px 30px rgba(0, 0, 0, 0.25);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+
+  /* NEW: Gradients */
+  --gradient-primary: linear-gradient(135deg, #6f7b85 0%, #2b3237 100%);
+  --gradient-accent: linear-gradient(135deg, #7fbfc9 0%, #2b3237 100%);
 }
 
 /* Optional: light mode tokens for future use */
@@ -28,11 +83,70 @@
   --bg: #f3f3f4;
   --card: #e7e7e8;
   --input: #cfcfd2;
+
   --text: #111111;
   --muted: #6b7280;
+
   --btn: #7a6f6d;
   --btn-text: #ffffff;
+
   --link: #0ea5b9;
   --link-hover: #14b8c4;
+
   --border: rgba(0, 0, 0, 0.1);
+
+  /* Light surfaces */
+  --surface-0: var(--bg);
+  --surface-1: #eaeaec;
+  --surface-2: #e2e2e5;
+  --surface-3: #dadade;
+  --surface-4: #d2d3d8;
+
+  /* Light semantic */
+  --primary: #0ea5b9;
+  --primary-600: #0b8fa1;
+  --primary-700: #0a7f8f;
+  --primary-800: #086e7b;
+
+  --secondary: #6b7280;
+  --secondary-600: #585f6d;
+  --secondary-700: #494f5b;
+
+  --success: #16a34a;
+  --success-700: #15803d;
+  --warning: #ca8a04;
+  --warning-700: #a16207;
+  --danger: #b91c1c;
+  --danger-700: #991b1b;
+  --info: #2563eb;
+
+  /* Light states */
+  --focus: #14b8c4;
+  --ring: rgba(20, 184, 196, 0.4);
+  --ring-offset: rgba(255, 255, 255, 0.9);
+
+  --disabled-bg: #d7d7da;
+  --disabled-text: rgba(17, 17, 17, 0.5);
+
+  /* Light overlays */
+  --overlay-1: rgba(0, 0, 0, 0.15);
+  --overlay-2: rgba(0, 0, 0, 0.25);
+  --overlay-3: rgba(0, 0, 0, 0.35);
+
+  /* Light borders */
+  --border-strong: rgba(0, 0, 0, 0.2);
+  --border-subtle: rgba(0, 0, 0, 0.06);
+
+  /* Light selections */
+  --selection-bg: rgba(20, 184, 196, 0.2);
+  --selection-text: #0b0b0b;
+  --highlight: rgba(0, 0, 0, 0.04);
+
+  /* Light shadows */
+  --shadow-2: 0 12px 30px rgba(0, 0, 0, 0.12);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  /* Light gradients */
+  --gradient-primary: linear-gradient(135deg, #7a6f6d 0%, #cfcfd2 100%);
+  --gradient-accent: linear-gradient(135deg, #0ea5b9 0%, #cfcfd2 100%);
 }

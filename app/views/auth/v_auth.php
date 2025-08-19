@@ -1,71 +1,148 @@
 <?php require APPROOT . '/views/inc/header.php';?>
-<!-- TOP NAVIGATION -->
-<!-- <?php require APPROOT . '\views\inc\commponents\topnavbar.php';?> -->
+
 <style>
-.container {
+/* Container layout */
+.auth-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     background-color: var(--bg);
-    /* width: 80vw; */
-
 }
 
-.container a {
-    text-decoration: none;
-    color: var(--text);
-}
-
-.card {
+/* Section styling */
+.auth-section {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 30px 10px;
-    margin: 10px 40px;
-    height: 80vh;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background-color: var(--card);
-
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
+    padding: 3rem;
+    position: relative;
 }
 
-.card p {
+/* Vertical divider */
+.auth-section.alumni-section::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    right: 0;
+    height: 70%;
+    width: 1px;
+    background-color: var(--border);
+}
+
+/* Logo styling */
+.section-logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1.5rem;
+}
+
+/* Typography */
+.section-title {
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text);
     text-align: center;
 }
 
-.card p>a {
-    color: var(--primary);
+.section-description {
+    color: var(--muted);
+    text-align: center;
+    font-weight: 300;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+    max-width: 400px;
+}
+
+/* Button styling */
+.btn {
+    background-color: var(--btn);
+    color: var(--btn-text);
+    border: none;
+    padding: 12px 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s ease;
+    margin-bottom: 2rem;
+}
+
+.btn:hover {
+    background-color: var(--link);
+}
+
+/* Link styling */
+a {
     text-decoration: none;
 }
 
-.alumni_card {
-    margin-right: 0px;
+.signup-link {
+    color: var(--text);
+    font-size: 0.95rem;
 }
 
-.card:hover {
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-    transform: translateY(-10px);
+.signup-link a {
+    color: var(--link);
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.signup-link a:hover {
+    color: var(--link-hover);
+}
+
+/* Hover effects
+.auth-section:hover .section-title {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+} */
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .auth-container {
+        flex-direction: column;
+    }
+    
+    .auth-section.alumni-section::after {
+        content: '';
+        position: absolute;
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 15%;
+        height: 1px;
+        width: 70%;
+        background-color: var(--border);
+    }
+    
+    .auth-section {
+        padding: 2rem 1.5rem;
+    }
 }
 </style>
-<div class="container">
-    <div class="card alumni_card">
-        <h1>For Alumni</h1>
-        <p>Reconnect with your UCSC family, share experiences, mentor the next generation, and explore new opportunities
-            together.</p>
-        <button class="btn btn-primary"><a href="<?php echo URLROOT?>/auth/login">Login</a></button>
-        <p>Don't have an account?<a href="<?php echo URLROOT?>/auth/signup?role=alumni">Signup</a></p>
+
+<div class="auth-container">
+    <div class="auth-section alumni-section">
+        <img src="<?php echo URLROOT?>/img/logo_white.png" alt="Alumni" class="section-logo">
+        <h1 class="section-title">For Alumni</h1>
+        <p class="section-description">Reconnect with your UCSC family, share experiences, mentor the next generation, and explore new opportunities together.</p>
+        <a class="btn" href="<?php echo URLROOT?>/login/alumni">Log In</a>
+        <p class="signup-link">Don't have an account? <a href="<?php echo URLROOT?>/signup/alumni">Sign Up</a></p>
     </div>
-    <div class="card undergrad_card">
-        <h1>For Undergraduates</h1>
-        <p>Join our vibrant undergraduate community, sharpen your skills, collaborate on projects, and build a
-            future-ready network.</p>
-        <button class="btn btn-primary"><a href="<?php echo URLROOT?>/auth/login">Login</a></button>
-        <p>Don't have an account?<a href="<?php echo URLROOT?>/auth/signup?role=undergrad">Signup</a></p>
+    
+    <div class="auth-section undergrad-section">
+        <img src="<?php echo URLROOT?>/img/logo_white.png" alt="Undergraduate" class="section-logo">
+        <h1 class="section-title">For Undergraduates</h1>
+        <p class="section-description">Join our vibrant undergraduate community, sharpen your skills,  and build a future-ready network.</p>
+        <a class="btn" href="<?php echo URLROOT?>/login/undergrad">Log In</a>
+        <p class="signup-link">Don't have an account? <a href="<?php echo URLROOT?>/signup/undergrad">Sign Up</a></p>
     </div>
 </div>
+
 <?php require APPROOT . '/views/inc/footer.php';?>
