@@ -1,73 +1,59 @@
 <?php
-class Cookie {
-    public static function set($name, $value, $expiry = 3600, $options = []) {
-        // Validate cookie name
-        if (empty($name) || !is_string($name)) {
-            return false;
-        }
-
-        // Handle array values
-        if (is_array($value)) {
-            $value = json_encode($value);
-        }
-
-        // Default security options
-        $defaults = [
-            'expires' => time() + $expiry,
-            'path' => '/',
-            'domain' => '',
-            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ];
-
-        $options = array_merge($defaults, $options);
-
-        // Check cookie size (4KB limit)
-        if (strlen($value) > 4096) {
-            return false;
-        }
-
-        return setcookie($name, $value, $options);
-    }
-
-    public static function get($name) {
-        if (!isset($_COOKIE[$name]) || empty($name)) {
-            return null;
-        }
-
-        $value = $_COOKIE[$name];
-        
-        // Try to decode JSON, return original if not JSON
-        $decoded = json_decode($value, true);
-        return (json_last_error() === JSON_ERROR_NONE) ? $decoded : $value;
-    }
-
-    public static function delete($name) {
-        if (!isset($_COOKIE[$name])) {
-            return false;
-        }
-
-        return setcookie($name, '', [
-            'expires' => time() - 3600,
-            'path' => '/',
-            'httponly' => true,
-            'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
-            'samesite' => 'Strict'
-        ]);
-    }
-
-    public static function exists($name) {
+class Cookie
+{
+    public static function exists(string $name): bool
+    {
         return isset($_COOKIE[$name]);
     }
 
-    // Secure method for sensitive data
-    public static function setSecure($name, $value, $expiry = 3600) {
-        return self::set($name, $value, $expiry, [
-            'secure' => true,
-            'httponly' => true,
-            'samesite' => 'Strict'
-        ]);
+    public static function get(string $name): ?string
+    {
+        return $_COOKIE[$name] ?? null;
+    }
+
+    public static function set(
+        string $name,
+        string $value,
+        int $ttl = 0,
+        string $path = '/',
+        ?string $domain = null,
+        bool $secure = null,
+        bool $httpOnly = true,
+        string $sameSite = 'Lax'
+    ): bool {
+        $expire = $ttl > 0 ? time() + $ttl : 0;
+        $secure = $secure ?? (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+
+        if (PHP_VERSION_ID >= 70300) {
+            $opts = [
+                'expires'  => $expire,
+                'path'     => $path,
+                'domain'   => $domain, // Remove the fallback to HTTP_HOST
+                'secure'   => $secure,
+                'httponly' => $httpOnly,
+                'samesite' => $sameSite,
+            ];
+            $result = setcookie($name, $value, $opts);
+        } else {
+            // Fallback (no SameSite)
+            $result = setcookie($name, $value, $expire, $path, $domain, $secure, $httpOnly);
+        }
+
+        if ($result) {
+            $_COOKIE[$name] = $value;
+        }
+        return $result;
+    }
+
+    public static function setSecure(string $name, string $value, int $ttl): bool
+    {
+        return self::set($name, $value, $ttl, '/', null, true, true, 'Lax');
+    }
+
+    public static function delete(string $name, string $path = '/'): bool
+    {
+        unset($_COOKIE[$name]);
+        return setcookie($name, '', time() - 3600, $path);
     }
 }
 ?>

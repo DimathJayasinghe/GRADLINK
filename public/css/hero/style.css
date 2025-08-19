@@ -1,0 +1,204 @@
+/* Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: system-ui, sans-serif;
+  transition: background-color 0.3s, color 0.3s;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: url('../../img/hero/background.jpg') center center / cover no-repeat fixed;
+  color: #141414;
+  background-color: #f9f9f9; /* fallback */
+  position: relative;
+  z-index: 0;
+}
+
+/* Overlay for readability */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.65); /* Light overlay */
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Dark mode body */
+body.dark-mode {
+  background-color: #121212;
+  color: #eaeaea;
+}
+
+body.dark-mode::before {
+  background-color: rgba(0, 0, 0, 0.65); /* Dark overlay */
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+}
+
+body.dark-mode .header {
+  background-color: rgba(20, 20, 20, 0.8);
+  border-color: #333;
+}
+
+/* Logo */
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.logo-text {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+/* Navigation */
+.nav-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: inherit;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.nav-links a:hover {
+  color: #000;
+}
+
+body.dark-mode .nav-links a:hover {
+  color: #fff;
+}
+
+/* Auth Buttons */
+.auth-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  border: none;
+  transition: background 0.3s, color 0.3s;
+}
+
+.btn-primary {
+  background-color: #000;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background-color: #333;
+}
+
+.btn-secondary {
+  background-color: #e0e0e0;
+  color: #000;
+}
+
+.btn-secondary:hover {
+  background-color: #cfcfcf;
+}
+
+body.dark-mode .btn-secondary {
+  background-color: #333;
+  color: #fff;
+}
+
+body.dark-mode .btn-secondary:hover {
+  background-color: #444;
+}
+
+/* Hero Section */
+.hero {
+  padding: 5rem 2rem;
+  text-align: center;
+  background: none;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 900;
+}
+
+.hero p {
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+  font-weight: 400;
+}
+
+/* Footer */
+.footer {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  margin-top: auto;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: inherit;
+}
+
+body.dark-mode .footer {
+  background-color: rgba(20, 20, 20, 0.85);
+}
+
+/* Dark Mode Toggle Button (Optional) */
+.toggle-mode {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 0.5rem 1rem;
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.toggle-mode:hover {
+  background: #444;
+}
