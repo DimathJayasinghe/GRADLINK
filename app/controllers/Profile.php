@@ -1,8 +1,11 @@
 <?php
 class Profile extends Controller{
     Protected $undergradModel;
+   
+
     public function __construct() {
         $this->undergradModel = $this->model('M_Undergrad');
+       
     }
     public function index() {
         $data = [];
@@ -60,4 +63,4 @@ class Profile extends Controller{
         $this->view('Undergraduate/v_profile', $data);
     }
 }
-?>
+   
