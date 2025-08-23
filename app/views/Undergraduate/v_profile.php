@@ -155,16 +155,21 @@
             gap: 1rem;
             overflow-y: auto;
             max-height: 100vh;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        .center-panel::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
         }
 
     .profile {
         width: 100%;
-        height: 200px;
+        min-height: 200px;
         position: relative;
     }
     .profile > .profile-up-part {
         width: 100%;
-        height: 50%;
+        height: 30%;
         border-radius: 5px 5px 0 0;
         background-color: var(--card);
         position: relative;
@@ -191,7 +196,7 @@
     }
     .profile > .profile-down-part {
         width: 100%;
-        height: 60%;
+        height: 70%;
         border-radius: 0 0 5px 5px;
         background-color: var(--input);
         position: relative;

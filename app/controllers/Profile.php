@@ -10,7 +10,20 @@ class Profile extends Controller{
     }
 
     public function undergraduateProfile() {
-        $data = [];
+        // $data = [];
+
+    //     $loggedInUserId = $_SESSION['user_id'] ?? null;
+
+    //     if($loggedInUserId) {
+    //         if($loggedInUserId == $profileUserId) {
+    //             $data['isOwnProfile'] = true;
+    //         } else {
+    //             $data['isOwnProfile'] = false;
+    //         }
+    //     }
+
+
+    //     $data['user'] = $this->undergradModel->getUserDetails($_SESSION['user_id']);
 
         $data['userDetails'] = [
             'name' => 'John Doe',
