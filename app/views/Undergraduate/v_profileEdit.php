@@ -133,51 +133,6 @@
     </style>
 </head>
 <body>
-    <div class="profile-edit">
-        <div class="profile-picture">
-            
-        </div>
-        <div class="profile-details-edit">
-            <div class="name">
-                <textarea placeholder="curent name will show here"></textarea>
-            </div>
-            <div class="bio">
-                <textarea placeholder="curent bio will show here"></textarea>
-            </div>
-
-            <div class="certificates">
-                <div class="current-certificates">
-                    <div class="current-certificate-remove">
-                        <button title="Remove certificate" style="background: none; border: none; cursor: pointer;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#cbb8a3" viewBox="0 0 24 24">
-                                <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 0 0 5.7 7.11L10.59 12l-4.89 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4z"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="certificates-add-button">
-                    <button>Add certificates</button>
-                </div>
-            </div>
-
-            <div class="projects">
-                <div class="current-projects">
-                    <div class="current-project-remove">
-                        <button title="Remove project" style="background: none; border: none; cursor: pointer;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#cbb8a3" viewBox="0 0 24 24">
-                                <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7A1 1 0 0 0 5.7 7.11L10.59 12l-4.89 4.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4z"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="projects-add-button">
-                    <button>Add projects</button>
-                </div>
-            </div>
-        </div>
-        <div class="save-button">
-            <button>Save Changes</button>
-        </div>
-    </div>
+    
 </body>
 </html>
