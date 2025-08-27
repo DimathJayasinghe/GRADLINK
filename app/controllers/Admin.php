@@ -2,20 +2,31 @@
     class Admin extends Controller {
         protected $adminModel;
 
-        public function __construct() {
-            SessionManager::requireRole('admin');
-            $this->adminModel = $this->model('M_admin');
+            public function __construct() {
+        // Check if user is logged in and has admin role
+        if (!SessionManager::isLoggedIn() || !SessionManager::hasRole('admin')) {
+            // Redirect to admin login if not authenticated
+            header('Location: ' . URLROOT . '/adminlogin');
+            exit();
         }
+        $this->adminModel = $this->model('M_admin');
+    }
+
+    public function dashboard() {
+        // Redirect to index method for dashboard
+        $this->index();
+    }
 
         public function index() {
             $metrics = $this->adminModel->getOverviewMetrics();
-            $charts = $this->adminModel->getChartData();
+            $detailed = $this->adminModel->getDetailedOverview();
+            $activity = $this->adminModel->getRecentActivity();
             $data = [
                 'metrics' => $metrics,
-                'charts' => $charts,
-                'activeTab' => 'overview',
+                'detailed' => $detailed,
+                'activity' => $activity,
             ];
-            $this->view('admin/v_dashboard', $data);
+            $this->view('admin/v_admin_dashboard', $data);
         }
 
         public function users() {

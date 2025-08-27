@@ -19,7 +19,7 @@
                     
                     // Unset the controller from the URL
                     unset($url[0]);
-                }else {
+                } else {
                     $this->show404();
                     return; // Stop further execution if controller not found
                 }

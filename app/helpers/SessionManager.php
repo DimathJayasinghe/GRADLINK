@@ -125,9 +125,9 @@ class SessionManager
     public static function requireRole(string $role, string $redirectTo = null): void
     {
         self::ensureStarted();
-        if (/*!*/self::isLoggedIn() /*||*/&& self::hasRole($role)) {
+        if (!self::isLoggedIn() || !self::hasRole($role)) {
             $target = $redirectTo ?? (URLROOT . '/auth');
-            header('Location: ' . $target); //check for code reuse
+            header('Location: ' . $target);
             exit();
         }
     }
