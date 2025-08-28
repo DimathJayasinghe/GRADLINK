@@ -55,6 +55,16 @@ class SessionManager
     }
 
     /**
+     * Redirect to auth login if user not logged in - use in any controller
+     */
+    public static function redirectToAuthIfNotLoggedIn(): void{
+        if(!self::isLoggedIn()){
+            header('Location: '.URLROOT . '/auth');
+            exit();
+        }
+    }
+
+    /**
      * Require login - use in any protected controller/page
      */
     public static function requireAuth(string $redirectTo = null): void
@@ -76,6 +86,7 @@ class SessionManager
         $_SESSION['user_name'] = $user->name ?? ($user->full_name ?? '');
         $_SESSION['user_email'] = $user->email ?? '';
         $_SESSION['user_role'] = $user->role ?? '';
+    $_SESSION['profile_image'] = $user->profile_image ?? 'default.jpg';
         $_SESSION['login_time'] = time();
     }
 

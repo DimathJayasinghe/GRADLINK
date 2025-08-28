@@ -1,0 +1,39 @@
+/* Post Card component styles extracted from mainfeed_styles.css */
+.post {
+	border-bottom: 1px solid var(--border);
+	padding: 15px;
+	transition: var(--transition);
+}
+.post:hover { background-color: rgba(15, 21, 24, 0.5); }
+.post-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.post-user { display: flex; }
+.post-user-info { margin-left: 10px; }
+.post-user-name { font-weight: 600; }
+.post-user-handle, .post-time { color: var(--muted); }
+.post-content { margin: 10px 0; line-height: 1.5; }
+.post-actions { display: flex; justify-content: space-around; margin-top: 15px; padding: 0 60px; }
+.post-actions div { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.post-actions i { font-size: 18px; transition: var(--transition); }
+.post-actions i:hover { color: var(--link); transform: scale(1.2); }
+.post-media { margin-top: 10px; border-radius: 15px; overflow: hidden; position: relative; width: 100%; padding-bottom: 100%; }
+.post-media img { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; }
+
+/* State styles */
+.post-actions .liked i { color: #e0245e; }
+.post-actions .reposted i { color: #17bf63; }
+
+/* Inline comments panel */
+.pc-comments { font-size: 14px; }
+.pc-comments-list > div { display:flex; align-items:flex-start; gap:8px; }
+.pc-comments-list > div .bubble { background: rgba(255,255,255,0.08); padding:10px 14px; border-radius:18px; max-width:480px; line-height:1.4; position:relative; font-size:15px; }
+.pc-comments-list > div .bubble:before { content:""; position:absolute; left:-6px; top:12px; width:12px; height:12px; background:inherit; transform:rotate(45deg); border-radius:3px; }
+.pc-comments-list strong { color: var(--link); font-weight:600; font-size:13px; }
+.pc-comments-list .meta { display:block; margin-top:4px; font-size:11px; opacity:.55; }
+.pc-comment-input { font-family:inherit; }
+.pc-comment-input::placeholder { color:var(--muted); }
+.pc-comment-send { background: var(--btn); color: var(--btn-text); border: none; border-radius: 20px; cursor:pointer; }
+.pc-comment-send:hover { background: var(--link); }
+
+/* Comment modal integration (minimal tweaks if needed) */
+.comment-modal { display: none; }
+.comment-modal.show { display: flex; }
