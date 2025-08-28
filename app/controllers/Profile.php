@@ -1,15 +1,32 @@
 <?php
 class Profile extends Controller{
-    Protected $undergradModel;
+    protected $undergradModel;
+    protected $alumniModel;
    
-
     public function __construct() {
         $this->undergradModel = $this->model('M_Undergrad');
-       
+        // $this->alumniModel = $this->model('M_Alumni');
     }
+    
     public function index() {
         $data = [];
         $this->view('_404', $data);
+    }
+
+    public function alumniProfile(){
+        $data['certificates'] = [
+            ['title' => 'Certificate in Web Development', 'image_url' => null],
+            ['title' => 'Certificate in Data Science', 'image_url' => null],
+            ['title' => 'Certificate in Machine Learning', 'image_url' => null]
+        ];
+
+        $data['projects'] = [
+            ['title' => 'Project A', 'description' => 'Description for Project A'],
+            ['title' => 'Project B', 'description' => 'Description for Project B'],
+            ['title' => 'Project C', 'description' => 'Description for Project C']
+        ];
+
+       $this->view('Alumni/v_profile', $data); 
     }
 
     public function undergraduateProfile() {
