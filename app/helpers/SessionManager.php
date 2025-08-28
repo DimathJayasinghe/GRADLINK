@@ -86,6 +86,7 @@ class SessionManager
         $_SESSION['user_name'] = $user->name ?? ($user->full_name ?? '');
         $_SESSION['user_email'] = $user->email ?? '';
         $_SESSION['user_role'] = $user->role ?? '';
+    $_SESSION['profile_image'] = $user->profile_image ?? 'default.jpg';
         $_SESSION['login_time'] = time();
     }
 
