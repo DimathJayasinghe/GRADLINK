@@ -17,59 +17,20 @@ if (!defined('URLROOT')) {
     </div>
 
     <div class="card">
-        <div class="card-title">What's happening</div>
+        <div class="card-title">Events ahead</div>
 
-        <div class="trend">
-            <div class="trend-category">Career Development · Trending</div>
-            <div class="trend-name">#ResumeWorkshop</div>
-            <div class="trend-posts">25.8K posts</div>
+        <div class="event">
+            <div class="event-category">Career Development · Trending </div>
+            <div class="event-name">#ResumeWorkshop</div>
+            <div class="event-date">Aug 23</div>
         </div>
-
-        <div class="trend">
-            <div class="trend-category">Academia · Trending</div>
-            <div class="trend-name">Graduate Research Funding</div>
-            <div class="trend-posts">62.2K posts</div>
-        </div>
-
-        <div class="trend">
-            <div class="trend-category">Networking · Trending</div>
-            <div class="trend-name">#AlumniConnections</div>
-            <div class="trend-posts">1,655 posts</div>
-        </div>
-
-        <div class="trend">
-            <div class="trend-category">Technology · Trending</div>
-            <div class="trend-name">AI in Education</div>
-            <div class="trend-posts">1.47M posts</div>
-        </div>
-
         <div class="show-more">Show more</div>
     </div>
 
     <div class="card">
         <div class="card-title">Who to follow</div>
 
-        <div class="follow-card">
-            <div class="follow-info">
-                <img src="<?php echo URLROOT; ?>/img/follow-1.jpg" alt="Profile" class="profile-photo">
-                <div class="follow-details">
-                    <div class="follow-name">Tech Careers</div>
-                    <div class="follow-handle">@TechCareers</div>
-                </div>
-            </div>
-            <button class="follow-btn">Follow</button>
-        </div>
-
-        <div class="follow-card">
-            <div class="follow-info">
-                <img src="<?php echo URLROOT; ?>/img/follow-2.jpg" alt="Profile" class="profile-photo">
-                <div class="follow-details">
-                    <div class="follow-name">Grad Network</div>
-                    <div class="follow-handle">@GradNetwork</div>
-                </div>
-            </div>
-            <button class="follow-btn">Follow</button>
-        </div>
+        
     </div>
 </div>
 
@@ -127,29 +88,29 @@ if (!defined('URLROOT')) {
         border-bottom: 1px solid var(--border);
     }
 
-    .trend {
+    .event {
         padding: 15px;
         border-bottom: 1px solid var(--border);
         cursor: pointer;
         transition: var(--transition);
     }
 
-    .trend:hover {
+    .event:hover {
         background-color: rgba(15, 21, 24, 0.3);
     }
 
-    .trend-category {
+    .event-category {
         font-size: 13px;
         color: var(--muted);
     }
 
-    .trend-name {
+    .event-name{
         font-size: 15px;
         font-weight: 700;
         margin: 5px 0;
     }
 
-    .trend-posts {
+    .event-date{
         font-size: 13px;
         color: var(--muted);
     }
@@ -228,38 +189,3 @@ if (!defined('URLROOT')) {
     }
 </style>
 <?php endif; ?>
-
-<!-- Include required JavaScript for the right sidebar functionality -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Show more functionality for trends
-    const showMoreBtn = document.querySelector('.right-sidebar .show-more');
-    
-    if (showMoreBtn) {
-        showMoreBtn.addEventListener('click', function() {
-            this.textContent = 'Loading...';
-            setTimeout(() => {
-                this.textContent = 'Show more';
-            }, 1000);
-        });
-    }
-    
-    // Follow button functionality
-    const followBtns = document.querySelectorAll('.follow-btn');
-    
-    followBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation(); // Prevent triggering the parent element's click event
-            
-            // Toggle follow state
-            if (this.textContent === 'Follow') {
-                this.textContent = 'Following';
-                this.style.backgroundColor = 'var(--btn)';
-            } else {
-                this.textContent = 'Follow';
-                this.style.backgroundColor = 'var(--text)';
-            }
-        });
-    });
-});
-</script>

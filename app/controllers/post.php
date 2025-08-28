@@ -9,12 +9,7 @@ class Post extends Controller
     }
     public function index()
     {
-    $posts = $this->m->getFeed();
-    // annotate liked by current user
-    $uid = $_SESSION['user_id'];
-    foreach($posts as $p){ $p->liked = $this->m->isLiked($p->id,$uid); }
-    if(isset($_GET['json'])){ header('Content-Type: application/json'); echo json_encode(['posts'=>$posts]); return; }
-    $this->view('v_mainfeed', ['posts' => $posts]);
+        $this->redirect("/mainfeed");
     }
     public function create()
     {
@@ -60,7 +55,28 @@ class Post extends Controller
     }
     public function like($pid)
     {
+        if (!is_numeric($pid) || (int)$pid <= 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid post ID']);
+            return;
+        }
+        
+        if (!isset($_SESSION['user_id'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'User not logged in']);
+            return;
+        }
+        
+        $result = $this->m->toggleLike($pid, $_SESSION['user_id']);
+        
+        // Check for error status
+        if (strpos($result, 'error_') === 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => str_replace('error_', '', $result)]);
+            return;
+        }
+        
         header('Content-Type: application/json');
-        echo json_encode(['status' => $this->m->toggleLike($pid, $_SESSION['user_id'])]);
+        echo json_encode(['status' => $result]);
     }
 }
