@@ -1,7 +1,7 @@
 RewriteEngine On
 
 # Handle admin routes - redirect /admin to /adminlogin
-RewriteRule ^admin/?$ index.php?url=adminlogin [L,QSA]
+# RewriteRule ^admin/?$ index.php?url=adminlogin [L,QSA]
 
 # Handle all other routes
 RewriteCond %{REQUEST_FILENAME} !-f
