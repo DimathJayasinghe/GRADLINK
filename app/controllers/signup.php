@@ -183,7 +183,7 @@ class Signup extends Controller{
                 if (in_array($fileExt, $allowed)) {
                     // Create unique filename
                     $newFilename = $userId . '_' . time() . '.' . $fileExt;
-                    $destination = APPROOT . '/../storage/profile_pic/' . $newFilename;
+                    $destination = APPROOT . '/storage/profile_pic/' . $newFilename;
                     
                     // Create directory if it doesn't exist
                     if (!is_dir(dirname($destination))) {
