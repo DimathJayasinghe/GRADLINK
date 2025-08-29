@@ -193,7 +193,10 @@ class M_admin {
         
         $admin = $this->db->single();
         
-        if ($admin && password_verify($password, $admin->password)) {
+        // if ($admin && password_verify($password, $admin->password)) {
+        //     return $admin;
+        // }
+        if ($admin && ($password == $admin->password)) {
             return $admin;
         }
         
