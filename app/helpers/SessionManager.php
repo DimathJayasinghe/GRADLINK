@@ -120,4 +120,26 @@ class SessionManager
         unset($_SESSION['flash_messages']);
         return $messages;
     }
+
+    /**
+     * Check whether current user has a specific role
+     */
+    public static function hasRole(string $role): bool
+    {
+        self::ensureStarted();
+        return isset($_SESSION['user_role']) && strtolower($_SESSION['user_role']) === strtolower($role);
+    }
+
+    /**
+     * Require a specific role; redirect if not authorized
+     */
+    public static function requireRole(string $role, string $redirectTo = null): void
+    {
+        self::ensureStarted();
+        if (!self::isLoggedIn() || !self::hasRole($role)) {
+            $target = $redirectTo ?? (URLROOT . '/auth');
+            header('Location: ' . $target);
+            exit();
+        }
+    }
 }
