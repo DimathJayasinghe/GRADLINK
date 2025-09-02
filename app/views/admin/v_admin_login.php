@@ -9,7 +9,7 @@
         </div>
         <h1 class="brand-title">GRADLINK</h1>
         <div style="display: flex; align-items: center; justify-content: center;">
-            <div class="badge">ADMIN PANEL</div>
+            <div class="admin-badge">ADMIN PANEL</div>
         </div>
     </section>
 

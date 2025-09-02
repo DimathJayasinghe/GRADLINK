@@ -25,21 +25,8 @@
     color: var(--text);
 }
 
-.nav-logo {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: var(--primary);
-    color: var(--btn-text);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.2rem
-}
-
 .admin-badge {
-    background: var(--primary);
+    background: var(--danger-700);
     color: var(--btn-text);
     font-size: .75rem;
     padding: .5rem .75rem;
@@ -86,7 +73,7 @@
     border: none;
     cursor: pointer;
     font-size: 1rem;
-    color: #4a90e2
+    color: var(--text);
 }
 
 .nav-right {
@@ -101,7 +88,7 @@
     border: none;
     font-size: 1.25rem;
     cursor: pointer;
-    padding: .5rem;
+    padding: 0rem;
     color: #fff;
     transition: color 0.3s ease
 }
@@ -110,17 +97,19 @@
     color: #4a90e2
 }
 
-.badge {
+.notification-badge {
+    background-color: var(--link);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
     position: relative;
-    top: 0;
-    right: 0;
-    background: #ef4444;
-    color: #fff;
-    font-size: .75rem;
-    padding: .25rem .5rem;
-    border-radius: 1rem;
-    width: fit-content;
-    text-align: center
+    top: -10px;
+    left: -15px;
 }
 
 .user-menu {
@@ -159,17 +148,18 @@
     border: 1px solid #3a3a3a;
     border-radius: .75rem;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    min-width: 180px;
+    width: fit-content;
     z-index: 1000;
     display: none;
     padding: .5rem 0
 }
 
 .user-menu:hover .user-dropdown {
-    display: block
+    display: flex;
 }
 
 .logout-btn {
+    width: 100%;
     display: block;
     padding: .75rem 1rem;
     color: #ff6b6b;
@@ -186,12 +176,13 @@
 
 .dashboard-container {
     display: flex;
-    min-height: calc(100vh - 80px)
+    min-height: calc(100vh - 80px);
+        background: var(--bg);
 }
 
 .sidebar {
     width: 280px;
-    background: #1a1a1a;
+    background: var(--card);
     padding: 1.5rem 0;
     border-right: 1px solid #3a3a3a
 }
@@ -208,35 +199,35 @@
     gap: 1rem;
     padding: 1rem 1.5rem;
     text-decoration: none;
-    color: rgba(255, 255, 255, .7);
+    color: rgb(255, 255, 255);
     transition: all 0.3s ease;
     border-left: 4px solid transparent;
     cursor: pointer;
-    font-weight: 500
+    font-weight: 500;
+    font-size: 17px;
 }
 
 .menu-item:hover {
     background: rgba(74, 144, 226, 0.1);
-    color: #fff;
-    border-left-color: #4a90e2
+    color: var(--text);
+    border-left-color: var(--info);
 }
 
 .menu-item.active {
     background: rgba(74, 144, 226, 0.15);
-    color: #fff;
-    border-left-color: #4a90e2
+    color: var(--text);
+    border-left-color: var(--info)
 }
 
 .menu-item:visited {
-    color: rgba(255, 255, 255, .7)
+    color: rgb(255, 255, 255)
 }
 
 .main-content {
     flex: 1;
     padding: 2rem;
-    background: #0f0f0f;
     overflow-y: auto;
-    color: #fff
+    color: var(--text);
 }
 
 .admin-section {
@@ -265,22 +256,24 @@
 
 .btn {
     display: inline-block;
+    width: fit-content;
     padding: .75rem 1.5rem;
     border: none;
     border-radius: .75rem;
-    font-size: .875rem;
+    font-size: 15px;
     font-weight: 600;
     text-decoration: none;
     cursor: pointer;
     transition: all 0.3s ease;
     line-height: 1;
     text-transform: uppercase;
-    letter-spacing: 0.5px
+    letter-spacing: 0.5px;
+    margin-left: 5px;
 }
 
 .btn-primary {
     background: #4a90e2;
-    color: #fff
+    color: var(--btn-text)
 }
 
 .btn-primary:hover {
@@ -291,8 +284,8 @@
 
 .btn-secondary {
     background: #2a2a2a;
-    color: #fff;
-    border: 1px solid #3a3a3a
+    color:var(--btn-text);
+    border: 1px solid #3a3a3a;
 }
 
 .btn-secondary:hover {
@@ -301,13 +294,13 @@
 }
 
 .btn-warning {
-    background: #f59e0b;
-    color: #fff
+    border-color: #f59e0b;
+    color: var(--btn-text);
 }
 
 .btn-warning:hover {
     background: #d97706;
-    transform: translateY(-2px)
+    transform: translateY(-2px);
 }
 
 .btn-small {
@@ -323,10 +316,10 @@
 }
 
 .stat-card {
-    background: #2a2a2a;
+    background: var(--card);
     padding: 1.5rem;
     border-radius: 1rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-4);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -336,8 +329,8 @@
 
 .stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-    border-color: #4a90e2
+    box-shadow: var(--shadow-3);
+    border-color: var(--info);
 }
 
 .stat-icon {
@@ -347,21 +340,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #4a90e2;
+    background: transparent;
     border-radius: 50%;
-    color: #fff
+    border: white 1px solid;
+    color: var(--btn-text);
 }
 
 .stat-info h3 {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--text);
     margin: 0
 }
 
 .stat-info p {
     margin: .5rem 0;
-    color: #cccccc;
+    color: var(--muted);
     font-weight: 500;
     font-size: 1rem
 }
@@ -393,11 +387,11 @@
 }
 
 .admin-card {
-    background: #2a2a2a;
+    background: var(--card);
     border-radius: 1rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-4);
     overflow: hidden;
-    border: 1px solid #3a3a3a
+    border: 1px solid var(--border);
 }
 
 .card-header {
@@ -406,11 +400,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #1a1a1a
+    /* background: #1a1a1a */
+    background: var(--surface-2);
 }
 
 .card-header h3 {
-    color: #fff;
+    color: var(--btn-text);
     margin: 0;
     font-weight: 600
 }
@@ -438,22 +433,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #4a90e2;
+    background: transparent;
+    border: white 1px solid;
     border-radius: 50%;
     font-size: 1.2rem;
     flex-shrink: 0;
-    color: #fff
+    color: var(--btn-text);
 }
 
 .activity-content p {
-    color: #fff;
+    color: var(--text);
     margin: 0 0 .25rem 0;
     font-weight: 500
 }
 
 .activity-time {
     font-size: .75rem;
-    color: #888;
+    color: var(--muted);
     font-weight: 400
 }
 
@@ -470,25 +466,27 @@
     align-items: center;
     gap: .75rem;
     padding: 1.5rem;
-    background: #1a1a1a;
-    border: 1px solid #3a3a3a;
+    background: var(--surface-1);
+    /* background: #1a1a1a; */
+    border: 1px solid var(--border);
     border-radius: .75rem;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    color: #fff
+    color: var(--muted);
 }
 
 .quick-action-btn:hover {
     background: #2a2a2a;
-    border-color: #4a90e2;
+    background: var(--surface-4);
+    border-color: var(--info);
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3)
 }
 
 .action-icon {
     font-size: 2rem;
-    color: #4a90e2
+    color: var(--btn-text);
 }
 
 .action-text {
@@ -529,12 +527,12 @@
 
 .metric-label {
     font-weight: 500;
-    color: #cccccc
+    color: var(--muted);
 }
 
 .metric-value {
     font-weight: 600;
-    color: #fff
+    color: var(--btn-text);
 }
 
 .status-indicator {
