@@ -176,15 +176,20 @@
 
 .dashboard-container {
     display: flex;
-    min-height: calc(100vh - 80px);
-        background: var(--bg);
+    height: calc(100vh - 80px);
+    background: var(--bg);
 }
 
 .sidebar {
     width: 280px;
     background: var(--card);
     padding: 1.5rem 0;
-    border-right: 1px solid #3a3a3a
+    border-right: 1px solid #3a3a3a;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    left: 0;
+    flex-shrink: 0;
 }
 
 .sidebar-menu {
@@ -227,6 +232,7 @@
     flex: 1;
     padding: 2rem;
     overflow-y: auto;
+    height: 100vh;
     color: var(--text);
 }
 
