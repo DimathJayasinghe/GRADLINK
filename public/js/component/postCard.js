@@ -41,12 +41,23 @@ class PostCard extends HTMLElement {
           <div class="post-menu" role="button" aria-haspopup="true" aria-expanded="false">
             <i class="fas fa-ellipsis-h post-menu-btn"></i>
             <div class="post-dropdown hidden" role="menu">
+              <!-- Always available -->
               <div class="dropdown-item" data-action="bookmark" role="menuitem">Bookmark</div>
+              <!-- Report: Available to all users -->
               <div class="dropdown-item" data-action="report" role="menuitem">Report</div>
-              ${currentUserRole ==="admin"? '<div class="dropdown-item" data-action="suspend" role="menuitem">suspend</div>':""}
-              ${isOwner ? '<div class="dropdown-item" data-action="delete-post" role="menuitem">Delete</div>' : ''}
-              ${isOwner ? '<div class="dropdown-item" data-action="edit-post" role="menuitem">Edit</div>' : ''}
-              
+              <!-- Admin specific actions -->
+              ${currentUserRole.toLowerCase() === 'admin' ? `
+                <!-- Suspend: Admin can suspend post owner (not themselves) -->
+                ${!isOwner ? '<div class="dropdown-item" data-action="suspend" role="menuitem">Suspend User</div>' : ''}
+                <!-- Delete: Admin can delete any post -->
+                <div class="dropdown-item" data-action="delete-post" role="menuitem">Delete Post</div>
+              ` : ''}
+              <!-- Owner specific actions (if not already shown via admin) -->
+              ${isOwner && currentUserRole.toLowerCase() !== 'admin' ? `
+                <div class="dropdown-item" data-action="delete-post" role="menuitem">Delete Post</div>
+              ` : ''}
+              <!-- Only owner can edit -->
+              ${isOwner ? '<div class="dropdown-item" data-action="edit-post" role="menuitem">Edit Post</div>' : ''}
             </div>
           </div>
         </div>
@@ -86,6 +97,7 @@ class PostCard extends HTMLElement {
           }
         }
       });
+      
       // simple action handlers (placeholder)
       dropdown.addEventListener('click', (e)=>{
         const item = e.target.closest('.dropdown-item');
@@ -93,19 +105,34 @@ class PostCard extends HTMLElement {
         const act = item.getAttribute('data-action');
         dropdown.classList.add('hidden');
         menu.setAttribute('aria-expanded','false');
+        
+        const isAdmin = currentUserRole.toLowerCase() === 'admin';
+        
         if(act === 'bookmark'){
           // TODO: implement bookmark endpoint
+          // Backend API: POST /api/bookmarks/{postId}
           console.log('Bookmark placeholder');
         } else if(act === 'report') {
-          console.log('Report placeholder');
+          // Available to all users
+          // Backend API: POST /api/reports/post/{postId}
+          console.log('Report placeholder for post', postId);
+        } else if(act === 'suspend') {
+          // Only admin can suspend (not themselves)
+          if(!isAdmin || isOwner) return;
+          // Backend API: POST /api/users/{postUserId}/suspend
+          console.log('Suspend user placeholder for', postUserId);
         } else if(act === 'delete-post') {
-          if(!isOwner) return; // safety
+          // Owner OR admin can delete
+          if(!isOwner && !isAdmin) return;
+          // Backend API: DELETE /api/posts/{postId}
           console.log('Delete post placeholder for', postId);
-          // TODO: call delete endpoint then remove element
+          // TODO: Remove post element from DOM after successful deletion
         } else if(act === 'edit-post') {
-          if(!isOwner) return; // safety
+          // Only owner can edit
+          if(!isOwner) return;
+          // TODO: Open modal or redirect to edit page
+          // Backend API: PUT /api/posts/{postId}
           console.log('Edit post placeholder for', postId);
-          // TODO: open edit modal / inline editor
         }
       });
     }

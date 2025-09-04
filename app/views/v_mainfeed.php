@@ -45,14 +45,14 @@
                     post-id="<?php echo $p->id; ?>"
                     post-user-id="<?php echo $p->user_id; ?>"
                     current-user-id="<?php echo $_SESSION['user_id']; ?>"
-                    current-user-role="<?php echo $_SESSION['role']; ?>"
-                >
+                    current-user-role="<?php echo $_SESSION['user_role']; ?>"
+                    >
                 </post-card>
-            <?php endforeach; else: ?>
-                <p>No posts yet.</p>
-            <?php endif; ?>
-            </div>
-
+                <?php endforeach; else: ?>
+                    <p>No posts yet.</p>
+                    <?php endif; ?>
+                </div>
+                
         </div>
             <!-- Include the right sidebar component -->
             <?php
