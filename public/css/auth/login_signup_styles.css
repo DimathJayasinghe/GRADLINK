@@ -72,7 +72,7 @@ body {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  
+
   /* Dynamic height based on content */
   min-height: 400px;
   max-height: 90vh;
@@ -196,19 +196,6 @@ body {
   color: var(--text);
   opacity: 0.8;
 }
-
-/* REMOVE button styles duplicated here (they live in style.css):
-   - .btn, variants (.btn-primary/.secondary/.success/.link)
-   - .btn:hover/.btn:active/.btn:disabled
-   - .btn-hidden
-   - .btn-next
-*/
-.btn, .btn-primary, .btn-secondary, .btn-success, .btn-link { /* removed */ }
-.btn:hover, .btn:active, .btn:disabled { /* removed */ }
-.btn-hidden { /* removed */ }
-.btn-next { /* removed */ }
-
-/* Keep auth-only styles below */
 
 .actions {
   display: flex;
