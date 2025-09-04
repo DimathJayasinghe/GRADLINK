@@ -40,7 +40,7 @@
         <div class="sidebar-menu">
             <a class="menu-item active" href="<?php echo URLROOT; ?>/admin/dashboard"><i class="fa fa-chart-line"></i> Overview</a>
             <div class="menu-item" data-section="users"><i class="fa fa-users"></i> Users Management</div>
-            <a class="menu-item" href="<?php echo URLROOT; ?>/admin/engagement"><i class="fa fa-chart-bar"></i> Analytics</a>
+            <a class="menu-item" data-section="analytics"><i class="fa fa-chart-bar"></i> Analytics</a>
             <div class="menu-item" data-section="verifications"><i class="fa fa-check"></i> Alumni Verifications</div>
             <div class="menu-item" data-section="posts"><i class="fa fa-pencil-alt"></i> Content Management</div>
             <div class="menu-item" data-section="events"><i class="fa fa-calendar-alt"></i> Event Management</div>
@@ -67,17 +67,38 @@
         <!-- Overview -->
             <!-- Modular sections for each menu item -->
             <section id="overview" class="admin-section active">
-                <?php require APPROOT . '/views/admin/v_overview.php'; ?>
+                <?php 
+                if (file_exists(APPROOT . '/views/admin/v_overview.php')) {
+                    require APPROOT . '/views/admin/v_overview.php';
+                } else {
+                    echo '<div class="admin-header"><h1>Overview</h1></div><div class="admin-card"><div class="card-header"><h3>Overview Content</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>';
+                }
+                ?>
             </section>
             <section id="users" class="admin-section">
-                <?php require APPROOT . '/views/admin/v_users.php'; ?>
+                <?php 
+                if (file_exists(APPROOT . '/views/admin/v_users.php')) {
+                    require APPROOT . '/views/admin/v_users.php';
+                } else {
+                    echo '<div class="admin-header"><h1>Users Management</h1></div><div class="admin-card"><div class="card-header"><h3>Users</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>';
+                }
+                ?>
             </section>
             <section id="analytics" class="admin-section">
-                <?php require APPROOT . '/views/admin/v_engagement.php'; ?>
+                <?php 
+                if (file_exists(APPROOT . '/views/admin/v_engagement.php')) {
+                    require APPROOT . '/views/admin/v_engagement.php';
+                } else {
+                    echo '<div class="admin-header"><h1>Analytics</h1></div><div class="admin-card"><div class="card-header"><h3>Engagement</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>';
+                }
+                ?>
             </section>
             <section id="verifications" class="admin-section">
                 <!-- Create v_verifications.php for this section -->
-                <?php if (file_exists(APPROOT . '/views/admin/v_verifications.php')) require APPROOT . '/views/admin/v_verifications.php'; else echo '<div class="admin-header"><h1>Alumni Verifications</h1></div><div class="admin-card"><div class="card-header"><h3>Queue</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>'; ?>
+                <?php
+                if (file_exists(APPROOT . '/views/admin/v_verifications.php'))
+                    require APPROOT . '/views/admin/v_verifications.php'; 
+                else echo '<div class="admin-header"><h1>Alumni Verifications</h1></div><div class="admin-card"><div class="card-header"><h3>Queue</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>'; ?>
             </section>
             <section id="posts" class="admin-section">
                 <!-- Create v_posts.php for this section -->
