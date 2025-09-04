@@ -20,7 +20,7 @@ class Post extends Controller
             $allowed = ['image/jpeg'=>'jpg','image/png'=>'png','image/gif'=>'gif','image/webp'=>'webp'];
             $mime = mime_content_type($_FILES['image']['tmp_name']);
             if(isset($allowed[$mime])){
-                if($_FILES['image']['size'] <= 5*1024*1024){ // 5MB limit
+                if($_FILES['image']['size'] <= 2*1024*1024){ // 5MB limit
                     $cleanBase = preg_replace('/[^A-Za-z0-9._-]/','', $_FILES['image']['name']);
                     $ext = pathinfo($cleanBase, PATHINFO_EXTENSION);
                     if(!$ext) $ext = $allowed[$mime];

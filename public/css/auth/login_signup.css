@@ -1,0 +1,4 @@
+/* Compatibility wrapper for signup pages. Imports the shared signup styles. */
+@import url('signup_shared.css');
+
+/* Keep this file minimal to avoid duplicating rules. Role-specific files import shared file as well. */
