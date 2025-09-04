@@ -33,7 +33,8 @@
             if(!empty($data['posts'])): foreach($data['posts'] as $p): ?>
                 <post-card
                     profile-img="<?php echo htmlspecialchars($p->profile_image); ?>"
-                    user-name="<?php echo htmlspecialchars($p->name . (isset($p->role) && $p->role==='alumni' ? ' ★' : '')); ?>"
+                    user-role = "<?php echo htmlspecialchars($p->role); ?>"
+                    user-name="<?php echo htmlspecialchars($p->name); ?>"
                     tag="@user<?php echo $p->user_id; ?>"
                     post-time="<?php echo date('M d', strtotime($p->created_at)); ?>"
                     post-content="<?php echo htmlspecialchars($p->content); ?>"
@@ -41,7 +42,12 @@
                     like-count="<?php echo $p->likes; ?>"
                     cmnt-count="<?php echo $p->comments; ?>"
                     liked="<?php echo !empty($p->liked)?1:0; ?>"
-                    post-id="<?php echo $p->id; ?>"></post-card>
+                    post-id="<?php echo $p->id; ?>"
+                    post-user-id="<?php echo $p->user_id; ?>"
+                    current-user-id="<?php echo $_SESSION['user_id']; ?>"
+                    current-user-role="<?php echo $_SESSION['role']; ?>"
+                >
+                </post-card>
             <?php endforeach; else: ?>
                 <p>No posts yet.</p>
             <?php endif; ?>
