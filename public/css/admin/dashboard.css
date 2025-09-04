@@ -89,6 +89,13 @@
     margin-bottom: 24px
 }
 
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px
+}
+
 .map-box {
     height: 220px;
     background: rgba(255, 255, 255, 0.05);
