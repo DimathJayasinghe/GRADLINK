@@ -72,5 +72,43 @@ class M_post {
 		$this->db->bind(':u', $uid);
 		return (bool)$this->db->single();
 	}
+
+	//ADMIN CONTENT MANAGEMENT METHODS
+	public function adminGetPosts($status = 'all', $search = '') {
+		$sql = 'SELECT p.*, u.name as author FROM posts p JOIN users u ON u.id = p.user_id';
+		$where = [];
+		$params = [];
+		if ($status !== 'all') {
+			$where[] = 'p.status = :status';
+			$params[':status'] = $status;
+		}
+		if ($search !== '') {
+			$where[] = '(u.name LIKE :search OR p.content LIKE :search)';
+			$params[':search'] = "%$search%";
+		}
+		if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
+		$sql .= ' ORDER BY p.created_at DESC LIMIT 100';
+		$this->db->query($sql);
+		foreach ($params as $k => $v) $this->db->bind($k, $v);
+		return $this->db->resultSet();
+	}
+
+	public function adminApprovePost($id) {
+		$this->db->query('UPDATE posts SET status = "approved" WHERE id = :id');
+		$this->db->bind(':id', $id);
+		return $this->db->execute();
+	}
+
+	public function adminRejectPost($id) {
+		$this->db->query('UPDATE posts SET status = "rejected" WHERE id = :id');
+		$this->db->bind(':id', $id);
+		return $this->db->execute();
+	}
+
+	public function adminDeletePost($id) {
+		$this->db->query('DELETE FROM posts WHERE id = :id');
+		$this->db->bind(':id', $id);
+		return $this->db->execute();
+	}
 }
 ?>

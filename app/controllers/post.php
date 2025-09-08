@@ -79,4 +79,44 @@ class Post extends Controller
         header('Content-Type: application/json');
         echo json_encode(['status' => $result]);
     }
+    // --- ADMIN CONTENT MANAGEMENT ENDPOINTS ---
+    // Only allow access if user is admin (add your own admin check logic)
+    public function admin_list() {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+            http_response_code(403); echo 'Forbidden'; return;
+        }
+        $status = $_GET['status'] ?? 'all';
+        $search = $_GET['search'] ?? '';
+        $posts = $this->m->adminGetPosts($status, $search);
+        header('Content-Type: application/json');
+        echo json_encode(['posts' => $posts]);
+    }
+
+    public function admin_approve($id) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+            http_response_code(403); echo 'Forbidden'; return;
+        }
+        $ok = $this->m->adminApprovePost($id);
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => $ok]);
+    }
+
+    public function admin_reject($id) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+            http_response_code(403); echo 'Forbidden'; return;
+        }
+        $ok = $this->m->adminRejectPost($id);
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => $ok]);
+    }
+
+    public function admin_delete($id) {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+            http_response_code(403); echo 'Forbidden'; return;
+        }
+        $ok = $this->m->adminDeletePost($id);
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => $ok]);
+    }
 }
+
