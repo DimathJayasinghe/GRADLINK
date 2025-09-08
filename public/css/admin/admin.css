@@ -8,13 +8,16 @@
     background: var(--card);
     border-bottom: 1px solid var(--border);
     padding: 1rem 2rem;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    width: 100vw;
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3)
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    opacity: 0.8;
 }
 
 .nav-brand {
@@ -176,8 +179,10 @@
 
 .dashboard-container {
     display: flex;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 72px); /* 72px is nav height, adjust as needed */
     background: var(--bg);
+    overflow: hidden;
+    margin-top: 72px; /* same as nav height */
 }
 
 .sidebar {
@@ -185,11 +190,12 @@
     background: var(--card);
     padding: 1.5rem 0;
     border-right: 1px solid #3a3a3a;
-    height: 100vh;
-    position: sticky;
-    top: 0;
+    height: calc(100vh - 72px);
+    position: fixed;
+    top: 72px;
     left: 0;
     flex-shrink: 0;
+    overflow: hidden;
 }
 
 .sidebar-menu {
@@ -232,8 +238,10 @@
     flex: 1;
     padding: 2rem;
     overflow-y: auto;
-    height: 100vh;
+    height: calc(100vh - 72px);
     color: var(--text);
+    box-sizing: border-box;
+    margin-left: 280px;
 }
 
 .admin-section {
