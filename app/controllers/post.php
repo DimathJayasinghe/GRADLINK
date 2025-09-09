@@ -82,14 +82,23 @@ class Post extends Controller
     // --- ADMIN CONTENT MANAGEMENT ENDPOINTS ---
     // Only allow access if user is admin (add your own admin check logic)
     public function admin_list() {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+        // DEBUG: Output session and query info
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
             http_response_code(403); echo 'Forbidden'; return;
         }
         $status = $_GET['status'] ?? 'all';
         $search = $_GET['search'] ?? '';
         $posts = $this->m->adminGetPosts($status, $search);
         header('Content-Type: application/json');
-        echo json_encode(['posts' => $posts]);
+        echo json_encode([
+            'debug' => [
+                'session' => $_SESSION,
+                'status' => $status,
+                'search' => $search,
+                'count' => is_array($posts) ? count($posts) : 0,
+            ],
+            'posts' => $posts
+        ]);
     }
 
     public function admin_approve($id) {

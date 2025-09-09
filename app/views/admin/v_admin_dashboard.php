@@ -38,7 +38,7 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-menu">
-            <a class="menu-item active" href="<?php echo URLROOT; ?>/admin/dashboard"><i class="fa fa-chart-line"></i> Overview</a>
+            <div class="menu-item active" data-section="overview"><i class="fa fa-chart-line"></i> Overview</div>
             <div class="menu-item" data-section="users"><i class="fa fa-users"></i> Users Management</div>
             <a class="menu-item" data-section="analytics"><i class="fa fa-chart-bar"></i> Analytics</a>
             <div class="menu-item" data-section="verifications"><i class="fa fa-check"></i> Alumni Verifications</div>
@@ -94,11 +94,7 @@
                 ?>
             </section>
             <section id="verifications" class="admin-section">
-                <!-- Create v_verifications.php for this section -->
-                <?php
-                if (file_exists(APPROOT . '/views/admin/v_verifications.php'))
-                    require APPROOT . '/views/admin/v_verifications.php'; 
-                else echo '<div class="admin-header"><h1>Alumni Verifications</h1></div><div class="admin-card"><div class="card-header"><h3>Queue</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>'; ?>
+                <?php require APPROOT . '/views/admin/v_verifications.php'; ?>
             </section>
             <section id="posts" class="admin-section">
                 <!-- Create v_posts.php for this section -->
@@ -120,6 +116,7 @@
 </div>
 
 <script src="<?php echo URLROOT; ?>/js/admin/admin.js"></script>
+</script>
 <?php require APPROOT . '/views/inc/footer.php'; ?>
 
 

@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchPosts() {
         const status = document.getElementById('postStatusFilter').value;
         const search = document.getElementById('postSearch').value;
-        fetch(`${window.location.origin}/post/admin_list?status=${encodeURIComponent(status)}&search=${encodeURIComponent(search)}`)
+        fetch(`<?php echo URLROOT; ?>/post/admin_list?status=${encodeURIComponent(status)}&search=${encodeURIComponent(search)}`)
             .then(r => r.json())
             .then(data => {
                 postsCache = data.posts || [];
@@ -83,16 +83,16 @@ document.addEventListener('DOMContentLoaded', function() {
         for (const post of posts) {
             const tr = document.createElement('tr');
             tr.setAttribute('data-post-id', post.id);
+            const status = post.status ? capitalize(post.status) : 'N/A';
             tr.innerHTML = `
                 <td><input type="checkbox" class="selectPost"></td>
                 <td>${escapeHtml(post.id)}</td>
                 <td>${escapeHtml(post.author)}</td>
                 <td>${escapeHtml(post.content.length > 60 ? post.content.substring(0, 60) + '...' : post.content)}</td>
                 <td>${escapeHtml(post.created_at || post.date || '')}</td>
-                <td><span class="status-badge status-${escapeHtml(post.status)}">${capitalize(post.status)}</span></td>
+                <td><span class="status-badge status-na">${status}</span></td>
                 <td>
                     <button class="admin-btn view-post">View</button>
-                    ${post.status === 'pending' ? '<button class="admin-btn approve-post">Approve</button> <button class="admin-btn reject-post">Reject</button>' : ''}
                     <button class="admin-btn admin-btn-danger delete-post">Delete</button>
                 </td>
             `;
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.onclick = function() {
                 const row = this.closest('tr');
                 const postId = row.getAttribute('data-post-id');
-                fetch(`/post/admin_approve/${postId}`)
+                fetch(`<?php echo URLROOT; ?>/post/admin_approve/${postId}`)
                     .then(r => r.json()).then(() => fetchPosts());
             };
         });
@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.onclick = function() {
                 const row = this.closest('tr');
                 const postId = row.getAttribute('data-post-id');
-                fetch(`/post/admin_reject/${postId}`)
+                fetch(`<?php echo URLROOT; ?>/post/admin_reject/${postId}`)
                     .then(r => r.json()).then(() => fetchPosts());
             };
         });
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const row = this.closest('tr');
                 const postId = row.getAttribute('data-post-id');
                 if(confirm('Delete this post?')) {
-                    fetch(`/post/admin_delete/${postId}`)
+                    fetch(`<?php echo URLROOT; ?>/post/admin_delete/${postId}`)
                         .then(r => r.json()).then(() => fetchPosts());
                 }
             };
@@ -155,18 +155,18 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('bulk-approve').onclick = function() {
         const ids = getSelectedPostIds();
         if (!ids.length) return;
-        Promise.all(ids.map(id => fetch(`/post/admin_approve/${id}`).then(r => r.json()))).then(fetchPosts);
+        Promise.all(ids.map(id => fetch(`<?php echo URLROOT; ?>/post/admin_approve/${id}`).then(r => r.json()))).then(fetchPosts);
     };
     document.getElementById('bulk-reject').onclick = function() {
         const ids = getSelectedPostIds();
         if (!ids.length) return;
-        Promise.all(ids.map(id => fetch(`/post/admin_reject/${id}`).then(r => r.json()))).then(fetchPosts);
+        Promise.all(ids.map(id => fetch(`<?php echo URLROOT; ?>/post/admin_reject/${id}`).then(r => r.json()))).then(fetchPosts);
     };
     document.getElementById('bulk-delete').onclick = function() {
         const ids = getSelectedPostIds();
         if (!ids.length) return;
         if(confirm('Delete selected posts?')) {
-            Promise.all(ids.map(id => fetch(`/post/admin_delete/${id}`).then(r => r.json()))).then(fetchPosts);
+            Promise.all(ids.map(id => fetch(`<?php echo URLROOT; ?>/post/admin_delete/${id}`).then(r => r.json()))).then(fetchPosts);
         }
     };
 

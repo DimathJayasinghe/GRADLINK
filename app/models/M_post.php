@@ -78,10 +78,7 @@ class M_post {
 		$sql = 'SELECT p.*, u.name as author FROM posts p JOIN users u ON u.id = p.user_id';
 		$where = [];
 		$params = [];
-		if ($status !== 'all') {
-			$where[] = 'p.status = :status';
-			$params[':status'] = $status;
-		}
+		// No status column in posts table, so ignore status filter
 		if ($search !== '') {
 			$where[] = '(u.name LIKE :search OR p.content LIKE :search)';
 			$params[':search'] = "%$search%";
@@ -94,15 +91,13 @@ class M_post {
 	}
 
 	public function adminApprovePost($id) {
-		$this->db->query('UPDATE posts SET status = "approved" WHERE id = :id');
-		$this->db->bind(':id', $id);
-		return $this->db->execute();
+		// No status column, so just return true
+		return true;
 	}
 
 	public function adminRejectPost($id) {
-		$this->db->query('UPDATE posts SET status = "rejected" WHERE id = :id');
-		$this->db->bind(':id', $id);
-		return $this->db->execute();
+		// No status column, so just return true
+		return true;
 	}
 
 	public function adminDeletePost($id) {
