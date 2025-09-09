@@ -113,7 +113,6 @@
                 </div>
                 
                 <div class="form-footer">
-                    <div class="back-link">Back to <a href="#">Dashboard</a></div>
                     <button type="button" class="btn btn-next" onclick="nextPage(1)">Next</button>
                 </div>
             </div>
@@ -495,15 +494,6 @@
                 // Trigger the change event manually
                 const event = new Event('change');
                 posterInput.dispatchEvent(event);
-            }
-        });
-        
-        // Close button functionality
-        document.querySelector('.close-button').addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('Are you sure you want to cancel this fundraising request?')) {
-                alert('Request cancelled. Redirecting to dashboard...');
-                // In a real app, this would redirect to the dashboard
             }
         });
     });

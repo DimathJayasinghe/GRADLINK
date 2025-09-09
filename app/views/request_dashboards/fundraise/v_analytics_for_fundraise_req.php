@@ -136,7 +136,7 @@
     background: rgba(255,255,255,0.03);
     border: 1px dashed var(--border);
     border-radius: var(--radius-md);
-    text-align: center;
+    text-align: left;
     color: var(--muted);
 }
 
@@ -147,7 +147,7 @@
 }
 
 .chart-placeholder {
-    height: 250px;
+    height: 190px;
     background: linear-gradient(180deg, 
                 rgba(255, 255, 255, 0.02) 0%, 
                 rgba(255, 255, 255, 0.05) 100%);
@@ -252,7 +252,7 @@
         <div id="analytics-charts">
             <h3>Fundraising Analytics</h3>
             <div class="chart-placeholder">
-                <p>Interactive charts will be displayed here</p>
+                <p>charts will be displayed here</p>
             </div>
         </div>
     <?php else: ?>

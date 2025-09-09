@@ -79,28 +79,22 @@
             ?>
             
         </a>
+            <!-- Dynamic buttons rendered here -->
+        <?php foreach($topnavbar_content as $element):?>
+        <a href="<?php echo $element['url']; ?>" class="<?php if($element['active']){echo "active";}?>">
+            <?php 
+            if(isset($element['icon'])){
+                echo '<i class="fas fa-'.$element['icon'].'"></i> ';
+            }
+            echo $element['label']; 
+            ?>
+            
+        </a>
+        <?php endforeach; ?>
 
-        <?php if (!isset($_SESSION['user_id'])): ?>
-            <a href="<?php echo URLROOT; ?>/auth/login">
-                <i class="fas fa-sign-in-alt"></i> Login
-            </a>
-            <a href="<?php echo URLROOT; ?>/auth/signup">
-                <i class="fas fa-user-plus"></i> Signup
-            </a>
-        <?php else: ?>
-            <?php if ($_SESSION['user_role'] === 'admin'): ?>
-                <a href="<?php echo URLROOT; ?>/admin/dashboard">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            <?php endif; ?>
+        <a href="<?php echo URLROOT; ?>/logout">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
 
-            <a href="<?php echo URLROOT; ?>/explore">
-                <i class="fas fa-compass"></i> Explore
-            </a>
-
-            <a href="<?php echo URLROOT; ?>/logout">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        <?php endif; ?>
     </div>
 </div>

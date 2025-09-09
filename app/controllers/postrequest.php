@@ -21,7 +21,7 @@ class postrequest extends Controller{
                 (object)['id'=>10,'name'=>'Literature Club']
             ]
             ];
-        $this->view("/request_dashboards/v_postrequest",$data);
+        $this->view("/request_dashboards/postreq/v_postrequest",$data);
     }
     public function viewpostrequests(){
         $data = [
@@ -113,7 +113,7 @@ class postrequest extends Controller{
                 ],
             ]
             ];
-        $this->view("/request_dashboards/v_viewpostrequests",$data);
+        $this->view("/request_dashboards/postreq/v_viewpostrequests",$data);
     }
 }
 ?>
