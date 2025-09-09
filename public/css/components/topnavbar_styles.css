@@ -1,0 +1,5 @@
+.topnav{
+    display: flex;
+    background-color: var(--bg-secondary);
+    padding: 10px 20px;
+}
