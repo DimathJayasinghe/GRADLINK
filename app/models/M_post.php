@@ -72,5 +72,46 @@ class M_post {
 		$this->db->bind(':u', $uid);
 		return (bool)$this->db->single();
 	}
+	
+	/**
+	 * Get post by ID
+	 */
+	public function getPostById($id) {
+		$this->db->query('SELECT * FROM posts WHERE id = :id');
+		$this->db->bind(':id', $id);
+		return $this->db->single();
+	}
+	
+	/**
+	 * Update an existing post
+	 */
+	public function updatePost($id, $content, $image = null) {
+		try {
+			if ($image === null) {
+				// Update without changing the image
+				$this->db->query('UPDATE posts SET content = :content WHERE id = :id');
+				$this->db->bind(':content', $content);
+				$this->db->bind(':id', $id);
+			} else {
+				// Update with new image
+				$this->db->query('UPDATE posts SET content = :content, image = :image WHERE id = :id');
+				$this->db->bind(':content', $content);
+				$this->db->bind(':image', $image);
+				$this->db->bind(':id', $id);
+			}
+			
+			return $this->db->execute();
+		} catch (Throwable $e) {
+			// If schema not updated yet (Unknown column 'image'), handle gracefully
+			if (stripos($e->getMessage(), 'unknown column') !== false && stripos($e->getMessage(), "image") !== false) {
+				// Try again without image field
+				$this->db->query('UPDATE posts SET content = :content WHERE id = :id');
+				$this->db->bind(':content', $content);
+				$this->db->bind(':id', $id);
+				return $this->db->execute();
+			}
+			return false;
+		}
+	}
 }
 ?>

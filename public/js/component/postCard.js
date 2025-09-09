@@ -1,4 +1,11 @@
 class PostCard extends HTMLElement {
+  // Store edit mode state
+  isEditing = false;
+  originalContent = {
+    text: '',
+    image: ''
+  };
+  
   connectedCallback() {
     const root = `${location.origin}/GRADLINK/public/img`;
     // Use secure media controller endpoints (served via /media/...)
@@ -130,9 +137,9 @@ class PostCard extends HTMLElement {
         } else if(act === 'edit-post') {
           // Only owner can edit
           if(!isOwner) return;
-          // TODO: Open modal or redirect to edit page
-          // Backend API: PUT /api/posts/{postId}
-          console.log('Edit post placeholder for', postId);
+          
+          // Toggle edit mode for this post
+          this.toggleEditMode(postId, postText, postImg);
         }
       });
     }
@@ -330,6 +337,296 @@ class PostCard extends HTMLElement {
     const el = this.querySelector(".comment-count");
     if (el) el.textContent = n;
   }
+  
+  /**
+   * Toggle edit mode for the post
+   */
+  toggleEditMode(postId, originalPostText, originalPostImg) {
+    this.isEditing = !this.isEditing;
+    
+    // Get references to relevant elements
+    const postContent = this.querySelector('.post-content');
+    const postTextEl = this.querySelector('.post-text');
+    const postMedia = this.querySelector('.post-media');
+    
+    if (this.isEditing) {
+      // Store original content for canceling
+      this.originalContent = {
+        text: postTextEl.textContent,
+        image: postMedia ? postMedia.querySelector('img').src : ''
+      };
+      
+      // Add visual indicators for edit mode
+      postContent.style.border = '2px dotted var(--link)';
+      postContent.style.padding = '10px';
+      postContent.style.borderRadius = '5px';
+      
+      if (postMedia) {
+        postMedia.style.border = '2px dotted var(--link)';
+        postMedia.style.padding = '10px';
+        postMedia.style.borderRadius = '5px';
+        postMedia.style.marginTop = '10px';
+      }
+      
+      // Make text editable - use a textarea for better editing
+      const fullText = originalPostText || '';
+      postTextEl.innerHTML = '';
+      const textarea = document.createElement('textarea');
+      textarea.className = 'edit-textarea';
+      textarea.value = fullText;
+      textarea.style.width = '100%';
+      textarea.style.minHeight = '80px';
+      textarea.style.padding = '8px';
+      textarea.style.background = 'transparent';
+      textarea.style.color = 'var(--text)';
+      textarea.style.border = '1px solid var(--border)';
+      textarea.style.borderRadius = '4px';
+      textarea.style.resize = 'vertical';
+      postTextEl.appendChild(textarea);
+      
+      // Create image edit controls
+      const editControls = document.createElement('div');
+      editControls.className = 'edit-controls';
+      editControls.style.marginTop = '10px';
+      editControls.style.display = 'flex';
+      editControls.style.justifyContent = 'space-between';
+      editControls.style.alignItems = 'center';
+      
+      // Add image button
+      const imageInput = document.createElement('input');
+      imageInput.type = 'file';
+      imageInput.accept = 'image/*';
+      imageInput.id = `file-${postId}`;
+      imageInput.style.display = 'none';
+      
+      const imageLabel = document.createElement('label');
+      imageLabel.htmlFor = `file-${postId}`;
+      imageLabel.innerHTML = '<i class="fas fa-image"></i> Change Image';
+      imageLabel.className = 'edit-image-btn';
+      imageLabel.style.cursor = 'pointer';
+      imageLabel.style.padding = '5px 10px';
+      imageLabel.style.background = 'var(--secondary)';
+      imageLabel.style.color = 'var(--text)';
+      imageLabel.style.borderRadius = '5px';
+      
+      // Add action buttons
+      const actionButtons = document.createElement('div');
+      actionButtons.style.display = 'flex';
+      actionButtons.style.gap = '10px';
+      
+      const saveBtn = document.createElement('button');
+      saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+      saveBtn.className = 'save-btn';
+      saveBtn.style.padding = '5px 10px';
+      saveBtn.style.background = 'var(--link)';
+      saveBtn.style.color = 'var(--text)';
+      saveBtn.style.border = 'none';
+      saveBtn.style.borderRadius = '5px';
+      saveBtn.style.cursor = 'pointer';
+      
+      const cancelBtn = document.createElement('button');
+      cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+      cancelBtn.className = 'cancel-btn';
+      cancelBtn.style.padding = '5px 10px';
+      cancelBtn.style.background = 'var(--secondary)';
+      cancelBtn.style.color = 'var(--text)';
+      cancelBtn.style.border = 'none';
+      cancelBtn.style.borderRadius = '5px';
+      cancelBtn.style.cursor = 'pointer';
+      
+      actionButtons.appendChild(saveBtn);
+      actionButtons.appendChild(cancelBtn);
+      
+      editControls.appendChild(imageLabel);
+      editControls.appendChild(imageInput);
+      editControls.appendChild(actionButtons);
+      
+      postContent.appendChild(editControls);
+      
+      // Set up event handlers
+      textarea.focus();
+      
+      // Image selection preview
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            // Create or update image preview
+            if (!postMedia) {
+              // Create new media container if none exists
+              const newMedia = document.createElement('div');
+              newMedia.className = 'post-media';
+              newMedia.style.border = '2px dotted var(--link)';
+              newMedia.style.padding = '10px';
+              newMedia.style.borderRadius = '5px';
+              newMedia.style.marginTop = '10px';
+              
+              const img = document.createElement('img');
+              img.src = event.target.result;
+              img.alt = 'Post image';
+              img.style.maxWidth = '100%';
+              
+              newMedia.appendChild(img);
+              postContent.parentNode.insertBefore(newMedia, postContent.nextSibling);
+            } else {
+              // Update existing image
+              const img = postMedia.querySelector('img');
+              img.src = event.target.result;
+              img.style.display = '';
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      
+      // Save button action
+      saveBtn.addEventListener('click', () => {
+        this.savePostEdit(postId, textarea.value, imageInput.files[0]);
+      });
+      
+      // Cancel button action
+      cancelBtn.addEventListener('click', () => {
+        if (confirm('Discard your changes?')) {
+          this.cancelPostEdit();
+        }
+      });
+    } else {
+      this.resetEditMode();
+    }
+  }
+  
+  /**
+   * Save post edits to the server
+   */
+  async savePostEdit(postId, newText, imageFile) {
+    try {
+      if (!confirm('Save changes to this post?')) {
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('content', newText);
+      
+      if (imageFile) {
+        formData.append('image', imageFile);
+      }
+      
+      // Show loading state
+      const saveBtn = this.querySelector('.save-btn');
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+      saveBtn.disabled = true;
+      
+      const response = await fetch(`${window.URLROOT}/post/edit/${postId}`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.status === 'success') {
+        // Update the post content
+        this.resetEditMode();
+        
+        // Update post content
+        const postTextEl = this.querySelector('.post-text');
+        postTextEl.innerHTML = this.truncateContent(newText);
+        
+        // Update image if provided
+        if (result.data && result.data.imagePath) {
+          const mediaPath = `${window.URLROOT}/public/media/post/${result.data.imagePath}`;
+          
+          const postMedia = this.querySelector('.post-media');
+          if (postMedia) {
+            // Update existing image
+            postMedia.querySelector('img').src = mediaPath;
+          } else {
+            // Create new media container
+            const newMedia = document.createElement('div');
+            newMedia.className = 'post-media';
+            const img = document.createElement('img');
+            img.src = mediaPath;
+            img.alt = 'Post image';
+            img.onerror = function() { this.style.display='none'; };
+            newMedia.appendChild(img);
+            
+            // Insert after post content
+            const postContent = this.querySelector('.post-content');
+            postContent.parentNode.insertBefore(newMedia, postContent.nextSibling);
+          }
+        }
+      } else {
+        alert('Error: ' + (result.message || 'Failed to update post'));
+      }
+    } catch (error) {
+      console.error('Edit error:', error);
+      alert('Error saving changes. Please try again.');
+    }
+  }
+  
+  /**
+   * Cancel post editing and restore original content
+   */
+  cancelPostEdit() {
+    this.resetEditMode();
+    
+    // Restore original text content
+    const postTextEl = this.querySelector('.post-text');
+    postTextEl.innerHTML = this.truncateContent(this.originalContent.text);
+    
+    // Restore original image if it exists
+    const postMedia = this.querySelector('.post-media');
+    if (this.originalContent.image) {
+      if (postMedia) {
+        postMedia.querySelector('img').src = this.originalContent.image;
+      }
+    } else if (postMedia) {
+      // If there was no image originally, remove the added one
+      postMedia.remove();
+    }
+  }
+  
+  /**
+   * Reset edit mode UI
+   */
+  resetEditMode() {
+    this.isEditing = false;
+    
+    // Remove styling
+    const postContent = this.querySelector('.post-content');
+    const postMedia = this.querySelector('.post-media');
+    
+    if (postContent) {
+      postContent.style.border = '';
+      postContent.style.padding = '';
+      postContent.style.borderRadius = '';
+    }
+    
+    if (postMedia) {
+      postMedia.style.border = '';
+      postMedia.style.padding = '';
+      postMedia.style.borderRadius = '';
+      postMedia.style.marginTop = '';
+    }
+    
+    // Remove edit controls
+    const editControls = this.querySelector('.edit-controls');
+    if (editControls) {
+      editControls.remove();
+    }
+  }
+  
+  /**
+   * Helper to truncate content with show more button
+   */
+  truncateContent(text) {
+    if (!text) return "";
+    if (text.length <= 100) return text;
+    const short = text.slice(0, 100).trim() + "...";
+    return `${short} <span class="seemore-btn" data-action="expand-post">Show more</span>`;
+  }
 }
+
 if (!customElements.get("post-card"))
   customElements.define("post-card", PostCard);
