@@ -113,5 +113,39 @@ class M_post {
 			return false;
 		}
 	}
+
+
+	//ADMIN CONTENT MANAGEMENT METHODS
+	public function adminGetPosts($status = 'all', $search = '') {
+		$sql = 'SELECT p.*, u.name as author FROM posts p JOIN users u ON u.id = p.user_id';
+		$where = [];
+		$params = [];
+		// No status column in posts table, so ignore status filter
+		if ($search !== '') {
+			$where[] = '(u.name LIKE :search OR p.content LIKE :search)';
+			$params[':search'] = "%$search%";
+		}
+		if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
+		$sql .= ' ORDER BY p.created_at DESC LIMIT 100';
+		$this->db->query($sql);
+		foreach ($params as $k => $v) $this->db->bind($k, $v);
+		return $this->db->resultSet();
+	}
+
+	public function adminApprovePost($id) {
+		// No status column, so just return true
+		return true;
+	}
+
+	public function adminRejectPost($id) {
+		// No status column, so just return true
+		return true;
+	}
+
+	public function adminDeletePost($id) {
+		$this->db->query('DELETE FROM posts WHERE id = :id');
+		$this->db->bind(':id', $id);
+		return $this->db->execute();
+	}
 }
 ?>

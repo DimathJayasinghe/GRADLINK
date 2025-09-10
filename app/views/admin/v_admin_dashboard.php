@@ -38,12 +38,13 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-menu">
-            <a class="menu-item active" href="<?php echo URLROOT; ?>/admin/dashboard"><i class="fa fa-chart-line"></i> Overview</a>
+            <div class="menu-item active" data-section="overview"><i class="fa fa-chart-line"></i> Overview</div>
             <div class="menu-item" data-section="users"><i class="fa fa-users"></i> Users Management</div>
             <a class="menu-item" data-section="analytics"><i class="fa fa-chart-bar"></i> Analytics</a>
             <div class="menu-item" data-section="verifications"><i class="fa fa-check"></i> Alumni Verifications</div>
             <div class="menu-item" data-section="posts"><i class="fa fa-pencil-alt"></i> Content Management</div>
             <div class="menu-item" data-section="events"><i class="fa fa-calendar-alt"></i> Event Management</div>
+            <div class="menu-item" data-section="fundraiser"><i class="fa fa-dollar-sign"></i> Fundraiser Management</div>
             <div class="menu-item" data-section="reports"><i class="fa fa-file-alt"></i> Reports</div>
             <div class="menu-item" data-section="settings"><i class="fa fa-cog"></i> System Settings</div>
         </div>
@@ -94,11 +95,7 @@
                 ?>
             </section>
             <section id="verifications" class="admin-section">
-                <!-- Create v_verifications.php for this section -->
-                <?php
-                if (file_exists(APPROOT . '/views/admin/v_verifications.php'))
-                    require APPROOT . '/views/admin/v_verifications.php'; 
-                else echo '<div class="admin-header"><h1>Alumni Verifications</h1></div><div class="admin-card"><div class="card-header"><h3>Queue</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>'; ?>
+                <?php require APPROOT . '/views/admin/v_verifications.php'; ?>
             </section>
             <section id="posts" class="admin-section">
                 <!-- Create v_posts.php for this section -->
@@ -108,9 +105,12 @@
                 <!-- Create v_events.php for this section -->
                 <?php if (file_exists(APPROOT . '/views/admin/v_events.php')) require APPROOT . '/views/admin/v_events.php'; else echo '<div class="admin-header"><h1>Event Management</h1></div><div class="admin-card"><div class="card-header"><h3>Events</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>'; ?>
             </section>
+            <section id="fundraiser" class="admin-section">
+                <!-- Create v_fundraiser.php for this section -->
+                <?php if (file_exists(APPROOT . '/views/admin/v_fundraiser.php')) require APPROOT . '/views/admin/v_fundraiser.php'; else echo '<div class="admin-header"><h1>Fundraiser Management</h1></div><div class="admin-card"><div class="card-header"><h3>Fundraisers</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>'; ?>
+            </section>
             <section id="reports" class="admin-section">
-                <!-- Create v_reports.php for this section -->
-                <?php if (file_exists(APPROOT . '/views/admin/v_reports.php')) require APPROOT . '/views/admin/v_reports.php'; else echo '<div class="admin-header"><h1>Reports</h1></div><div class="admin-card"><div class="card-header"><h3>Reporting</h3></div><div style="padding:1.5rem;color:var(--text-secondary)">Coming soon</div></div>'; ?>
+                <?php require APPROOT . '/views/admin/v_reports.php'; ?>
             </section>
             <section id="settings" class="admin-section">
                 <!-- Create v_settings.php for this section -->
@@ -120,6 +120,7 @@
 </div>
 
 <script src="<?php echo URLROOT; ?>/js/admin/admin.js"></script>
+</script>
 <?php require APPROOT . '/views/inc/footer.php'; ?>
 
 
