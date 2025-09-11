@@ -1,5 +1,51 @@
-.topnav{
+@import url('../style.css');
+.topnav {
+    font-family: poppins;
     display: flex;
-    background-color: var(--bg-secondary);
-    padding: 10px 20px;
+    background: #04091d80;
+    padding: 15px 30px;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+.topnav a {
+    color: rgba(255, 255, 255, 0.853);
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    margin: 0 5px;
+}
+.topnav a:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+    transform: translateY(-1px);
+}
+.topnav a.active {
+    background-color: rgba(255, 255, 255, 0.3);
+    font-weight: 600;
+}
+.logo {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    margin-right: auto;
+}
+.logo img {
+    height: 100%;
+    width: auto;
+    margin-right: 10px;
+}
+.logo span {
+    font-weight: bold;
+    font-size: 1.4em;
+    letter-spacing: 1px;
+}
+.nav-links {
+    display: flex;
+    align-items: center;
 }
