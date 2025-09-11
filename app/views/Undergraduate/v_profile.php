@@ -541,14 +541,14 @@
                     </div>
                     <div class="profile-name-container">
                         <div class="profile-name">
-                            <?= isset($data['userDetails']['name']) ? htmlspecialchars($data['userDetails']['name']) : 'User Name' ?>
+                            <?= isset($data['userDetails']->name) ? htmlspecialchars($data['userDetails']->name) : 'User Name' ?>
                         </div>
                         <div class="batch-indicator">
-                            <?= isset($data['userDetails']['batch']) ? htmlspecialchars($data['userDetails']['batch']) : '21' ?>
+                            <?= isset($data['userDetails']->batch) ? htmlspecialchars($data['userDetails']->batch) : '21' ?>
                         </div>
                     </div>
                     <div class="profile-bio">
-                        <?= isset($data['userDetails']['bio']) ? htmlspecialchars($data['userDetails']['bio']) : 'User bio goes here' ?>
+                        <?= isset($data['userDetails']->bio) ? htmlspecialchars($data['userDetails']->bio) : 'User bio goes here' ?>
                     </div>
                 </div>
             </div>

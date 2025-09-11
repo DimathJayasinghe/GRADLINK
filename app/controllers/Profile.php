@@ -45,12 +45,16 @@ class Profile extends Controller{
 
     //     $data['user'] = $this->undergradModel->getUserDetails($_SESSION['user_id']);
 
-        $data['userDetails'] = [
-            'name' => 'John Doe',
-            'age' => 21,
-            'major' => 'Computer Science',
-            'bio' => 'Aspiring software developer with a passion for learning new technologies.'
-        ];
+        //! Kalin code eka 
+        // $data['userDetails'] = [
+        //     'name' => 'John Doe',
+        //     'age' => 21,
+        //     'major' => 'Computer Science',
+        //     'bio' => 'Aspiring software developer with a passion for learning new technologies.'
+        // ];
+
+        //* Uses the currently logged in user's id
+        $data['userDetails'] = $this->undergradModel->getUserDetails(2);
 
         $data['certificates'] = [
             ['title' => 'Certificate in Web Development', 'image_url' => null],
