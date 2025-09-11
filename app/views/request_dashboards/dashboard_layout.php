@@ -5,9 +5,7 @@
 ]?>
 <?php require APPROOT . '/views/inc/commponents/topnavbar.php';?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/dashboard_layout.css">
-<style>
-    <?php echo $styles; ?> 
-</style>
+<?php echo $styles; ?> 
 
 <div class="container">
     <div class="leftsidebar">
