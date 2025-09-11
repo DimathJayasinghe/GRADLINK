@@ -2,38 +2,6 @@
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/admin.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">
 
-<nav class="dashboard-nav">
-    <div class="nav-brand">
-        <a href="<?php echo URLROOT; ?>/admin/dashboard" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 0.75rem;">
-            <div class="logo">
-                <img src="<?php echo URLROOT; ?>/img/logo_white.png" alt="GRADLINK">
-            </div>
-            <h2>GRADLINK</h2>
-            <span class="admin-badge">ADMIN</span>
-        </a>
-    </div>
-    <div class="nav-center">
-        <div class="search-bar">
-            <input type="text" placeholder="Search users, posts, events..." id="adminSearch">
-            <button class="search-btn"><i class="fas fa-search"></i></button>
-        </div>
-    </div>
-    <div class="nav-right">
-        <button class="notification-btn">
-            <i class="fas fa-bell"></i>
-        </button>
-        <span class="notification-badge">5</span>
-        <div class="user-menu">
-            <div class="user-avatar">AD</div>
-            <span><?php echo htmlspecialchars(SessionManager::getUser()['name'] ?? 'Admin'); ?></span>
-            <div class="user-dropdown">
-                <a href="<?php echo URLROOT; ?>/adminlogin/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </div>
-        </div>
-    </div>
-    
-</nav>
-
 <div class="dashboard-container">
     <!-- Sidebar -->
     <aside class="sidebar">

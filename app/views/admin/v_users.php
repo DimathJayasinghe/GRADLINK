@@ -1,14 +1,19 @@
-<?php require APPROOT . '/views/inc/header.php'; ?>
+<?php ob_start(); ?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">
+<?php $styles = ob_get_clean(); ?>
 
+
+<?php $sidebar_left = [
+    ['url' => '/admin', 'label' => 'Overview', 'icon' => 'chart-bar', 'active' => false],
+    ['url' => '/admin/users', 'label' => 'Users', 'icon' => 'users', 'active' => true],
+    ['url' => '/admin/engagement', 'label' => 'Engagement', 'icon' => 'comments', 'active' => false],
+    ['url' => '/admin/reports', 'label' => 'Reports', 'icon' => 'flag', 'active' => false],
+    ['url' => '/admin/settings', 'label' => 'Settings', 'icon' => 'cog', 'active' => false],
+]?>
+<?php $content = ob_start(); ?>
 <div class="admin-dashboard">
     <div class="admin-header">
         <h1>Users</h1>
-        <nav class="tabs">
-            <a class="tab" href="<?php echo URLROOT; ?>/admin">Overview</a>
-            <a class="tab active" href="<?php echo URLROOT; ?>/admin/users">Users</a>
-            <a class="tab" href="<?php echo URLROOT; ?>/admin/engagement">Engagement</a>
-        </nav>
     </div>
 
     <div class="card">
@@ -36,7 +41,8 @@
         </table>
     </div>
 </div>
+<?php $content = ob_get_clean(); ?>
 
-<?php require APPROOT . '/views/inc/footer.php'; ?>
+<?php require APPROOT . '/views/admin/dashboard_layout.php';?>
 
 

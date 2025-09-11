@@ -30,7 +30,8 @@
                 'users' => $users,
                 'engagement' => $engagement,
             ];
-            $this->view('admin/v_admin_dashboard', $data);
+            $this->view('admin/v_users', $data);
+            // $this->view('admin/v_admin_dashboard', $data);
         }
 
         public function users() {
