@@ -1,14 +1,25 @@
-<?php require APPROOT . '/views/inc/header.php'; ?>
+<?php ob_start()?>
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/admin.css">   
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">
+<?php $styles = ob_get_clean()?>
 
+<?php
+    $sidebar_left = [
+        ['label'=>'Overview', 'url'=>'/admin','active'=>false, 'icon'=>'tachometer-alt'],
+        ['label'=>'User Management', 'url'=>'/admin/users','active'=>true, 'icon' => 'users'],
+        ['label'=>'Engagement Metrics', 'url'=>'/admin/engagement','active'=>false, 'icon' => 'chart-bar'],
+        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>false, 'icon' => 'file-alt'],
+        ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>false, 'icon' => 'pencil-alt'],
+        ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
+        ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>false, 'icon' => 'check-circle']
+    ]
+?>
+
+<?php ob_start();?>
 <div class="admin-dashboard">
     <div class="admin-header">
         <h1>Users</h1>
-        <nav class="tabs">
-            <a class="tab" href="<?php echo URLROOT; ?>/admin">Overview</a>
-            <a class="tab active" href="<?php echo URLROOT; ?>/admin/users">Users</a>
-            <a class="tab" href="<?php echo URLROOT; ?>/admin/engagement">Engagement</a>
-        </nav>
+        
     </div>
 
     <div class="card">
@@ -36,7 +47,8 @@
         </table>
     </div>
 </div>
+<?php $content = ob_get_clean(); ?>
+<?php require APPROOT . '/views/admin/dashboard_layout.php'; ?>
 
-<?php require APPROOT . '/views/inc/footer.php'; ?>
 
 

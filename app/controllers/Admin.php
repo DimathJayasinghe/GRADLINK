@@ -30,7 +30,7 @@
                 'users' => $users,
                 'engagement' => $engagement,
             ];
-            $this->view('admin/v_admin_dashboard', $data);
+            $this->view('admin/v_overview', $data);
         }
 
         public function users() {
@@ -49,6 +49,23 @@
                 'activeTab' => 'engagement',
             ];
             $this->view('admin/v_engagement', $data);
+        }
+
+        public function reports() {
+            $data = [];
+            $this->view('admin/v_reports', $data);
+        }
+        public function posts() {
+            $data = [];
+            $this->view('admin/v_posts', $data);
+        }
+        public function fundraisers() {
+            $data = [];
+            $this->view('admin/v_fundraiser', $data);
+        }
+        public function verifications() {
+            $data = [];
+            $this->view('admin/v_verifications', $data);
         }
     }
 ?>

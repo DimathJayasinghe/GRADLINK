@@ -1,6 +1,22 @@
-<?php require APPROOT . '/views/inc/header.php'; ?>
+<?php ob_start()?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">
+<?php $styles = ob_get_clean()?>
 
+
+<?php
+    $sidebar_left = [
+        ['label'=>'Overview', 'url'=>'/admin','active'=>false, 'icon'=>'tachometer-alt'],
+        ['label'=>'User Management', 'url'=>'/admin/users','active'=>false, 'icon' => 'users'],
+        ['label'=>'Engagement Metrics', 'url'=>'/admin/engagement','active'=>true, 'icon' => 'chart-bar'],
+        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>false, 'icon' => 'file-alt'],
+        ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>false, 'icon' => 'pencil-alt'],
+        ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
+        ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>false, 'icon' => 'check-circle']
+    ]
+?>
+
+
+<?php ob_start();?>
 <div class="admin-dashboard">
     <div class="admin-header">
         <h1>Analytics Dashboard</h1>
@@ -111,6 +127,7 @@
     });
 </script>
 
-<?php require APPROOT . '/views/inc/footer.php'; ?>
+<?php $content = ob_get_clean(); ?>
+<?php require APPROOT . '/views/admin/dashboard_layout.php'; ?>
 
 
