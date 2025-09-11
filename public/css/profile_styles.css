@@ -6,6 +6,7 @@
             margin-bottom: 1rem;
             box-shadow: var(--shadow-1);
             overflow: hidden;
+            margin-bottom: 0px;
         }
         
         .profile > .profile-up-part {
@@ -105,16 +106,21 @@
             margin: 8px auto 0;
             text-align: center;
             color: var(--muted);
+            margin-bottom: 0px;
         }
 
         /* Updated navigation button styles */
         .profile-navigation {
+            margin-top: 0px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
             display: flex;
             justify-content: center;
             gap: 80px; /* Increased spacing between buttons */
             margin: 0px;
-            padding: 10px;
-            padding-bottom: 25px;
+            padding: 30px;
+            /* padding-bottom: 25px; */
             border-bottom:  1px solid var(--border);
         }
 
