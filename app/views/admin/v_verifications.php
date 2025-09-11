@@ -1,6 +1,40 @@
+<?php ob_start()?>
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">
+<style>
+.admin-table-wrapper { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+.admin-table th, .admin-table td { padding: 0.75rem; border-bottom: 1px solid #eee; text-align: left; }
+.admin-table th { background: #f8f8f8; }
+.status-badge { padding: 0.25em 0.75em; border-radius: 1em; font-size: 0.9em; }
+.status-pending { background: #ffeeba; color: #856404; }
+.status-verified { background: #d4edda; color: #155724; }
+.status-rejected { background: #f8d7da; color: #721c24; }
+.admin-btn { padding: 0.4em 1em; margin: 0 0.2em; border: none; border-radius: 3px; background: #007bff; color: #fff; cursor: pointer; font-size: 0.95em; }
+.admin-btn-danger { background: #dc3545; }
+.admin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.admin-actions { display: flex; gap: 0.5rem; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.card-tools { display: flex; gap: 0.5rem; }
+.admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.3); }
+.admin-modal-content { background: #fff; margin: 5% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
+.admin-modal-close { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
+</style>
+<?php $styles = ob_get_clean()?>
+
 <?php
-// Alumni Verification Management Page for Admin
+    $sidebar_left = [
+        ['label'=>'Overview', 'url'=>'/admin','active'=>false, 'icon'=>'tachometer-alt'],
+        ['label'=>'User Management', 'url'=>'/admin/users','active'=>false, 'icon' => 'users'],
+        ['label'=>'Engagement Metrics', 'url'=>'/admin/engagement','active'=>false, 'icon' => 'chart-bar'],
+        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>false, 'icon' => 'file-alt'],
+        ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>false, 'icon' => 'pencil-alt'],
+        ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
+        ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>true, 'icon' => 'check-circle']
+    ]
 ?>
+
+<?php ob_start();?>
 <div class="admin-header">
     <h1>Alumni Verifications</h1>
     <div class="admin-actions">
@@ -131,23 +165,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<style>
-.admin-table-wrapper { overflow-x: auto; }
-.admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-.admin-table th, .admin-table td { padding: 0.75rem; border-bottom: 1px solid #eee; text-align: left; }
-.admin-table th { background: #f8f8f8; }
-.status-badge { padding: 0.25em 0.75em; border-radius: 1em; font-size: 0.9em; }
-.status-pending { background: #ffeeba; color: #856404; }
-.status-verified { background: #d4edda; color: #155724; }
-.status-rejected { background: #f8d7da; color: #721c24; }
-.admin-btn { padding: 0.4em 1em; margin: 0 0.2em; border: none; border-radius: 3px; background: #007bff; color: #fff; cursor: pointer; font-size: 0.95em; }
-.admin-btn-danger { background: #dc3545; }
-.admin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.admin-actions { display: flex; gap: 0.5rem; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.card-tools { display: flex; gap: 0.5rem; }
-.admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.3); }
-.admin-modal-content { background: #fff; margin: 5% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
-.admin-modal-close { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
-</style>
+
+<?php $content = ob_get_clean(); ?>
+<?php require APPROOT . '/views/admin/dashboard_layout.php'; ?>

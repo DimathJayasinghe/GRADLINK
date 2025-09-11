@@ -2,15 +2,12 @@
 class login extends Controller{
     protected $loginModel = null;
     public function __construct(){
+        SessionManager::redirectIfLoggedIn("/mainfeed");
         $this->loginModel = $this->Model('M_login');
         SessionManager::ensureStarted();
     }
 
     public function index(){
-        // Redirect to main feed if already logged in
-        SessionManager::redirectIfLoggedIn("/mainfeed");
-        
-        // Load the authentication view
         $this->redirect("/auth");
     }
 
@@ -43,7 +40,6 @@ class login extends Controller{
     }
 
     private function loginAlumniHandler(){
-        SessionManager::redirectIfLoggedIn("/mainfeed");
         $_POST = Sanitizer::sanitizeArray($_POST);
 
         // Prepare data and error array
@@ -68,11 +64,8 @@ class login extends Controller{
                  // Invalid credentials
                 $data['errors'][] = 'Invalid email or password';
             }
-        }else{
-            // If we reach here, there were validation errors or login failed
-            // Display login form again with errors
-            $this->view('auth/login/v_login_alumni', $data);
         }
+        $this->view('auth/login/v_login_alumni', $data);
     }
     
     private function loginUndergradHandler(){
@@ -101,11 +94,8 @@ class login extends Controller{
                 // Invalid credentials
                 $data['errors'][] = 'Invalid email or password';
             }
-        }else{
-            // If we reach here, there were validation errors or login failed
-            // Display login form again with errors
-            $this->view('auth/login/v_login_undergrad', $data);
         }
+        $this->view('auth/login/v_login_undergrad', $data);
         
     }
 

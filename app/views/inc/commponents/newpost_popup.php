@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/post_modal.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/newpost_popup.css">
 <div class="post-modal" id="postModal">
     <div class="post-modal-content">
         <div class="post-modal-header">
