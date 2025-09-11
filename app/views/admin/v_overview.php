@@ -1,7 +1,7 @@
-<?php ob_start()?>
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/admin.css">   
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">   
-<?php $styles = ob_get_clean()?>
+<!-- <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/admin.css">    -->
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">
+<?php ob_start(); ?>
+<?php $styles = ob_get_clean(); ?>
 
 <?php
     $sidebar_left = [
