@@ -21,10 +21,14 @@
             $metrics = $this->adminModel->getOverviewMetrics();
             $detailed = $this->adminModel->getDetailedOverview();
             $activity = $this->adminModel->getRecentActivity();
+            $users = $this->adminModel->getAllUsers();
+            $engagement = $this->adminModel->getEngagementMetrics();
             $data = [
                 'metrics' => $metrics,
                 'detailed' => $detailed,
                 'activity' => $activity,
+                'users' => $users,
+                'engagement' => $engagement,
             ];
             $this->view('admin/v_admin_dashboard', $data);
         }

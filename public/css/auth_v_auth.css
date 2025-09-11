@@ -1,0 +1,112 @@
+/* Styles for auth landing page (v_auth.php) */
+
+.auth-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    background-color: var(--bg);
+    position: relative;
+}
+
+.auth-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    position: relative;
+}
+
+.auth-section.alumni-section::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    right: 0;
+    height: 70%;
+    width: 1px;
+    background-color: var(--border);
+}
+
+.section-logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+    text-align: center;
+}
+
+.section-description {
+    color: var(--muted);
+    text-align: center;
+    font-weight: 300;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+    max-width: 400px;
+}
+
+.btn {
+    background-color: var(--btn);
+    color: var(--btn-text);
+    border: none;
+    padding: 12px 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s ease;
+    margin-bottom: 2rem;
+}
+
+.btn:hover { background-color: var(--link); }
+
+a { text-decoration: none; }
+
+.signup-link { color: var(--text); font-size: .95rem; }
+.signup-link a { color: var(--link); font-weight:600; transition: color .2s; }
+.signup-link a:hover { color: var(--link-hover); }
+
+/* Back button */
+.back-btn{
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 9999; /* ensure it's above sections */
+    pointer-events: auto;
+}
+.back-btn:hover{ background: rgba(158,212,220,0.04); }
+
+@media (max-width:768px){
+    .auth-container { flex-direction: column; }
+    .auth-section.alumni-section::after{
+        content: '';
+        position: absolute;
+        top: auto;
+        right: auto;
+        bottom: 0;
+        left: 15%;
+        height: 1px;
+        width: 70%;
+        background-color: var(--border);
+    }
+    .auth-section{ padding: 2rem 1.5rem; }
+    .back-btn{ top: 12px; left: 12px; }
+}

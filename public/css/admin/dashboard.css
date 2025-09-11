@@ -13,6 +13,19 @@
     color: var(--muted)
 }
 
+.logo {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    width: fit-content;
+    height: fit-content;
+}
+
+.logo img {
+    height: 40px;
+    filter: drop-shadow(0 0 5px rgba(158, 212, 220, 0.3));
+}
+
 .tabs {
     display: flex;
     gap: 12px;
@@ -72,6 +85,13 @@
 .grid-3 {
     display: grid;
     grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     margin-bottom: 24px
 }

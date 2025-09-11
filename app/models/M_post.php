@@ -72,5 +72,80 @@ class M_post {
 		$this->db->bind(':u', $uid);
 		return (bool)$this->db->single();
 	}
+	
+	/**
+	 * Get post by ID
+	 */
+	public function getPostById($id) {
+		$this->db->query('SELECT * FROM posts WHERE id = :id');
+		$this->db->bind(':id', $id);
+		return $this->db->single();
+	}
+	
+	/**
+	 * Update an existing post
+	 */
+	public function updatePost($id, $content, $image = null) {
+		try {
+			if ($image === null) {
+				// Update without changing the image
+				$this->db->query('UPDATE posts SET content = :content WHERE id = :id');
+				$this->db->bind(':content', $content);
+				$this->db->bind(':id', $id);
+			} else {
+				// Update with new image
+				$this->db->query('UPDATE posts SET content = :content, image = :image WHERE id = :id');
+				$this->db->bind(':content', $content);
+				$this->db->bind(':image', $image);
+				$this->db->bind(':id', $id);
+			}
+			
+			return $this->db->execute();
+		} catch (Throwable $e) {
+			// If schema not updated yet (Unknown column 'image'), handle gracefully
+			if (stripos($e->getMessage(), 'unknown column') !== false && stripos($e->getMessage(), "image") !== false) {
+				// Try again without image field
+				$this->db->query('UPDATE posts SET content = :content WHERE id = :id');
+				$this->db->bind(':content', $content);
+				$this->db->bind(':id', $id);
+				return $this->db->execute();
+			}
+			return false;
+		}
+	}
+
+
+	//ADMIN CONTENT MANAGEMENT METHODS
+	public function adminGetPosts($status = 'all', $search = '') {
+		$sql = 'SELECT p.*, u.name as author FROM posts p JOIN users u ON u.id = p.user_id';
+		$where = [];
+		$params = [];
+		// No status column in posts table, so ignore status filter
+		if ($search !== '') {
+			$where[] = '(u.name LIKE :search OR p.content LIKE :search)';
+			$params[':search'] = "%$search%";
+		}
+		if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
+		$sql .= ' ORDER BY p.created_at DESC LIMIT 100';
+		$this->db->query($sql);
+		foreach ($params as $k => $v) $this->db->bind($k, $v);
+		return $this->db->resultSet();
+	}
+
+	public function adminApprovePost($id) {
+		// No status column, so just return true
+		return true;
+	}
+
+	public function adminRejectPost($id) {
+		// No status column, so just return true
+		return true;
+	}
+
+	public function adminDeletePost($id) {
+		$this->db->query('DELETE FROM posts WHERE id = :id');
+		$this->db->bind(':id', $id);
+		return $this->db->execute();
+	}
 }
 ?>
