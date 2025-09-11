@@ -71,8 +71,8 @@ class PostCard extends HTMLElement {
         ${postImg? `<div class=\"post-media\"><img src=\"${mediaPost(postImg)}\" alt=\"Post image\" onerror=\"this.style.display='none'\"></div>`: ""}
         
         <div class="post-actions">
-          <div class="comment-btn" data-post-id="${postId}"><i class="far fa-comment"></i> <span class="comment-count">${commentCount}</span></div>
           <div class="like-btn${likedInitial ? " liked" : ""}" data-post-id="${postId}"><i class="${likedInitial ? "fas" : "far"} fa-heart"></i> <span class="like-count">${likeCount}</span></div>
+          <div class="comment-btn" data-post-id="${postId}"><i class="far fa-comment"></i> <span class="comment-count">${commentCount}</span></div>
         </div>
         
         <div class="pc-comments" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
