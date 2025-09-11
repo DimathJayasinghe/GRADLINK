@@ -30,6 +30,7 @@
 
 
 <?php ob_start(); ?>
+<div>
 <!-- Main content goes here -->
 <h2>All Fundraise Requests</h2>
 <?php if($data['fundraise_reqs']): ?>
@@ -82,7 +83,7 @@
 <?php else: ?>
     <p>No fundraise requests found.</p>
 <?php endif; ?>
-
+</div>
 
 <?php $content = ob_get_clean(); ?>
 <?php require APPROOT . '/views/request_dashboards/dashboard_layout.php';?>
