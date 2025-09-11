@@ -1,6 +1,21 @@
-<?php require APPROOT . '/views/inc/header.php'; ?>
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/posts.css">
+<?php ob_start()?>
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/posts.css">
+<?php $styles = ob_get_clean()?>
 
+
+<?php
+    $sidebar_left = [
+        ['label'=>'Overview', 'url'=>'/admin','active'=>false, 'icon'=>'tachometer-alt'],
+        ['label'=>'User Management', 'url'=>'/admin/users','active'=>false, 'icon' => 'users'],
+        ['label'=>'Engagement Metrics', 'url'=>'/admin/engagement','active'=>false, 'icon' => 'chart-bar'],
+        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>false, 'icon' => 'file-alt'],
+        ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>true, 'icon' => 'pencil-alt'],
+        ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
+        ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>false, 'icon' => 'check-circle']
+    ]
+?>
+
+<?php ob_start();?>
 <div class="admin-header">
     <h1>Content Management</h1>
     <div class="admin-actions">
@@ -200,4 +215,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<?php require APPROOT . '/views/inc/footer.php'; ?>
+<?php $content = ob_get_clean(); ?>
+<?php require APPROOT . '/views/admin/dashboard_layout.php'; ?>
+
