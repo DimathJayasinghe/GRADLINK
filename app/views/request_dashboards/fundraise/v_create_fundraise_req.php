@@ -1,6 +1,7 @@
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/fundraise_req_create_styles.css">    
 
 <?php ob_start(); ?>
+
 <?php $styles = ob_get_clean(); ?>
 
 <?php

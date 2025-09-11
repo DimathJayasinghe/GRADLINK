@@ -20,6 +20,7 @@
         ]
     ]
     ?>
+
     <?php ob_start() ?>
     <?php
     $leftside_buttons = [
@@ -27,6 +28,7 @@
         ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
         ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'notifications' => $notifications],
         ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
+        ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile/watch/".$_SESSION['user_id'] . "'"],
         // icon for fundraiser
         ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
         //icon for post requests
@@ -75,11 +77,12 @@
     <?php $center_content = ob_get_clean(); ?>
     <?php ob_start() ?>
     <!-- Include the right sidebar component -->
-    <?php
-    $rightSidebarStylesIncluded = true; // Prevent duplicate styles
-    require APPROOT . '/views/inc/commponents/rightSideBar.php';
-    ?>
+        <?php
+        $rightSidebarStylesIncluded = true; // Prevent duplicate styles
+        require APPROOT . '/views/inc/commponents/rightSideBar.php';
+        ?>
     <?php $rightsidebar = ob_get_clean(); ?>
+
     <?php ob_start() ?>
     window.URLROOT = "<?php echo URLROOT; ?>";
     <script src="<?php echo URLROOT; ?>/js/mainfeed_script.js"></script>
