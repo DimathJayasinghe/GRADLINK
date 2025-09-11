@@ -1,15 +1,7 @@
 <?php ob_start(); ?>
 <style>
 .analytics-container {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 2rem;
-    margin-top: 1.5rem;
-    box-shadow: var(--shadow-1);
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
+    padding: 1rem;
 }
 
 .analytics-header {
