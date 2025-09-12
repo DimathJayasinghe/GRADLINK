@@ -17,12 +17,57 @@ class M_Profile{
         return $this->db->single();
     }
     public function getCertificates($user_id){
-        return [
-            (object)['title' => 'Certificate in Web Development', 'image_url' => null],
-            (object)['title' => 'Certificate in Data Science', 'image_url' => null],
-            (object)['title' => 'Certificate in Machine Learning', 'image_url' => null]
-        ];
+        $this->db->query('SELECT c.*, u.name AS user_name, u.profile_image 
+                          FROM certificates c 
+                          JOIN users u ON u.id = c.user_id 
+                          WHERE c.user_id = :uid 
+                          ORDER BY c.issued_date DESC');
+        $this->db->bind(':uid', $user_id);
+        return $this->db->resultSet();
     }
+
+
+// ...existing code...
+
+    /**
+     * Create a certificate for a user.
+     * If the certificate_file column does not exist yet, it will gracefully
+     * fall back to inserting without the file instead of crashing.
+     */
+    public function createCertificate($user_id, $name, $issuer, $issued_date, $certificate_file = null) {
+        if ($certificate_file === null) {
+            // Insert without file
+            $this->db->query('INSERT INTO certificates (user_id, name, issuer, issued_date) VALUES (:uid, :name, :issuer, :issued_date)');
+            $this->db->bind(':uid', $user_id);
+            $this->db->bind(':name', $name);
+            $this->db->bind(':issuer', $issuer);
+            $this->db->bind(':issued_date', $issued_date);
+            return $this->db->execute();
+        }
+        try {
+            $this->db->query('INSERT INTO certificates (user_id, name, issuer, issued_date, certificate_file) VALUES (:uid, :name, :issuer, :issued_date, :file)');
+            $this->db->bind(':uid', $user_id);
+            $this->db->bind(':name', $name);
+            $this->db->bind(':issuer', $issuer);
+            $this->db->bind(':issued_date', $issued_date);
+            $this->db->bind(':file', $certificate_file);
+            return $this->db->execute();
+        } catch (Throwable $e) {
+            // If schema not updated yet (Unknown column 'certificate_file'), retry without file
+            if (stripos($e->getMessage(), 'unknown column') !== false && stripos($e->getMessage(), "certificate_file") !== false) {
+                $this->db->query('INSERT INTO certificates (user_id, name, issuer, issued_date) VALUES (:uid, :name, :issuer, :issued_date)');
+                $this->db->bind(':uid', $user_id);
+                $this->db->bind(':name', $name);
+                $this->db->bind(':issuer', $issuer);
+                $this->db->bind(':issued_date', $issued_date);
+                return $this->db->execute();
+            }
+            throw $e; // Different error, rethrow
+        }
+    }
+
+// ...existing code...
+
     public function getProjects($user_id){
         return [
             (object)['title' => 'Project A', 'description' => 'Description for Project A'],

@@ -19,6 +19,13 @@ class Profile extends Controller{
     }
 
     public function watch($user_id){
+
+        if($_SERVER['REQUEST_METHOD'] == "POST") {
+            var_dump($_POST);
+            echo "POST";
+            return;
+        }
+
         if (!$user_id){
             SessionManager:: redirectIfLoggedIn('/profile/'. $_SESSION['user_id']);
         }
@@ -42,5 +49,27 @@ class Profile extends Controller{
         }
         $this->view('errors/_404', []);
     }
+
+  
+    public function addCertificate()
+{
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); return; }
+        $name = trim($_POST['certificate_name'] ?? '');
+        $issuer = trim($_POST['certificate_issuer'] ?? '');
+        $issued_date = trim($_POST['certificate_date'] ?? '');
+        $certificate_file = null;
+        if (!empty($_FILES['certificate_file']['name']) && is_uploaded_file($_FILES['certificate_file']['tmp_name'])) {
+            $ext = pathinfo($_FILES['certificate_file']['name'], PATHINFO_EXTENSION);
+            $certificate_file = time() . '_' . substr(sha1($_FILES['certificate_file']['name'].random_bytes(4)),0,8) . '.' . $ext;
+            $targetDir = APPROOT . '/storage/certificates';
+            if(!is_dir($targetDir)) @mkdir($targetDir,0775,true);
+            $dest = $targetDir . '/' . $certificate_file;
+            if(!move_uploaded_file($_FILES['certificate_file']['tmp_name'],$dest)) $certificate_file=null;
+        }
+        if ($name !== '' && $issuer !== '' && $issued_date !== '' && $certificate_file !== null) {
+            $this->Model->createCertificate($_SESSION['user_id'], $name, $issuer, $issued_date, $certificate_file);
+        }
+        $this->redirect('/profile');
+}
 }
 

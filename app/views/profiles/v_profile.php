@@ -178,24 +178,22 @@
                 <!-- Certificate Cards -->
                 <div id="certificatesContainer">
                     <?php 
-                    // Sample certificate data - this would come from your database
-                    $sampleCertificates = [
-                        ['id' => 1, 'title' => 'Machine Learning Expert', 'issuer' => 'Coursera', 'date' => '2022-05-15'],
-                        ['id' => 2, 'title' => 'AWS Solutions Architect', 'issuer' => 'Amazon', 'date' => '2021-11-20']
-                    ];
-                    
+                    // Fetch certificates from $data['certificates'] (assumed to be passed from controller)
+                    $sampleCertificates = !empty($data['certificates']) ? $data['certificates'] : [];
+                    ?>
+                    <?php
                     if(!empty($sampleCertificates)):
                         foreach($sampleCertificates as $cert):
-                            $date = new DateTime($cert['date']);
+                            $date = new DateTime($cert->issued_date);
                             $formattedDate = $date->format('F Y');
                     ?>
-                    <div class="certificate-card" data-id="<?= $cert['id'] ?>">
+                    <div class="certificate-card" data-id="<?= $cert->id ?>">
                         <div class="certificate-card-image">
                             <i class="fas fa-certificate"></i>
                         </div>
                         <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($cert['title']) ?></div>
-                            <div class="certificate-issuer"><?= htmlspecialchars($cert['issuer']) ?></div>
+                            <div class="certificate-card-title"><?= htmlspecialchars($cert->name) ?></div>
+                            <div class="certificate-issuer"><?= htmlspecialchars($cert->issuer) ?></div>
                             <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
                         </div>
                         <div class="certificate-actions">
@@ -268,27 +266,27 @@
             </button>
             
             <div class="form-title">Add New Certificate</div>
-            
-            <form class="certificate-form" id="certificateForm">
+
+            <form method="post" action="<?php echo URLROOT; ?>/profile/addCertificate" enctype="multipart/form-data" class="certificate-form" id="certificateForm">
                 <div class="form-group">
                     <label for="certificateName">Name</label>
-                    <input type="text" id="certificateName" name="certificateName" placeholder="Certificate name" required>
+                    <input type="text" id="certificateName" name="certificate_name" placeholder="Certificate name" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="certificateIssuer">Issuing Organization</label>
-                    <input type="text" id="certificateIssuer" name="certificateIssuer" placeholder="Organization name" required>
+                    <input type="text" id="certificateIssuer" name="certificate_issuer" placeholder="Organization name" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="certificateDate">Issue Date</label>
-                    <input type="date" id="certificateDate" name="certificateDate" required>
+                    <input type="date" id="certificateDate" name="certificate_date" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="certificateFile">Upload Certificate (PDF)</label>
                     <div class="file-upload-container">
-                        <input type="file" id="certificateFile" name="certificateFile" accept=".pdf" style="display: none;">
+                        <input type="file" id="certificateFile" name="certificate_file" accept=".pdf" style="display: none;">
                         <button type="button" class="file-upload-btn" onclick="document.getElementById('certificateFile').click()">Choose File</button>
                         <span class="file-name" id="fileName">No file chosen</span>
                     </div>
@@ -379,7 +377,19 @@
             if (certificateForm) {
                 certificateForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    console.log('Certificate form submitted - will be implemented later');
+                    
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: new FormData(this)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+
                     document.getElementById('certificateAddPopup').style.display = 'none';
                 });
             }
