@@ -250,11 +250,14 @@ class Post extends Controller
             if ($result) {
                 echo json_encode(['status' => 'success', 'message' => 'Post deleted successfully']);
                 // delete the post pic if exists
-                /***
-                 * 
-                 * 
-                 * 
-                 */
+                // Note: Model also attempts to remove the image. This is a safety net.
+                if (isset($post->image) && !empty($post->image)) {
+                    $imgFile = basename($post->image); // sanitize
+                    $imgPath = APPROOT . '/storage/posts/' . $imgFile;
+                    if (is_file($imgPath)) {
+                        @unlink($imgPath);
+                    }
+                }
             } else {
                 echo json_encode(['status' => 'error', 'message' => 'Failed to delete post']);
             }
