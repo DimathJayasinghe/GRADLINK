@@ -71,6 +71,7 @@
     display: inline-block;
     transition: background-color 0.2s ease;
     margin-bottom: 2rem;
+    text-align: center;
 }
 
 .btn:hover {
@@ -126,7 +127,6 @@ a {
     }
 }
 </style>
-
 <div class="auth-container">
     <div class="auth-section alumni-section">
         <img src="<?php echo URLROOT?>/img/logo_white.png" alt="Alumni" class="section-logo">

@@ -6,21 +6,11 @@ class Profile extends Controller{
         SessionManager:: redirectToAuthIfNotLoggedIn();
         $this->Model = $this->model('M_Profile');
     }
-    
-    public function index() {
-        if (SessionManager::hasRole('undergraduate')) {
-            $this->watch($_SESSION['user_id']);
-            return;
-        } else if (SessionManager::hasRole('alumni')) {
-            $this->watch($_SESSION['user_id']);
-            return;
-        }
-        $this->view('errors/_404', []);
-    }
 
-    public function watch($user_id){
+    public function index(){
+        $user_id = $this->getQueryParam('userid', null);
         if (!$user_id){
-            SessionManager:: redirectIfLoggedIn('/profile/'. $_SESSION['user_id']);
+            $user_id = $_SESSION['user_id'];
         }
         // handle other user profile view
         $user = $this->Model->getUser($user_id);
