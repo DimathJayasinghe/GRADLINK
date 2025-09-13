@@ -144,9 +144,57 @@ class M_post {
 	}
 
 	public function adminDeletePost($id) {
-		$this->db->query('DELETE FROM posts WHERE id = :id');
-		$this->db->bind(':id', $id);
-		return $this->db->execute();
+		try {
+			// Attempt to fetch image name (schema may not have image column yet)
+			$postImage = null;
+			try {
+				$this->db->query('SELECT image FROM posts WHERE id = :id');
+				$this->db->bind(':id', $id);
+				$row = $this->db->single();
+				if ($row && isset($row->image)) {
+					$postImage = $row->image;
+				}
+			} catch (Throwable $e) {
+				// If image column doesn't exist yet, ignore and continue deletion flow
+				if (stripos($e->getMessage(), 'unknown column') === false) {
+					throw $e;
+				}
+			}
+
+			// Delete comments first (correct table name is `comments`)
+			$this->db->query('DELETE FROM comments WHERE post_id = :id');
+			$this->db->bind(':id', $id);
+			$this->db->execute();
+
+			// Delete likes
+			$this->db->query('DELETE FROM post_likes WHERE post_id = :id');
+			$this->db->bind(':id', $id);
+			$this->db->execute();
+
+			// Finally delete the post itself
+			$this->db->query('DELETE FROM posts WHERE id = :id');
+			$this->db->bind(':id', $id);
+			$result = $this->db->execute();
+
+			// Remove associated image file if it exists and we successfully deleted the post
+			if ($result && $postImage) {
+				$path = APPROOT . '/storage/posts/' . $postImage;
+				if (is_file($path)) {
+					@unlink($path);
+				}
+			}
+
+			return $result;
+		} catch (Exception $e) {
+			error_log("Error deleting post: " . $e->getMessage());
+			return false;
+		}
+	}
+
+	public function getUserById($userId){
+		$this->db->query('SELECT id,role FROM users WHERE id = :id');
+		$this->db->bind(':id', $userId);
+		return $this->db->single();
 	}
 }
 ?>
