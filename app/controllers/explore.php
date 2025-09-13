@@ -19,7 +19,8 @@ class Explore extends Controller
             'filter' => 'all',
             'results' => []
         ];
-        
+        $data['query'] = $this->getQueryParam('q', '');
+        echo "Query: " . htmlspecialchars($data['query']) . "<br>";
         
         $this->view('v_explore', $data);
     }
