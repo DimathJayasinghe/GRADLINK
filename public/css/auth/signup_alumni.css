@@ -1,0 +1,4 @@
+/* Alumni-specific signup styles */
+@import url('signup_shared.css');
+
+/* Alumni could have subtle overrides in the future. Keep file for role-specific rules. */

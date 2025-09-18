@@ -2,9 +2,9 @@
 @import url('./color-pallate.css');
 
 /* Component stylings */
-@import url('./components/topnavbar_styles.css');
 @import url('./components/form_styles.css');
-@import url('./auth/login_signup_styles.css');
+@import url('./components/topnavbar_styles.css');
+@import url('./auth/login_shared.css');
 
 /* FONTS */
 @font-face {

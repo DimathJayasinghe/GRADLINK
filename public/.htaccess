@@ -1,8 +1,9 @@
-<IfModule mod_rewrite.c>
-    Options -Multiviews
-    RewriteEngine On
-    RewriteBase /GRADLINK/public
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^(.+)$ index.php?url=$1 [QSA,L]
-</IfModule>
+RewriteEngine On
+
+# Handle admin routes - redirect /admin to /adminlogin
+# RewriteRule ^admin/?$ index.php?url=adminlogin [L,QSA]
+
+# Handle all other routes
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]

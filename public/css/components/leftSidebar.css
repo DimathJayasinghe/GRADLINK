@@ -1,0 +1,139 @@
+/* Left sidebar component styles (extracted from leftSideBar.php)
+ * Keep this file small and focused. Loaded from leftSideBar.php
+ */
+
+:root {
+  --sidebar-width: 275px;
+}
+
+/* Logo */
+.logo-name{
+  font-size:24px;
+  font-weight:700;
+  color:var(--text);
+  margin-left:10px;
+}
+
+.logo{
+  display:flex;
+  align-items:center;
+  margin-bottom:20px; /* Fixed conflicting margin-bottom values */
+}
+
+.logo img{
+  height:40px;
+  filter:drop-shadow(0 0 5px rgba(158,212,220,0.3));
+}
+.logo p{
+  margin:0;
+  margin-left:10px;
+  font-size:24px;
+  font-weight:700;
+  color:var(--text);
+}
+
+/* Settings positioning: anchor for popup */
+.settings-section{
+  margin-top:auto;
+  position:relative;
+}
+
+.hidden{display:none}
+.rotated{transform:rotate(90deg);transition:transform .3s}
+
+/* Settings popup */
+.settings-popup-menu{
+  position:absolute;
+  bottom:56px;
+  right:12px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:8px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.12);
+  width:200px;
+  z-index:9999;
+  overflow:hidden;
+  transform-origin:bottom right;
+}
+.settings-popup-menu ul{list-style:none;margin:0;padding:6px 0}
+.settings-popup-menu .popup-menu-item{padding:8px 12px;font-size:13px;color:var(--text);cursor:pointer;transition:background .12s}
+.settings-popup-menu .popup-menu-item:hover{background:rgba(255,255,255,0.03)}
+
+/* Essential sidebar styles */
+.sidebar{
+  width:var(--sidebar-width);
+  padding:20px;
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
+  box-sizing:border-box;
+}
+
+.sidebar-menu{
+  list-style:none;
+  margin-top:20px;
+  display:flex;
+  flex-direction:column;
+  flex:1 1 auto;
+  padding:0;
+}
+
+.sidebar-menu li{margin-bottom:25px;font-size:18px;display:flex;align-items:center;font-weight:500;cursor:pointer;transition:var(--transition)}
+.sidebar-menu li:hover{color:var(--link)}
+.sidebar-menu li i,.sidebar-menu li img{margin-right:15px;font-size:22px}
+
+.sidebar-menu .notification-badge{background-color:var(--link);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px;position:relative;top:-10px;left:-10px}
+
+/* Enhanced active state styling */
+.active{
+  color:var(--link);
+  font-weight:600;
+  position: relative;
+  padding-left: 5px;
+}
+
+.active::before {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background-color: var(--link);
+  border-radius: 0 4px 4px 0;
+}
+
+.active i {
+  transform: scale(1.1);
+}
+
+.post-button{background-color:var(--btn);color:var(--btn-text);border:none;border-radius:30px;padding:15px 0;width:100%;font-size:16px;font-weight:600;cursor:pointer;margin-top:10px;transition:var(--transition)}
+.post-button:hover{background-color:var(--link);transform:translateY(-2px)}
+
+/* Post modal */
+.post-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:1000;align-items:flex-start;justify-content:center;padding-top:50px;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.post-modal-content{background:var(--bg);width:100%;max-width:600px;border-radius:16px;overflow:hidden;box-shadow:0 0 20px rgba(0,0,0,.3);animation:slideDown .3s}
+@keyframes slideDown{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.post-modal-header{display:flex;justify-content:space-between;align-items:center;padding:10px 15px;border-bottom:1px solid var(--border)}
+.modal-close-btn{background:transparent;border:none;color:var(--text);font-size:20px;cursor:pointer;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background-color .2s}
+.modal-close-btn:hover{background-color:rgba(158,212,220,.1)}
+.post-modal-body{padding:15px;display:flex;gap:15px}
+.post-input-container{flex-grow:1}
+.post-modal-body textarea{width:100%;min-height:120px;background:transparent;border:none;color:var(--text);font-size:20px;resize:none;font-family:'Poppins',sans-serif;outline:none;margin-bottom:15px}
+.divider{height:1px;background-color:var(--border);margin:15px 0}
+.post-modal-actions{display:flex;justify-content:space-between;align-items:center}
+.post-modal-tools{display:flex;gap:10px}
+.modal-post-btn{background-color:var(--btn);color:var(--btn-text);border:none;border-radius:20px;padding:8px 20px;font-weight:600;cursor:pointer;transition:var(--transition)}
+.modal-post-btn:hover{background-color:var(--link);transform:translateY(-2px)}
+
+
+/* Responsive adjustments */
+@media (max-width:768px){
+  .sidebar{width:70px;padding:20px 10px}
+  .sidebar-menu li span{display:none}
+  .sidebar-menu li i{margin-right:0;font-size:24px}
+  .post-button{font-size:0;padding:15px}
+  .post-button::after{content:"+";font-size:24px;font-weight:300}
+}

@@ -55,6 +55,16 @@ class SessionManager
     }
 
     /**
+     * Redirect to auth login if user not logged in - use in any controller
+     */
+    public static function redirectToAuthIfNotLoggedIn(): void{
+        if(!self::isLoggedIn()){
+            header('Location: '.URLROOT . '/auth');
+            exit();
+        }
+    }
+
+    /**
      * Require login - use in any protected controller/page
      */
     public static function requireAuth(string $redirectTo = null): void
@@ -76,6 +86,7 @@ class SessionManager
         $_SESSION['user_name'] = $user->name ?? ($user->full_name ?? '');
         $_SESSION['user_email'] = $user->email ?? '';
         $_SESSION['user_role'] = $user->role ?? '';
+        $_SESSION['profile_image'] = $user->profile_image ?? 'default.jpg';
         $_SESSION['login_time'] = time();
     }
 
@@ -108,5 +119,27 @@ class SessionManager
         $messages = $_SESSION['flash_messages'] ?? [];
         unset($_SESSION['flash_messages']);
         return $messages;
+    }
+
+    /**
+     * Check whether current user has a specific role
+     */
+    public static function hasRole(string $role): bool
+    {
+        self::ensureStarted();
+        return isset($_SESSION['user_role']) && strtolower($_SESSION['user_role']) === strtolower($role);
+    }
+
+    /**
+     * Require a specific role; redirect if not authorized
+     */
+    public static function requireRole(string $role, string $redirectTo = null): void
+    {
+        self::ensureStarted();
+        if (!self::isLoggedIn() || !self::hasRole($role)) {
+            $target = $redirectTo ?? (URLROOT . '/auth');
+            header('Location: ' . $target);
+            exit();
+        }
     }
 }
