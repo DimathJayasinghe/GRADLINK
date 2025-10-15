@@ -1,6 +1,31 @@
 <?php require APPROOT . '/views/inc/header.php';?>
 
 <style>
+/* Back button */
+.back-button {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    z-index: 100;
+}
+
+.back-button:hover {
+    color: var(--text);
+    border-color: var(--muted);
+    background: var(--input);
+}
+
 /* Container layout */
 .auth-container {
     max-width: 1200px;
@@ -71,6 +96,7 @@
     display: inline-block;
     transition: background-color 0.2s ease;
     margin-bottom: 2rem;
+    text-align: center;
 }
 
 .btn:hover {
@@ -126,7 +152,10 @@ a {
     }
 }
 </style>
-
+<a href="<?php echo URLROOT; ?>" class="back-button" aria-label="Back to Gradlink home">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Back
+</a>
 <div class="auth-container">
     <div class="auth-section alumni-section">
         <img src="<?php echo URLROOT?>/img/logo_white.png" alt="Alumni" class="section-logo">
