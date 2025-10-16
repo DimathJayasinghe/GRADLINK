@@ -16,32 +16,33 @@ class settings extends Controller{
         $data = [
             'section' => 'account'
         ];
-        $this->view('settings/v_settings_account', $data);
+        $this->view('settings/v_settings', $data);
     }
 
     public function privacyandsafety(){
         $data = [
             'section' => 'privacyandsafety'
         ];
-        $this->view('settings/v_settings_privacyandsafety', $data);
+        $this->view('settings/v_settings', $data);
     }
     public function notifications(){
         $data = [
             'section' => 'notifications'
         ];
-        $this->view('settings/v_settings_notifications', $data);
+        $this->view('settings/v_settings', $data);
+
     }
     public function appearance(){
         $data = [
             'section' => 'appearance'
         ];
-        $this->view('settings/v_settings_appearance', $data);
+        $this->view('settings/v_settings', $data);
     }
     public function helpandsupport(){
         $data = [
             'section' => 'helpandsupport'
         ];
-        $this->view('settings/v_settings_helpandsupport', $data);
+        $this->view('settings/v_settings', $data);
     }
 }
 ?>

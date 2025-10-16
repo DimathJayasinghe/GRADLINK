@@ -32,4 +32,4 @@
 ?>
 
 <?php $content = ob_get_clean(); ?>
-<?php require APPROOT . '/views/request_dashboards/dashboard_layout.php';?>
+<?php require APPROOT . '/views/request_dashboards/request_dashboard_layout_adapter.php';?>
