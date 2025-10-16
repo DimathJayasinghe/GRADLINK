@@ -1,17 +1,18 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/auth/login_signup_styles.css">
+
 <main class="page">
     <section class="brand">
         <div class="logo-mark">
             <img src="<?php echo URLROOT ?>/img/logo_white.png" alt="Gradlink mark" />
         </div>
         <h1 class="brand-title">GRADLINK</h1>
-        <p class="brand-copy">Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard</p>
+        <p class="brand-copy">Reconnect with your UCSC community, mentor the next generation, and expand your professional network with fellow alumni.</p>
     </section>
 
     <section class="auth-card">
         <a href="<?php echo URLROOT;?>/auth"><button class="card-close" aria-label="Close">×</button></a>
-        <h2 class="card-title">UNDERGRAD LOGIN</h2>
+        <h2 class="card-title">Undergrad Login</h2>
         <?php
         if (isset($data['errors']) && !empty($data['errors'])) {
             foreach ($data['errors'] as $error) {
@@ -37,7 +38,7 @@
             </div>
         </form>
 
-        <p class="signup">Don't have an account? <a href="<?php echo URLROOT; ?>/users/signup">Signup</a></p>
+        <p class="signup">Don't have an account? <a href="<?php echo URLROOT; ?>/signup/undergrad">Sign Up</a></p>
     </section>
 </main>
 

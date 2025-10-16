@@ -6,28 +6,11 @@ class Profile extends Controller{
         SessionManager:: redirectToAuthIfNotLoggedIn();
         $this->Model = $this->model('M_Profile');
     }
-    
-    public function index() {
-        if (SessionManager::hasRole('undergraduate')) {
-            $this->watch($_SESSION['user_id']);
-            return;
-        } else if (SessionManager::hasRole('alumni')) {
-            $this->watch($_SESSION['user_id']);
-            return;
-        }
-        $this->view('errors/_404', []);
-    }
 
-    public function watch($user_id){
-
-        if($_SERVER['REQUEST_METHOD'] == "POST") {
-            var_dump($_POST);
-            echo "POST";
-            return;
-        }
-
+    public function index(){
+        $user_id = $this->getQueryParam('userid', null);
         if (!$user_id){
-            SessionManager:: redirectIfLoggedIn('/profile/'. $_SESSION['user_id']);
+            $user_id = $_SESSION['user_id'];
         }
         // handle other user profile view
         $user = $this->Model->getUser($user_id);
@@ -71,5 +54,35 @@ class Profile extends Controller{
         }
         $this->redirect('/profile');
 }
+    public function updateCertificate()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); return; }
+        $cert_id = intval($_POST['certificate_id'] ?? 0);
+        $name = trim($_POST['certificate_name'] ?? '');
+        $issuer = trim($_POST['certificate_issuer'] ?? '');
+        $issued_date = trim($_POST['certificate_date'] ?? '');
+        $remove_file = !empty($_POST['remove_certificate_file']) ? true : false;
+        $new_file = null;
+
+        // Handle uploaded replacement file
+        if (!empty($_FILES['certificate_file']['name']) && is_uploaded_file($_FILES['certificate_file']['tmp_name'])) {
+            $ext = pathinfo($_FILES['certificate_file']['name'], PATHINFO_EXTENSION);
+            $new_file = time() . '_' . substr(sha1($_FILES['certificate_file']['name'].random_bytes(4)),0,8) . '.' . $ext;
+            $targetDir = APPROOT . '/storage/certificates';
+            if(!is_dir($targetDir)) @mkdir($targetDir,0775,true);
+            $dest = $targetDir . '/' . $new_file;
+            if(!move_uploaded_file($_FILES['certificate_file']['tmp_name'],$dest)) $new_file=null;
+        }
+
+        $ok = false;
+        if ($cert_id > 0 && $name !== '' && $issuer !== '' && $issued_date !== '') {
+            // If requested to remove existing file, controller will ask model to remove and unlink
+            $ok = $this->Model->updateCertificate($_SESSION['user_id'], $cert_id, $name, $issuer, $issued_date, $new_file, $remove_file);
+        }
+        // return JSON for AJAX usage
+        header('Content-Type: application/json');
+        echo json_encode(['success' => (bool)$ok]);
+    }
+
 }
 

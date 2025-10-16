@@ -5,9 +5,26 @@
 // Import the skills data
 $skills = require APPROOT . '/data/skills_data.php';
 ?>
+<style>
+/* Container styles */
+.back-button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid var(--border);
+    padding: 10px;
+    text-decoration: none;
+    border-radius: 5px;
+    color: wheat;
+    width: fit-content;
+}
+</style>
 
 <div class="signup-container">
-    <a href="<?php echo URLROOT;?>/auth" class="close-button">&times;</a>
+    <a href="<?php echo URLROOT; ?>" class="back-button" aria-label="Back to Gradlink home">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        Back
+    </a>
     
     <div class="signup-header">
         <div class="title-section">
@@ -128,11 +145,7 @@ $skills = require APPROOT . '/data/skills_data.php';
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Close button functionality
-    document.querySelector('.close-button').addEventListener('click', function(e) {
-        e.preventDefault();
-        window.location.href = '<?php echo URLROOT; ?>/auth';
-    });
+    // Back button is a normal link; no JS needed
 
     // Profile image preview
     const profileInput = document.getElementById('profile_image');
@@ -302,19 +315,7 @@ body {
     background-color: var(--bg);
 }
 
-/* Close button - fixed positioning */
-.close-button {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    font-size: 2rem;
-    cursor: pointer;
-    color: var(--text);
-    text-decoration: none;
-    z-index: 10;
-}
+/* back-button styles are in login_signup_styles.css */
 
 /* Header section */
 .signup-header {

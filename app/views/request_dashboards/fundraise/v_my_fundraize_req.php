@@ -23,8 +23,8 @@
 
 <?php
     $sidebar_left = [
-        ['label'=>'View All Fundraise Requests', 'url'=>'/fundraiser/all','active'=>true, 'icon'=>'list'],
-        ['label'=>'View my Fundraise Requests', 'url'=>'/fundraiser/myrequests','active'=>false, 'icon'=>'user'],
+        ['label'=>'View All Fundraise Requests', 'url'=>'/fundraiser/all','active'=>false, 'icon'=>'list'],
+        ['label'=>'View my Fundraise Requests', 'url'=>'/fundraiser/myrequests','active'=>true, 'icon'=>'user'],
         ['label'=>'Create Fundraise Request', 'url'=>'/fundraiser/request','active'=>false, 'icon' => 'plus-circle'],
     ]
 ?>

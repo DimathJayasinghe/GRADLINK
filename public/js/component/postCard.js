@@ -7,11 +7,15 @@ class PostCard extends HTMLElement {
   };
   
   connectedCallback() {
+    // Ensure URLROOT is available (fallback if not injected by layout)
+    if (!window.URLROOT || typeof window.URLROOT !== 'string') {
+      window.URLROOT = `${location.origin}/GRADLINK`;
+    }
     const root = `${location.origin}/GRADLINK/public/img`;
-    // Use secure media controller endpoints (served via /media/...)
+    // Use Media controller endpoints: /media/profile and /media/post
     const appBase = `${location.origin}/GRADLINK`;
-    const mediaProfile = (name) =>`${appBase}/public/media/profile/${encodeURIComponent(name)}`; // Core.php default RewriteBase may need adjusting for /GRADLINK/public
-    const mediaPost = (name) =>`${appBase}/public/media/post/${encodeURIComponent(name)}`;
+    const mediaProfile = (name) =>`${appBase}/media/profile/${encodeURIComponent(name)}`;
+    const mediaPost = (name) =>`${appBase}/media/post/${encodeURIComponent(name)}`;
     const rawProfile = this.getAttribute("profile-img");
     const profileImg =rawProfile && rawProfile.trim() !== "" ? rawProfile : "default.jpg";
 
@@ -106,7 +110,7 @@ class PostCard extends HTMLElement {
       });
       
       // simple action handlers (placeholder)
-      dropdown.addEventListener('click', (e)=>{
+      dropdown.addEventListener('click', async (e)=>{
         const item = e.target.closest('.dropdown-item');
         if(!item) return;
         const act = item.getAttribute('data-action');
@@ -131,9 +135,35 @@ class PostCard extends HTMLElement {
         } else if(act === 'delete-post') {
           // Owner OR admin can delete
           if(!isOwner && !isAdmin) return;
-          // Backend API: DELETE /api/posts/{postId}
-          console.log('Delete post placeholder for', postId);
-          // TODO: Remove post element from DOM after successful deletion
+          
+          // Confirm deletion
+          if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+            return;
+          }
+          
+          // Send delete request
+          const r = await fetch(`${window.URLROOT}/post/delete`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ post_id: postId})
+          });
+        
+          try {
+            const response = await r.json();
+            
+            if (r.ok && response.status === 'success') {
+              // Remove post element from DOM after successful deletion
+              const postElement = this.closest('.post-container') || this;
+              postElement.remove();
+            } else {
+              alert(`Error: ${response.message || 'Failed to delete post'}`);
+              console.error("Failed to delete post", response);
+            }
+          } catch (err) {
+            console.error("Error parsing delete response", err);
+          }
         } else if(act === 'edit-post') {
           // Only owner can edit
           if(!isOwner) return;

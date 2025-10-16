@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardStyles.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/profile_styles.css"> <!-- Import profile specific styles -->
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css"> <!-- Import main feed styles -->
+
 <?php $styles = ob_get_clean();?>
 <?php
     $notifications = [
@@ -22,7 +23,8 @@
             'time' => '3h ago',
             'userImg' => URLROOT . '/media/profile/bob.jpg'
         ]
-    ]
+    ];
+    $isOwner = isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] == $data['userDetails']->id;
     ?>
  <?php ob_start() ?>
     <?php
@@ -31,7 +33,7 @@
         ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
         ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'notifications' => $notifications],
         ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
-        ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile/watch/".$_SESSION['user_id'] . "'",'active' => true],
+        ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=".$_SESSION['user_id'] . "'",'active' => true],
         // icon for fundraiser
         ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
         //icon for post requests
@@ -46,11 +48,17 @@
 <?php ob_start()?>
         <div class="main-content">
             <!-- Profile Section -->
-            <div class="profile">
+            <?php $hasProfileActions = (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id); ?>
+            <div class="profile <?= $hasProfileActions ? 'has-actions' : 'no-actions' ?>">
                 <div class="profile-up-part">
-                    <div class="profile-edit-btn">
+                    <?php if ($isOwner){
+                        echo '
+                            <div class="profile-edit-btn">
                         <i class="fas fa-pencil-alt"></i>
                     </div>
+                        ';
+                    }?>
+                    
                 </div>
                 <div class="profile-down-part">
                     <div class="profile-image">
@@ -66,6 +74,28 @@
                         <div class="profile-bio">
                             <?= isset($data['userDetails']->bio) ? htmlspecialchars($data['userDetails']->bio) : 'Software Engineer at Google' ?>
                         </div>
+                        <div class="profile-footer-spacer"></div>
+                        <?php if (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id): ?>
+                        <div class="profile-actions">
+                            <button
+                                class="action-btn connect-btn"
+                                id="connectBtn"
+                                data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
+                                data-connected="0"
+                                title="Connect with <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
+                                <i class="fas fa-user-plus" aria-hidden="true"></i>
+                                <span>Connect</span>
+                            </button>
+                            <button
+                                class="action-btn message-btn"
+                                id="messageBtn"
+                                data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
+                                title="Message <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
+                                <i class="fas fa-envelope" aria-hidden="true"></i>
+                                <span>Message</span>
+                            </button>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -82,7 +112,11 @@
 
 
             <!-- Import newpost_section below navigation -->
-            <?php require APPROOT . '/views/inc/commponents/newpost_section.php'; ?>
+
+            <?php
+            if ($isOwner){
+                require APPROOT . '/views/inc/commponents/newpost_section.php';
+            }?>
 
             <!-- Posts Section - Using same structure as main feed -->
             <div class="feed" id="postsSection">
@@ -113,14 +147,18 @@
                 <!-- Work Experience Section -->
                 <div class="section-header">
                     <div class="section-title">Work Experience</div>
-                    <div class="section-actions">
+                    <?php if($isOwner){
+                        echo '
+                        <div class="section-actions">
                         <div class="section-action-btn" id="editWorkBtn" title="Edit Work Experience">
                             <i class="fas fa-pencil-alt"></i>
                         </div>
                         <div class="section-action-btn" id="addWorkBtn" title="Add Work Experience">
                             <i class="fas fa-plus"></i>
                         </div>
-                    </div>
+                        </div>';
+                        }?>
+                    
                 </div>
                 
                 <!-- Work Experience Cards -->
@@ -145,14 +183,17 @@
                             <div class="certificate-issuer"><?= htmlspecialchars($work['company']) ?></div>
                             <div class="certificate-date"><?= htmlspecialchars($work['period']) ?></div>
                         </div>
-                        <div class="certificate-actions">
+                        <?php if ($isOwner){
+                            echo '<div class="certificate-actions">
                             <div class="certificate-action-btn edit-btn" title="Edit Work Experience">
                                 <i class="fas fa-pencil-alt"></i>
                             </div>
                             <div class="certificate-action-btn delete-btn" title="Delete Work Experience">
                                 <i class="fas fa-trash-alt"></i>
                             </div>
-                        </div>
+                        </div>';
+                        }?>
+                        
                     </div>
                     <?php 
                         endforeach; 
@@ -165,7 +206,9 @@
                 <!-- Certificates Section with Action Buttons -->
                 <div class="section-header" style="margin-top:1.5em;">
                     <div class="section-title">Certificates</div>
-                    <div class="section-actions">
+                    <?php if($isOwner){
+                        echo '
+                            <div class="section-actions">
                         <div class="section-action-btn" id="editCertificatesBtn" title="Edit Certificates">
                             <i class="fas fa-pencil-alt"></i>
                         </div>
@@ -173,50 +216,53 @@
                             <i class="fas fa-plus"></i>
                         </div>
                     </div>
+                        ';
+
+                    }?>
+                    
                 </div>
                 
                 <!-- Certificate Cards -->
                 <div id="certificatesContainer">
-                    <?php 
-                    // Fetch certificates from $data['certificates'] (assumed to be passed from controller)
-                    $sampleCertificates = !empty($data['certificates']) ? $data['certificates'] : [];
-                    ?>
                     <?php
-                    if(!empty($sampleCertificates)):
-                        foreach($sampleCertificates as $cert):
-                            $date = new DateTime($cert->issued_date);
-                            $formattedDate = $date->format('F Y');
-                    ?>
-                    <div class="certificate-card" data-id="<?= $cert->id ?>">
-                        <div class="certificate-card-image">
-                            <i class="fas fa-certificate"></i>
-                        </div>
-                        <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($cert->name) ?></div>
-                            <div class="certificate-issuer"><?= htmlspecialchars($cert->issuer) ?></div>
-                            <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
-                        </div>
-                        <div class="certificate-actions">
-                            <div class="certificate-action-btn edit-btn" title="Edit Certificate">
-                                <i class="fas fa-pencil-alt"></i>
-                            </div>
-                            <div class="certificate-action-btn delete-btn" title="Delete Certificate">
-                                <i class="fas fa-trash-alt"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <?php 
-                        endforeach; 
-                    else: 
-                    ?>
-                    <div>No certificates added yet.</div>
-                    <?php endif; ?>
+if(!empty($data['certificates'])):
+    foreach($data['certificates'] as $cert):
+        $date = new DateTime($cert->issued_date);
+        $formattedDate = $date->format('F Y');
+?>
+<div class="certificate-card"
+     data-id="<?= htmlspecialchars($cert->id) ?>"
+     data-name="<?= htmlspecialchars($cert->name) ?>"
+     data-issuer="<?= htmlspecialchars($cert->issuer) ?>"
+     data-issued_date="<?= htmlspecialchars($cert->issued_date) ?>"
+     data-file="<?= htmlspecialchars($cert->certificate_file ?? '') ?>">
+    <div class="certificate-card-image"><i class="fas fa-certificate"></i></div>
+    <div class="certificate-details">
+        <div class="certificate-card-title"><?= htmlspecialchars($cert->name) ?></div>
+        <div class="certificate-issuer"><?= htmlspecialchars($cert->issuer) ?></div>
+        <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
+    </div>
+    <?php if($isOwner): ?>
+    <div class="certificate-actions">
+        <div class="certificate-action-btn edit-btn" title="Edit Certificate"><i class="fas fa-pencil-alt"></i></div>
+        <div class="certificate-action-btn delete-btn" title="Delete Certificate"><i class="fas fa-trash-alt"></i></div>
+    </div>
+    <?php endif; ?>
+</div>
+<?php
+    endforeach;
+else:
+?>
+<div>No certificates added yet.</div>
+<?php endif; ?>
                 </div>
 
                 <!-- Projects Section -->
                 <div class="section-header" style="margin-top:1.5em;">
                     <div class="section-title">Projects</div>
-                    <div class="section-actions">
+                    <?php if ($isOwner){
+                        echo '
+                            <div class="section-actions">
                         <div class="section-action-btn" id="editProjectsBtn" title="Edit Projects">
                             <i class="fas fa-pencil-alt"></i>
                         </div>
@@ -224,6 +270,10 @@
                             <i class="fas fa-plus"></i>
                         </div>
                     </div>
+                        ';
+
+                    }?>
+                    
                 </div>
                 
                 <div id="projectsContainer">
@@ -240,14 +290,17 @@
                                 <i class="fas fa-project-diagram"></i>
                             </div>
                             <div class="project-card-title"><?= htmlspecialchars($project['title']) ?></div>
-                            <div class="certificate-actions">
+                            <?php if($isOwner){
+                                echo '<div class="certificate-actions">
                                 <div class="certificate-action-btn edit-btn" title="Edit Project">
                                     <i class="fas fa-pencil-alt"></i>
                                 </div>
                                 <div class="certificate-action-btn delete-btn" title="Delete Project">
                                     <i class="fas fa-trash-alt"></i>
                                 </div>
-                            </div>
+                            </div>';
+                            }?>
+                            
                         </div>
                     <?php endforeach; else: ?>
                         <div>No projects added yet.</div>
@@ -258,44 +311,55 @@
 
 
 
-    <!-- Certificate Add Popup -->
-    <div id="certificateAddPopup" class="certificate-add-popup">
-        <div class="certificate-add">
-            <button class="close-popup" title="Close">
-                <i class="fas fa-times"></i>
-            </button>
-            
-            <div class="form-title">Add New Certificate</div>
+    <!-- Add/Edit Certificate Popup -->
+<div id="certificateAddPopup" class="certificate-add-popup" style="display:none;">
+    <div class="certificate-add">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title" id="certificateFormTitle">Add New Certificate</div>
 
-            <form method="post" action="<?php echo URLROOT; ?>/profile/addCertificate" enctype="multipart/form-data" class="certificate-form" id="certificateForm">
-                <div class="form-group">
-                    <label for="certificateName">Name</label>
-                    <input type="text" id="certificateName" name="certificate_name" placeholder="Certificate name" required>
+        <form method="post" action="<?= URLROOT; ?>/profile/addCertificate" enctype="multipart/form-data" class="certificate-form" id="certificateForm">
+            <input type="hidden" name="certificate_id" id="certificateId" value="">
+            <div class="form-group">
+                <label for="certificateName">Name</label>
+                <input type="text" id="certificateName" name="certificate_name" required>
+            </div>
+            <div class="form-group">
+                <label for="certificateIssuer">Issuing Organization</label>
+                <input type="text" id="certificateIssuer" name="certificate_issuer" required>
+            </div>
+            <div class="form-group">
+                <label for="certificateDate">Issue Date</label>
+                <input type="date" id="certificateDate" name="certificate_date" required>
+            </div>
+            <div class="form-group">
+                <label for="certificateFile">Upload Certificate (PDF)</label>
+                <div class="file-upload-container">
+                    <input type="file" id="certificateFile" name="certificate_file" accept=".pdf" style="display:none;">
+                    <button type="button" class="file-upload-btn" id="chooseFileBtn" onclick="document.getElementById('certificateFile').click()">Choose File</button>
+                    <span class="file-name" id="fileName" style="color:var(--text)">No file chosen</span>
+                    <input type="hidden" id="removeFileInput" name="remove_certificate_file" value="0">
+                    <!-- NEW: send existing filename to server so backend can decide to keep/replace -->
+                    <input type="hidden" id="existingFileInput" name="existing_certificate_file" value="">
                 </div>
-                
-                <div class="form-group">
-                    <label for="certificateIssuer">Issuing Organization</label>
-                    <input type="text" id="certificateIssuer" name="certificate_issuer" placeholder="Organization name" required>
+
+                <div id="currentFileContainer" style="margin-top:8px; display:none;">
+                    <span style="color:var(--muted)">Current file: </span>
+                    <a href="#" id="currentFileLink" target="_blank" style="color:var(--link);"></a>
+                    <!-- cut button to remove the current file and reveal the "Choose File" button -->
+                    <button type="button" id="cutFileBtn" class="file-cut-btn" title="Remove current file"
+                            style="margin-left:12px;background:none;border:none;color:var(--link);cursor:pointer;font-size:1rem;">
+                        &times;
+                    </button>
                 </div>
-                
-                <div class="form-group">
-                    <label for="certificateDate">Issue Date</label>
-                    <input type="date" id="certificateDate" name="certificate_date" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="certificateFile">Upload Certificate (PDF)</label>
-                    <div class="file-upload-container">
-                        <input type="file" id="certificateFile" name="certificate_file" accept=".pdf" style="display: none;">
-                        <button type="button" class="file-upload-btn" onclick="document.getElementById('certificateFile').click()">Choose File</button>
-                        <span class="file-name" id="fileName">No file chosen</span>
-                    </div>
-                </div>
-                
-                <button type="submit" class="save-btn">Save Certificate</button>
-            </form>
-        </div>
+            </div>
+
+            <div style="margin-top:12px;">
+                <button type="submit" class="save-btn" id="saveNewBtn">Save Certificate</button>
+                <button type="submit" class="save-btn" id="saveChangesBtn" style="display:none;">Save Changes</button>
+            </div>
+        </form>
     </div>
+</div>
 <?php $center_content = ob_get_clean();?>
 <?php ob_start() ?>
     <!-- Include the right sidebar component -->
@@ -413,6 +477,40 @@
             }
 
             // Add fundraising section to the existing right sidebar
+            // Connect button behavior (basic toggle for now)
+            const connectBtn = document.getElementById('connectBtn');
+            if (connectBtn) {
+                connectBtn.addEventListener('click', async function() {
+                    const targetId = this.getAttribute('data-user-id');
+                    const isConnected = this.getAttribute('data-connected') === '1';
+
+                    try {
+                        // TODO: Replace this with real follow/connect API call
+                        // const res = await fetch(`${window.URLROOT}/follow/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target_id: targetId }) });
+                        // const json = await res.json();
+                        // const connected = !!json.connected;
+                        const connected = !isConnected; // Simulate
+
+                        this.setAttribute('data-connected', connected ? '1' : '0');
+                        this.classList.toggle('active', connected);
+                        this.querySelector('span').textContent = connected ? 'Connected' : 'Connect';
+                        this.querySelector('i').className = connected ? 'fas fa-user-check' : 'fas fa-user-plus';
+                    } catch (e) {
+                        console.error(e);
+                        alert('Failed to update connection. Please try again.');
+                    }
+                });
+            }
+
+            // Message button behavior - navigate to messages (optionally with query param)
+            const messageBtn = document.getElementById('messageBtn');
+            if (messageBtn) {
+                messageBtn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-user-id');
+                    // If conversations by user supported, pass param; else go to messages home
+                    window.location.href = `${window.URLROOT}/messages?user=${encodeURIComponent(targetId)}`;
+                });
+            }
         });
 
         // Updated function to set up edit mode only for specific sections
@@ -477,5 +575,145 @@
             });
         }
     </script>
+    <script>
+        var URLROOT = '<?= URLROOT ?>';
+        const addCertificateBtn = document.getElementById('addCertificateBtn');
+        const certificatePopup = document.getElementById('certificateAddPopup');
+        const certificateForm = document.getElementById('certificateForm');
+        const saveNewBtn = document.getElementById('saveNewBtn');
+        const saveChangesBtn = document.getElementById('saveChangesBtn');
+        const certificateIdInput = document.getElementById('certificateId');
+        // currentFileContainer and currentFileLink are declared earlier in this file; do not redeclare them here.
+        // removeFileCheckbox may or may not exist; reference it safely
+        const removeFileCheckbox = document.getElementById('removeFileCheckbox');
+
+        if (addCertificateBtn) addCertificateBtn.addEventListener('click', openAddMode);
+
+        document.querySelectorAll('.certificate-card .edit-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const card = this.closest('.certificate-card');
+        const id = card.dataset.id || '';
+        const name = card.dataset.name || '';
+        const issuer = card.dataset.issuer || '';
+        const issued_date = card.dataset.issued_date || '';
+        const file = card.dataset.file || '';
+
+        certificateIdInput.value = id;
+        document.getElementById('certificateName').value = name;
+        document.getElementById('certificateIssuer').value = issuer;
+        document.getElementById('certificateDate').value = issued_date;
+
+        if (file) {
+            // show filename and real file URL; hide "Choose File" until user cuts it
+            currentFileContainer.style.display = 'block';
+            currentFileLink.href = URLROOT + '/storage/certificates/' + file;
+            currentFileLink.textContent = file;
+            removeFileInput.value = '0';
+            // set hidden existing file so server knows the old filename when form submitted
+            if (existingFileInput) existingFileInput.value = file;
+            if (chooseFileBtn) chooseFileBtn.style.display = 'none';
+        } else {
+            currentFileContainer.style.display = 'none';
+            currentFileLink.href = '#';
+            currentFileLink.textContent = '';
+            if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
+            removeFileInput.value = '0';
+            if (existingFileInput) existingFileInput.value = '';
+        }
+        certificateForm.action = URLROOT + '/profile/updateCertificate';
+        document.getElementById('certificateFormTitle').textContent = 'Edit Certificate';
+        saveNewBtn.style.display = 'none';
+        saveChangesBtn.style.display = 'inline-block';
+        certificatePopup.style.display = 'flex';
+    });
+});
+function openAddMode() {
+    certificateIdInput.value = '';
+    document.getElementById('certificateName').value = '';
+    document.getElementById('certificateIssuer').value = '';
+    document.getElementById('certificateDate').value = '';
+    document.getElementById('certificateFile').value = '';
+    currentFileContainer.style.display = 'none';
+    if (removeFileCheckbox) removeFileCheckbox.checked = false;
+    // ensure choose button visible in add mode
+    if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
+    removeFileInput.value = '0';
+
+    certificateForm.action = URLROOT + '/profile/addCertificate';
+    document.getElementById('certificateFormTitle').textContent = 'Add New Certificate';
+    saveNewBtn.style.display = 'inline-block';
+    saveChangesBtn.style.display = 'none';
+    certificatePopup.style.display = 'flex';
+}
+const closePopupBtn = document.querySelector('.certificate-add-popup .close-popup');
+if (closePopupBtn) closePopupBtn.addEventListener('click', function(){ certificatePopup.style.display = 'none'; });
+
+certificateForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    const fd = new FormData(this);
+    fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
+    .then(r => r.json()).then(json => {
+        if (json.success) window.location.reload();
+        else alert('Failed to save certificate');
+    }).catch(()=>alert('Error while saving certificate'));
+
+});
+
+// file removal ("cut") button behaviour
+const removeFileInput = document.getElementById('removeFileInput');
+const chooseFileBtn = document.getElementById('chooseFileBtn');
+const fileNameSpan = document.getElementById('fileName');
+const currentFileContainer = document.getElementById('currentFileContainer');
+const currentFileLink = document.getElementById('currentFileLink');
+const certificateFileInput = document.getElementById('certificateFile');
+const cutFileBtn = document.getElementById('cutFileBtn');
+
+if (cutFileBtn) {
+    cutFileBtn.addEventListener('click', function(){
+        // mark remove flag for server, hide current file display and show choose button
+        removeFileInput.value = '1';
+        currentFileContainer.style.display = 'none';
+        if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
+        fileNameSpan.textContent = 'No file chosen';
+        // clear file input
+        if (certificateFileInput) certificateFileInput.value = '';
+        // clear existing-filename so backend knows user removed it
+        if (existingFileInput) existingFileInput.value = '';
+    });
+}
+
+if (certificateFileInput) {
+    certificateFileInput.addEventListener('change', function() {
+        const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
+        fileNameSpan.textContent = fileName;
+        if (fileName !== 'No file chosen') {
+            // a newly selected file replaces the old one; ensure remove flag is unset
+            removeFileInput.value = '0';
+            // clear existing-file indicator (new file will replace)
+            if (existingFileInput) existingFileInput.value = '';
+            // when a new file is selected hide the current-file display (if any)
+            if (currentFileContainer) currentFileContainer.style.display = 'none';
+            // keep choose button visible (the user is in file-choose flow)
+            if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
+        }
+    });
+}
+
+// when opening edit mode, populate current file and ensure choose button shown/hidden appropriately
+function showCurrentFile(url, filename){
+    if (!filename) {
+        currentFileContainer.style.display = 'none';
+        if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
+        return;
+    }
+    currentFileLink.href = url;
+    currentFileLink.textContent = filename;
+    removeFileInput.value = '0';
+    currentFileContainer.style.display = 'inline-block';
+    if (chooseFileBtn) chooseFileBtn.style.display = 'none';
+    // chooseFileBtn.style.display = 'none';
+}
+</script>
+
 <?php $scripts = ob_get_clean();?>
 <?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>

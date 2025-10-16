@@ -64,7 +64,49 @@ class M_Profile{
             }
             throw $e; // Different error, rethrow
         }
+}
+// ...existing code...
+
+    /**
+     * Update certificate record.
+     * @return bool
+     */
+    public function updateCertificate($user_id, $cert_id, $name, $issuer, $issued_date, $certificate_file = null, $remove_file = false) {
+        // fetch existing record
+        $this->db->query('SELECT certificate_file FROM certificates WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $cert_id);
+        $this->db->bind(':uid', $user_id);
+        $existing = $this->db->single();
+
+        if ($certificate_file !== null) {
+            $this->db->query('UPDATE certificates SET name = :name, issuer = :issuer, issued_date = :issued_date, certificate_file = :file WHERE id = :id AND user_id = :uid');
+            $this->db->bind(':file', $certificate_file);
+        } elseif ($remove_file) {
+            $this->db->query('UPDATE certificates SET name = :name, issuer = :issuer, issued_date = :issued_date, certificate_file = NULL WHERE id = :id AND user_id = :uid');
+        } else {
+            $this->db->query('UPDATE certificates SET name = :name, issuer = :issuer, issued_date = :issued_date WHERE id = :id AND user_id = :uid');
+        }
+
+        $this->db->bind(':name', $name);
+        $this->db->bind(':issuer', $issuer);
+        $this->db->bind(':issued_date', $issued_date);
+        $this->db->bind(':id', $cert_id);
+        $this->db->bind(':uid', $user_id);
+
+        $ok = $this->db->execute();
+
+        if ($ok && $existing) {
+            $oldFile = $existing->certificate_file ?? null;
+            if ($oldFile && ($certificate_file !== null || $remove_file)) {
+                $path = APPROOT . '/storage/certificates/' . $oldFile;
+                if (is_file($path)) @unlink($path);
+            }
+        }
+
+        return (bool)$ok;
     }
+
+// ...existing code...
 
 // ...existing code...
 

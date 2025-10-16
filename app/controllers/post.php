@@ -205,12 +205,66 @@ class Post extends Controller
     }
 
     public function admin_delete($id) {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
             http_response_code(403); echo 'Forbidden'; return;
         }
         $ok = $this->m->adminDeletePost($id);
         header('Content-Type: application/json');
         echo json_encode(['ok' => $ok]);
     }
-}
 
+    // Delete post by owner or admin
+    public function delete(){
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE'){
+            http_response_code(405);
+            return;
+        }
+        
+        $data = json_decode(file_get_contents('php://input'), true);
+        $post_id = $data['post_id'] ?? null;
+        // post_user_id is client-provided; do not trust it
+        
+        // Validate post ID
+        if (!is_numeric($post_id) || (int)$post_id <= 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Invalid post ID']);
+            return;
+        }
+
+        $post_id = (int)$post_id;
+        $post = $this->m->getPostById($post_id);
+
+        if (!$post) {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'Post not found']);
+            return;
+        }
+
+        // Allow only admins or the actual post owner
+        $isAdmin = (($_SESSION['user_role'] ?? '') === 'admin');
+        $isOwner = ($post->user_id == ($_SESSION['user_id'] ?? null));
+
+        if ($isAdmin || $isOwner) {
+            $result = $this->m->adminDeletePost($post_id);
+            header('Content-Type: application/json');
+            if ($result) {
+                echo json_encode(['status' => 'success', 'message' => 'Post deleted successfully']);
+                // delete the post pic if exists
+                // Note: Model also attempts to remove the image. This is a safety net.
+                if (isset($post->image) && !empty($post->image)) {
+                    $imgFile = basename($post->image); // sanitize
+                    $imgPath = APPROOT . '/storage/posts/' . $imgFile;
+                    if (is_file($imgPath)) {
+                        @unlink($imgPath);
+                    }
+                }
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Failed to delete post']);
+            }
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'message' => 'You can only delete your own posts or you have to be an admin']);
+            return;
+        }
+    }
+}
