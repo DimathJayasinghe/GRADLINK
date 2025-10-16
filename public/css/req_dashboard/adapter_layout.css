@@ -1,0 +1,173 @@
+/* CSS styles to help the request dashboard layout adapter work with the three-column mini layout */
+
+/* Dashboard-specific styling for the three-column layout */
+.dashboard-categories a {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Ensure content in right panel is properly styled */
+.template-right {
+    padding: 20px;
+    background-color: var(--bg);
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+.template-right h1,
+.template-right h2 {
+    color: var(--text);
+    margin-bottom: 1.5rem;
+}
+
+/* Fix for fundraising request form to match post request form */
+.template-right .formbody {
+    padding: 0;
+    width: 100%;
+}
+
+.template-right .signup-container {
+    max-width: 800px;
+    padding: 0;
+    margin: 0 auto;
+}
+
+.template-right .form-page {
+    display: none;
+}
+
+.template-right .form-page.active {
+    display: block;
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Match post request form styling */
+.template-right .title-section h1 {
+    color: #9ed4dc;
+    font-size: 2.2rem;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.template-right .form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.template-right .form-group {
+    width: 100%;
+}
+
+.template-right .form-label,
+.template-right label.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #e0e0e0;
+}
+
+.template-right .form-control,
+.template-right input.form-control,
+.template-right select.form-control,
+.template-right textarea.form-control {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: #1e1e1e;
+    color: #e0e0e0;
+    font-size: 1rem;
+}
+
+.template-right .progress-container {
+    max-width: 100%;
+    margin-bottom: 30px;
+}
+
+.template-right .progress-bar {
+    background-color: rgba(158, 212, 220, 0.1);
+    border-radius: 8px;
+}
+
+/* Style the form elements consistently */
+.template-right input, 
+.template-right select, 
+.template-right textarea {
+    background-color: var(--input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+}
+
+.template-right button,
+.template-right .next-btn,
+.template-right .form-buttons button {
+    background-color: #9ed4dc;
+    color: #121212;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    margin-top: 24px;
+    font-size: 1rem;
+}
+
+.template-right button:hover,
+.template-right .next-btn:hover,
+.template-right .form-buttons button:hover {
+    opacity: 0.9;
+}
+
+/* Style for form button container */
+.template-right .form-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    gap: 15px;
+}
+
+/* Make cards consistent */
+.template-right .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Add responsive adjustments */
+@media (max-width: 992px) {
+    .template-left {
+        width: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .three-column-layout {
+        flex-direction: column;
+    }
+    
+    .template-left {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+    
+    .template-right {
+        width: 100%;
+    }
+}
