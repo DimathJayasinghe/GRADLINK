@@ -106,6 +106,30 @@ class M_Profile{
         return (bool)$ok;
     }
 
+    public function deleteCertificate($user_id, $cert_id) {
+        // fetch existing record
+        $this->db->query('SELECT certificate_file FROM certificates WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $cert_id);
+        $this->db->bind(':uid', $user_id);
+        $existing = $this->db->single();
+
+        // delete record
+        $this->db->query('DELETE FROM certificates WHERE id = :id AND user_id = :uid');
+        $this->db->bind(':id', $cert_id);
+        $this->db->bind(':uid', $user_id);
+        $ok = $this->db->execute();
+
+        if ($ok && $existing) {
+            $oldFile = $existing->certificate_file ?? null;
+            if ($oldFile) {
+                $path = APPROOT . '/storage/certificates/' . $oldFile;
+                if (is_file($path)) @unlink($path);
+            }
+        }
+
+        return (bool)$ok;
+    }
+
 // ...existing code...
 
 // ...existing code...

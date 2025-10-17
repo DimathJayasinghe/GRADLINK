@@ -395,6 +395,21 @@ else:
         </div>
     </div>
 
+    <!-- Add Delete Confirmation Popup (uses same styles as certificate-add-popup) -->
+    <div id="deleteCertificatePopup" class="certificate-add-popup" style="display:none;">
+        <div class="certificate-add">
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+            <div class="form-title">Delete Certificate</div>
+            <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
+                <p>Are you sure you want to permanently delete this certificate? This action cannot be undone.</p>
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 20px;">
+                <button type="button" id="cancelDeleteCertBtn" class="save-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+                <button type="button" id="confirmDeleteCertBtn" class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
+            </div>
+        </div>
+    </div>
+
 <?php $center_content = ob_get_clean();?>
 <?php ob_start() ?>
     <!-- Include the right sidebar component -->
@@ -729,8 +744,15 @@ if (addCertificateForm) {
         const fd = new FormData(this);
         fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
         .then(r => r.json()).then(json => {
-            if (json.success) window.location.reload();
-            else alert('Failed to save certificate');
+            if (json.success) {
+                // show uploaded original filename if provided
+                if (json.original_name) {
+                    alert('Certificate uploaded: ' + json.original_name);
+                }
+                window.location.reload();
+            } else {
+                alert(json.error || 'Failed to save certificate');
+            }
         }).catch(()=>alert('Error while saving certificate'));
     });
 }
@@ -741,11 +763,87 @@ if (editCertificateForm) {
         const fd = new FormData(this);
         fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
         .then(r => r.json()).then(json => {
-            if (json.success) window.location.reload();
-            else alert('Failed to update certificate');
+            if (json.success) {
+                // if server returned original uploaded name, show it
+                if (json.original_name) {
+                    alert('Certificate updated. Uploaded file: ' + json.original_name);
+                } else if (json.file) {
+                    // no new upload, show stored filename
+                    alert('Certificate updated. File: ' + json.file);
+                }
+                window.location.reload();
+            } else {
+                alert(json.error || 'Failed to update certificate');
+            }
         }).catch(()=>alert('Error while updating certificate'));
     });
 }
+
+// New: delete-certificate popup logic
+(function(){
+    const deletePopup = document.getElementById('deleteCertificatePopup');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteCertBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteCertBtn');
+    let pendingDeleteCertId = null;
+    // open delete popup when any certificate-card delete-btn clicked
+    document.querySelectorAll('.certificate-card .delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e){
+            e.stopPropagation();
+            const card = this.closest('.certificate-card');
+            const id = card ? card.dataset.id : null;
+            if (!id) {
+                alert('Invalid certificate id');
+                return;
+            }
+            pendingDeleteCertId = id;
+            if (deletePopup) deletePopup.style.display = 'flex';
+        });
+    });
+
+    // close handlers (reuse close-popup buttons)
+    document.querySelectorAll('.certificate-add .close-popup').forEach(btn=>{
+        btn.addEventListener('click', function(){
+            const popup = this.closest('.certificate-add-popup');
+            if (popup) popup.style.display = 'none';
+        });
+    });
+
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', function(){
+            pendingDeleteCertId = null;
+            if (deletePopup) deletePopup.style.display = 'none';
+        });
+    }
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async function(){
+            if (!pendingDeleteCertId) return;
+            try {
+                const fd = new FormData();
+                fd.append('certificate_id', pendingDeleteCertId);
+                const res = await fetch(window.URLROOT + '/profile/deleteCertificate', {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'same-origin'
+                });
+                const json = await res.json();
+                if (json.success) {
+                    // remove card from DOM if present
+                    const card = document.querySelector('.certificate-card[data-id="'+pendingDeleteCertId+'"]');
+                    if (card) card.remove();
+                    // hide popup
+                    if (deletePopup) deletePopup.style.display = 'none';
+                    pendingDeleteCertId = null;
+                } else {
+                    alert(json.error || 'Failed to delete certificate');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error while deleting certificate');
+            }
+        });
+    }
+})();
     </script>
 <?php $scripts = ob_get_clean(); ?>
 <?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>
