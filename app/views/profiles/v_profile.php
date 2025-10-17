@@ -311,55 +311,90 @@ else:
 
 
 
-    <!-- Add/Edit Certificate Popup -->
-<div id="certificateAddPopup" class="certificate-add-popup" style="display:none;">
-    <div class="certificate-add">
-        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-        <div class="form-title" id="certificateFormTitle">Add New Certificate</div>
+    <!-- Add Certificate Popup (separate form) -->
+    <div id="addCertificatePopup" class="certificate-add-popup" style="display:none;">
+        <div class="certificate-add">
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+            <div class="form-title">Add New Certificate</div>
 
-        <form method="post" action="<?= URLROOT; ?>/profile/addCertificate" enctype="multipart/form-data" class="certificate-form" id="certificateForm">
-            <input type="hidden" name="certificate_id" id="certificateId" value="">
-            <div class="form-group">
-                <label for="certificateName">Name</label>
-                <input type="text" id="certificateName" name="certificate_name" required>
-            </div>
-            <div class="form-group">
-                <label for="certificateIssuer">Issuing Organization</label>
-                <input type="text" id="certificateIssuer" name="certificate_issuer" required>
-            </div>
-            <div class="form-group">
-                <label for="certificateDate">Issue Date</label>
-                <input type="date" id="certificateDate" name="certificate_date" required>
-            </div>
-            <div class="form-group">
-                <label for="certificateFile">Upload Certificate (PDF)</label>
-                <div class="file-upload-container">
-                    <input type="file" id="certificateFile" name="certificate_file" accept=".pdf" style="display:none;">
-                    <button type="button" class="file-upload-btn" id="chooseFileBtn" onclick="document.getElementById('certificateFile').click()">Choose File</button>
-                    <span class="file-name" id="fileName" style="color:var(--text)">No file chosen</span>
-                    <input type="hidden" id="removeFileInput" name="remove_certificate_file" value="0">
-                    <!-- NEW: send existing filename to server so backend can decide to keep/replace -->
-                    <input type="hidden" id="existingFileInput" name="existing_certificate_file" value="">
+            <form id="addCertificateForm" method="post" action="<?= URLROOT; ?>/profile/addCertificate" enctype="multipart/form-data" class="certificate-form">
+                <div class="form-group">
+                    <label for="certificateNameAdd">Name</label>
+                    <input type="text" id="certificateNameAdd" name="certificate_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="certificateIssuerAdd">Issuing Organization</label>
+                    <input type="text" id="certificateIssuerAdd" name="certificate_issuer" required>
+                </div>
+                <div class="form-group">
+                    <label for="certificateDateAdd">Issue Date</label>
+                    <input type="date" id="certificateDateAdd" name="certificate_date" required>
+                </div>
+                <div class="form-group">
+                    <label for="certificateFileAdd">Upload Certificate (PDF)</label>
+                    <div class="file-upload-container">
+                        <input type="file" id="certificateFileAdd" name="certificate_file" accept=".pdf" style="display:none;">
+                        <button type="button" class="file-upload-btn" id="chooseFileBtnAdd" onclick="document.getElementById('certificateFileAdd').click()">Choose File</button>
+                        <span class="file-name" id="fileNameAdd" style="color:var(--text)">No file chosen</span>
+                    </div>
                 </div>
 
-                <div id="currentFileContainer" style="margin-top:8px; display:none;">
-                    <span style="color:var(--muted)">Current file: </span>
-                    <a href="#" id="currentFileLink" target="_blank" style="color:var(--link);"></a>
-                    <!-- cut button to remove the current file and reveal the "Choose File" button -->
-                    <button type="button" id="cutFileBtn" class="file-cut-btn" title="Remove current file"
-                            style="margin-left:12px;background:none;border:none;color:var(--link);cursor:pointer;font-size:1rem;">
-                        &times;
-                    </button>
+                <div style="margin-top:12px;">
+                    <button type="submit" class="save-btn" id="saveNewBtnAdd">Save Certificate</button>
                 </div>
-            </div>
-
-            <div style="margin-top:12px;">
-                <button type="submit" class="save-btn" id="saveNewBtn">Save Certificate</button>
-                <button type="submit" class="save-btn" id="saveChangesBtn" style="display:none;">Save Changes</button>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
+
+    <!-- Edit Certificate Popup (separate form) -->
+    <div id="editCertificatePopup" class="certificate-add-popup" style="display:none;">
+        <div class="certificate-add">
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+            <div class="form-title" id="certificateFormTitleEdit">Edit Certificate</div>
+
+            <form id="editCertificateForm" method="post" action="<?= URLROOT; ?>/profile/updateCertificate" enctype="multipart/form-data" class="certificate-form">
+                <input type="hidden" name="certificate_id" id="certificateIdEdit" value="">
+                <div class="form-group">
+                    <label for="certificateNameEdit">Name</label>
+                    <input type="text" id="certificateNameEdit" name="certificate_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="certificateIssuerEdit">Issuing Organization</label>
+                    <input type="text" id="certificateIssuerEdit" name="certificate_issuer" required>
+                </div>
+                <div class="form-group">
+                    <label for="certificateDateEdit">Issue Date</label>
+                    <input type="date" id="certificateDateEdit" name="certificate_date" required>
+                </div>
+                <div class="form-group">
+                    
+                    <div class="file-upload-container" id="fileUploadContainerEdit">
+                        <label for="certificateFileEdit">Upload Certificate (PDF)</label>
+                        </br>
+                        <input type="file" id="certificateFileEdit" name="certificate_file" accept=".pdf" style="display:none;">
+                        <button type="button" class="file-upload-btn" id="chooseFileBtnEdit" onclick="document.getElementById('certificateFileEdit').click()">Choose File</button>
+                        <span class="file-name" id="fileNameEdit" style="color:var(--text)">No file chosen</span>
+                        <input type="hidden" id="removeFileInputEdit" name="remove_certificate_file" value="0">
+                        <input type="hidden" id="existingFileInputEdit" name="existing_certificate_file" value="">
+                    </div>
+                    
+                    <div id="currentFileContainerEdit" style="margin-top:8px; display:none;">
+                        <span style="color:var(--muted)">Current file: </span>
+                        <a href="#" id="currentFileLinkEdit" target="_blank" style="color:var(--link);"></a>
+                        <button type="button" id="cutFileBtnEdit" class="file-cut-btn" title="Remove current file"
+                                style="margin-left:12px;background:none;border:none;color:var(--link);cursor:pointer;font-size:1rem;">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-top:12px;">
+                    <button type="submit" class="save-btn" id="saveChangesBtnEdit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 <?php $center_content = ob_get_clean();?>
 <?php ob_start() ?>
     <!-- Include the right sidebar component -->
@@ -416,17 +451,18 @@ else:
             setupEditModeForSection('editCertificatesBtn', 'certificatesContainer', 'certificate-card');
             setupEditModeForSection('editProjectsBtn', 'projectsContainer', 'project-card');
             
-            // Open add certificate popup
-            const addCertificateBtn = document.getElementById('addCertificateBtn');
-            if (addCertificateBtn) {
-                addCertificateBtn.addEventListener('click', function() {
-                    document.getElementById('certificateAddPopup').style.display = 'flex';
-                });
-            }
-            
             // Setup card action buttons for all card types
             setupCardActionButtons('.certificate-card');
             setupCardActionButtons('.project-card');
+            
+            // Removed obsolete certificate handlers that referenced old IDs:
+            // - document.getElementById('certificateAddPopup')
+            // - document.getElementById('certificateForm')
+            // - document.getElementById('certificateFile')
+            // These selectors no longer exist and threw JS errors preventing the new handlers from executing.
+            //
+            // The new per-form handlers (addCertificatePopup / editCertificatePopup / addCertificateForm / editCertificateForm)
+            // defined later in this file handle add/update flows and should remain.
             
             // Close certificate add popup
             const closePopupBtn = document.querySelector('.certificate-add-popup .close-popup');
@@ -576,20 +612,49 @@ else:
         }
     </script>
     <script>
-        var URLROOT = '<?= URLROOT ?>';
-        const addCertificateBtn = document.getElementById('addCertificateBtn');
-        const certificatePopup = document.getElementById('certificateAddPopup');
-        const certificateForm = document.getElementById('certificateForm');
-        const saveNewBtn = document.getElementById('saveNewBtn');
-        const saveChangesBtn = document.getElementById('saveChangesBtn');
-        const certificateIdInput = document.getElementById('certificateId');
-        // currentFileContainer and currentFileLink are declared earlier in this file; do not redeclare them here.
-        // removeFileCheckbox may or may not exist; reference it safely
-        const removeFileCheckbox = document.getElementById('removeFileCheckbox');
+        // --- New: per-form element references ---
+const addCertificateBtn = document.getElementById('addCertificateBtn'); // existing in page
+const addCertificatePopup = document.getElementById('addCertificatePopup');
+const addCertificateForm = document.getElementById('addCertificateForm');
+const chooseFileBtnAdd = document.getElementById('chooseFileBtnAdd');
+const certificateFileAdd = document.getElementById('certificateFileAdd');
+const fileNameAdd = document.getElementById('fileNameAdd');
 
-        if (addCertificateBtn) addCertificateBtn.addEventListener('click', openAddMode);
+const editCertificatePopup = document.getElementById('editCertificatePopup');
+const editCertificateForm = document.getElementById('editCertificateForm');
+const certificateIdEdit = document.getElementById('certificateIdEdit');
+const chooseFileBtnEdit = document.getElementById('chooseFileBtnEdit');
+const certificateFileEdit = document.getElementById('certificateFileEdit');
+const fileNameEdit = document.getElementById('fileNameEdit');
+const currentFileContainerEdit = document.getElementById('currentFileContainerEdit');
+const currentFileLinkEdit = document.getElementById('currentFileLinkEdit');
+const cutFileBtnEdit = document.getElementById('cutFileBtnEdit');
+const removeFileInputEdit = document.getElementById('removeFileInputEdit');
+const existingFileInputEdit = document.getElementById('existingFileInputEdit');
+// NEW: reference to the upload container so we can hide/show it
+const fileUploadContainerEdit = document.getElementById('fileUploadContainerEdit');
 
-        document.querySelectorAll('.certificate-card .edit-btn').forEach(btn => {
+// close buttons for both popups (reuse existing selector)
+document.querySelectorAll('.certificate-add .close-popup').forEach(btn=>{
+    btn.addEventListener('click', function(){
+        const popup = this.closest('.certificate-add-popup');
+        if (popup) popup.style.display = 'none';
+    });
+});
+
+// Open add popup
+if (addCertificateBtn && addCertificatePopup) {
+    addCertificateBtn.addEventListener('click', function(){
+        // clear add form
+        addCertificateForm.reset();
+        fileNameAdd.textContent = 'No file chosen';
+        if (chooseFileBtnAdd) chooseFileBtnAdd.style.display = 'inline-block';
+        addCertificatePopup.style.display = 'flex';
+    });
+}
+
+// Edit button behavior: populate edit form and open edit popup
+document.querySelectorAll('.certificate-card .edit-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const card = this.closest('.certificate-card');
         const id = card.dataset.id || '';
@@ -598,122 +663,89 @@ else:
         const issued_date = card.dataset.issued_date || '';
         const file = card.dataset.file || '';
 
-        certificateIdInput.value = id;
-        document.getElementById('certificateName').value = name;
-        document.getElementById('certificateIssuer').value = issuer;
-        document.getElementById('certificateDate').value = issued_date;
+        certificateIdEdit.value = id;
+        document.getElementById('certificateNameEdit').value = name;
+        document.getElementById('certificateIssuerEdit').value = issuer;
+        document.getElementById('certificateDateEdit').value = issued_date || '';
 
         if (file) {
-            // show filename and real file URL; hide "Choose File" until user cuts it
-            currentFileContainer.style.display = 'block';
-            currentFileLink.href = URLROOT + '/storage/certificates/' + file;
-            currentFileLink.textContent = file;
-            removeFileInput.value = '0';
-            // set hidden existing file so server knows the old filename when form submitted
-            if (existingFileInput) existingFileInput.value = file;
-            if (chooseFileBtn) chooseFileBtn.style.display = 'none';
+            // show current-file area; hide upload area (per requirement #1)
+            currentFileContainerEdit.style.display = 'block';
+            currentFileLinkEdit.href = URLROOT + '/storage/certificates/' + file;
+            currentFileLinkEdit.textContent = file;
+            removeFileInputEdit.value = '0';
+            if (existingFileInputEdit) existingFileInputEdit.value = file;
+            if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'none';
+            fileNameEdit.textContent = 'No file chosen';
         } else {
-            currentFileContainer.style.display = 'none';
-            currentFileLink.href = '#';
-            currentFileLink.textContent = '';
-            if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
-            removeFileInput.value = '0';
-            if (existingFileInput) existingFileInput.value = '';
+            // no existing file: hide current-file area and show upload area
+            currentFileContainerEdit.style.display = 'none';
+            currentFileLinkEdit.href = '#';
+            currentFileLinkEdit.textContent = '';
+            if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'block';
+            removeFileInputEdit.value = '0';
+            if (existingFileInputEdit) existingFileInputEdit.value = '';
+            fileNameEdit.textContent = 'No file chosen';
         }
-        certificateForm.action = URLROOT + '/profile/updateCertificate';
-        document.getElementById('certificateFormTitle').textContent = 'Edit Certificate';
-        saveNewBtn.style.display = 'none';
-        saveChangesBtn.style.display = 'inline-block';
-        certificatePopup.style.display = 'flex';
+
+        editCertificatePopup.style.display = 'flex';
     });
 });
-function openAddMode() {
-    certificateIdInput.value = '';
-    document.getElementById('certificateName').value = '';
-    document.getElementById('certificateIssuer').value = '';
-    document.getElementById('certificateDate').value = '';
-    document.getElementById('certificateFile').value = '';
-    currentFileContainer.style.display = 'none';
-    if (removeFileCheckbox) removeFileCheckbox.checked = false;
-    // ensure choose button visible in add mode
-    if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
-    removeFileInput.value = '0';
 
-    certificateForm.action = URLROOT + '/profile/addCertificate';
-    document.getElementById('certificateFormTitle').textContent = 'Add New Certificate';
-    saveNewBtn.style.display = 'inline-block';
-    saveChangesBtn.style.display = 'none';
-    certificatePopup.style.display = 'flex';
-}
-const closePopupBtn = document.querySelector('.certificate-add-popup .close-popup');
-if (closePopupBtn) closePopupBtn.addEventListener('click', function(){ certificatePopup.style.display = 'none'; });
-
-certificateForm.addEventListener('submit', function(e){
-    e.preventDefault();
-    const fd = new FormData(this);
-    fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
-    .then(r => r.json()).then(json => {
-        if (json.success) window.location.reload();
-        else alert('Failed to save certificate');
-    }).catch(()=>alert('Error while saving certificate'));
-
-});
-
-// file removal ("cut") button behaviour
-const removeFileInput = document.getElementById('removeFileInput');
-const chooseFileBtn = document.getElementById('chooseFileBtn');
-const fileNameSpan = document.getElementById('fileName');
-const currentFileContainer = document.getElementById('currentFileContainer');
-const currentFileLink = document.getElementById('currentFileLink');
-const certificateFileInput = document.getElementById('certificateFile');
-const cutFileBtn = document.getElementById('cutFileBtn');
-
-if (cutFileBtn) {
-    cutFileBtn.addEventListener('click', function(){
-        // mark remove flag for server, hide current file display and show choose button
-        removeFileInput.value = '1';
-        currentFileContainer.style.display = 'none';
-        if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
-        fileNameSpan.textContent = 'No file chosen';
-        // clear file input
-        if (certificateFileInput) certificateFileInput.value = '';
-        // clear existing-filename so backend knows user removed it
-        if (existingFileInput) existingFileInput.value = '';
+// Cut (X) behavior in edit popup: reveal upload container, mark remove flag
+if (cutFileBtnEdit) {
+    cutFileBtnEdit.addEventListener('click', function(){
+        removeFileInputEdit.value = '1';
+        currentFileContainerEdit.style.display = 'none';
+        if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'block';
+        if (chooseFileBtnEdit) chooseFileBtnEdit.style.display = 'inline-block';
+        fileNameEdit.textContent = 'No file chosen';
+        if (certificateFileEdit) certificateFileEdit.value = '';
+        if (existingFileInputEdit) existingFileInputEdit.value = '';
     });
 }
 
-if (certificateFileInput) {
-    certificateFileInput.addEventListener('change', function() {
-        const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
-        fileNameSpan.textContent = fileName;
-        if (fileName !== 'No file chosen') {
-            // a newly selected file replaces the old one; ensure remove flag is unset
-            removeFileInput.value = '0';
-            // clear existing-file indicator (new file will replace)
-            if (existingFileInput) existingFileInput.value = '';
-            // when a new file is selected hide the current-file display (if any)
-            if (currentFileContainer) currentFileContainer.style.display = 'none';
-            // keep choose button visible (the user is in file-choose flow)
-            if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
+// File selection handler for edit form
+if (certificateFileEdit) {
+    certificateFileEdit.addEventListener('change', function() {
+        const f = this.files[0];
+        fileNameEdit.textContent = f ? f.name : 'No file chosen';
+        if (f) {
+            // new file will replace existing -> unset remove flag and clear existing filename
+            removeFileInputEdit.value = '0';
+            if (existingFileInputEdit) existingFileInputEdit.value = '';
+            // hide current-file display (we're in upload-flow)
+            if (currentFileContainerEdit) currentFileContainerEdit.style.display = 'none';
+            // keep upload container visible so filename shows
+            if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'block';
         }
     });
 }
 
-// when opening edit mode, populate current file and ensure choose button shown/hidden appropriately
-function showCurrentFile(url, filename){
-    if (!filename) {
-        currentFileContainer.style.display = 'none';
-        if (chooseFileBtn) chooseFileBtn.style.display = 'inline-block';
-        return;
-    }
-    currentFileLink.href = url;
-    currentFileLink.textContent = filename;
-    removeFileInput.value = '0';
-    currentFileContainer.style.display = 'inline-block';
-    if (chooseFileBtn) chooseFileBtn.style.display = 'none';
-    // chooseFileBtn.style.display = 'none';
+// Submit handlers (use fetch like before, per form)
+if (addCertificateForm) {
+    addCertificateForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const fd = new FormData(this);
+        fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
+        .then(r => r.json()).then(json => {
+            if (json.success) window.location.reload();
+            else alert('Failed to save certificate');
+        }).catch(()=>alert('Error while saving certificate'));
+    });
 }
-</script>
 
-<?php $scripts = ob_get_clean();?>
+if (editCertificateForm) {
+    editCertificateForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const fd = new FormData(this);
+        fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
+        .then(r => r.json()).then(json => {
+            if (json.success) window.location.reload();
+            else alert('Failed to update certificate');
+        }).catch(()=>alert('Error while updating certificate'));
+    });
+}
+    </script>
+<?php $scripts = ob_get_clean(); ?>
 <?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>

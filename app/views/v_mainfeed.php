@@ -18,7 +18,7 @@
             'time' => '3h ago',
             'userImg' => URLROOT . '/media/profile/bob.jpg'
         ]
-    ]
+    ];
     ?>
 
     <?php ob_start() ?>
