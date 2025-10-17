@@ -166,7 +166,7 @@ body {
 }
 
 .card {
-    background-color: var(--card);
+    /* background-color: var(--card); */
     border-radius: 15px;
     padding: 15px;
     margin-bottom: 15px;
