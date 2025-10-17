@@ -9,27 +9,27 @@
         <div class="event">
             <div class="event-category"><i class="fas fa-users"></i><span>IEEE CS Chapter</span></div>
             <div class="event-name">AI Workshop</div>
-            <div class="sidebar-event-date">
-                <span class="event-date"><i class="far fa-calendar-alt"></i><span>18 Aug</span></span>
-                <span class="event-time"><i class="far fa-clock"></i><span>10:00 AM</span></span>
+            <div class="sidebar-datetime">
+                <span class="sidebar-date"><i class="far fa-calendar-alt"></i><span>18 Aug</span></span>
+                <span class="sidebar-time"><i class="far fa-clock"></i><span>10:00 AM</span></span>
                 <span class="event-location">@S401</span>
             </div>
         </div>
         <div class="event">
             <div class="event-category"><i class="fas fa-university"></i><span>UCSC Alumni</span></div>
             <div class="event-name">Tech Talk: Scaling Systems</div>
-            <div class="sidebar-event-date">
-                <span class="event-date"><i class="far fa-calendar-alt"></i><span>22 Aug</span></span>
-                <span class="event-time"><i class="far fa-clock"></i><span>05:30 PM</span></span>
+            <div class="sidebar-datetime">
+                <span class="sidebar-date"><i class="far fa-calendar-alt"></i><span>22 Aug</span></span>
+                <span class="sidebar-time"><i class="far fa-clock"></i><span>05:30 PM</span></span>
                 <span class="event-location">Online</span>
             </div>
         </div>
         <div class="event">
             <div class="event-category"><i class="fas fa-rocket"></i><span>Startup Club</span></div>
             <div class="event-name">Founder Fireside</div>
-            <div class="sidebar-event-date">
-                <span class="event-date"><i class="far fa-calendar-alt"></i><span>25 Aug</span></span>
-                <span class="event-time"><i class="far fa-clock"></i><span>06:00 PM</span></span>
+            <div class="sidebar-datetime">
+                <span class="sidebar-date"><i class="far fa-calendar-alt"></i><span>25 Aug</span></span>
+                <span class="sidebar-time"><i class="far fa-clock"></i><span>06:00 PM</span></span>
                 <span class="event-location">@W104</span>
             </div>
         </div>
