@@ -1,7 +1,7 @@
 /* Right Sidebar Styles */
 .right-sidebar {
-    width: 300px; /* Reduced from 350px */
-    padding: 0 15px; /* Reduced padding */
+    width: 100%; /* Let layout column control width */
+    padding: 10px 12px 12px; /* Unified headroom across pages */
     font-family: 'Poppins', sans-serif;
 }
 
@@ -52,8 +52,8 @@
     opacity: 0.8;
 }
 
-.card {
-    background-color: var(--card);
+.right-sidebar .card {
+    /* background-color: var(--card); */
     border-radius: 12px; /* Slightly smaller radius */
     margin-bottom: 14px; /* Reduced spacing */
     overflow: hidden;
@@ -62,13 +62,13 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.card:hover {
+.right-sidebar .card:hover {
     transform: translateY(-2px);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
-.card-title {
-    font-size: 18px; /* Smaller font */
+.right-sidebar .card-title {
+    font-size: 17px; /* Align with mainfeed section titles */
     font-weight: 700;
     padding: 12px 15px; /* Reduced padding */
     border-bottom: 1px solid var(--border);
@@ -78,7 +78,7 @@
     justify-content: space-between;
 }
 
-.card-title::after {
+.right-sidebar .card-title::after {
     content: '';
     display: block;
     width: 30px;
@@ -88,18 +88,18 @@
     margin-top: 3px;
 }
 
-.event {
+.right-sidebar .event {
     padding: 12px 15px; /* Reduced padding */
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-.event:hover {
+.right-sidebar .event:hover {
     background-color: rgba(15, 21, 24, 0.3);
 }
 
-.event-category {
+.right-sidebar .event-category {
     font-size: 12px; /* Smaller font */
     color: var(--muted);
     display: flex;
@@ -107,19 +107,19 @@
     gap: 4px;
 }
 
-.event-category i {
+.right-sidebar .event-category i {
     font-size: 11px;
     color: var(--link);
 }
 
-.event-name {
-    font-size: 14px; /* Smaller font */
+.right-sidebar .event-name {
+    font-size: 14px; /* Match feed card titles */
     font-weight: 600;
     margin: 4px 0; /* Less spacing */
     color: var(--text);
 }
 
-.sidebar-event-date {
+.right-sidebar .sidebar-datetime {
     font-size: 12px; /* Smaller font */
     color: var(--muted);
     display: flex;
@@ -127,26 +127,46 @@
     gap: 4px;
 }
 
-.sidebar-event-date i {
+.right-sidebar .sidebar-datetime i {
     font-size: 11px;
 }
 
-.show-more {
+.right-sidebar .sidebar-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.right-sidebar .event-location {
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.right-sidebar .sidebar-time {
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid var(--border);
+}
+
+.right-sidebar .show-more {
     color: var(--link);
     padding: 10px 15px; /* Reduced padding */
-    font-size: 13px; /* Smaller font */
+    font-size: 13px; /* Consistent small accent text */
     text-align: center;
     cursor: pointer;
     transition: background-color 0.2s ease;
     font-weight: 500;
 }
 
-.show-more:hover {
+.right-sidebar .show-more:hover {
     background-color: rgba(158, 212, 220, 0.1);
     text-decoration: underline;
 }
 
-.follow-card {
+.right-sidebar .follow-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -156,33 +176,49 @@
     transition: background-color 0.2s ease;
 }
 
-.follow-card:hover {
+.right-sidebar .follow-card:hover {
     background-color: rgba(15, 21, 24, 0.3);
 }
 
-.follow-info {
+.right-sidebar .follow-info {
     display: flex;
     align-items: center;
 }
 
-.follow-profile-img {
-    width: 40px; /* Smaller size */
-    height: 40px;
+/* Fallback: any img within right-sidebar that acts like an avatar */
+.right-sidebar img.avatar,
+.right-sidebar .event .event_icon img,
+.right-sidebar .follow-info img:not(.non-avatar) {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     border-radius: 50%;
     object-fit: cover;
+    object-position: center;
+}
+
+.right-sidebar .follow-profile-img {
+    width: 36px; /* Consistent small avatar */
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
     border: 2px solid transparent;
     transition: border-color 0.2s ease;
 }
 
-.follow-card:hover .follow-profile-img {
+.right-sidebar .follow-card:hover .follow-profile-img {
     border-color: var(--link);
 }
 
-.follow-details {
+.right-sidebar .follow-details {
     margin-left: 8px; /* Less spacing */
 }
 
-.follow-name {
+.right-sidebar .follow-name {
     font-weight: 600;
     font-size: 14px; /* Smaller font */
     color: var(--text);
@@ -191,17 +227,17 @@
     gap: 3px;
 }
 
-.follow-name .verified {
+.right-sidebar .follow-name .verified {
     color: var(--link);
     font-size: 11px;
 }
 
-.follow-handle {
+.right-sidebar .follow-handle {
     color: var(--muted);
     font-size: 12px; /* Smaller font */
 }
 
-.follow-btn {
+.right-sidebar .follow-btn {
     background-color: var(--text);
     color: var(--bg);
     border: none;
@@ -213,21 +249,28 @@
     transition: all 0.2s ease;
 }
 
-.follow-btn:hover {
+.right-sidebar .follow-btn:hover {
     background-color: var(--link);
     transform: translateY(-1px);
     box-shadow: 0 2px 5px rgba(158, 212, 220, 0.3);
 }
 
+.right-sidebar .sidebar-event-date {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.right-sidebar .sidebar-event-date i {
+    font-size: 11px;
+    color: var(--link);
+}
+
 /* Responsive styles for right sidebar */
 @media (max-width: 1200px) {
-    .right-sidebar {
-        width: 280px; /* Even smaller on medium screens */
-    }
-    
-    .card-title {
-        font-size: 16px;
-    }
+    .card-title { font-size: 16px; }
 }
 
 @media (max-width: 1024px) {

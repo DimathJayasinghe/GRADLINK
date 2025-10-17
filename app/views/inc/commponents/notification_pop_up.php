@@ -3,7 +3,7 @@
     <div class="notification-modal-content">
         <div class="notification-modal-header">
             <h3>Notifications</h3>
-            <button class="modal-close-btn" onclick="NotificationModal()" id="closeNotificationModal"><i class="fas fa-times"></i></button>
+            <button class="modal-close-btn"  id="closeNotificationModal"><i class="fas fa-times" style="margin-right: 0px;" ></i></button>
         </div>
 
         <div class="notification-list" id="notificationList">
