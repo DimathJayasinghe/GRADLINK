@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    padding: 15px;
+    padding: 0 0 20px; /* Match padding-bottom with other pages */
 }
 
 /* Search section styling */
@@ -12,7 +12,7 @@
     position: sticky;
     top: 0;
     background-color: var(--bg);
-    padding: 12px 0;
+    padding: 12px 15px; /* match internal spacing to other pages */
     z-index: 10;
     border-bottom: 1px solid var(--border);
 }
@@ -112,6 +112,7 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    padding: 0 15px 15px; /* balanced inner padding without shifting layout */
 }
 
 .results-section {
@@ -337,7 +338,7 @@
 .event-location {
     color: var(--muted);
     font-size: 13px;
-    margin-bottom: 10px;
+    /* margin-bottom: 10px; */
     display: flex;
     align-items: center;
     gap: 5px;
