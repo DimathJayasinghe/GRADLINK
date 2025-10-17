@@ -1,7 +1,7 @@
 /* Right Sidebar Styles */
 .right-sidebar {
-    width: 300px; /* Reduced from 350px */
-    padding: 0 15px; /* Reduced padding */
+    width: 100%; /* Let layout column control width */
+    padding: 0 12px; /* Slight inner padding */
     font-family: 'Poppins', sans-serif;
 }
 
@@ -131,6 +131,19 @@
     font-size: 11px;
 }
 
+.event-location {
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid var(--border);
+    color: var(--muted);
+}
+
+.event-time {
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid var(--border);
+}
+
 .show-more {
     color: var(--link);
     padding: 10px 15px; /* Reduced padding */
@@ -165,11 +178,27 @@
     align-items: center;
 }
 
-.follow-profile-img {
-    width: 40px; /* Smaller size */
-    height: 40px;
+/* Fallback: any img within right-sidebar that acts like an avatar */
+.right-sidebar img.avatar,
+.right-sidebar .event .event_icon img,
+.right-sidebar .follow-info img:not(.non-avatar) {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     border-radius: 50%;
     object-fit: cover;
+    object-position: center;
+}
+
+.follow-profile-img {
+    width: 36px; /* Consistent small avatar */
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
     border: 2px solid transparent;
     transition: border-color 0.2s ease;
 }
@@ -221,13 +250,7 @@
 
 /* Responsive styles for right sidebar */
 @media (max-width: 1200px) {
-    .right-sidebar {
-        width: 280px; /* Even smaller on medium screens */
-    }
-    
-    .card-title {
-        font-size: 16px;
-    }
+    .card-title { font-size: 16px; }
 }
 
 @media (max-width: 1024px) {

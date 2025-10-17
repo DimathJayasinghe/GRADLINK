@@ -26,6 +26,8 @@
     .template-right {
         width: 325px;
         overflow-y: auto;
+        background-color: var(--bg);
+        padding: 8px 8px 12px;
     }
     
     /* Responsive adjustments */
