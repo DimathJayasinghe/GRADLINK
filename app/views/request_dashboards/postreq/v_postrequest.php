@@ -3,9 +3,9 @@
     <style>
         h1 {
             color: #9ed4dc;
-            font-size: 2.2rem;
+            font-size: 24px;
             margin-bottom: 24px;
-            text-align: center;
+            text-align: left;
         }
         .event-request-form .form-section {
             display: flex;
@@ -81,15 +81,15 @@
 
 <?php
     $sidebar_left = [
-        ['label'=>'View All Post Requests', 'url'=>'/postrequest/all','active'=>false ,'icon'=>'list'],
-        ['label'=>'Create Post Request', 'url'=>'/postrequest/request','active'=>true ,'icon'=>'plus-circle'],
+        ['label'=>'My Event Requests', 'url'=>'/postrequest/all','active'=>false ,'icon'=>'user'],
+        ['label'=>'Create Event Request', 'url'=>'/postrequest','active'=>true ,'icon'=>'plus-circle'],
     ]
 ?>
 
 <?php ob_start(); ?>
 
     <div >
-        <h1>Post Request</h1>
+        <h1>Create a New Event Request</h1>
         <form method="post" action="/events/request" enctype="multipart/form-data" class="event-request-form">
             <div class="form-section">
                 <div class="form-group">

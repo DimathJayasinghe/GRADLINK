@@ -23,97 +23,184 @@ class postrequest extends Controller{
             ];
         $this->view("/request_dashboards/postreq/v_postrequest",$data);
     }
-    public function viewpostrequests(){
+    
+    public function all(){
+        // In a real app, we would filter requests by the current user ID
+        // For now, let's use mock data
+        $current_user_id = 101; // Assuming this is the logged in user's ID
+        
+        // Get all requests that match the current user ID
+        $allRequests = [
+            (object)[
+                'req_id'=>1,
+                'status'=>'Approved',
+                'created_at'=>'2025-10-01 10:00:00',
+                'user_id'=>101,
+                'user_name'=>'D. Jayasinghe',
+                'Position'=>'Design Lead, IEEE CS Chapter',
+                'title'=>'IEEE CS Annual General Meeting 2025',
+                'description'=>'We are conducting our annual general meeting of the IEEE CS Chapter 2025. And we need to publish this event to invite all members and interested students to join us for this important gathering. The AGM will include presentations on our activities, elections for new committee members, and discussions on future plans for the chapter.',
+                'attachment_image'=>'IEEE_CS_AGM_25.png',
+                'club_name'=>'IEEE CS Chapter',
+                'event_date'=>'2024-11-15',
+                'event_time'=>'8:00',
+                'event_venue'=>'@S104, Main Building',
+                'views' => 328,
+                'unique_viewers' => 215,
+                'interested_count' => 45,
+                'going_count' => 23
+            ],
+            (object)[
+                'req_id'=>4,
+                'status'=>'Pending',
+                'created_at'=>'2025-10-05 11:20:00',
+                'user_id'=>101,
+                'user_name'=>'D. Jayasinghe',
+                'Position'=>'Member, Drama Club',
+                'title'=>'Drama Club Annual Performance: Shakespeare Reimagined',
+                'description'=>'The Drama Club presents its annual performance, featuring modern interpretations of classic Shakespeare plays. Don\'t miss this creative showcase of student talent!',
+                'attachment_image'=>'Drama_Performance.png',
+                'club_name'=>'Drama Club',
+                'event_date'=>'2025-12-10',
+                'event_time'=>'18:30',
+                'event_venue'=>'University Theater',
+            ],
+        ];
+        
+        $myRequests = [];
+        foreach ($allRequests as $request) {
+            if ($request->user_id === $current_user_id) {
+                $myRequests[] = $request;
+            }
+        }
+        
         $data = [
-            'requests' => [
-                (object)[
-                    'req_id'=>1,
-                    'status'=>'Pending',
-                    'created_at'=>'2024-10-01 10:00:00',
+            'myrequests' => $myRequests
+        ];
+        
+        $this->view("/request_dashboards/postreq/v_myrequests", $data);
+    }
 
-                    'user_id'=>101,
-                    'user_name'=>'john_doe',
-                    'title'=>'Request for New Laptops',
-                    'description'=>'We need new laptops for our coding workshops and hackathons.',
-                    'attachment_image'=>null,
-                    'club_name'=>'IEEE CS Chapter',
-                    
-                    'is_event'=>true,
-                    'event_date'=>'2024-11-15',
-                    'event_time'=>'14:00',
-                    'event_venue'=>'Room 101, Tech Building',
-                ],
-                (object)[
-                    'req_id'=>2,
-                    'status'=>'Approved',
-                    'created_at'=>'2024-09-20 14:30:00',
+    public function show($id = null) {
+        // If no id is provided, redirect to the all page
+        if($id === null) {
+            header('Location: ' . URLROOT . '/postrequest/all');
+            exit();
+        }
 
-                    'user_id'=>102,
-                    'user_name'=>'jane_smith',
-                    'title'=>'Request for Art Supplies',
-                    'description'=>'We need art supplies for our upcoming art exhibition.',
-                    'attachment_image'=>null,
-                    'club_name'=>'Art Society',
-                    
-                    'is_event'=>false,
-                    'event_date'=>null,
-                    'event_time'=>null,
-                    'event_venue'=>null,
-                ],
-                (object)[
-                    'req_id'=>3,
-                    'status'=>'Rejected',
-                    'created_at'=>'2024-08-15 09:15:00',
+        // In a real app, we would fetch the request from the database
+        // For now, we'll use mock data
+        $mockRequests = [
+            1=>(object)[
+                'req_id'=>1,
+                'status'=>'Approved',
+                'created_at'=>'2025-10-01 10:00:00',
+                'user_id'=>101,
+                'user_name'=>'D. Jayasinghe',
+                'Position'=>'Design Lead, IEEE CS Chapter',
+                'title'=>'IEEE CS Annual General Meeting 2025',
+                'description'=>'We are conducting our annual general meeting of the IEEE CS Chapter 2025. And we need to publish this event to invite all members and interested students to join us for this important gathering. The AGM will include presentations on our activities, elections for new committee members, and discussions on future plans for the chapter.',
+                'attachment_image'=>'IEEE_CS_AGM_25.png',
+                'club_name'=>'IEEE CS Chapter',
+                'event_date'=>'2024-11-15',
+                'event_time'=>'8:00',
+                'event_venue'=>'@S104, Main Building',
+                'views' => 328,
+                'unique_viewers' => 215,
+                'interested_count' => 45,
+                'going_count' => 23
+            ],
+            4=>(object)[
+                'req_id'=>4,
+                'status'=>'Pending',
+                'created_at'=>'2025-10-05 11:20:00',
+                'user_id'=>101,
+                'user_name'=>'D. Jayasinghe',
+                'Position'=>'Member, Drama Club',
+                'title'=>'Drama Club Annual Performance: Shakespeare Reimagined',
+                'description'=>'The Drama Club presents its annual performance, featuring modern interpretations of classic Shakespeare plays. Don\'t miss this creative showcase of student talent!',
+                'attachment_image'=>'Drama_Performance.png',
+                'club_name'=>'Drama Club',
+                'event_date'=>'2025-12-10',
+                'event_time'=>'18:30',
+                'event_venue'=>'University Theater',
+            ],
+        ];
 
-                    'user_id'=>103,
-                    'user_name'=>'alice_wonder',
-                    'title'=>'Request for Photography Equipment',
-                    'description'=>'We need new cameras and lenses for our photography club activities.',
-                    'attachment_image'=>null,
-                    'club_name'=>'Photography Club',
-                    
-                    'is_event'=>true,
-                    'event_date'=>'2024-12-05',
-                    'event_time'=>'10:00',
-                    'event_venue'=>'Auditorium',
-                ],
-                (object)[
-                    'req_id'=>4,
-                    'status'=>'Pending',
-                    'created_at'=>'2024-10-05 11:45:00',
-
-                    'user_id'=>104,
-                    'user_name'=>'bob_builder',
-                    'title'=>'Request for Robotics Kits',
-                    'description'=>'We need robotics kits for our upcoming robotics competition.',
-                    'attachment_image'=>null,
-                    'club_name'=>'Robotics Club',
-                    
-                    'is_event'=>false,
-                    'event_date'=>null,
-                    'event_time'=>null,
-                    'event_venue'=>null,
-                ],
-                (object)[
-                    'req_id'=>5,
-                    'status'=>'Approved',
-                    'created_at'=>'2024-09-25 16:20:00',
-
-                    'user_id'=>105,
-                    'user_name'=>'charlie_chaplin',
-                    'title'=>'Request for Drama Costumes',
-                    'description'=>'We need costumes for our upcoming drama performance.',
-                    'attachment_image'=>null,
-                    'club_name'=>'Drama Club',
-                    
-                    'is_event'=>true,
-                    'event_date'=>'2024-11-30',
-                    'event_time'=>'18:00',
-                    'event_venue'=>'Main Stage, Arts Building',
-                ],
-            ]
+        // Check if the request exists
+        if(isset($mockRequests[$id])) {
+            $data = [
+                'request' => $mockRequests[$id]
             ];
-        $this->view("/request_dashboards/postreq/v_viewpostrequests",$data);
+            $this->view("/request_dashboards/postreq/v_viewpostrequest", $data);
+        } else {
+            // If the request doesn't exist, show a blank page with not found message
+            $data = [
+                'request' => null
+            ];
+            $this->view("/request_dashboards/postreq/v_viewpostrequest", $data);
+        }
+    }
+    
+    public function analytics($id = null) {
+        // If no id is provided, redirect to my requests
+        if($id === null) {
+            header('Location: ' . URLROOT . '/postrequest/myrequests');
+            exit();
+        }
+        
+        // Fetch the request data
+        $mockRequests = [
+            1=>(object)[
+                'req_id'=>1,
+                'status'=>'Approved',
+                'created_at'=>'2025-10-01 10:00:00',
+                'user_id'=>101,
+                'user_name'=>'D. Jayasinghe',
+                'Position'=>'Design Lead, IEEE CS Chapter',
+                'title'=>'IEEE CS Annual General Meeting 2025',
+                'description'=>'We are conducting our annual general meeting of the IEEE CS Chapter 2025. And we need to publish this event to invite all members and interested students to join us for this important gathering. The AGM will include presentations on our activities, elections for new committee members, and discussions on future plans for the chapter.',
+                'attachment_image'=>'IEEE_CS_AGM_25.png',
+                'club_name'=>'IEEE CS Chapter',
+                'event_date'=>'2024-11-15',
+                'event_time'=>'8:00',
+                'event_venue'=>'@S104, Main Building',
+                'views' => 328,
+                'unique_viewers' => 215,
+                'interested_count' => 45,
+                'going_count' => 23
+            ],
+            4=>(object)[
+                'req_id'=>4,
+                'status'=>'Pending',
+                'created_at'=>'2025-10-05 11:20:00',
+                'user_id'=>101,
+                'user_name'=>'D. Jayasinghe',
+                'Position'=>'Member, Drama Club',
+                'title'=>'Drama Club Annual Performance: Shakespeare Reimagined',
+                'description'=>'The Drama Club presents its annual performance, featuring modern interpretations of classic Shakespeare plays. Don\'t miss this creative showcase of student talent!',
+                'attachment_image'=>'Drama_Performance.png',
+                'club_name'=>'Drama Club',
+                'event_date'=>'2025-12-10',
+                'event_time'=>'18:30',
+                'event_venue'=>'University Theater',
+            ],
+        ];
+        
+        // Check if the request exists and is approved (only approved requests have analytics)
+        if(isset($mockRequests[$id]) && $mockRequests[$id]->status === 'Approved') {
+            $data = [
+                'request' => $mockRequests[$id],
+                'engagement' => [
+                    // You could add detailed engagement data here if needed
+                ]
+            ];
+            $this->view("/request_dashboards/postreq/v_postrequest_analytics", $data);
+        } else {
+            // If the request doesn't exist or isn't approved, redirect to my requests
+            header('Location: ' . URLROOT . '/postrequest/myrequests');
+            exit();
+        }
     }
 }
 ?>
