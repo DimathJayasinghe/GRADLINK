@@ -1,4 +1,7 @@
 <?php require APPROOT.'/views/inc/header.php'?>
+<!-- <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css"> -->
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/newpost_popup.css">
+
 <style>
     .three-column-layout {
         display: flex;
@@ -19,6 +22,19 @@
         width: 280px;
         border-right: 1px solid var(--border);
         overflow: hidden;
+    }
+    .center-topic{
+        padding-left: 20px;
+        text-align: left;
+        background-color: rgba(26, 16, 81, 0.07);
+        border-bottom: 1px solid var(--border);
+        margin-top: 0px;
+        padding-top: 29px;
+        padding-bottom: 20px;
+        margin-bottom: 0px;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text);
     }
     
     .template-right {
@@ -93,6 +109,7 @@
         <?php echo $leftsidebar; ?>
     </div>
     <div class="template-center">
+        <h1 class="center-topic"><?php echo $center_topic?></h1>
         <?php echo $center_content; ?>
     </div>
     <div class="template-right">

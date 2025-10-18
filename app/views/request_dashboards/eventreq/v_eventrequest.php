@@ -2,10 +2,10 @@
 <?php ob_start(); ?>
     <style>
         h1 {
-            color: #9ed4dc;
-            font-size: 2.2rem;
-            margin-bottom: 24px;
-            text-align: center;
+            /* color: #9ed4dc; */
+            font-size: 23px;
+            /* margin-bottom: 24px; */
+            text-align: left;
         }
         .event-request-form .form-section {
             display: flex;
@@ -81,16 +81,16 @@
 
 <?php
     $sidebar_left = [
-        ['label'=>'View All Post Requests', 'url'=>'/postrequest/all','active'=>false ,'icon'=>'list'],
-        ['label'=>'Create Post Request', 'url'=>'/postrequest/request','active'=>true ,'icon'=>'plus-circle'],
+        ['label'=>'My Event Requests', 'url'=>'/eventrequest/all','active'=>false ,'icon'=>'user'],
+        ['label'=>'Create Event Request', 'url'=>'/eventrequest','active'=>true ,'icon'=>'plus-circle'],
     ]
 ?>
 
 <?php ob_start(); ?>
 
     <div >
-        <h1>Post Request</h1>
-        <form method="post" action="/events/request" enctype="multipart/form-data" class="event-request-form">
+        <h2>Create a New Event Request</h2>
+        <form method="event" action="/events/request" enctype="multipart/form-data" class="event-request-form">
             <div class="form-section">
                 <div class="form-group">
                     <label for="event_title" class="form-label">Event Title:</label>
@@ -129,7 +129,7 @@
                     <textarea id="description" name="description" class="form-control" rows="4"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="event_image" class="form-label">Add post (image):</label>
+                    <label for="event_image" class="form-label">Add event (image):</label>
                     <div class="upload-area" id="uploadArea">
                         <span>Click to upload or drag and drop</span>
                         <input type="file" id="event_image" name="event_image" accept="image/*" style="display:none;">

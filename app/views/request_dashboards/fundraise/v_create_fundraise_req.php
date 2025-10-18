@@ -1,6 +1,7 @@
 
 <?php ob_start(); ?>
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/fundraise_req_create_styles.css">    
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/fundraise_req_create_styles.css"> 
+ 
 
 <?php $styles = ob_get_clean(); ?>
 
@@ -17,8 +18,7 @@
     <div class="signup-container">
         <div class="signup-header">
             <div class="title-section">
-                <h1>Fundraising Request</h1>
-                <p class="subtitle">Submit your fundraising project proposal</p>
+                <h2>Create New Request</h2>
             </div>
         </div>
         

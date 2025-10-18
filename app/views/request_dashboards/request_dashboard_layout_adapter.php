@@ -25,7 +25,7 @@ ob_start();
 
     // Define which sidebar item should be active based on current page
     $is_fundraiser = strpos($_SERVER['REQUEST_URI'], 'fundraiser') !== false;
-    $is_postrequest = strpos($_SERVER['REQUEST_URI'], 'postrequest') !== false;
+    $is_eventrequest = strpos($_SERVER['REQUEST_URI'], 'eventrequest') !== false;
 
     $leftside_buttons = [
         ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'" ],
@@ -35,8 +35,9 @@ ob_start();
         ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=".$_SESSION['user_id'] . "'"],
         // icon for fundraiser
         ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'", 'active' => $is_fundraiser],
-        //icon for post requests
-        ['icon' => 'clipboard-list', 'label' => 'Post Requests', 'onclick' => "window.location.href='" . URLROOT . "/postrequest/'", 'active' => $is_postrequest],
+        //icon for event requests
+        // ['icon' => 'clipboard-list', 'label' => 'event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'", 'active' => $is_eventrequest],
+        ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'", 'active' => $is_eventrequest],
         ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
         ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"],
     ];
@@ -59,7 +60,7 @@ ob_start();
         display: flex;
         flex-direction: column;
         height: 100%;
-        border-right: 1px solid var(--border);
+        /* border-right: 1px solid var(--border); */
         background-color: var(--bg-alt);
     }
     
@@ -72,7 +73,7 @@ ob_start();
     
     .dashboard-categories ul {
         list-style: none;
-        padding: 20px 0 0 0; /* Added top padding for headroom */
+        /* padding: 20px 0 0 0; Added top padding for headroom */
         margin: 0;
     }
     
@@ -120,6 +121,7 @@ ob_start();
     </ul>
 </div>
 <?php
+$center_topic = ($is_fundraiser) ? "Fundraiser" : (($is_eventrequest) ? "Event Request" : "Event Request");
 // Save center content
 $center_content = ob_get_clean();
 
