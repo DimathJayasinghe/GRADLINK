@@ -21,6 +21,10 @@
         border-right: 1px solid var(--border);
         max-width: 600px;
         overflow-y: auto;
+
+    }
+    .template-center::-webkit-scrollbar {
+        display: none; /* Chrome, Safari */
     }
     
     .template-right {

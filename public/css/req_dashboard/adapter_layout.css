@@ -11,7 +11,7 @@
 
 /* Ensure content in right panel is properly styled */
 .template-right {
-    padding: 20px;
+    padding: 20px 30px 30px 30px;
     background-color: var(--bg);
     overflow-y: auto;
     max-height: 100vh;
@@ -20,7 +20,10 @@
 .template-right h1,
 .template-right h2 {
     color: var(--text);
-    margin-bottom: 1.5rem;
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 0.53rem;
+    margin-bottom: 1.1rem;
 }
 
 /* Fix for fundraising request form to match post request form */
@@ -96,7 +99,7 @@
 }
 
 .template-right .progress-bar {
-    background-color: rgba(158, 212, 220, 0.1);
+    /* background-color: rgba(158, 212, 220, 0.1); */
     border-radius: 8px;
 }
 
@@ -121,7 +124,8 @@
     cursor: pointer;
     font-family: 'Poppins', sans-serif;
     font-weight: 600;
-    margin-top: 24px;
+    margin-top: 12px;
+    margin-bottom: 12px;
     font-size: 1rem;
 }
 
@@ -146,6 +150,11 @@
     border-radius: 10px;
     padding: 20px;
     margin-bottom: 20px;
+}
+.template-right .card:hover {
+    box-shadow: 0 0px 18px rgba(1, 10, 26, 0.264);
+    border-color: rgba(3, 23, 54, 0.548);
+    background: rgba(8, 44, 62, 0.825);
 }
 
 /* Add responsive adjustments */
