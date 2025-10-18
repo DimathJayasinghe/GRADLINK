@@ -132,6 +132,30 @@
         color: var(--muted);
         margin-top: 20px;
     }
+    .Empty-section{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        min-height: 77vh;
+    }
+    .Empty-section h2{
+        margin: 0 0 0px;
+        font-size: 20px;
+        font-weight: 600;
+        /* color: var(--text); */
+        /* color: rgba(237, 237, 237, 0.74); */
+        color: rgba(255, 255, 255, 0.12);
+    }
+    .Empty-section .empty-state{
+        margin: 0px;
+        margin-top: 5px;
+        font-size: 15px;
+        /* color: var(--muted); */
+        color: rgba(255, 255, 255, 0.12);
+        max-width: 520px;
+    }
     .section-topic{
         margin-top: 8px;
         margin-bottom: 10px;
@@ -203,7 +227,7 @@
     <?php else: ?>
         <div class="Empty-section">
             <h2 class="">Select a request to view details</h2>
-            <p class="empty-state">Click on a request card on the left to see more information.</p>
+            <!-- <p class="empty-state">Click on a request card on the left to see more information.</p> -->
         </div>
     <?php endif; ?>
 </div>
