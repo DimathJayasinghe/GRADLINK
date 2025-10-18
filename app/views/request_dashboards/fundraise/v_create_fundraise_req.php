@@ -226,16 +226,13 @@
                 </div>
                 
                 <div class="signature-section">
-                    <h2 class="section-title">Approvals & Signatures</h2>
+                    <h2 class="section-title">Approvals</h2>
                     
                     <div class="signature-row">
                         <div class="signature-field">
                             <div class="form-group">
                                 <label class="form-label" for="president_name">President/Head of Club/Society:</label>
                                 <input type="text" class="form-control" id="president_name" name="president_name" required>
-                            </div>
-                            <div class="signature-line">
-                                <span class="signature-label">Signature/Stamp</span>
                             </div>
                         </div>
                         
@@ -252,9 +249,6 @@
                             <div class="form-group">
                                 <label class="form-label" for="advisor_name">Faculty Advisor/Staff-in-Charge (if applicable):</label>
                                 <input type="text" class="form-control" id="advisor_name" name="advisor_name">
-                            </div>
-                            <div class="signature-line">
-                                <span class="signature-label">Signature/Stamp</span>
                             </div>
                         </div>
                     </div>

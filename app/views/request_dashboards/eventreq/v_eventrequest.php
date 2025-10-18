@@ -32,6 +32,20 @@
             color: #e0e0e0;
             font-size: 1rem;
         }
+        /* minimal checkbox styling to match theme */
+        .event-request-form .form-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .event-request-form .form-check input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #9ed4dc;
+        }
+        .event-request-form .form-check label {
+            color: #e0e0e0;
+        }
         .upload-area {
             width: 350px;
             height: 350px;
@@ -90,15 +104,23 @@
 
     <div >
         <h2>Create a New Event Request</h2>
-        <form method="event" action="/events/request" enctype="multipart/form-data" class="event-request-form">
+        <form method="post" action="/events/request" enctype="multipart/form-data" class="event-request-form">
             <div class="form-section">
                 <div class="form-group">
                     <label for="event_title" class="form-label">Event Title:</label>
                     <input type="text" id="event_title" name="event_title" class="form-control" required>
                 </div>
                 <div class="form-group">
+                    <label for="short_tagline" class="form-label">Short Tagline:</label>
+                    <input type="text" id="short_tagline" name="short_tagline" class="form-control" placeholder="A short catchy line about the event">
+                </div>
+                <div class="form-group">
                     <label for="organizer" class="form-label">Organizer (Club/Society Name):</label>
                     <input type="text" id="organizer" name="organizer" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="requester_position" class="form-label">Requesting Person's Position in Club:</label>
+                    <input type="text" id="requester_position" name="requester_position" class="form-control" placeholder="e.g., President, Secretary, Event Lead">
                 </div>
                 <div class="form-group">
                     <label for="event_date" class="form-label">Date of Event:</label>
@@ -127,6 +149,30 @@
                 <div class="form-group">
                     <label for="description" class="form-label">Purpose/Objective of Event:</label>
                     <textarea id="description" name="description" class="form-control" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="post_caption" class="form-label">Caption for the Post:</label>
+                    <textarea id="post_caption" name="post_caption" class="form-control" rows="3" placeholder="Optional caption to use when posting about this event"></textarea>
+                </div>
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="hidden" name="add_to_calendar" value="0">
+                        <input type="checkbox" id="add_to_calendar" name="add_to_calendar" value="1">
+                        <label for="add_to_calendar">Add this event to the calendar</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Approval</label>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:240px;">
+                            <label for="president_name" class="form-label">President's Name:</label>
+                            <input type="text" id="president_name" name="president_name" class="form-control">
+                        </div>
+                        <div style="flex:1; min-width:240px;">
+                            <label for="approval_date" class="form-label">Approval Date:</label>
+                            <input type="date" id="approval_date" name="approval_date" class="form-control">
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="event_image" class="form-label">Add event (image):</label>
