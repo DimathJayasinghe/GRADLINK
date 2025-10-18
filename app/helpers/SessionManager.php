@@ -86,6 +86,7 @@ class SessionManager
         $_SESSION['user_name'] = $user->name ?? ($user->full_name ?? '');
         $_SESSION['user_email'] = $user->email ?? '';
         $_SESSION['user_role'] = $user->role ?? '';
+        $_SESSION['special_alumni'] = $user->special_alumni?? false;
         $_SESSION['profile_image'] = $user->profile_image ?? 'default.jpg';
         $_SESSION['login_time'] = time();
     }
@@ -140,6 +141,13 @@ class SessionManager
             $target = $redirectTo ?? (URLROOT . '/auth');
             header('Location: ' . $target);
             exit();
+        }
+    }
+
+    public static function isSpecialAlumni(){
+        self::ensureStarted();
+        if (self::isLoggedIn()){
+            return $_SESSION['special_alumni'];
         }
     }
 }
