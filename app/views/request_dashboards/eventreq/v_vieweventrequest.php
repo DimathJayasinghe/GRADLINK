@@ -1,9 +1,6 @@
 <?php ob_start(); ?>
 <!-- Additional styles for the dashboard layout -->
 <style>
-.details-container {
-    /* padding: 1rem; */
-}
 
 .details-header {
     margin-bottom: 1.5rem;

@@ -17,7 +17,7 @@
                         'user_id'=>101,
                         'user_name'=>'john_doe',
                         'title'=>'Fundraiser for New Laptops',
-                        'description'=>'We need new laptops for our coding workshops and hackathons.',
+                        'description'=>'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
                         'attachment_image'=>null,
                         'club_name'=>'IEEE CS Chapter',
                         
@@ -47,7 +47,7 @@
                         'user_id'=>101,
                         'user_name'=>'john_doe',
                         'title'=>'Fundraiser for New Laptops',
-                        'description'=>'We need new laptops for our coding workshops and hackathons.',
+                        'description'=>'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
                         'attachment_image'=>null,
                         'club_name'=>'IEEE CS Chapter',
                         
@@ -137,7 +137,7 @@
                         'user_id'=>101,
                         'user_name'=>'john_doe',
                         'title'=>'Fundraiser for New Laptops',
-                        'description'=>'We need new laptops for our coding workshops and hackathons.',
+                        'description'=>'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
                         'attachment_image'=>null,
                         'club_name'=>'IEEE CS Chapter',
                         
@@ -166,4 +166,5 @@
             $this->view("/request_dashboards/fundraise/v_my_fundraize_req",$data);
         }
     }
+    
 ?>

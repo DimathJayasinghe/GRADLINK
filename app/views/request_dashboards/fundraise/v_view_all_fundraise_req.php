@@ -161,7 +161,7 @@ $sidebar_left = [
                             }
                         }; ?>
                     </h3>
-                    <p class="description"><?php echo htmlspecialchars($req->description); ?></p>
+                    <!-- <p class="description"><?php echo htmlspecialchars($req->description); ?></p> -->
                     <p class="club-name">Club: <?php echo htmlspecialchars($req->club_name); ?></p>
                     <p class="amount target">Target Amount: Rs.<?php echo number_format($req->target_amount, 2); ?></p>
                     <p class="amount raised">Raised Amount: Rs.<?php echo number_format($req->raised_amount, 2); ?></p>

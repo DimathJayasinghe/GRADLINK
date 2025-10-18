@@ -99,7 +99,7 @@
 }
 
 .template-right .progress-bar {
-    background-color: rgba(158, 212, 220, 0.1);
+    /* background-color: rgba(158, 212, 220, 0.1); */
     border-radius: 8px;
 }
 
