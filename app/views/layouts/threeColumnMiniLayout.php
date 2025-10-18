@@ -1,4 +1,7 @@
 <?php require APPROOT.'/views/inc/header.php'?>
+<!-- <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css"> -->
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/newpost_popup.css">
+
 <style>
     .three-column-layout {
         display: flex;
@@ -13,21 +16,30 @@
         width: 275px;
         border-right: 1px solid var(--border);
         overflow: hidden;
-
     }
     
     .template-center {
-        flex: 1;
+        width: 280px;
         border-right: 1px solid var(--border);
-        max-width: 600px;
-        overflow-y: auto;
+        overflow: hidden;
+    }
+    .center-topic{
+        padding-left: 20px;
+        text-align: left;
+        background-color: rgba(26, 16, 81, 0.07);
+        border-bottom: 1px solid var(--border);
+        margin-top: 0px;
+        padding-top: 29px;
+        padding-bottom: 20px;
+        margin-bottom: 0px;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text);
     }
     
     .template-right {
-        width: 325px;
+        flex: 1;
         overflow-y: auto;
-        background-color: var(--bg);
-        padding: 0; /* Remove any default padding */
     }
     
     /* Responsive adjustments */
@@ -39,13 +51,37 @@
     
     @media (max-width: 992px) {
         .template-right {
-            display: none;
+            flex: 1;
+        }
+        
+        .three-column-layout {
+            flex-wrap: wrap;
+        }
+        
+        .template-left {
+            order: 1;
+        }
+        
+        .template-center {
+            order: 2;
+            width: calc(100% - 275px);
+            border-right: none;
+        }
+        
+        .template-right {
+            order: 3;
+            width: 100%;
+            border-top: 1px solid var(--border);
         }
     }
     
     @media (max-width: 768px) {
         .template-left {
             width: 70px;
+        }
+        
+        .template-center {
+            width: calc(100% - 70px);
         }
     }
     
@@ -73,6 +109,7 @@
         <?php echo $leftsidebar; ?>
     </div>
     <div class="template-center">
+        <h1 class="center-topic"><?php echo $center_topic?></h1>
         <?php echo $center_content; ?>
     </div>
     <div class="template-right">

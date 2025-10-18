@@ -22,7 +22,8 @@
             'time' => '3h ago',
             'userImg' => URLROOT . '/media/profile/bob.jpg'
         ]
-    ]
+    ];
+    $isOwner = isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] == $data['userDetails']->id;
     ?>
  <?php ob_start() ?>
     <?php
@@ -35,10 +36,17 @@
         // icon for fundraiser
         ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
         //icon for post requests
-        ['icon' => 'clipboard-list', 'label' => 'Post Requests', 'onclick' => "window.location.href='" . URLROOT . "/postrequest/'"],
+        ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
         ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
-        ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"]
     ];
+    //  new portal to approve new alumnis only available for special alumnis
+    if ($_SESSION['special_alumni']){
+        $leftside_buttons[] = [
+            'icon'=>'user-check','label'=>'Approve Alumni','onclick'=>"window.location.href='".URLROOT."/alumni/approve'"
+        ];
+    };
+    $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
+    require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
     require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
     <?php $leftsidebar = ob_get_clean(); ?>
 
@@ -46,11 +54,17 @@
 <?php ob_start()?>
         <div class="main-content">
             <!-- Profile Section -->
-            <div class="profile">
+            <?php $hasProfileActions = (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id); ?>
+            <div class="profile <?= $hasProfileActions ? 'has-actions' : 'no-actions' ?>">
                 <div class="profile-up-part">
-                    <div class="profile-edit-btn">
+                    <?php if ($isOwner){
+                        echo '
+                            <div class="profile-edit-btn">
                         <i class="fas fa-pencil-alt"></i>
                     </div>
+                        ';
+                    }?>
+                    
                 </div>
                 <div class="profile-down-part">
                     <div class="profile-image">
@@ -66,6 +80,28 @@
                         <div class="profile-bio">
                             <?= isset($data['userDetails']->bio) ? htmlspecialchars($data['userDetails']->bio) : 'Software Engineer at Google' ?>
                         </div>
+                        <div class="profile-footer-spacer"></div>
+                        <?php if (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id): ?>
+                        <div class="profile-actions">
+                            <button
+                                class="action-btn connect-btn"
+                                id="connectBtn"
+                                data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
+                                data-connected="0"
+                                title="Connect with <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
+                                <i class="fas fa-user-plus" aria-hidden="true"></i>
+                                <span>Connect</span>
+                            </button>
+                            <button
+                                class="action-btn message-btn"
+                                id="messageBtn"
+                                data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
+                                title="Message <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
+                                <i class="fas fa-envelope" aria-hidden="true"></i>
+                                <span>Message</span>
+                            </button>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -82,7 +118,11 @@
 
 
             <!-- Import newpost_section below navigation -->
-            <?php require APPROOT . '/views/inc/commponents/newpost_section.php'; ?>
+
+            <?php
+            if ($isOwner){
+                require APPROOT . '/views/inc/commponents/newpost_section.php';
+            }?>
 
             <!-- Posts Section - Using same structure as main feed -->
             <div class="feed" id="postsSection">
@@ -113,14 +153,18 @@
                 <!-- Work Experience Section -->
                 <div class="section-header">
                     <div class="section-title">Work Experience</div>
-                    <div class="section-actions">
+                    <?php if($isOwner){
+                        echo '
+                        <div class="section-actions">
                         <div class="section-action-btn" id="editWorkBtn" title="Edit Work Experience">
                             <i class="fas fa-pencil-alt"></i>
                         </div>
                         <div class="section-action-btn" id="addWorkBtn" title="Add Work Experience">
                             <i class="fas fa-plus"></i>
                         </div>
-                    </div>
+                        </div>';
+                        }?>
+                    
                 </div>
                 
                 <!-- Work Experience Cards -->
@@ -145,14 +189,17 @@
                             <div class="certificate-issuer"><?= htmlspecialchars($work['company']) ?></div>
                             <div class="certificate-date"><?= htmlspecialchars($work['period']) ?></div>
                         </div>
-                        <div class="certificate-actions">
+                        <?php if ($isOwner){
+                            echo '<div class="certificate-actions">
                             <div class="certificate-action-btn edit-btn" title="Edit Work Experience">
                                 <i class="fas fa-pencil-alt"></i>
                             </div>
                             <div class="certificate-action-btn delete-btn" title="Delete Work Experience">
                                 <i class="fas fa-trash-alt"></i>
                             </div>
-                        </div>
+                        </div>';
+                        }?>
+                        
                     </div>
                     <?php 
                         endforeach; 
@@ -165,7 +212,9 @@
                 <!-- Certificates Section with Action Buttons -->
                 <div class="section-header" style="margin-top:1.5em;">
                     <div class="section-title">Certificates</div>
-                    <div class="section-actions">
+                    <?php if($isOwner){
+                        echo '
+                            <div class="section-actions">
                         <div class="section-action-btn" id="editCertificatesBtn" title="Edit Certificates">
                             <i class="fas fa-pencil-alt"></i>
                         </div>
@@ -173,6 +222,10 @@
                             <i class="fas fa-plus"></i>
                         </div>
                     </div>
+                        ';
+
+                    }?>
+                    
                 </div>
                 
                 <!-- Certificate Cards -->
@@ -198,7 +251,9 @@
                             <div class="certificate-issuer"><?= htmlspecialchars($cert['issuer']) ?></div>
                             <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
                         </div>
-                        <div class="certificate-actions">
+                        <?php if($isOwner){
+                            echo '
+                                <div class="certificate-actions">
                             <div class="certificate-action-btn edit-btn" title="Edit Certificate">
                                 <i class="fas fa-pencil-alt"></i>
                             </div>
@@ -206,6 +261,9 @@
                                 <i class="fas fa-trash-alt"></i>
                             </div>
                         </div>
+                            ';
+                        }?>
+                        
                     </div>
                     <?php 
                         endforeach; 
@@ -218,7 +276,9 @@
                 <!-- Projects Section -->
                 <div class="section-header" style="margin-top:1.5em;">
                     <div class="section-title">Projects</div>
-                    <div class="section-actions">
+                    <?php if ($isOwner){
+                        echo '
+                            <div class="section-actions">
                         <div class="section-action-btn" id="editProjectsBtn" title="Edit Projects">
                             <i class="fas fa-pencil-alt"></i>
                         </div>
@@ -226,6 +286,10 @@
                             <i class="fas fa-plus"></i>
                         </div>
                     </div>
+                        ';
+
+                    }?>
+                    
                 </div>
                 
                 <div id="projectsContainer">
@@ -242,14 +306,17 @@
                                 <i class="fas fa-project-diagram"></i>
                             </div>
                             <div class="project-card-title"><?= htmlspecialchars($project['title']) ?></div>
-                            <div class="certificate-actions">
+                            <?php if($isOwner){
+                                echo '<div class="certificate-actions">
                                 <div class="certificate-action-btn edit-btn" title="Edit Project">
                                     <i class="fas fa-pencil-alt"></i>
                                 </div>
                                 <div class="certificate-action-btn delete-btn" title="Delete Project">
                                     <i class="fas fa-trash-alt"></i>
                                 </div>
-                            </div>
+                            </div>';
+                            }?>
+                            
                         </div>
                     <?php endforeach; else: ?>
                         <div>No projects added yet.</div>
@@ -403,6 +470,40 @@
             }
 
             // Add fundraising section to the existing right sidebar
+            // Connect button behavior (basic toggle for now)
+            const connectBtn = document.getElementById('connectBtn');
+            if (connectBtn) {
+                connectBtn.addEventListener('click', async function() {
+                    const targetId = this.getAttribute('data-user-id');
+                    const isConnected = this.getAttribute('data-connected') === '1';
+
+                    try {
+                        // TODO: Replace this with real follow/connect API call
+                        // const res = await fetch(`${window.URLROOT}/follow/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target_id: targetId }) });
+                        // const json = await res.json();
+                        // const connected = !!json.connected;
+                        const connected = !isConnected; // Simulate
+
+                        this.setAttribute('data-connected', connected ? '1' : '0');
+                        this.classList.toggle('active', connected);
+                        this.querySelector('span').textContent = connected ? 'Connected' : 'Connect';
+                        this.querySelector('i').className = connected ? 'fas fa-user-check' : 'fas fa-user-plus';
+                    } catch (e) {
+                        console.error(e);
+                        alert('Failed to update connection. Please try again.');
+                    }
+                });
+            }
+
+            // Message button behavior - navigate to messages (optionally with query param)
+            const messageBtn = document.getElementById('messageBtn');
+            if (messageBtn) {
+                messageBtn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-user-id');
+                    // If conversations by user supported, pass param; else go to messages home
+                    window.location.href = `${window.URLROOT}/messages?user=${encodeURIComponent(targetId)}`;
+                });
+            }
         });
 
         // Updated function to set up edit mode only for specific sections

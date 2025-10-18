@@ -1,9 +1,5 @@
 <?php ob_start(); ?>
 <style>
-.analytics-container {
-    padding: 1rem;
-}
-
 .analytics-header {
     margin-bottom: 1.5rem;
 }
@@ -18,8 +14,9 @@
 .analytics-container .description {
     margin: 0.5rem 0 1rem;
     color: var(--muted);
-    font-size: 1rem;
+    font-size: 0.9rem;
     line-height: 1.5;
+    font-weight: normal;
 }
 
 .analytics-info {
@@ -165,6 +162,7 @@
 <?php
     $sidebar_left = [
         ['label'=>'View All Fundraise Requests', 'url'=>'/fundraiser/all', 'active'=>false, 'icon'=>'list'],
+        ['label'=>'View my Fundraise Requests', 'url'=>'/fundraiser/myrequests','active'=>false, 'icon'=>'user'],
         ['label'=>'Create Fundraise Request', 'url'=>'/fundraiser/request', 'active'=>false, 'icon'=>'plus-circle'],
         ['label'=>'Analytics', 'url'=>'#', 'active'=>true, 'icon'=>'chart-line']
     ]
@@ -239,6 +237,9 @@
                 <?php echo htmlspecialchars($target_post->status); ?>
             </span>
         </p>
+        <button style="background-color:#4caf50" onclick="GL_openDonationModal()">
+            <span class="btn" style="color:#ffffff">Make a Donation</span>
+        </button>
 
         <!-- Analytics charts with placeholders -->
         <div id="analytics-charts">
@@ -252,5 +253,11 @@
     <?php endif; ?>
 </div>
 
+<?php 
+    // Provide $campaign for the modal summary; use the same selected request
+    if(isset($target_post)) { $campaign = $target_post; }
+    require APPROOT . '/views/request_dashboards/fundraise/_donation_modal.php';
+?>
+
 <?php $content = ob_get_clean(); ?>
-<?php require APPROOT . '/views/request_dashboards/dashboard_layout.php';?>
+<?php require APPROOT . '/views/request_dashboards/request_dashboard_layout_adapter.php';?>

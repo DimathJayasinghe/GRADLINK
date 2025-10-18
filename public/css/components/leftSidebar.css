@@ -63,10 +63,11 @@
 .sidebar{
   width:var(--sidebar-width);
   padding:20px;
-  border-right:1px solid var(--border);
+  padding-top: 28px;
+  /* border-right:1px solid var(--border); */
   display:flex;
   flex-direction:column;
-  min-height:100vh;
+  height:100%;
   box-sizing:border-box;
 }
 
@@ -90,7 +91,7 @@
   color:var(--link);
   font-weight:600;
   position: relative;
-  padding-left: 5px;
+  /* padding-left: 5px; */
 }
 
 .active::before {
@@ -100,7 +101,7 @@
   top: 0;
   height: 100%;
   width: 4px;
-  background-color: var(--link);
+  /* background-color: var(--link); */
   border-radius: 0 4px 4px 0;
 }
 
@@ -108,7 +109,23 @@
   transform: scale(1.1);
 }
 
-.post-button{background-color:var(--btn);color:var(--btn-text);border:none;border-radius:30px;padding:15px 0;width:100%;font-size:16px;font-weight:600;cursor:pointer;margin-top:10px;transition:var(--transition)}
+.post-button{
+  background-color:var(--btn);
+  color:var(--btn-text);
+  border:none;
+  border-radius:30px;
+  height:50px;
+  width:100%;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  margin-top:10px;
+  transition:var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
 .post-button:hover{background-color:var(--link);transform:translateY(-2px)}
 
 /* Post modal */

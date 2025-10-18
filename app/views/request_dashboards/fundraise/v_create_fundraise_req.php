@@ -1,11 +1,14 @@
 
 <?php ob_start(); ?>
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/fundraise_req_create_styles.css">    
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/fundraise_req_create_styles.css"> 
+ 
+
 <?php $styles = ob_get_clean(); ?>
 
 <?php
     $sidebar_left = [
         ['label'=>'View All Fundraise Requests', 'url'=>'/fundraiser/all','active'=>false ,'icon'=>'list'],
+        ['label'=>'View my Fundraise Requests', 'url'=>'/fundraiser/myrequests','active'=>false, 'icon'=>'user'],
         ['label'=>'Create Fundraise Request', 'url'=>'/fundraiser/request','active'=>true ,'icon'=>'plus-circle'],
     ]
 ?>
@@ -15,8 +18,7 @@
     <div class="signup-container">
         <div class="signup-header">
             <div class="title-section">
-                <h1>Fundraising Request</h1>
-                <p class="subtitle">Submit your fundraising project proposal</p>
+                <h2>Create New Request</h2>
             </div>
         </div>
         
@@ -224,16 +226,13 @@
                 </div>
                 
                 <div class="signature-section">
-                    <h2 class="section-title">Approvals & Signatures</h2>
+                    <h2 class="section-title">Approvals</h2>
                     
                     <div class="signature-row">
                         <div class="signature-field">
                             <div class="form-group">
                                 <label class="form-label" for="president_name">President/Head of Club/Society:</label>
                                 <input type="text" class="form-control" id="president_name" name="president_name" required>
-                            </div>
-                            <div class="signature-line">
-                                <span class="signature-label">Signature/Stamp</span>
                             </div>
                         </div>
                         
@@ -250,9 +249,6 @@
                             <div class="form-group">
                                 <label class="form-label" for="advisor_name">Faculty Advisor/Staff-in-Charge (if applicable):</label>
                                 <input type="text" class="form-control" id="advisor_name" name="advisor_name">
-                            </div>
-                            <div class="signature-line">
-                                <span class="signature-label">Signature/Stamp</span>
                             </div>
                         </div>
                     </div>
@@ -502,4 +498,4 @@
 </html>
 
 <?php $content = ob_get_clean(); ?>
-<?php require APPROOT . '/views/request_dashboards/dashboard_layout.php';?>
+<?php require APPROOT . '/views/request_dashboards/request_dashboard_layout_adapter.php';?>
