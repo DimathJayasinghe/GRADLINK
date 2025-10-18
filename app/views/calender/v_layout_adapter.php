@@ -47,7 +47,6 @@ ob_start();
     $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
     require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 <?php $leftsidebar = ob_get_clean();
-$center_topic= "Events";
 $rightsidebar = $content;
 require APPROOT . '/views/layouts/threeColumnMiniLayout.php';
 ?>
