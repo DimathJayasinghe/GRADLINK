@@ -42,9 +42,7 @@ ob_start();
     ];
     //  new portal to approve new alumnis only available for special alumnis
     if ($_SESSION['special_alumni']){
-        $leftside_buttons[] = [
-            'icon'=>'user-check','label'=>'Approve Alumni','onclick'=>"window.location.href='".URLROOT."/alumni/approve'"
-        ];
+        $leftside_buttons[] = ['icon'=>'user-check','label'=>'Approve Alumni','onclick'=>"window.location.href='".URLROOT."/alumni/approve'",'active' => true];
     };
     $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
     require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>

@@ -1,58 +1,144 @@
 <?php ob_start(); ?>
 <style>
-/* Center column: request list */
-.request-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-.request-card { text-decoration: none; color: inherit; }
-.request-card:hover { background: rgba(255,255,255,0.04); }
-.request-card.active-selected-request { background: rgba(158,212,220,0.1); }
-.profile-pic-new-alumni img {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-.new-commer-details h3 {
-    margin: 0;
-    font-size: 15px;
-    color: var(--text);
-}
-.new-commer-details p {
-    margin: 2px 0 6px;
-    font-size: 12px;
-    color: var(--muted);
-}
-.status {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: var(--radius-full);
-    font-size: 11px;
-    font-weight: 600;
-}
-.status-pending { background: rgba(255,193,7,0.15); color: #ffc107; }
-.status-approved { background: rgba(40,167,69,0.15); color: #28a745; }
-.status-rejected { background: rgba(220,53,69,0.15); color: #dc3545; }
+    /* Center column: request list */
+    .request-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.2s ease;
+    }
 
-/* Right column: detail panel */
-.rightsidebar_content { padding: 20px; }
-.name-of-the-request-holder h2 { margin: 0 0 6px; font-size: 20px; }
-.name-of-the-request-holder .description { color: var(--muted); font-size: 13px; }
-.profile-image img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin: 16px 0; }
-.detail-grid { display: grid; grid-template-columns: 160px 1fr; gap: 8px 12px; margin: 16px 0 20px; }
-.detail-label { color: var(--muted); font-size: 13px; }
-.detail-value { color: var(--text); font-weight: 500; font-size: 14px; }
-.action-row { display: flex; gap: 10px; margin-top: 8px; }
-.btn-approve, .btn-reject { border: none; padding: 10px 14px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; }
-.btn-approve { background: #28a745; color: #fff; }
-.btn-reject { background: #dc3545; color: #fff; }
-.empty-state { color: var(--muted); margin-top: 20px; }
+    .request-card {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .request-card:hover {
+        background: rgba(255, 255, 255, 0.04);
+    }
+
+    .request-card.active-selected-request {
+        background: rgba(158, 212, 220, 0.1);
+    }
+
+    .profile-pic-new-alumni img {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .new-commer-details h3 {
+        margin: 0;
+        font-size: 15px;
+        color: var(--text);
+    }
+
+    .new-commer-details p {
+        margin: 2px 0 6px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .status {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+
+    .status-approved {
+        background: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+    }
+
+    .status-rejected {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+
+    /* Right column: detail panel */
+    .rightsidebar_content {
+        padding: 20px 30px 30px;
+    }
+
+
+    .name-of-the-request-holder .description {
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .profile-image img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 16px 0;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 8px 12px;
+        margin: 16px 0 20px;
+    }
+
+    .detail-label {
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .detail-value {
+        color: var(--text);
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .action-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .btn-approve,
+    .btn-reject {
+        border: none;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .btn-approve {
+        background: #28a745;
+        color: #fff;
+    }
+
+    .btn-reject {
+        background: #dc3545;
+        color: #fff;
+    }
+
+    .empty-state {
+        color: var(--muted);
+        margin-top: 20px;
+    }
+    .section-topic{
+        margin-top: 8px;
+        margin-bottom: 10px;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text);
+    }
 </style>
 <?php $styles = ob_get_clean(); ?>
 
@@ -79,15 +165,16 @@
 <?php ob_start(); ?>
 <!-- Right column: user-selected details -->
 <div class="rightsidebar_content">
-    <?php 
-        $selected = null; 
-        if (isset($data['selected_req_id']) && isset($data['requestsById'][$data['selected_req_id']])) {
-            $selected = $data['requestsById'][$data['selected_req_id']];
-        }
+    <?php
+    $selected = null;
+    if (isset($data['selected_req_id']) && isset($data['requestsById'][$data['selected_req_id']])) {
+        $selected = $data['requestsById'][$data['selected_req_id']];
+    }
     ?>
     <?php if ($selected): ?>
+        <!-- <h2 class="section-topic">Details about the Alumni</h2> -->
         <div class="name-of-the-request-holder">
-            <h2><?php echo htmlspecialchars($selected->Name); ?></h2>
+            <h2 class="section-topic"><?php echo htmlspecialchars($selected->Name); ?></h2>
             <p class="description">Review the details and approve or reject this alumni request.</p>
         </div>
         <div class="profile-image">
@@ -114,8 +201,10 @@
             <button class="btn-reject" data-req-id="<?php echo htmlspecialchars($selected->req_id); ?>">Reject</button>
         </div>
     <?php else: ?>
-        <h2>Select a request to view details</h2>
-        <p class="empty-state">Click on a request card on the left to see more information.</p>
+        <div class="Empty-section">
+            <h2 class="">Select a request to view details</h2>
+            <p class="empty-state">Click on a request card on the left to see more information.</p>
+        </div>
     <?php endif; ?>
 </div>
 <?php $content = ob_get_clean(); ?>
@@ -123,22 +212,19 @@
 <?php ob_start(); ?>
 // Placeholder actions; integrate with backend endpoints when ready
 document.addEventListener('click', (e) => {
-    const approveBtn = e.target.closest('.btn-approve');
-    const rejectBtn = e.target.closest('.btn-reject');
-    if (approveBtn) {
-        const id = approveBtn.getAttribute('data-req-id');
-        // TODO: POST to backend to approve
-        alert('Approved request #' + id + ' (wire up backend)');
-    }
-    if (rejectBtn) {
-        const id = rejectBtn.getAttribute('data-req-id');
-        // TODO: POST to backend to reject
-        alert('Rejected request #' + id + ' (wire up backend)');
-    }
+const approveBtn = e.target.closest('.btn-approve');
+const rejectBtn = e.target.closest('.btn-reject');
+if (approveBtn) {
+const id = approveBtn.getAttribute('data-req-id');
+// TODO: POST to backend to approve
+alert('Approved request #' + id + ' (wire up backend)');
+}
+if (rejectBtn) {
+const id = rejectBtn.getAttribute('data-req-id');
+// TODO: POST to backend to reject
+alert('Rejected request #' + id + ' (wire up backend)');
+}
 });
 <?php $scripts = ob_get_clean(); ?>
 
 <?php require APPROOT . '/views/alumni_approval/layout_adapter.php'; ?>
-
-
-
