@@ -33,7 +33,7 @@
 <?php ob_start(); ?>
 <div>
 <!-- Main content goes here -->
-<h2>All Fundraise Requests</h2>
+<h2>My Fundraise Requests</h2>
 <?php if($data['fundraise_reqs']): ?>
     <div class="cards-container">
         <?php 

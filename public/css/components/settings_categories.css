@@ -10,7 +10,7 @@
 
 .settings-nav-container {
     padding: 0;
-    margin-top: 20px;
+    /* margin-top: 20px; */
 }
 
 .settings-menu {
@@ -44,6 +44,7 @@
 .settings-menu-item.active {
     background: rgba(158, 212, 220, 0.1);
     color: var(--link);
+    border-left: 3px solid var(--link);
     /* Removed the border-left that was causing the blue thick line */
 }
 

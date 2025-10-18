@@ -1,7 +1,7 @@
 <?php ob_start(); ?>
 <style>
 .analytics-container {
-    padding: 1rem;
+    /* padding: 1rem; */
 }
 
 .analytics-header {
@@ -18,8 +18,9 @@
 .analytics-container .description {
     margin: 0.5rem 0 1rem;
     color: var(--muted);
-    font-size: 1rem;
+    font-size: 0.9rem;
     line-height: 1.5;
+    font-weight: normal;
 }
 
 .analytics-info {

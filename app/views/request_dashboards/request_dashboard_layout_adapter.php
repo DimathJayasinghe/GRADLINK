@@ -60,7 +60,7 @@ ob_start();
         display: flex;
         flex-direction: column;
         height: 100%;
-        border-right: 1px solid var(--border);
+        /* border-right: 1px solid var(--border); */
         background-color: var(--bg-alt);
     }
     
@@ -73,7 +73,7 @@ ob_start();
     
     .dashboard-categories ul {
         list-style: none;
-        padding: 20px 0 0 0; /* Added top padding for headroom */
+        /* padding: 20px 0 0 0; Added top padding for headroom */
         margin: 0;
     }
     
@@ -121,6 +121,7 @@ ob_start();
     </ul>
 </div>
 <?php
+$center_topic = ($is_fundraiser) ? "Fundraiser" : (($is_eventrequest) ? "Event Request" : "Event Request");
 // Save center content
 $center_content = ob_get_clean();
 

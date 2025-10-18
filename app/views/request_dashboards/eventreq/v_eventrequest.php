@@ -2,9 +2,9 @@
 <?php ob_start(); ?>
     <style>
         h1 {
-            color: #9ed4dc;
-            font-size: 24px;
-            margin-bottom: 24px;
+            /* color: #9ed4dc; */
+            font-size: 23px;
+            /* margin-bottom: 24px; */
             text-align: left;
         }
         .event-request-form .form-section {
@@ -89,7 +89,7 @@
 <?php ob_start(); ?>
 
     <div >
-        <h1>Create a New Event Request</h1>
+        <h2>Create a New Event Request</h2>
         <form method="event" action="/events/request" enctype="multipart/form-data" class="event-request-form">
             <div class="form-section">
                 <div class="form-group">

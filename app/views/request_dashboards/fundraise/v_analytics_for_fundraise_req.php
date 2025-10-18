@@ -1,7 +1,7 @@
 <?php ob_start(); ?>
 <style>
 .analytics-container {
-    padding: 1rem;
+    /* padding: 1rem; */
 }
 
 .analytics-header {

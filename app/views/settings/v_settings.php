@@ -53,8 +53,8 @@
             ['icon' => 'question-circle', 'label'=>'Help', 'link' => URLROOT . '/settings/helpandsupport','active' => $data['section'] === 'helpandsupport'? true : false],
         ];
         require APPROOT . '/views/inc/commponents/settings_categories.php';
+        $center_topic = "Settings";
     ?>
-    
 <?php $center_content = ob_get_clean(); ?>
 <?php ob_start();?>
        <?php require APPROOT . '/views/settings/Sections/' . $data['section']. '_section.php'; ?>
