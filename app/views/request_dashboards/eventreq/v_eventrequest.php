@@ -81,8 +81,8 @@
 
 <?php
     $sidebar_left = [
-        ['label'=>'My Event Requests', 'url'=>'/postrequest/all','active'=>false ,'icon'=>'user'],
-        ['label'=>'Create Event Request', 'url'=>'/postrequest','active'=>true ,'icon'=>'plus-circle'],
+        ['label'=>'My Event Requests', 'url'=>'/eventrequest/all','active'=>false ,'icon'=>'user'],
+        ['label'=>'Create Event Request', 'url'=>'/eventrequest','active'=>true ,'icon'=>'plus-circle'],
     ]
 ?>
 
@@ -90,7 +90,7 @@
 
     <div >
         <h1>Create a New Event Request</h1>
-        <form method="post" action="/events/request" enctype="multipart/form-data" class="event-request-form">
+        <form method="event" action="/events/request" enctype="multipart/form-data" class="event-request-form">
             <div class="form-section">
                 <div class="form-group">
                     <label for="event_title" class="form-label">Event Title:</label>
@@ -129,7 +129,7 @@
                     <textarea id="description" name="description" class="form-control" rows="4"></textarea>
                 </div>
                 <div class="form-group">
-                    <label for="event_image" class="form-label">Add post (image):</label>
+                    <label for="event_image" class="form-label">Add event (image):</label>
                     <div class="upload-area" id="uploadArea">
                         <span>Click to upload or drag and drop</span>
                         <input type="file" id="event_image" name="event_image" accept="image/*" style="display:none;">

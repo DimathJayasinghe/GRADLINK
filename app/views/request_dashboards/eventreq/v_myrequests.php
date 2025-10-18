@@ -142,8 +142,8 @@
 
 <?php
     $sidebar_left = [
-        ['label'=>'My Event Requests', 'url'=>'/postrequest/all','active'=>true, 'icon'=>'user'],
-        ['label'=>'Create Event Request', 'url'=>'/postrequest','active'=>false, 'icon'=>'plus-circle']
+        ['label'=>'My Event Requests', 'url'=>'/eventrequest/all','active'=>true, 'icon'=>'user'],
+        ['label'=>'Create Event Request', 'url'=>'/eventrequest','active'=>false, 'icon'=>'plus-circle']
     ]
 ?>
 
@@ -175,9 +175,9 @@
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <a href="<?php echo URLROOT; ?>/postrequest/show/<?php echo $request->req_id; ?>" style="flex: 1;">View Details</a>
+                        <a href="<?php echo URLROOT; ?>/eventrequest/show/<?php echo $request->req_id; ?>" style="flex: 1;">View Details</a>
                         <?php if($request->status === 'Approved'): ?>
-                            <a href="<?php echo URLROOT; ?>/postrequest/analytics/<?php echo $request->req_id; ?>" style="flex: 1; background: #6c5ce7;">Analytics</a>
+                            <a href="<?php echo URLROOT; ?>/eventrequest/analytics/<?php echo $request->req_id; ?>" style="flex: 1; background: #6c5ce7;">Analytics</a>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -187,7 +187,7 @@
         <div class="empty-state">
             <h3>You haven't created any event requests yet</h3>
             <p>Create your first event request to promote campus activities and events.</p>
-            <a href="<?php echo URLROOT; ?>/postrequest" class="btn">Create Event Request</a>
+            <a href="<?php echo URLROOT; ?>/eventrequest" class="btn">Create Event Request</a>
         </div>
     <?php endif; ?>
 </div>

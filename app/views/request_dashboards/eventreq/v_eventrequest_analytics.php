@@ -240,9 +240,9 @@
 
 <?php
     $sidebar_left = [
-        ['label'=>'My Event Requests', 'url'=>'/postrequest/all', 'active'=>false, 'icon'=>'user'],
-        ['label'=>'Create Event Request', 'url'=>'/postrequest', 'active'=>false, 'icon'=>'plus-circle'],
-        ['label'=>'Analytics', 'url'=>'/postrequest/analytics/'. $data['request']->req_id, 'active'=>true, 'icon'=>'chart-line'],
+        ['label'=>'My Event Requests', 'url'=>'/eventrequest/all', 'active'=>false, 'icon'=>'user'],
+        ['label'=>'Create Event Request', 'url'=>'/eventrequest', 'active'=>false, 'icon'=>'plus-circle'],
+        ['label'=>'Analytics', 'url'=>'/eventrequest/analytics/'. $data['request']->req_id, 'active'=>true, 'icon'=>'chart-line'],
     ]
 ?>
 

@@ -168,9 +168,9 @@
 
 <?php
     $sidebar_left = [
-        ['label'=>'My Event Requests', 'url'=>'/postrequest/all', 'active'=>false, 'icon'=>'user'],
-        ['label'=>'Create Event Request', 'url'=>'/postrequest', 'active'=>false, 'icon'=>'plus-circle'],
-        ['label' => 'Details', 'url'=>'/postrequest/show/'.$data['request']->req_id, 'active'=>true, 'icon'=>'info-circle']
+        ['label'=>'My Event Requests', 'url'=>'/eventrequest/all', 'active'=>false, 'icon'=>'user'],
+        ['label'=>'Create Event Request', 'url'=>'/eventrequest', 'active'=>false, 'icon'=>'plus-circle'],
+        ['label' => 'Details', 'url'=>'/eventrequest/show/'.$data['request']->req_id, 'active'=>true, 'icon'=>'info-circle']
     ]
 ?>
 
@@ -219,7 +219,7 @@
 
         <?php if($request->attachment_image): ?>
             <div class="image-container">
-                <img src="<?php echo URLROOT; ?>/Media/post/<?php echo htmlspecialchars($request->attachment_image); ?>" alt="Event Image" class="request-image">
+                <img src="<?php echo URLROOT; ?>/Media/event/<?php echo htmlspecialchars($request->attachment_image); ?>" alt="Event Image" class="request-image">
             </div>
         <?php else: ?>
             <div class="image-container">
@@ -228,17 +228,17 @@
         <?php endif; ?>
 
         <div class="action-buttons">
-            <a href="<?php echo URLROOT; ?>/postrequest/all" class="btn btn-back">Back to All Event Requests</a>
+            <a href="<?php echo URLROOT; ?>/eventrequest/all" class="btn btn-back">Back to All Event Requests</a>
             
             <?php if($request->status === 'Pending' && isset($_SESSION['user_id']) && $_SESSION['user_id'] === $request->user_id): ?>
-                <a href="<?php echo URLROOT; ?>/postrequest/edit/<?php echo $request->req_id; ?>" class="btn btn-primary">Edit Event Request</a>
-                <a href="<?php echo URLROOT; ?>/postrequest/delete/<?php echo $request->req_id; ?>" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this event request?')">Delete Event Request</a>
+                <a href="<?php echo URLROOT; ?>/eventrequest/edit/<?php echo $request->req_id; ?>" class="btn btn-primary">Edit Event Request</a>
+                <a href="<?php echo URLROOT; ?>/eventrequest/delete/<?php echo $request->req_id; ?>" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this event request?')">Delete Event Request</a>
             <?php endif; ?>
         </div>
     <?php else: ?>
         <p>Event request not found.</p>
         <div class="action-buttons">
-            <a href="<?php echo URLROOT; ?>/postrequest/all" class="btn btn-back">Back to All Event Requests</a>
+            <a href="<?php echo URLROOT; ?>/eventrequest/all" class="btn btn-back">Back to All Event Requests</a>
         </div>
     <?php endif; ?>
 </div>

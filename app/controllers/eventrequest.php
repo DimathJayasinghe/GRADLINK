@@ -1,9 +1,9 @@
 <?php
-class postrequest extends Controller{
+class eventrequest extends Controller{
     private $model = null;
     public function __construct(){
         SessionManager::redirectToAuthIfNotLoggedIn();
-        $this->model = $this->model('M_postrequest');
+        $this->model = $this->model('M_eventrequest');
     }
     public function index(){
         $data = [
@@ -21,7 +21,7 @@ class postrequest extends Controller{
                 (object)['id'=>10,'name'=>'Literature Club']
             ]
             ];
-        $this->view("/request_dashboards/postreq/v_postrequest",$data);
+        $this->view("/request_dashboards/eventreq/v_eventrequest",$data);
     }
     
     public function all(){
@@ -78,13 +78,13 @@ class postrequest extends Controller{
             'myrequests' => $myRequests
         ];
         
-        $this->view("/request_dashboards/postreq/v_myrequests", $data);
+        $this->view("/request_dashboards/eventreq/v_myrequests", $data);
     }
 
     public function show($id = null) {
         // If no id is provided, redirect to the all page
         if($id === null) {
-            header('Location: ' . URLROOT . '/postrequest/all');
+            header('Location: ' . URLROOT . '/eventrequest/all');
             exit();
         }
 
@@ -132,20 +132,20 @@ class postrequest extends Controller{
             $data = [
                 'request' => $mockRequests[$id]
             ];
-            $this->view("/request_dashboards/postreq/v_viewpostrequest", $data);
+            $this->view("/request_dashboards/eventreq/v_vieweventrequest", $data);
         } else {
             // If the request doesn't exist, show a blank page with not found message
             $data = [
                 'request' => null
             ];
-            $this->view("/request_dashboards/postreq/v_viewpostrequest", $data);
+            $this->view("/request_dashboards/eventreq/v_vieweventrequest", $data);
         }
     }
     
     public function analytics($id = null) {
         // If no id is provided, redirect to my requests
         if($id === null) {
-            header('Location: ' . URLROOT . '/postrequest/myrequests');
+            header('Location: ' . URLROOT . '/eventrequest/myrequests');
             exit();
         }
         
@@ -195,10 +195,10 @@ class postrequest extends Controller{
                     // You could add detailed engagement data here if needed
                 ]
             ];
-            $this->view("/request_dashboards/postreq/v_postrequest_analytics", $data);
+            $this->view("/request_dashboards/eventreq/v_eventrequest_analytics", $data);
         } else {
             // If the request doesn't exist or isn't approved, redirect to my requests
-            header('Location: ' . URLROOT . '/postrequest/myrequests');
+            header('Location: ' . URLROOT . '/eventrequest/myrequests');
             exit();
         }
     }
