@@ -66,6 +66,18 @@
         color: #dc3545;
     }
 
+    /* Make the center column a flex container so the list can scroll */
+    .template-center {
+        display: flex;
+        flex-direction: column;
+    }
+    .template-center .center-topic { flex: 0 0 auto; }
+    .request-list {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        min-height: 0; /* allow flex item to shrink for overflow */
+    }
+
     /* Right column: detail panel */
     .rightsidebar_content {
         padding: 20px 30px 30px;
@@ -169,6 +181,7 @@
 <?php ob_start(); ?>
 <!-- Center column: list all pending join requests -->
 <?php if (!empty($data['requests'])): ?>
+<div class="request-list" style="overflow-y: auto;">
     <?php foreach ($data['requests'] as $request): ?>
         <a class="request-card <?php echo (isset($data['selected_req_id']) && (string)$request->req_id === (string)$data['selected_req_id']) ? 'active-selected-request' : ''; ?>" href="<?php echo URLROOT; ?>/alumni/approve?req_id=<?php echo urlencode($request->req_id); ?>">
             <div class="profile-pic-new-alumni" data-req-id="<?php echo htmlspecialchars($request->req_id); ?>">
@@ -181,6 +194,8 @@
             </div>
         </a>
     <?php endforeach; ?>
+
+</div>
 <?php else: ?>
     <div class="empty-state">No pending requests.</div>
 <?php endif; ?>
