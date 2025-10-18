@@ -187,17 +187,24 @@ class PostCard extends HTMLElement {
     const list = panel.querySelector(".pc-comments-list");
     const cBtn = this.querySelector(".comment-btn");
     // Post text expand / collapse (event delegation)
-    const postTextEl = this.querySelector('.post-text');
+  const postTextEl = this.querySelector('.post-content .post-text');
     // Delegated click handler (post + comments)
     this.addEventListener('click', (e)=>{
       const target = e.target;
       // Post text expand/collapse
       if(postText.length > 100){
-        if(target.matches('[data-action="expand-post"]')){
-          postTextEl.innerHTML = `${postText} <span class=\"seemore-btn\" data-action=\"collapse-post\">Show less</span>`;
+        const expandBtn = target.closest('[data-action="expand-post"]');
+        const collapseBtn = target.closest('[data-action="collapse-post"]');
+        if(expandBtn){
+          if (postTextEl) {
+            postTextEl.innerHTML = `${postText} <span class=\"seemore-btn\" data-action=\"collapse-post\">Show less</span>`;
+          }
           return;
-        } else if(target.matches('[data-action="collapse-post"]')) {
-          postTextEl.innerHTML = truncatePostText(postText);
+        }
+        if(collapseBtn){
+          if (postTextEl) {
+            postTextEl.innerHTML = truncatePostText(postText);
+          }
           return;
         }
       }
