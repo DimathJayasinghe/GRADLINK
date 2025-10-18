@@ -1,4 +1,6 @@
 <?php ob_start()?>
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/common.css">
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard-common.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/posts.css">
 <?php $styles = ob_get_clean()?>
 <?php

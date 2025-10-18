@@ -1,13 +1,24 @@
-<?php
-// Ensure per-page styles are emitted into the <head> by header.php
-$styles = '<link rel="stylesheet" href="' . URLROOT . '/css/admin/common.css">' . PHP_EOL
-         . '<link rel="stylesheet" href="' . URLROOT . '/css/admin/login.css">' . PHP_EOL;
-require APPROOT . '/views/inc/header.php'; ?>
 
+
+<!DOCTYPE html>
+ <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>GRADLINK</title>
+        <link rel="shortcut icon" href="http://localhost/gradlink/img/favicon_white.png" type="image/x-icon">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="http://localhost/gradlink/css/color-pallate.css">
+        <link rel="stylesheet" href="http://localhost/gradlink/css/style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <link rel="stylesheet" href="http://localhost/gradlink/css/admin/common.css">
+<link rel="stylesheet" href="http://localhost/gradlink/css/admin/login.css">
+
+    </head>
+    <body>
 <main class="page">
     <section class="brand">
         <div class="logo-mark">
-            <img src="<?php echo URLROOT ?>/img/logo_white.png" alt="Gradlink mark" />
+            <img src="http://localhost/gradlink/img/logo_white.png" alt="Gradlink mark" />
         </div>
         <h1 class="brand-title">GRADLINK</h1>
         <div style="display: flex; align-items: center; justify-content: center;">
@@ -16,31 +27,20 @@ require APPROOT . '/views/inc/header.php'; ?>
     </section>
 
     <section class="auth-card">
-        <a href="<?php echo URLROOT;?>"><button class="card-close" aria-label="Close">×</button></a>
+        <a href="http://localhost/gradlink"><button class="card-close" aria-label="Close">×</button></a>
         <h2 class="card-title">ADMINISTRATIVE LOGIN</h2>
 
         <!-- Flash Messages start-->
-            <?php 
-            $flashMessages = SessionManager::getFlash();
-            if (!empty($flashMessages)): ?>
-                <div class="flash-messages">
-                    <?php foreach ($flashMessages as $message): ?>
-                        <div class="flash-message <?php echo $message['type']; ?>">
-                            <?php echo htmlspecialchars($message['message']); ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-        <!-- Flash Messages end-->
+                    <!-- Flash Messages end-->
 
         <!-- Admin Login Form start-->
-            <form  class="form" method="POST" action="<?php echo URLROOT; ?>/adminlogin">
+            <form  class="form" method="POST" action="http://localhost/gradlink/adminlogin">
                 <label class="field">
                     <span class="sr-only" for="email">Admin Email</span>
                     <input class="input"
                         type="email" id="email" name="email" required 
                         placeholder="admin@gradlink.com" 
-                        value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                        value="">
                 </label>
 
                 <label class="field">
@@ -56,9 +56,10 @@ require APPROOT . '/views/inc/header.php'; ?>
             </form>
         <!-- Admin Login Form end-->
         <div class="brand-copy">
-                <a href="<?php echo URLROOT;?>">← Back to Main Site</a>
+                <a href="http://localhost/gradlink">← Back to Main Site</a>
         </div>
     </section>
 </main>
 
-<?php require APPROOT . '/views/inc/footer.php'; ?>
+    </body>
+</html>

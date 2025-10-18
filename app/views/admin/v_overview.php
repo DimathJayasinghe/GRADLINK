@@ -1,5 +1,6 @@
-<!-- <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/admin.css">    -->
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/common.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard-common.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard-overview.css">
 <?php ob_start(); ?>
 <?php $styles = ob_get_clean(); ?>
 

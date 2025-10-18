@@ -94,7 +94,7 @@ app/
 
 ### Styling
 
-Admin styles are located in `public/css/admin/admin.css`. The design follows a modern, professional aesthetic with:
+Admin styles are now organized under `public/css/admin/` with the shared/common styles in `public/css/admin/common.css`. The design follows a modern, professional aesthetic with:
 
 - Dark sidebar with gradient background
 - Clean, card-based layout
