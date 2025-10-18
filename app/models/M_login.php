@@ -27,7 +27,7 @@
         
         public function loginAlumni($email,$password){
             // Prepare SQL with role condition for alumni users
-            $this->db->query('SELECT id,name,email,password,role,profile_image FROM users WHERE email = :email AND role = :role LIMIT 1');
+            $this->db->query('SELECT id,name,email,password,role,profile_image,special_alumni FROM users WHERE email = :email AND role = :role LIMIT 1');
             
             // Bind values
             $this->db->bind(':email', $email);

@@ -38,8 +38,16 @@
         //icon for post requests
         ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
         ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
-        ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'", 'active' => true],
+        
     ];
+    //  new portal to approve new alumnis only available for special alumnis
+    if ($_SESSION['special_alumni']){
+        $leftside_buttons[] = [
+            'icon'=>'user-check','label'=>'Approve Alumni','onclick'=>"window.location.href='".URLROOT."/alumni/approve'"
+        ];
+    };
+    $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'", 'active' => true];
+    require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
     require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 <?php $leftsidebar = ob_get_clean(); ?>
 <?php ob_start();?>
