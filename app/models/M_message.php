@@ -69,9 +69,11 @@ class M_message extends Database {
     }
     
     // Send a message
-    public function sendMessage($senderId, $receiverId, $messageText) {
+    public function sendMessage($senderId, $receiverId, $messageText, $conversationId = null) {
         // First, find or create conversation
-        $conversationId = $this->findOrCreateConversation($senderId, $receiverId);
+        if (!$conversationId) {
+            $conversationId = $this->findOrCreateConversation($senderId, $receiverId);
+        }
         
         if (!$conversationId) {
             return false;
@@ -90,7 +92,12 @@ class M_message extends Database {
         if ($this->execute()) {
             // Update conversation last_activity
             $this->updateConversationActivity($conversationId);
-            return $this->lastInsertId();
+            $messageId = $this->lastInsertId();
+            
+            return [
+                'message_id' => $messageId,
+                'conversation_id' => $conversationId
+            ];
         }
         return false;
     }
@@ -220,6 +227,117 @@ class M_message extends Database {
         $this->bind(':conversation_id', $conversationId);
         $this->bind(':user_id', $userId);
         return $this->single();
+    }
+    
+    // Get available users to start conversation with
+    public function getAvailableUsers($currentUserId, $searchQuery = '', $limit = 20) {
+        try {
+            $searchCondition = '';
+            if (!empty($searchQuery)) {
+                $searchCondition = "AND (u.name LIKE :search OR u.email LIKE :search OR u.display_name LIKE :search)";
+            }
+            
+            // Query matching your actual users table structure
+            $this->query("
+                SELECT 
+                    u.id as user_id,
+                    u.email as username,
+                    COALESCE(u.display_name, u.name) as full_name,
+                    u.profile_image as profile_picture,
+                    u.role,
+                    u.batch_no,
+                    0 as has_conversation
+                FROM users u
+                WHERE u.id != :current_user_id
+                    $searchCondition
+                ORDER BY u.name ASC
+                LIMIT :limit
+            ");
+            
+            $this->bind(':current_user_id', $currentUserId);
+            $this->bind(':limit', $limit);
+            
+            if (!empty($searchQuery)) {
+                $searchTerm = "%$searchQuery%";
+                $this->bind(':search', $searchTerm);
+            }
+            
+            $result = $this->resultSet();
+            return $result ? $result : [];
+            
+        } catch (Exception $e) {
+            error_log("Database error in getAvailableUsers: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // Get users by batch/year (for batch conversations)
+    public function getUsersByBatch($currentUserId, $batchYear = null) {
+        $batchCondition = '';
+        if ($batchYear) {
+            $batchCondition = "AND u.batch_year = :batch_year";
+        }
+        
+        $this->query("
+            SELECT 
+                u.user_id,
+                u.username,
+                u.full_name,
+                u.profile_picture,
+                u.batch_year,
+                u.degree_program
+            FROM users u
+            WHERE u.user_id != :current_user_id
+                AND u.is_active = 1
+                $batchCondition
+            ORDER BY u.full_name ASC
+        ");
+        
+        $this->bind(':current_user_id', $currentUserId);
+        if ($batchYear) {
+            $this->bind(':batch_year', $batchYear);
+        }
+        
+        return $this->resultSet();
+    }
+    
+    // Get conversation between two users
+    public function getConversation($userId1, $userId2) {
+        // First, find conversation
+        $this->query("
+            SELECT conversation_id 
+            FROM conversations 
+            WHERE ((user1_id = :user1 AND user2_id = :user2) 
+                OR (user1_id = :user2 AND user2_id = :user1))
+                AND is_deleted = 0
+        ");
+        $this->bind(':user1', $userId1);
+        $this->bind(':user2', $userId2);
+        $conversation = $this->single();
+        
+        if (!$conversation) {
+            return null; // No conversation exists
+        }
+        
+        $conversationId = $conversation->conversation_id;
+        
+        // Get messages
+        $this->query("
+            SELECT m.*, 
+                   u.name as sender_name,
+                   u.email as sender_email
+            FROM messages m
+            JOIN users u ON m.sender_id = u.id
+            WHERE m.conversation_id = :conversation_id
+            ORDER BY m.created_at ASC
+        ");
+        $this->bind(':conversation_id', $conversationId);
+        $messages = $this->resultSet();
+        
+        return [
+            'conversation_id' => $conversationId,
+            'messages' => $messages ? $messages : []
+        ];
     }
 }
 ?>

@@ -1,7 +1,137 @@
 ﻿<?php ob_start();?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/messages/messages.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/messages/messages_sections.css">
+<script>
+// Define functions globally to ensure they're available when buttons are clicked
+window.openNewConversationModal = function() {
+    console.log('Opening modal...');
+    document.getElementById('newConversationModal').style.display = 'flex';
+    loadAvailableUsers();
+}
 
+window.closeNewConversationModal = function() {
+    document.getElementById('newConversationModal').style.display = 'none';
+}
+
+// Load available users for new conversation
+function loadAvailableUsers() {
+    const usersList = document.getElementById('usersList');
+    usersList.innerHTML = '<div class="loading">Loading users...</div>';
+    
+    // Fetch real users from database only
+    fetch('<?php echo URLROOT; ?>/messages/getAvailableUsers')
+        .then(response => {
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('API Response:', data);
+            usersList.innerHTML = '';
+            
+            if (data.success && data.users && data.users.length > 0) {
+                console.log(`Found ${data.users.length} users`);
+                data.users.forEach(user => {
+                    console.log('Creating user item for:', user);
+                    const userItem = createUserItem(user);
+                    usersList.appendChild(userItem);
+                });
+            } else {
+                usersList.innerHTML = '<div class="no-users">No users found in database.<br>' + 
+                    (data.message || 'Make sure you have users in your database.') + '</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+            usersList.innerHTML = '<div class="error">Failed to load users from database.<br>' + 
+                'Error: ' + error.message + '<br>' +
+                'Check console for details.</div>';
+        });
+}
+
+// Create user item element
+function createUserItem(user) {
+    const div = document.createElement('div');
+    div.className = 'conversation-item';
+    div.onclick = () => startConversation(user.user_id, user.full_name || user.username);
+    
+    // Handle name display
+    const displayName = user.full_name || user.username;
+    const nameParts = displayName.split(' ');
+    const shortName = displayName.length > 15 && nameParts.length > 1 
+        ? nameParts[0] + ' ' + nameParts[nameParts.length - 1].charAt(0).toUpperCase() + '.'
+        : displayName;
+    
+    // Handle avatar
+    const avatarSrc = user.profile_picture 
+        ? `<?php echo URLROOT; ?>/media/profile/${user.profile_picture}`
+        : `<?php echo URLROOT; ?>/img/default-avatar.png`;
+    
+    // Show if user already has conversation
+    const statusText = user.has_conversation == 1 
+        ? 'Continue conversation' 
+        : 'Click to start conversation';
+    
+    div.innerHTML = `
+        <div class="user-avatar">
+            <img src="${avatarSrc}" 
+                 alt="${displayName}" class="avatar-img" 
+                 onerror="this.src='<?php echo URLROOT; ?>/img/default-avatar.png'">
+        </div>
+        <div class="user-info">
+            <h4 class="user-name">${shortName}</h4>
+            <p class="last-message">${statusText}</p>
+        </div>
+        ${user.has_conversation == 1 ? '<div class="conversation-indicator"><i class="fas fa-comment"></i></div>' : ''}
+    `;
+    
+    return div;
+}
+
+// Start new conversation
+function startConversation(userId, userName) {
+    closeNewConversationModal();
+    // Use the conversation section instead of redirecting
+    if (typeof openConversation === 'function') {
+        openConversation(userId, userName);
+    } else {
+        console.error('openConversation function not found');
+    }
+}
+
+// Search users function
+function searchUsers(query) {
+    if (query.length < 2) {
+        loadAvailableUsers(); // Load all users if query too short
+        return;
+    }
+    
+    const usersList = document.getElementById('usersList');
+    usersList.innerHTML = '<div class="loading">Searching...</div>';
+    
+    // Fetch filtered users from database
+    fetch(`<?php echo URLROOT; ?>/messages/getAvailableUsers?search=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            usersList.innerHTML = '';
+            
+            if (data.success && data.users.length > 0) {
+                data.users.forEach(user => {
+                    const userItem = createUserItem(user);
+                    usersList.appendChild(userItem);
+                });
+            } else {
+                usersList.innerHTML = '<div class="no-users">No users found matching your search</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error searching users:', error);
+            usersList.innerHTML = '<div class="error">Failed to search users</div>';
+        });
+}
+</script>
 <?php $styles = ob_get_clean();?>
 
 <?php 
@@ -70,90 +200,32 @@
 
 <?php ob_start();?>
 <script>
-    // New Conversation Modal Functions
-    function openNewConversationModal() {
-        document.getElementById('newConversationModal').style.display = 'flex';
-        loadAvailableUsers();
-    }
-    
-    function closeNewConversationModal() {
-        document.getElementById('newConversationModal').style.display = 'none';
-    }
-    
-    // Load available users for new conversation
-    function loadAvailableUsers() {
-        const usersList = document.getElementById('usersList');
-        // Sample users - this would come from an API call
-        const sampleUsers = [
-            { id: 4, name: 'John Doe', avatar: 'john.jpg', is_online: true },
-            { id: 5, name: 'Emma Wilson', avatar: 'emma.jpg', is_online: false },
-            { id: 6, name: 'Michael Brown', avatar: 'michael.jpg', is_online: true },
-            { id: 7, name: 'Lisa Davis', avatar: 'lisa.jpg', is_online: false }
-        ];
-        
-        usersList.innerHTML = '';
-        sampleUsers.forEach(user => {
-            const userItem = createUserItem(user);
-            usersList.appendChild(userItem);
-        });
-    }
-    
-    // Create user item element
-    function createUserItem(user) {
-        const div = document.createElement('div');
-        div.className = 'conversation-item';
-        div.onclick = () => startConversation(user.id, user.name);
-        
-        const nameParts = user.name.split(' ');
-        const displayName = user.name.length > 15 && nameParts.length > 1 
-            ? nameParts[0] + ' ' + nameParts[nameParts.length - 1].charAt(0).toUpperCase() + '.'
-            : user.name;
-        
-        div.innerHTML = `
-            <div class="user-avatar">
-                <img src="<?php echo URLROOT; ?>/media/profile/${user.avatar}" 
-                     alt="${user.name}" class="avatar-img" 
-                     onerror="this.src='<?php echo URLROOT; ?>/img/default-avatar.png'">
-            </div>
-            <div class="user-info">
-                <h4 class="user-name">${displayName}</h4>
-                <p class="last-message">Click to start conversation</p>
-            </div>
-        `;
-        
-        return div;
-    }
-    
-    // Start new conversation
-    function startConversation(userId, userName) {
-        closeNewConversationModal();
-        // Redirect to conversation or update current view
-        window.location.href = `<?php echo URLROOT; ?>/messages/conversation/${userId}`;
-    }
-    
-    // Open existing conversation
-    function openConversation(conversationId) {
+    // Open existing conversation (can handle both conversationId and userId)
+    function openConversation(conversationIdOrUserId, userName = null) {
         // Update active conversation
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.classList.remove('active');
         });
-        event.currentTarget.classList.add('active');
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        }
         
-        // Load conversation in right sidebar (you can implement this)
-        console.log('Opening conversation:', conversationId);
-    }
-    
-    // Search users function
-    function searchUsers(query) {
-        const userItems = document.querySelectorAll('#usersList .conversation-item');
-        userItems.forEach(item => {
-            const userName = item.querySelector('.user-name').textContent.toLowerCase();
-            if (userName.includes(query.toLowerCase())) {
-                item.style.display = 'flex';
+        // Check if conversation section's openConversation function exists
+        if (window.openConversation && typeof window.openConversation === 'function') {
+            // This is a call from the conversation section
+            if (userName) {
+                // Starting new conversation with user
+                window.openConversation(conversationIdOrUserId, userName);
             } else {
-                item.style.display = 'none';
+                // Opening existing conversation - need to get user info
+                // For now, use conversationId to load the conversation
+                console.log('Opening existing conversation:', conversationIdOrUserId);
+                // You could fetch conversation details and then call window.openConversation
+                // For now, we'll redirect or handle differently
             }
-        });
+        } else {
+            console.log('Opening conversation:', conversationIdOrUserId);
+        }
     }
     
     // Close modal when clicking outside

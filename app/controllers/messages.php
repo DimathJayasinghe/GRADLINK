@@ -52,26 +52,35 @@ class messages extends Controller{
             // Get JSON input
             $input = json_decode(file_get_contents('php://input'), true);
             
-            if (!$input || !isset($input['receiver_id']) || !isset($input['message_text'])) {
-                echo json_encode(['success' => false, 'message' => 'Invalid input data']);
+            // Support both 'content' and 'message_text' parameters
+            $messageText = '';
+            if (isset($input['content'])) {
+                $messageText = trim($input['content']);
+            } elseif (isset($input['message_text'])) {
+                $messageText = trim($input['message_text']);
+            }
+            
+            if (!$input || !isset($input['receiver_id']) || empty($messageText)) {
+                echo json_encode(['success' => false, 'message' => 'Invalid input data. Missing receiver_id or message content.']);
                 return;
             }
             
             $senderId = $_SESSION['user_id'];
             $receiverId = filter_var($input['receiver_id'], FILTER_VALIDATE_INT);
-            $messageText = trim($input['message_text']);
+            $conversationId = isset($input['conversation_id']) ? filter_var($input['conversation_id'], FILTER_VALIDATE_INT) : null;
             
             if (!$receiverId || empty($messageText)) {
                 echo json_encode(['success' => false, 'message' => 'Invalid receiver or message']);
                 return;
             }
             
-            $messageId = $this->message_model->sendMessage($senderId, $receiverId, $messageText);
+            $result = $this->message_model->sendMessage($senderId, $receiverId, $messageText, $conversationId);
             
-            if ($messageId) {
+            if ($result && isset($result['message_id'])) {
                 echo json_encode([
                     'success' => true, 
-                    'message_id' => $messageId,
+                    'message_id' => $result['message_id'],
+                    'conversation_id' => $result['conversation_id'],
                     'message' => 'Message sent successfully'
                 ]);
             } else {
@@ -174,6 +183,105 @@ class messages extends Controller{
             ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Conversation not found']);
+        }
+    }
+    
+    // Get available users for new conversation (AJAX)
+    public function getAvailableUsers() {
+        header('Content-Type: application/json');
+        
+        try {
+            // Use 'id' from session to match your users table
+            $userId = $_SESSION['user_id']; // This should be the user's id
+            $searchQuery = isset($_GET['search']) ? trim($_GET['search']) : '';
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+            
+            // Get real users from database
+            $users = $this->message_model->getAvailableUsers($userId, $searchQuery, $limit);
+            
+            if ($users && count($users) > 0) {
+                echo json_encode([
+                    'success' => true, 
+                    'users' => $users, 
+                    'count' => count($users),
+                    'current_user_id' => $userId
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'No users found in database',
+                    'users' => [],
+                    'count' => 0
+                ]);
+            }
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Database error: ' . $e->getMessage(),
+                'users' => [],
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    // Get users by batch (AJAX)
+    public function getUsersByBatch() {
+        $userId = $_SESSION['user_id'];
+        $batchYear = isset($_GET['batch_year']) ? (int)$_GET['batch_year'] : null;
+        
+        $users = $this->message_model->getUsersByBatch($userId, $batchYear);
+        
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'users' => $users]);
+    }
+    
+    // Get conversation with specific user (AJAX)
+    public function getConversation() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+            
+            // Get JSON input
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (!$input || !isset($input['partner_id'])) {
+                echo json_encode(['success' => false, 'message' => 'Partner ID required']);
+                return;
+            }
+            
+            $userId = $_SESSION['user_id'];
+            $partnerId = filter_var($input['partner_id'], FILTER_VALIDATE_INT);
+            
+            if (!$partnerId) {
+                echo json_encode(['success' => false, 'message' => 'Invalid partner ID']);
+                return;
+            }
+            
+            try {
+                $conversation = $this->message_model->getConversation($userId, $partnerId);
+                
+                if ($conversation) {
+                    echo json_encode([
+                        'success' => true,
+                        'conversation_id' => $conversation['conversation_id'],
+                        'messages' => $conversation['messages']
+                    ]);
+                } else {
+                    // No existing conversation
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'No existing conversation found',
+                        'conversation_id' => null,
+                        'messages' => []
+                    ]);
+                }
+            } catch (Exception $e) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Database error: ' . $e->getMessage()
+                ]);
+            }
+        } else {
+            echo json_encode(['success' => false, 'message' => 'POST method required']);
         }
     }
 }

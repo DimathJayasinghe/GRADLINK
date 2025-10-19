@@ -36,8 +36,13 @@
             <!-- Conversations List -->
             <div class="conversations-list">
                 <?php
-                // Use sample data for now (until database is set up)
-                $conversations = [];
+                // Get real conversations from database
+                try {
+                    $messageModel = new M_message();
+                    $conversations = $messageModel->getUserConversations($_SESSION['user_id']);
+                } catch (Exception $e) {
+                    $conversations = [];
+                }
                 
                 // If no conversations, use sample data for demo
                 if (empty($conversations)) {

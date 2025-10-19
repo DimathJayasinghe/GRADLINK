@@ -1,6 +1,7 @@
 <!-- All Messages Section -->
 <div class="messages-right-panel">
-    <div class="section-container">
+    <!-- Default Messages View -->
+    <div class="section-container" id="messagesSection">
         <div class="section-header">
             <div class="section-title-container">
                 <i class="fas fa-inbox section-icon"></i>
@@ -20,5 +21,8 @@
             </div>
         </div>
     </div>
+    
+    <!-- Include Conversation Section -->
+    <?php require APPROOT . '/views/messages/sections/conversation_section.php'; ?>
 </div>
 
