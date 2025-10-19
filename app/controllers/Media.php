@@ -42,5 +42,8 @@ class Media extends Controller {
         readfile($path);
         exit;
     }
+    public function event($filename = '') {
+        $this->serve('posts', $filename);
+    }
 }
 ?>
