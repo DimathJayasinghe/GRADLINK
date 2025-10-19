@@ -27,7 +27,7 @@ class eventrequest extends Controller{
     public function all(){
         // In a real app, we would filter requests by the current user ID
         // For now, let's use mock data
-        $current_user_id = 101; // Assuming this is the logged in user's ID
+        $current_user_id = $_SESSION['user_id']; // Assuming this is the logged in user's ID
         
         // Get all requests that match the current user ID
         $allRequests = [
@@ -35,7 +35,26 @@ class eventrequest extends Controller{
                 'req_id'=>1,
                 'status'=>'Approved',
                 'created_at'=>'2025-10-01 10:00:00',
-                'user_id'=>101,
+                'user_id'=>3,
+                'user_name'=>'D. Jayasinghe',
+                'Position'=>'Design Lead, IEEE CS Chapter',
+                'title'=>'IEEE CS Annual General Meeting 2025',
+                'description'=>'We are conducting our annual general meeting of the IEEE CS Chapter 2025. And we need to publish this event to invite all members and interested students to join us for this important gathering. The AGM will include presentations on our activities, elections for new committee members, and discussions on future plans for the chapter.',
+                'attachment_image'=>'IEEE_CS_AGM_25.png',
+                'club_name'=>'IEEE CS Chapter',
+                'event_date'=>'2024-11-15',
+                'event_time'=>'8:00',
+                'event_venue'=>'@S104, Main Building',
+                'views' => 328,
+                'unique_viewers' => 215,
+                'interested_count' => 45,
+                'going_count' => 23
+            ],
+            (object)[
+                'req_id'=>2,
+                'status'=>'Pending',
+                'created_at'=>'2025-10-01 10:00:00',
+                'user_id'=>3,
                 'user_name'=>'D. Jayasinghe',
                 'Position'=>'Design Lead, IEEE CS Chapter',
                 'title'=>'IEEE CS Annual General Meeting 2025',
@@ -155,7 +174,7 @@ class eventrequest extends Controller{
                 'req_id'=>1,
                 'status'=>'Approved',
                 'created_at'=>'2025-10-01 10:00:00',
-                'user_id'=>101,
+                'user_id'=>3,
                 'user_name'=>'D. Jayasinghe',
                 'Position'=>'Design Lead, IEEE CS Chapter',
                 'title'=>'IEEE CS Annual General Meeting 2025',
@@ -200,6 +219,16 @@ class eventrequest extends Controller{
             // If the request doesn't exist or isn't approved, redirect to my requests
             header('Location: ' . URLROOT . '/eventrequest/myrequests');
             exit();
+        }
+    }
+
+    public function edit($id = null) {
+        // $event = $this->model->getEventRequestById($id);
+        $event = null;
+        $data = ['event' => null];
+        if (!$event) {
+            $data['event'] = $event;
+            $this->view("/request_dashboards/eventreq/v_eventrequest", $data);
         }
     }
 }

@@ -290,7 +290,7 @@
     }
 
     .events-list {
-        max-height: 250px;
+        /* max-height: 250px; */
         overflow-y: auto;
     }
 
@@ -323,33 +323,67 @@
         text-align: center;
         padding: 10px;
     }
+    
+    /* Bookmark button styles */
+    .bookmark-btn {
+        width: 100%;
+        margin-top: 8px;
+        padding: 8px 12px;
+        border: none;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 500;
+        color: #ffffff;
+    }
+    
+    .bookmark-btn.bookmarked {
+        background-color:#ec2424ff;
+    }
+    
+    .bookmark-btn.not-bookmarked {
+        background-color: #4caf50;
+    }
 </style>
 <?php $styles = ob_get_clean(); ?>
 
 <?php ob_start(); ?>
-<?php 
-        $calender_categories = [
-            ['icon' => 'calendar', 'label' => 'View Calender', 'link' => URLROOT . '/calender', 'active'=>true],
-            ['icon' => 'bookmark', 'label' => 'Bookmarked events', 'link' => URLROOT . '/settings/bookmarks', 'active'=>false]
-            
-        ];
-        require APPROOT . '/views/inc/commponents/calender_categories.php';
-        $center_topic = "Events";
-    ?>
+<?php
+    $sidebar_left = [
+        ['label' => 'View Calendar', 'url'=>'/calender', 'active'=>true, 'icon'=>'calendar'],
+        ['label'=>'Bookmarked Events', 'url'=>'/calender/bookmarks', 'active'=>false, 'icon'=>'bookmark'],
+    ]
+?>
 
 <?php $center_content = ob_get_clean(); ?>
 
 <?php ob_start(); ?>
 <!-- Right column: user-selected details -->
-<div class="rightsidebar_content">
+<div class="rightsidebar_content" style="padding:0px">
     <div class="section-topic">Calendar</div>
     
     <div class="calendar-container">
         <!-- Month navigation -->
         <div class="calendar-header">
-            <button class="calendar-nav" id="prevMonth">&lt;</button>
+            <button class="calendar-nav" id="prevMonth" style="background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: var(--text);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-weight: bold;padding:2px">&lt;</button>
             <h3 id="currentMonthDisplay">October 2025</h3>
-            <button class="calendar-nav" id="nextMonth">&gt;</button>
+            <button class="calendar-nav" id="nextMonth" style="background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: var(--text);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-weight: bold;padding:2px">&gt;</button>
         </div>
         
         <!-- Days of week header -->
@@ -400,17 +434,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Format: 'YYYY-MM-DD': [{ title: 'Event Title', time: '10:00 AM', description: 'Event description' }]
     const events = {
         '2025-10-20': [
-            { title: 'Alumni Networking Event', time: '14:00', description: 'Virtual networking session with industry professionals.' },
-            { title: 'Resume Workshop', time: '16:30', description: 'Learn how to create an effective resume.' }
+            { title: 'Alumni Networking Event', time: '14:00', description: 'Virtual networking session with industry professionals.' ,bookmarked: false,id:1},
+            { title: 'Resume Workshop', time: '16:30', description: 'Learn how to create an effective resume.' ,bookmarked: true,id:2}
         ],
         '2025-10-25': [
-            { title: 'Career Fair', time: '10:00', description: 'Annual career fair with top employers.' }
+            {title: 'Career Fair', time: '10:00', description: 'Annual career fair with top employers.',bookmarked: false ,id:3}
         ],
         '2025-10-28': [
-            { title: 'Graduate Studies Info Session', time: '15:00', description: 'Information about graduate programs and opportunities.' }
+            {title: 'Graduate Studies Info Session', time: '15:00', description: 'Information about graduate programs and opportunities.' ,bookmarked: true,id:4 }
         ],
         '2025-11-05': [
-            { title: 'Tech Industry Panel', time: '18:00', description: 'Panel discussion with alumni working in technology.' }
+            {title: 'Tech Industry Panel', time: '18:00', description: 'Panel discussion with alumni working in technology.' ,bookmarked: false,id: 5}
         ]
     };
 
@@ -545,13 +579,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 eventItem.classList.add('event-item');
                 
                 const formattedTime = formatTime(event.time);
-                
-                eventItem.innerHTML = `
-                    <h4>${event.title}</h4>
-                    <p class="event-time">${formattedTime}</p>
-                    <p>${event.description}</p>
-                `;
-                
+                const html = `
+                <div>
+                        <h4>${event.title}</h4>
+                        <p class="event-time">${formattedTime}</p>
+                        <p>${event.description}</p>
+                    </div>
+                    <div style="display:flex; flex-direction:row; gap:6px;">
+                        <button class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-title="${event.title}" style="margin:0px; margin-top:4px;">
+                            <span class="btn" style="color: #ffffff;">
+                            ${event.bookmarked ? 'Remove Bookmark' : 'Add to Bookmarks'}
+                            </span>
+                        </button>
+                        <button class="bookmark-btn" style="margin:0px; margin-top:4px;background-color: #6c757d;">
+                            <a class="btn" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" style="color: #ffffff;" value=${event.id}>
+                                View Details
+                            </a>
+                    </div>
+                    `;
+
+                // then attach to DOM
+                eventItem.innerHTML = html;                
                 eventsList.appendChild(eventItem);
             });
         } else {
@@ -573,6 +621,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize the calendar
     initCalendar();
+    
+    // Event listener for bookmark buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.bookmark-btn')) {
+            const bookmarkBtn = e.target.closest('.bookmark-btn');
+            const eventTitle = bookmarkBtn.getAttribute('data-event-title');
+            
+            // Find the event in our events data
+            if (selectedDate && events[selectedDate]) {
+                const eventIndex = events[selectedDate].findIndex(event => event.title === eventTitle);
+                
+                if (eventIndex !== -1) {
+                    // Toggle the bookmarked status
+                    events[selectedDate][eventIndex].bookmarked = !events[selectedDate][eventIndex].bookmarked;
+                    
+                    // Update the display
+                    showEventsForDate(selectedDate);
+                    
+                    // Here you would typically send an AJAX request to update the backend
+                    console.log(`Event "${eventTitle}" bookmark status changed to: ${events[selectedDate][eventIndex].bookmarked}`);
+                    
+                    // Example of what an AJAX call might look like (commented out)
+                    /*
+                    fetch('/calender/toggleBookmark', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            date: selectedDate,
+                            eventTitle: eventTitle,
+                            bookmarked: events[selectedDate][eventIndex].bookmarked
+                        }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+                    */
+                }
+            }
+        }
+    });
 });
 
 // Original event handling
