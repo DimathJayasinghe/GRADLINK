@@ -53,11 +53,40 @@ CREATE TABLE post_likes (
     CONSTRAINT fk_post_likes_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+
+CREATE TABLE certificates (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    issuer VARCHAR(255) NOT NULL,
+    issued_date DATE NOT NULL,
+    certificate_file VARCHAR(255) NOT NULL, -- path to uploaded PDF
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_certificates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX (user_id, issued_date)
+);
+
+
+
 -- Sample user (password is 'password' hashed using bcrypt 60-char standard example)
 INSERT INTO users (name,email,password,role) VALUES
  ('Sample User','user@example.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','undergrad');
 
 -- Add special_alumni column to users table
  ALTER TABLE users ADD COLUMN special_alumni BOOLEAN DEFAULT 0;
+
+
+ CREATE TABLE certificates (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    issuer VARCHAR(255) NOT NULL,
+    issued_date DATE NOT NULL,
+    certificate_file VARCHAR(255) NOT NULL,  -- path to uploaded PDF
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_certificates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_issued (user_id, issued_date)
+);
+
 
 
