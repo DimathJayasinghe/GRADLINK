@@ -10,16 +10,16 @@
 }
 
 .section-container {
-    padding: 20px;
+    padding: 30px 30px 30px;
     height: 100%;
-    overflow: hidden;
+    overflow: auto;
     display: flex;
     flex-direction: column;
 }
 
 .section-header {
     margin-bottom: 20px;
-    padding-bottom: 15px;
+    padding-bottom: 18px;
     border-bottom: 1px solid var(--border, #3a3a3a);
 }
 

@@ -4,12 +4,7 @@
 <!-- Horizontal Messages Navigation -->
 <div class="messages-nav">
     <div class="messages-nav-container">
-        <div class="messages-header">
-            <h2>Messages</h2>
-            <button class="new-message-btn">
-                <i class="fas fa-edit"></i>
-            </button>
-        </div>
+        <?php $center_topic = "Messages"?>
         
         <!-- Search Messages -->
         <div class="messages-search">
