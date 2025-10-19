@@ -34,7 +34,7 @@ class M_signup {
      */
     public function registerAlumni($data) {
         // Prepare SQL statement
-        $this->db->query("INSERT INTO users (name, email, password, role, display_name, profile_image, bio, skills, nic, batch_no,special_alumni) 
+        $this->db->query("INSERT INTO users (name, email, password, role, display_name, profile_image, bio, skills, nic, batch_no) 
                           VALUES (:name, :email, :password, :role, :display_name, :profile_image, :bio, :skills, :nic, :batch_no)");
         
         // Bind values
@@ -48,7 +48,6 @@ class M_signup {
         $this->db->bind(':skills', $data['skills_json'] ?? null);
         $this->db->bind(':nic', $data['nic'] ?? null);
         $this->db->bind(':batch_no', $data['batch_no'] ?? null);
-        $this->db->bind('special_alumni',false);
         
         // Execute
         if($this->db->execute()) {
