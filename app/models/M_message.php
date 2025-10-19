@@ -317,5 +317,39 @@ class M_message extends Database {
             'other_avatar' => $row->other_avatar,
         ];
     }
+
+    // Edit message text (only by sender)
+    public function editMessage($messageId, $userId, $newText) {
+        $this->query("UPDATE messages SET message_text = :text WHERE message_id = :id AND sender_id = :uid");
+        $this->bind(':text', $newText);
+        $this->bind(':id', $messageId);
+        $this->bind(':uid', $userId);
+        $ok = $this->execute();
+        if ($ok) {
+            // bump conversation last activity
+            $this->query("UPDATE conversations c JOIN messages m ON c.conversation_id = m.conversation_id SET c.last_activity = NOW() WHERE m.message_id = :id");
+            $this->bind(':id', $messageId);
+            $this->execute();
+        }
+        return $ok;
+    }
+
+    // Delete message (soft or hard); here we hard delete, sender only
+    public function deleteMessage($messageId, $userId) {
+        // Get conversation id for activity update
+        $this->query("SELECT conversation_id FROM messages WHERE message_id = :id AND sender_id = :uid");
+        $this->bind(':id', $messageId);
+        $this->bind(':uid', $userId);
+        $row = $this->single();
+        if (!$row) return false;
+        $convId = $row->conversation_id;
+
+        $this->query("DELETE FROM messages WHERE message_id = :id AND sender_id = :uid");
+        $this->bind(':id', $messageId);
+        $this->bind(':uid', $userId);
+        $ok = $this->execute();
+        if ($ok && $convId) { $this->updateConversationActivity($convId); }
+        return $ok;
+    }
 }
 ?>
