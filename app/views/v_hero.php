@@ -405,12 +405,12 @@
 
   <footer id="contact" class="footer">
     <div class="footer-links">
-      <a href="#">Terms of Service</a>
-      <a href="#">Privacy Policy</a>
-      <a href="#">Support</a>
-      <a href="#">Contact Us</a>
+      <a href="<?php echo URLROOT; ?>/Hero/termsofservice">Terms of Service</a>
+      <a href="<?php echo URLROOT; ?>/Hero/privacypolicy">Privacy Policy</a>
+      <a href="<?php echo URLROOT; ?>/Hero/support">Support</a>
+      <a href="<?php echo URLROOT; ?>/Hero/contactus">Contact Us</a>
     </div>
-    <p class="copyright">&copy; 2025 GRADLINK. All rights reserved.</p>
+    <p class="copyright">&copy; <?php echo date('Y'); ?> GRADLINK. All rights reserved.</p>
   </footer>
 
   <script>

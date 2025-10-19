@@ -1,4 +1,4 @@
-    <?php ob_start() ?>
+<?php ob_start() ?>
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardStyles.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css">
     <?php $styles = ob_get_clean(); ?>
@@ -18,7 +18,7 @@
             'time' => '3h ago',
             'userImg' => URLROOT . '/media/profile/bob.jpg'
         ]
-    ]
+    ];
     ?>
 
     <?php ob_start() ?>
