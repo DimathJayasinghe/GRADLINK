@@ -1,5 +1,5 @@
 <?php require APPROOT . '/views/inc/header.php'; ?>
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/auth/v_login_undergrad.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/auth/login_signup_styles.css">
 
 <main class="page">
     <section class="brand">
