@@ -16,19 +16,27 @@
         }
 
         public function termsofservice(){
-
+            // Terms & Conditions page
+            $data = [];
+            $this->view('static_pages/v_termsAndConditions', $data);
         }
 
         public function privacypolicy(){
-
+            // Privacy Policy page
+            $data = [];
+            $this->view('static_pages/v_privacyAndPolicy', $data);
         }
 
         public function support(){
-
+            // Support page
+            $data = [];
+            $this->view('static_pages/v_support', $data);
         }
 
         public function contactus(){
-            
+            // Contact Us page
+            $data = [];
+            $this->view('static_pages/v_contactus', $data);
         }
     }
 ?>
