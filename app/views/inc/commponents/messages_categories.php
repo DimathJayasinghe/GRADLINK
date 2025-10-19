@@ -15,14 +15,14 @@
         </div>
         
         <!-- Horizontal Category Icons -->
-        <div class="messages-categories-row">
+        <!-- <div class="messages-categories-row">
             <?php foreach($message_categories as $category): ?>
             <a href="<?php echo $category['link'] ?>" class="category-icon-btn <?php if($category['active']){echo "active";}?>" 
                data-category="<?php echo $category['label'] ?>">
                 <i class="fas fa-<?php echo isset($category['icon']) ? $category['icon'] : 'envelope'; ?>"></i>
             </a>
             <?php endforeach; ?>
-        </div>
+        </div> -->
         
         <!-- Conversations List -->
         <div class="conversations-section">

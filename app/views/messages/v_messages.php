@@ -55,9 +55,9 @@
     <!-- Message categories -->
     <?php 
         $message_categories = [
-            ['icon' => 'inbox', 'label' => 'All Messages', 'link' => URLROOT . '/messages/all', 'active' => $data['section'] === 'all'? true : false],
-            ['icon' => 'users', 'label' => 'Groups', 'link' => URLROOT . '/messages/groups','active' => $data['section'] === 'groups'? true : false],
-            ['icon' => 'graduation-cap', 'label' => 'Batch', 'link' => URLROOT . '/messages/batch','active' => $data['section'] === 'batch'? true : false],
+            // ['icon' => 'inbox', 'label' => 'All Messages', 'link' => URLROOT . '/messages/all', 'active' => $data['section'] === 'all'? true : false],
+            // ['icon' => 'users', 'label' => 'Groups', 'link' => URLROOT . '/messages/groups','active' => $data['section'] === 'groups'? true : false],
+            // ['icon' => 'graduation-cap', 'label' => 'Batch', 'link' => URLROOT . '/messages/batch','active' => $data['section'] === 'batch'? true : false],
             //['icon' => 'star', 'label' => 'Starred', 'link' => URLROOT . '/messages/starred','active' => $data['section'] === 'starred'? true : false],
         ];
         require APPROOT . '/views/inc/commponents/messages_categories.php';
