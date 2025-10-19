@@ -3,8 +3,10 @@
     margin-right: auto;
     margin-top: 20px;
     padding: 15px;
-    background-color: rgb(255, 245, 200);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: var(--card);
+    color: var(--text);
+    box-shadow: var(--shadow-1);
     width: 500px;
-    border: 1px solid #d3d3d3;
+    border: 1px solid var(--border);
+    border-radius: 10px;
 }

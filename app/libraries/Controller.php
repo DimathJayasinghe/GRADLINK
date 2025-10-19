@@ -17,5 +17,28 @@
                 die('View does not exist: ' . $view);
             }
         }
+
+        public function redirect($to){
+            // Redirect to auth page after logout
+            header('Location: ' . URLROOT . $to);
+            exit();
+        }
+        
+        // Get query parameters (GET parameters excluding 'url')
+        public function getQueryParam($key = null, $default = null) {
+            // Get all GET parameters except 'url'
+            $params = $_GET;
+            if(isset($params['url'])) {
+                unset($params['url']);
+            }
+            
+            // If a specific key is requested
+            if($key !== null) {
+                return isset($params[$key]) ? $params[$key] : $default;
+            }
+            
+            // Return all query parameters
+            return $params;
+        }
     }
 ?>

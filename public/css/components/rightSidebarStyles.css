@@ -1,0 +1,280 @@
+/* Right Sidebar Styles */
+.right-sidebar {
+    width: 100%; /* Let layout column control width */
+    padding: 10px 12px 12px; /* Unified headroom across pages */
+    font-family: 'Poppins', sans-serif;
+}
+
+.search-container {
+    background-color: var(--input);
+    border-radius: 20px;
+    padding: 8px 15px; /* Slightly smaller padding */
+    margin-bottom: 12px; /* Reduced margin */
+    display: flex;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    transition: all 0.2s ease;
+}
+
+.search-container:focus-within {
+    box-shadow: 0 2px 10px rgba(158, 212, 220, 0.15); /* Enhanced focus state */
+    border: 1px solid rgba(158, 212, 220, 0.3);
+}
+
+.calendar-search-icon {
+    position: relative;
+    width: 16px; /* Smaller icon */
+    height: 16px;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calendar-search-icon i {
+    color: var(--muted);
+    font-size: 14px; /* Smaller icon */
+}
+
+.search-container input {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    width: 100%;
+    outline: none;
+    font-size: 14px; /* Smaller font */
+    padding: 2px 0;
+}
+
+.search-container input::placeholder {
+    color: var(--muted);
+    opacity: 0.8;
+}
+
+.right-sidebar .card {
+    /* background-color: var(--card); */
+    border-radius: 12px; /* Slightly smaller radius */
+    margin-bottom: 14px; /* Reduced spacing */
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); /* Subtle shadow */
+    border: 1px solid var(--border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.right-sidebar .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.right-sidebar .card-title {
+    font-size: 17px; /* Align with mainfeed section titles */
+    font-weight: 700;
+    padding: 12px 15px; /* Reduced padding */
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.right-sidebar .card-title::after {
+    content: '';
+    display: block;
+    width: 30px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--link) 0%, rgba(158, 212, 220, 0.5) 100%);
+    border-radius: 2px;
+    margin-top: 3px;
+}
+
+.right-sidebar .event {
+    padding: 12px 15px; /* Reduced padding */
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.right-sidebar .event:hover {
+    background-color: rgba(15, 21, 24, 0.3);
+}
+
+.right-sidebar .event-category {
+    font-size: 12px; /* Smaller font */
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.right-sidebar .event-category i {
+    font-size: 11px;
+    color: var(--link);
+}
+
+.right-sidebar .event-name {
+    font-size: 14px; /* Match feed card titles */
+    font-weight: 600;
+    margin: 4px 0; /* Less spacing */
+    color: var(--text);
+}
+
+.right-sidebar .sidebar-datetime {
+    font-size: 12px; /* Smaller font */
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.right-sidebar .sidebar-datetime i {
+    font-size: 11px;
+}
+
+.right-sidebar .sidebar-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.right-sidebar .event-location {
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.right-sidebar .sidebar-time {
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid var(--border);
+}
+
+.right-sidebar .show-more {
+    color: var(--link);
+    padding: 10px 15px; /* Reduced padding */
+    font-size: 13px; /* Consistent small accent text */
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+}
+
+.right-sidebar .show-more:hover {
+    background-color: rgba(158, 212, 220, 0.1);
+    text-decoration: underline;
+}
+
+.right-sidebar .follow-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px; /* Reduced padding */
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.right-sidebar .follow-card:hover {
+    background-color: rgba(15, 21, 24, 0.3);
+}
+
+.right-sidebar .follow-info {
+    display: flex;
+    align-items: center;
+}
+
+/* Fallback: any img within right-sidebar that acts like an avatar */
+.right-sidebar img.avatar,
+.right-sidebar .event .event_icon img,
+.right-sidebar .follow-info img:not(.non-avatar) {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.right-sidebar .follow-profile-img {
+    width: 36px; /* Consistent small avatar */
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center;
+    border: 2px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.right-sidebar .follow-card:hover .follow-profile-img {
+    border-color: var(--link);
+}
+
+.right-sidebar .follow-details {
+    margin-left: 8px; /* Less spacing */
+}
+
+.right-sidebar .follow-name {
+    font-weight: 600;
+    font-size: 14px; /* Smaller font */
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.right-sidebar .follow-name .verified {
+    color: var(--link);
+    font-size: 11px;
+}
+
+.right-sidebar .follow-handle {
+    color: var(--muted);
+    font-size: 12px; /* Smaller font */
+}
+
+.right-sidebar .follow-btn {
+    background-color: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 18px;
+    padding: 4px 12px; /* Smaller button */
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.right-sidebar .follow-btn:hover {
+    background-color: var(--link);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(158, 212, 220, 0.3);
+}
+
+.right-sidebar .sidebar-event-date {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.right-sidebar .sidebar-event-date i {
+    font-size: 11px;
+    color: var(--link);
+}
+
+/* Responsive styles for right sidebar */
+@media (max-width: 1200px) {
+    .card-title { font-size: 16px; }
+}
+
+@media (max-width: 1024px) {
+    .right-sidebar {
+        display: none; /* Hide on smaller screens */
+    }
+}

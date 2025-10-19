@@ -10,5 +10,25 @@
             $data = [];
             $this->view('v_hero', $data);
         }
+
+        public function learnmore(){
+
+        }
+
+        public function termsofservice(){
+
+        }
+
+        public function privacypolicy(){
+
+        }
+
+        public function support(){
+
+        }
+
+        public function contactus(){
+            
+        }
     }
 ?>

@@ -1,0 +1,356 @@
+        /* Reset and base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body{
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Container styles */
+        .signup-container {
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+
+        /* Header section */
+        .signup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .title-section h1 {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+            font-weight: 600;
+            color: #e0e0e0; /* Light text instead of var(--text) */
+        }
+
+        .subtitle {
+            color: #9e9e9e; /* Muted text instead of var(--muted) */
+        }
+
+        /* Logo container with text */
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+
+        /* Progress bar for multi-page form */
+        .progress-container {
+            border-left: none;
+            margin: 0 auto 2rem;
+            max-width: 400px;
+        }
+        
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 30px;
+            counter-reset: step;
+        }
+        
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            height: 4px;
+            width: 100%;
+            background-color: #303030; /* var(--border) */
+            z-index: 0;
+        }
+        
+        .progress-step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #303030; /* var(--border) */
+            color: #9e9e9e; /* var(--muted) */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .progress-step.active {
+            background-color: #9ed4dc; /* var(--primary) */
+            color: #121212; /* var(--bg) */
+        }
+        
+        .progress-step.completed {
+            background-color: #4caf50; /* Green for completed */
+            color: #121212; /* var(--bg) */
+        }
+        
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            gap: 50px;
+            margin-top: 10px;
+        }
+        
+        .progress-label {
+            text-align: center;
+            color: #9e9e9e; /* var(--muted) */
+            font-size: 0.7rem;
+            width: 50%;
+        }
+        
+        .progress-label.active {
+            color: #e0e0e0; /* var(--text) */
+            font-weight: 500;
+        }
+
+        /* Form page container */
+        .form-page {
+            display: none;
+        }
+        
+        .form-page.active {
+            display: block;
+        }
+
+        /* Form layout */
+        .form-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #656565; /* var(--border) */
+        }
+        
+        .section-title {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color:  var(--link);
+        }
+
+        /* Form controls */
+        .form-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #e0e0e0; /* var(--text) */
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            height: 55px;
+            padding: 0 15px;
+            border: none;
+            background-color: #1e1e1e; /* var(--input) */
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95rem;
+            color: #e0e0e0; /* var(--text) */
+        }
+        
+        textarea.form-control {
+            height: 120px;
+            padding-top: 15px;
+            resize: vertical;
+        }
+        
+        .form-text {
+            font-size: 0.8rem;
+            color: #9e9e9e; /* var(--muted) */
+            margin-top: 0.25rem;
+        }
+
+        /* Checkbox styles */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background-color: #1e1e1e; /* var(--input) */
+            border-radius: 4px;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .checkbox-item input[type="checkbox"]:checked {
+            background-color: #9ed4dc; /* var(--primary) */
+        }
+        
+        .checkbox-item input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #121212; /* var(--bg) */
+            font-size: 0.8rem;
+        }
+        
+        .checkbox-item label {
+            color: #e0e0e0; /* var(--text) */
+        }
+
+        /* File upload section */
+        .file-upload {
+            width: 100%;
+            max-width: 400px;
+            height: 200px;
+            margin-top: 1rem;
+        }
+        
+        .upload-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            background-color: #1e1e1e; /* var(--input) */
+            border: 2px dashed #9e9e9e; /* var(--muted) */
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            color: #9e9e9e; /* var(--muted) */
+        }
+        
+        .upload-area i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Footer section */
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        
+        .back-link {
+            color: #e0e0e0; /* var(--text) */
+        }
+        
+        .back-link a {
+            color: #9ed4dc; /* var(--link) */
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .btn {
+            background-color: #9ed4dc; /* var(--btn) */
+            color: #121212; /* var(--btn-text) */
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-previous {
+            background-color: transparent;
+            border: 1px solid #9ed4dc;
+            color: #9ed4dc;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Error messages */
+        .error-message {
+            background-color: rgba(220, 38, 38, 0.1);
+            color: #ef4444;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 3px solid #dc2626;
+        }
+
+        /* Signature section */
+        .signature-section {
+            margin-top: 2rem;
+        }
+        
+        .signature-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .signature-field {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .signature-line {
+            height: 1px;
+            background-color: #9e9e9e; /* var(--muted) */
+            margin-top: 2rem;
+            position: relative;
+        }
+        
+        .signature-label {
+            position: absolute;
+            top: 0.5rem;
+            left: 0;
+            color: #9e9e9e; /* var(--muted) */
+            font-size: 0.8rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .signature-row {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .form-footer {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .form-footer .back-link {
+                order: 2;
+            }
+            
+            .form-footer .btn-group {
+                order: 1;
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
