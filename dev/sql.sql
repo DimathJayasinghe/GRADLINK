@@ -53,6 +53,21 @@ CREATE TABLE post_likes (
     CONSTRAINT fk_post_likes_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+
+CREATE TABLE certificates (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    issuer VARCHAR(255) NOT NULL,
+    issued_date DATE NOT NULL,
+    certificate_file VARCHAR(255) NOT NULL, -- path to uploaded PDF
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_certificates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX (user_id, issued_date)
+);
+
+
+
 -- Sample user (password is 'password' hashed using bcrypt 60-char standard example)
 INSERT INTO users (name,email,password,role) VALUES
  ('Sample User','user@example.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','undergrad');
@@ -123,5 +138,19 @@ INSERT INTO messages (sender_id, receiver_id, conversation_id, message_text) VAL
 (2, 1, 1, 'Hi there! I am doing great, thanks for asking!'),
 (1, 2, 1, 'That is awesome to hear!');
 */
+
+
+ CREATE TABLE certificates (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    issuer VARCHAR(255) NOT NULL,
+    issued_date DATE NOT NULL,
+    certificate_file VARCHAR(255) NOT NULL,  -- path to uploaded PDF
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_certificates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_issued (user_id, issued_date)
+);
+
 
 
