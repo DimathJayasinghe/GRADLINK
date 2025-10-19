@@ -261,7 +261,9 @@
     }
 
     .calendar-day.selected {
-        background-color: var(--accent-light);
+        /* background-color: var(--accent-light); */
+        background-color: #7216c853;
+        border: 1px solid #d5c6e2a4;
         color: var(--text-invert);
     }
 
@@ -275,6 +277,12 @@
         height: 4px;
         border-radius: 50%;
         background-color: var(--accent);
+    }
+
+    /* If a day has events, give it a subtle background so it's easy to spot
+       Avoid overriding the styles for the currently selected day or today */
+    .calendar-day.has-event:not(.selected):not(.today) {
+        background-color: rgba(179, 124, 29, 0.49);
     }
 
     /* Event details panel */
