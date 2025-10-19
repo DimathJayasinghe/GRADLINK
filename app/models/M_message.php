@@ -285,5 +285,37 @@ class M_message extends Database {
         $this->bind(':user_id', $userId);
         return $this->execute();
     }
+
+    // Get conversation details for a specific conversation for this user
+    public function getConversationDetails($conversationId, $userId) {
+        $this->query("
+            SELECT 
+                c.conversation_id,
+                c.user1_id,
+                c.user2_id,
+                CASE WHEN c.user1_id = :user_id THEN u2.id ELSE u1.id END AS other_user_id,
+                CASE WHEN c.user1_id = :user_id THEN u2.name ELSE u1.name END AS other_full_name,
+                CASE WHEN c.user1_id = :user_id THEN u2.profile_image ELSE u1.profile_image END AS other_avatar
+            FROM conversations c
+            JOIN users u1 ON c.user1_id = u1.id
+            JOIN users u2 ON c.user2_id = u2.id
+            WHERE c.conversation_id = :conversation_id
+              AND (c.user1_id = :user_id OR c.user2_id = :user_id)
+              AND c.is_deleted = 0
+            LIMIT 1
+        ");
+        $this->bind(':user_id', $userId);
+        $this->bind(':conversation_id', $conversationId);
+        $row = $this->single();
+        if (!$row) {
+            return null;
+        }
+        return [
+            'conversation_id' => (int)$row->conversation_id,
+            'other_user_id' => (int)$row->other_user_id,
+            'other_full_name' => $row->other_full_name,
+            'other_avatar' => $row->other_avatar,
+        ];
+    }
 }
 ?>
