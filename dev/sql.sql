@@ -61,3 +61,17 @@ INSERT INTO users (name,email,password,role) VALUES
  ALTER TABLE users ADD COLUMN special_alumni BOOLEAN DEFAULT 0;
 
 
+ CREATE TABLE certificates (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    issuer VARCHAR(255) NOT NULL,
+    issued_date DATE NOT NULL,
+    certificate_file VARCHAR(255) NOT NULL,  -- path to uploaded PDF
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_certificates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_issued (user_id, issued_date)
+);
+
+
+
