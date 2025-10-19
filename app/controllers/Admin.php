@@ -43,11 +43,15 @@
         }
 
         public function engagement() {
-            $engagement = $this->adminModel->getEngagementMetrics();
-            $data = [
-                'engagement' => $engagement,
-                'activeTab' => 'engagement',
-            ];
+                $engagement = $this->adminModel->getEngagementMetrics();
+                $metrics = $this->adminModel->getOverviewMetrics();
+                $charts = $this->adminModel->getChartData();
+                $data = [
+                    'engagement' => $engagement,
+                    'metrics' => $metrics,
+                    'charts' => $charts,
+                    'activeTab' => 'engagement',
+                ];
             $this->view('admin/v_engagement', $data);
         }
 

@@ -29,13 +29,12 @@
 
 
 
-
 <?php
     $sidebar_left = [
         ['label'=>'Overview', 'url'=>'/admin','active'=>false, 'icon'=>'tachometer-alt'],
         ['label'=>'User Management', 'url'=>'/admin/users','active'=>false, 'icon' => 'users'],
         ['label'=>'Engagement Metrics', 'url'=>'/admin/engagement','active'=>false, 'icon' => 'chart-bar'],
-        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>true, 'icon' => 'file-alt'],
+        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>true, 'icon' => 'fas fa-exclamation-triangle'],
         ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>false, 'icon' => 'pencil-alt'],
         ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
         ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>false, 'icon' => 'check-circle']
@@ -51,29 +50,7 @@
         <button class="admin-btn" id="export-content">Export Content Reports</button>
     </div>
 </div>
-<div class="admin-card" style="margin-bottom:1.5rem;">
-    <div class="card-header">
-        <h3>Analytics Overview</h3>
-    </div>
-    <div class="analytics-section">
-        <div class="analytics-item">
-            <span class="analytics-label">Total Users:</span>
-            <span class="analytics-value" id="analytics-users">—</span>
-        </div>
-        <div class="analytics-item">
-            <span class="analytics-label">Total Posts:</span>
-            <span class="analytics-value" id="analytics-posts">—</span>
-        </div>
-        <div class="analytics-item">
-            <span class="analytics-label">Active Users (30d):</span>
-            <span class="analytics-value" id="analytics-active">—</span>
-        </div>
-        <div class="analytics-item">
-            <span class="analytics-label">Growth (3mo):</span>
-            <span class="analytics-value" id="analytics-growth">—</span>
-        </div>
-    </div>
-</div>
+
 <div class="admin-card" style="margin-bottom:1.5rem;">
     <div class="card-header">
         <h3>User Reports</h3>

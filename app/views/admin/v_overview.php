@@ -9,7 +9,7 @@
         ['label'=>'Overview', 'url'=>'/admin','active'=>true, 'icon'=>'tachometer-alt'],
         ['label'=>'User Management', 'url'=>'/admin/users','active'=>false, 'icon' => 'users'],
         ['label'=>'Engagement Metrics', 'url'=>'/admin/engagement','active'=>false, 'icon' => 'chart-bar'],
-        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>false, 'icon' => 'file-alt'],
+        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>false, 'icon' => 'fas fa-exclamation-triangle'],
         ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>false, 'icon' => 'pencil-alt'],
         ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
         ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>false, 'icon' => 'check-circle']

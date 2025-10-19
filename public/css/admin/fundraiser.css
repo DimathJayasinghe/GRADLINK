@@ -1,0 +1,149 @@
+/* Fundraiser admin styles */
+:root {
+    --ff-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+.admin-fundraiser {
+    font-family: var(--ff-sans);
+}
+
+.fund-kpis {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+.fund-kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    min-width: 160px
+}
+
+.fund-kpi .label {
+    color: var(--muted);
+    font-size: 0.9rem
+}
+
+.fund-kpi .value {
+    font-weight: 700;
+    font-size: 1.25rem
+}
+
+.fund-controls {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 1rem;
+    align-items: center;
+    flex-wrap: wrap
+}
+
+.fund-controls input,
+.fund-controls select {
+    padding: .5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+.fund-controls .btn {
+    padding: .5rem .8rem;
+    border-radius: 6px;
+    background: var(--btn);
+    color: var(--btn-text);
+    border: none;
+    cursor: pointer
+}
+
+.fund-grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1rem
+}
+
+.fund-list-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1rem;
+    border-radius: 8px
+}
+
+.fund-list-table {
+    width: 100%;
+    border-collapse: collapse
+}
+
+.fund-list-table th,
+.fund-list-table td {
+    padding: .6rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left
+}
+
+.fund-list-table th {
+    background: var(--bg);
+}
+
+.fund-sidebar {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 1rem;
+    border-radius: 8px
+}
+
+.fund-sidebar h4 {
+    margin-top: 0
+}
+
+.card-compact {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: .6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface)
+}
+
+/* Progress bar */
+.progress {
+    height: 10px;
+    background: var(--border);
+    border-radius: 6px;
+    overflow: hidden
+}
+
+.progress>i {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), #2e7d32);
+    width: 0
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 1200
+}
+
+.modal .modal-inner {
+    width: 100%;
+    max-width: 820px;
+    background: var(--card-bg);
+    padding: 1rem;
+    border-radius: 8px
+}
+
+@media (max-width:900px) {
+    .fund-grid {
+        grid-template-columns: 1fr
+    }
+}
