@@ -26,7 +26,7 @@
         <li id="logout-btn" onclick="window.location.href='<?php echo URLROOT; ?>/logout'">
             <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
         </li>
-        <button class="post-button">Post</button>
+        <button class="post-button" style="font-family: 'Poppins', sans-serif;">Post</button>
     </ul>
 </div>
 
