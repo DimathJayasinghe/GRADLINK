@@ -13,7 +13,7 @@ body {
 
 /* Messages specific styling will go here */
 .messages-container {
-    height: 100vh;
+    /* height: 100vh; */
     overflow: hidden;
 }
 

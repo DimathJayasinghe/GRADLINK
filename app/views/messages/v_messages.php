@@ -94,8 +94,8 @@ function createUserItem(user) {
 function startConversation(userId, userName, userAvatar = null) {
     closeNewConversationModal();
     // Use the conversation section instead of redirecting
-    if (typeof openConversation === 'function') {
-        openConversation(userId, userName, userAvatar);
+    if (typeof openUserConversation === 'function') {
+        openUserConversation(userId, userName, userAvatar);
     } else {
         console.error('openConversation function not found');
     }
@@ -159,10 +159,10 @@ function searchUsers(query) {
 ?>
 <?php ob_start();
     $leftside_buttons = [
-        ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'" , 'active' => true],
+        ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'"],
         ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
         ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'notifications' => $notifications],
-        ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
+        ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'",'active' => true],
         // ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile/watch/".$_SESSION['user_id'] . "'"],
         ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=".$_SESSION['user_id'] . "'"],
         // icon for fundraiser
@@ -210,44 +210,40 @@ function searchUsers(query) {
             event.currentTarget.classList.add('active');
         }
         
-        // Check if conversation section's openConversation function exists
-        if (window.openConversation && typeof window.openConversation === 'function') {
-            // This is a call from the conversation section
-            if (userName) {
-                // Starting new conversation with user
-                window.openConversation(conversationIdOrUserId, userName);
-            } else {
-                // Opening existing conversation - need to get user info
-                // For now, use conversationId to load the conversation
-                console.log('Opening existing conversation:', conversationIdOrUserId);
-                // You could fetch conversation details and then call window.openConversation
-                // For now, we'll redirect or handle differently
-            }
-        } else {
-            console.log('Opening conversation:', conversationIdOrUserId);
+        // Delegate to the conversation panel opener if available
+        if (typeof openUserConversation === 'function' && userName) {
+            openUserConversation(conversationIdOrUserId, userName);
+            return;
         }
+        // Fallback: log
+        console.log('Opening conversation:', conversationIdOrUserId);
     }
     
     // Open existing conversation with full user details
-    function openExistingConversation(conversationId, userName, userAvatar) {
+    window.openExistingConversation = function(el, conversationId, userName, userAvatar, partnerUserId) {
         // Update active conversation
         document.querySelectorAll('.conversation-item').forEach(item => {
             item.classList.remove('active');
         });
-        if (event && event.currentTarget) {
-            event.currentTarget.classList.add('active');
-        }
+        if (el) { el.classList.add('active'); }
         
-        // For existing conversations, we need to get the user ID first
-        // For now, we'll use a simplified approach
-        console.log('Opening existing conversation:', conversationId, userName, userAvatar);
-        
-        // You might want to fetch the user ID from the conversation
-        // For now, we'll call openConversation directly with available data
-        if (typeof openConversation === 'function' && window.openConversation) {
-            // This is a simplified approach - you might want to fetch user ID first
-            window.openConversation(conversationId, userName, userAvatar);
+        // If we know the partner's user id, open directly
+        if (partnerUserId && typeof openUserConversation === 'function') {
+            openUserConversation(partnerUserId, userName, userAvatar);
+            return;
         }
+        // Fallback: attempt to fetch conversation details to derive partner id
+        fetch('<?php echo URLROOT; ?>/messages/getMessages/' + conversationId)
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success && data.conversation && data.conversation.other_user_id && typeof openUserConversation === 'function') {
+                    openUserConversation(data.conversation.other_user_id, userName, userAvatar);
+                } else if (typeof openUserConversation === 'function') {
+                    // If we still can't resolve, try best effort with partnerUserId or noop
+                    console.warn('Could not resolve partner id from conversation');
+                }
+            })
+            .catch(() => {});
     }
     
     // Close modal when clicking outside
@@ -356,10 +352,9 @@ function searchUsers(query) {
             .then(data => {
                 if (data.success) {
                     // Remove conversation from UI
-                    const conversationElement = document.querySelector(`[onclick*="openConversation(${conversationId})"]`);
-                    if (conversationElement) {
-                        conversationElement.remove();
-                    }
+                    const dropdown = document.getElementById(`dropdown-${conversationId}`);
+                    const conversationElement = dropdown ? dropdown.closest('.conversation-item') : null;
+                    if (conversationElement) { conversationElement.remove(); }
                     alert('Conversation deleted successfully.');
                 } else {
                     alert('Failed to delete conversation: ' + (data.message || 'Unknown error'));

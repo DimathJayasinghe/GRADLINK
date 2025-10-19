@@ -162,6 +162,7 @@
     display: flex;
     gap: 12px;
     max-width: 70%;
+    position: relative;
 }
 
 .message-group.sent {
@@ -187,7 +188,7 @@
 }
 
 .message-bubble {
-    padding: 8px 12px;
+    /* padding: 8px 12px; */
     border-radius: 12px;
     font-size: 14px;
     line-height: 1.4;
@@ -300,6 +301,17 @@
 .chat-messages::-webkit-scrollbar-thumb:hover {
     background: var(--muted, #cbb8a3);
 }
+
+/* Message actions dropdown */
+.msg-actions { position: absolute; top: -6px; right: -6px; }
+.message-group.received .msg-actions { right: auto; left: -6px; }
+.msg-actions-btn { width: 28px; height: 28px; border: none; border-radius: 50%; background: var(--surface-2, #1b2126); color: var(--muted, #cbb8a3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.msg-actions-btn:hover { background: var(--surface-1, #151b1f); color: var(--text, #e8eef2); }
+.msg-dropdown { position: absolute; top: 32px; right: 0; background: var(--surface-2, #1b2126); border: 1px solid var(--border, #3a3a3a); border-radius: 8px; min-width: 140px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 10; }
+.message-group.received .msg-dropdown { left: 0; right: auto; }
+.msg-dropdown-item { padding: 8px 10px; font-size: 13px; color: var(--text, #e8eef2); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.msg-dropdown-item:hover { background: var(--surface-1, #151b1f); }
+.msg-dropdown-item.danger { color: #ef4444; }
 </style>
 <!-- Conversation Section -->
 <div class="message-section" id="conversationSection" style="display: none;">
@@ -354,7 +366,7 @@ let currentPartnerId = null;
 
 <script>
 // Function to open conversation with a specific user
-function openConversation(userId, userName, userAvatar = null) {
+function openUserConversation(userId, userName, userAvatar = null) {
     currentPartnerId = userId;
     
     // Update partner info
@@ -368,12 +380,12 @@ function openConversation(userId, userName, userAvatar = null) {
         
         // If database avatar fails, fall back to default
         avatarElement.onerror = function() {
-            this.src = '<?php echo URLROOT; ?>/public/img/default-profile.png';
+            this.src = '<?php echo URLROOT; ?>/media/profile/default-profile.png';
             this.onerror = null; // Prevent infinite loop
         };
     } else {
         // Use default avatar
-        avatarElement.src = '<?php echo URLROOT; ?>/public/img/default-profile.png';
+        avatarElement.src = '<?php echo URLROOT; ?>/media/profile/default-profile.png';
     }
     
     // Show conversation section and hide messages list
@@ -383,6 +395,9 @@ function openConversation(userId, userName, userAvatar = null) {
     // Load conversation
     loadConversation(userId);
 }
+
+// Back-compat global alias if other scripts call openConversation(userId,...)
+window.openConversation = window.openUserConversation;
 
 // Function to go back to messages list
 function backToMessages() {
@@ -442,7 +457,12 @@ function displayMessages(messages) {
     }
     
     messages.forEach(message => {
-        addMessageToChat(message.content, message.sender_id == <?php echo $_SESSION['user_id'] ?? 'null'; ?>, message.created_at);
+        addMessageToChat(
+            message.message_text,
+            message.sender_id == <?php echo $_SESSION['user_id'] ?? 'null'; ?>,
+            message.message_time,
+            message.message_id
+        );
     });
     
     // Scroll to bottom
@@ -484,14 +504,16 @@ function sendMessage() {
             if (!currentConversationId) {
                 currentConversationId = data.conversation_id;
             }
+            // Reload to get definitive message_id and sync
+            loadConversation(currentPartnerId);
         } else {
-            alert('Failed to send message: ' + (data.message || 'Unknown error'));
+            // alert('Failed to send message: ' + (data.message || 'Unknown error'));
             // Optionally remove the message from UI or mark it as failed
         }
     })
     .catch(error => {
-        console.error('Error sending message:', error);
-        alert('Failed to send message. Please try again.');
+        // console.error('Error sending message:', error);
+        // alert('Failed to send message. Please try again.');
     });
     
     // Scroll to bottom
@@ -500,10 +522,14 @@ function sendMessage() {
 }
 
 // Function to add message to chat UI
-function addMessageToChat(message, isSent, timestamp = null) {
+function addMessageToChat(message, isSent, timestamp = null, messageId = null) {
     const chatMessages = document.getElementById('chatMessages');
     const messageGroup = document.createElement('div');
     messageGroup.className = `message-group ${isSent ? 'sent' : 'received'}`;
+    if (messageId) {
+        messageGroup.id = 'msg-' + messageId;
+        messageGroup.dataset.messageId = messageId;
+    }
     
     let timeStr;
     if (timestamp) {
@@ -513,15 +539,88 @@ function addMessageToChat(message, isSent, timestamp = null) {
         timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
     
-    messageGroup.innerHTML = `
-        ${!isSent ? '<div class="message-avatar"><img src="<?php echo URLROOT; ?>/public/img/default-profile.png" alt="User" class="avatar-small"></div>' : ''}
-        <div class="messages-container">
-            <div class="message-bubble">${message}</div>
-            <div class="message-time">${timeStr}</div>
-        </div>
-    `;
+        const actions = `
+            <div class="msg-actions">
+                <button class="msg-actions-btn" title="Options" onclick="event.stopPropagation(); toggleMsgDropdown('${messageId || ''}', ${isSent ? 'true' : 'false'})">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <div class="msg-dropdown" id="msg-dd-${messageId || 'temp'}" style="display:none;">
+                    <div class="msg-dropdown-item" onclick="event.stopPropagation(); replyToMessage('${messageId || ''}', '${encodeURIComponent(message)}')"><i class=\"fas fa-reply\"></i> Reply</div>
+                    ${isSent ? `<div class=\"msg-dropdown-item\" onclick=\"event.stopPropagation(); editMessagePrompt('${messageId}')\"><i class=\"fas fa-edit\"></i> Edit</div>` : ''}
+                    ${isSent ? `<div class=\"msg-dropdown-item danger\" onclick=\"event.stopPropagation(); deleteMessageConfirm('${messageId}')\"><i class=\"fas fa-trash\"></i> Delete</div>` : ''}
+                </div>
+            </div>`;
+
+        messageGroup.innerHTML = `
+                ${!isSent ? '<div class="message-avatar"><img src="<?php echo URLROOT; ?>/media/profile/default-profile.png" alt="User" class="avatar-small"></div>' : ''}
+                <div class="messages-container">
+                        <div class="message-bubble"><span class="msg-text">${message}</span></div>
+                        <div class="message-time">${timeStr}</div>
+                </div>
+                ${actions}
+        `;
     
     chatMessages.appendChild(messageGroup);
+    return messageGroup;
+}
+
+function toggleMsgDropdown(messageId, isSent) {
+    // Hide all other dropdowns
+    document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none');
+    const dd = document.getElementById('msg-dd-' + (messageId || 'temp'));
+    if (dd) dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+}
+
+function replyToMessage(messageId, encodedText) {
+    const input = document.getElementById('messageInput');
+    const text = decodeURIComponent(encodedText || '');
+    const snippet = text.length > 80 ? text.slice(0,80) + '…' : text;
+    input.value = `"${snippet}" ` + input.value;
+    input.focus();
+    toggleMsgDropdown(messageId);
+}
+
+function editMessagePrompt(messageId) {
+    if (!messageId) { alert('Message not ready to edit'); return; }
+    const root = document.getElementById('msg-' + messageId);
+    const textEl = root ? root.querySelector('.msg-text') : null;
+    if (!textEl) return;
+    const current = textEl.textContent;
+    const next = prompt('Edit message:', current);
+    if (next === null) { toggleMsgDropdown(messageId); return; }
+    fetch('<?php echo URLROOT; ?>/messages/editMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message_id: parseInt(messageId,10), new_text: next.trim() })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d && d.success) { textEl.textContent = next.trim(); }
+        else { alert(d.message || 'Failed to edit message'); }
+        toggleMsgDropdown(messageId);
+    })
+    .catch(() => { alert('Failed to edit message'); toggleMsgDropdown(messageId); });
+}
+
+function deleteMessageConfirm(messageId) {
+    if (!messageId) { alert('Message not ready to delete'); return; }
+    if (!confirm('Delete this message?')) { toggleMsgDropdown(messageId); return; }
+    fetch('<?php echo URLROOT; ?>/messages/deleteMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message_id: parseInt(messageId,10) })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d && d.success) {
+            const el = document.getElementById('msg-' + messageId);
+            if (el) el.remove();
+        } else {
+            alert(d.message || 'Failed to delete message');
+        }
+    })
+    .catch(() => alert('Failed to delete message'))
+    .finally(() => toggleMsgDropdown(messageId));
 }
 
 // Send message on Enter key
@@ -534,5 +633,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    // Close message dropdowns on outside click
+    document.addEventListener('click', function(e){
+        if (!e.target.closest('.msg-actions')) {
+            document.querySelectorAll('.msg-dropdown').forEach(d => d.style.display = 'none');
+        }
+    });
 });
 </script>

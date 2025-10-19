@@ -75,25 +75,27 @@
                 }
                 
                 foreach($conversations as $conversation):
-                    $userName = isset($conversation->other_full_name) ? $conversation->other_full_name : $conversation['user_name'];
+                    // Normalize values assuming $conversation is an object (stdClass)
+                    $userName = $conversation->other_full_name ?? ($conversation->user_name ?? 'User');
                     $nameParts = explode(' ', trim($userName));
                     if (strlen($userName) > 15 && count($nameParts) > 1) {
                         $displayName = $nameParts[0] . ' ' . strtoupper(substr($nameParts[count($nameParts)-1], 0, 1)) . '.';
                     } else {
                         $displayName = $userName;
                     }
-                    
-                    // Format time
-                    $lastTime = isset($conversation->last_message_time) 
-                        ? date('g:i A', strtotime($conversation->last_message_time)) 
-                        : (isset($conversation['last_time']) ? $conversation['last_time'] : '');
-                    
-                    $conversationId = isset($conversation->conversation_id) ? $conversation->conversation_id : $conversation['id'];
-                    $lastMessage = isset($conversation->last_message) ? $conversation->last_message : $conversation['last_message'];
-                    $unreadCount = isset($conversation->unread_count) ? $conversation->unread_count : $conversation['unread_count'];
-                    $userAvatar = isset($conversation->other_avatar) ? $conversation->other_avatar : $conversation['user_avatar'];
+
+                    // Format time (prefer last_message_time)
+                    $lastTimeRaw = $conversation->last_message_time ?? ($conversation->last_time ?? null);
+                    $lastTime = $lastTimeRaw ? date('g:i A', strtotime($lastTimeRaw)) : '';
+
+                    // IDs and other fields with safe fallbacks
+                    $conversationId = $conversation->conversation_id ?? ($conversation->id ?? 0);
+                    $lastMessage = $conversation->last_message ?? '';
+                    $unreadCount = isset($conversation->unread_count) ? (int)$conversation->unread_count : 0;
+                    $userAvatar = $conversation->other_avatar ?? ($conversation->user_avatar ?? 'default-avatar.png');
+                    $otherUserId = $conversation->other_user_id ?? null;
                 ?>
-                <div class="conversation-item" onclick="openExistingConversation(<?php echo $conversationId; ?>, '<?php echo htmlspecialchars($userName); ?>', '<?php echo htmlspecialchars($userAvatar); ?>')">
+                <div class="conversation-item" onclick='openExistingConversation(this, <?php echo (int)$conversationId; ?>, <?php echo json_encode($userName); ?>, <?php echo json_encode($userAvatar); ?>, <?php echo (int)$otherUserId; ?>)'>
                     <div class="user-avatar">
                         <img src="<?php echo URLROOT; ?>/media/profile/<?php echo $userAvatar; ?>" 
                              alt="<?php echo $userName; ?>" class="avatar-img" 

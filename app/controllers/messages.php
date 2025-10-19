@@ -49,6 +49,7 @@ class messages extends Controller{
     // Send message
     public function sendMessage() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
             // Get JSON input
             $input = json_decode(file_get_contents('php://input'), true);
             
@@ -83,8 +84,10 @@ class messages extends Controller{
                     'conversation_id' => $result['conversation_id'],
                     'message' => 'Message sent successfully'
                 ]);
+                return;
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to send message']);
+                return;
             }
         }
     }
@@ -92,6 +95,7 @@ class messages extends Controller{
     // Delete conversation
     public function deleteConversation() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
             // Get JSON input
             $input = json_decode(file_get_contents('php://input'), true);
             
@@ -112,8 +116,10 @@ class messages extends Controller{
             
             if ($result) {
                 echo json_encode(['success' => true, 'message' => 'Conversation deleted successfully']);
+                return;
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to delete conversation']);
+                return;
             }
         }
     }
@@ -121,6 +127,7 @@ class messages extends Controller{
     // Report conversation
     public function reportConversation() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
             // Get JSON input
             $input = json_decode(file_get_contents('php://input'), true);
             
@@ -142,8 +149,10 @@ class messages extends Controller{
             
             if ($result) {
                 echo json_encode(['success' => true, 'message' => 'Conversation reported successfully']);
+                return;
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to report conversation']);
+                return;
             }
         }
     }
@@ -169,13 +178,13 @@ class messages extends Controller{
         $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
         
         $messages = $this->message_model->getConversationMessages($conversationId, $userId, $limit, $offset);
+        header('Content-Type: application/json');
         $conversationDetails = $this->message_model->getConversationDetails($conversationId, $userId);
         
         if ($conversationDetails) {
             // Mark messages as read
             $this->message_model->markAsRead($conversationId, $userId);
             
-            header('Content-Type: application/json');
             echo json_encode([
                 'success' => true, 
                 'messages' => $messages,
@@ -283,6 +292,37 @@ class messages extends Controller{
         } else {
             echo json_encode(['success' => false, 'message' => 'POST method required']);
         }
+    }
+    
+    // Edit single message (sender only)
+    public function editMessage() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+            $input = json_decode(file_get_contents('php://input'), true);
+            $messageId = isset($input['message_id']) ? (int)$input['message_id'] : 0;
+            $newText = isset($input['new_text']) ? trim($input['new_text']) : '';
+            $userId = $_SESSION['user_id'];
+            if (!$messageId || $newText === '') {
+                echo json_encode(['success' => false, 'message' => 'Invalid message id or text']); return;
+            }
+            $ok = $this->message_model->editMessage($messageId, $userId, $newText);
+            echo json_encode(['success' => (bool)$ok]); return;
+        }
+        echo json_encode(['success' => false, 'message' => 'POST method required']);
+    }
+
+    // Delete single message (sender only)
+    public function deleteMessage() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+            $input = json_decode(file_get_contents('php://input'), true);
+            $messageId = isset($input['message_id']) ? (int)$input['message_id'] : 0;
+            $userId = $_SESSION['user_id'];
+            if (!$messageId) { echo json_encode(['success' => false, 'message' => 'Invalid message id']); return; }
+            $ok = $this->message_model->deleteMessage($messageId, $userId);
+            echo json_encode(['success' => (bool)$ok]); return;
+        }
+        echo json_encode(['success' => false, 'message' => 'POST method required']);
     }
 }
 ?>
