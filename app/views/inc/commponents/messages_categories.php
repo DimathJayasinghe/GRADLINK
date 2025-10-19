@@ -93,7 +93,7 @@
                     $unreadCount = isset($conversation->unread_count) ? $conversation->unread_count : $conversation['unread_count'];
                     $userAvatar = isset($conversation->other_avatar) ? $conversation->other_avatar : $conversation['user_avatar'];
                 ?>
-                <div class="conversation-item" onclick="openConversation(<?php echo $conversationId; ?>)">
+                <div class="conversation-item" onclick="openExistingConversation(<?php echo $conversationId; ?>, '<?php echo htmlspecialchars($userName); ?>', '<?php echo htmlspecialchars($userAvatar); ?>')">
                     <div class="user-avatar">
                         <img src="<?php echo URLROOT; ?>/media/profile/<?php echo $userAvatar; ?>" 
                              alt="<?php echo $userName; ?>" class="avatar-img" 

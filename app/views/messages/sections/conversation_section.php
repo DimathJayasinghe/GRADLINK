@@ -1,70 +1,8 @@
-<!-- Conversation Section -->
-<div class="message-section" id="conversationSection" style="display: none;">
-    <div class="message-section-header">
-        <div class="section-title-container">
-            <button class="back-btn" onclick="backToMessages()" title="Back to conversations">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <div class="conversation-partner-info">
-                <img src="<?php echo URLROOT; ?>/public/img/default-profile.png" alt="User" class="partner-avatar" id="partnerAvatar">
-                <div class="partner-details">
-                    <h3 id="partnerName">Loading...</h3>
-                    <span class="partner-status" id="partnerStatus">Online</span>
-                </div>
-            </div>
-        </div>
-        <div class="conversation-actions">
-            <button class="message-options-btn" title="Call">
-                <i class="fas fa-phone"></i>
-            </button>
-            <button class="message-options-btn" title="Video Call">
-                <i class="fas fa-video"></i>
-            </button>
-            <button class="message-options-btn" title="More Options">
-                <i class="fas fa-ellipsis-h"></i>
-            </button>
-        </div>
-    </div>
-    
-    <div class="conversation-content">
-        <!-- Chat Messages Area -->
-        <div class="chat-messages" id="chatMessages">
-            <!-- Messages will be loaded dynamically -->
-            <div class="loading-messages" id="loadingMessages">
-                <div class="spinner"></div>
-                <span>Loading conversation...</span>
-            </div>
-        </div>
-        
-        <!-- Message Input Area -->
-        <div class="message-input-container">
-            <button class="attach-btn" title="Attach File">
-                <i class="fas fa-paperclip"></i>
-            </button>
-            <div class="input-wrapper">
-                <input type="text" placeholder="Type a message..." class="message-input" id="messageInput">
-                <button class="emoji-btn" title="Add Emoji">
-                    <i class="fas fa-smile"></i>
-                </button>
-            </div>
-            <button class="send-btn" onclick="sendMessage()">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Global conversation variables -->
-<script>
-let currentConversationId = null;
-let currentPartnerId = null;
-</script>
-
 <style>
 .section-title-container {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
     flex: 1;
 }
 
@@ -86,6 +24,7 @@ let currentPartnerId = null;
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 16px;
+    flex-shrink: 0;
 }
 
 .back-btn:hover {
@@ -97,19 +36,33 @@ let currentPartnerId = null;
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-left: 8px;
+    flex: 1;
+    min-width: 0;
 }
 
 .partner-avatar {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid var(--border, #3a3a3a);
+    flex-shrink: 0;
+}
+
+.partner-details {
+    flex: 1;
+    min-width: 0;
 }
 
 .partner-details h3 {
     margin: 0;
     font-size: 16px;
+    font-weight: 600;
+    color: var(--text, #e8eef2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
     font-weight: 600;
     color: var(--text, #e8eef2);
 }
@@ -141,6 +94,47 @@ let currentPartnerId = null;
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+.message-section{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.message-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border, #3a3a3a);
+    background-color: var(--bg, #0f1518);
+    height: 80vh;
+    max-height: 66px;
+}
+
+.conversation-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.message-options-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--surface-2, #1b2126);
+    color: var(--muted, #cbb8a3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+}
+
+.message-options-btn:hover {
+    background-color: var(--surface-1, #151b1f);
+    color: var(--text, #e8eef2);
 }
 
 .conversation-actions {
@@ -228,7 +222,7 @@ let currentPartnerId = null;
     background-color: var(--bg, #0f1518);
 }
 
-.attach-btn, .send-btn, .emoji-btn {
+.send-btn {
     width: 36px;
     height: 36px;
     border: none;
@@ -239,19 +233,6 @@ let currentPartnerId = null;
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 16px;
-}
-
-.attach-btn, .emoji-btn {
-    background-color: var(--surface-2, #1b2126);
-    color: var(--muted, #cbb8a3);
-}
-
-.attach-btn:hover, .emoji-btn:hover {
-    background-color: var(--surface-1, #151b1f);
-    color: var(--text, #e8eef2);
-}
-
-.send-btn {
     background-color: var(--primary, #9ed4dc);
     color: var(--bg, #0f1518);
 }
@@ -270,7 +251,7 @@ let currentPartnerId = null;
 
 .message-input {
     width: 100%;
-    padding: 10px 40px 10px 16px;
+    padding: 10px 16px;
     background-color: var(--surface-2, #1b2126);
     border: 1px solid var(--border, #3a3a3a);
     border-radius: 20px;
@@ -286,14 +267,6 @@ let currentPartnerId = null;
 
 .message-input:focus {
     border-color: var(--primary, #9ed4dc);
-}
-
-.emoji-btn {
-    position: absolute;
-    right: 4px;
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
 }
 
 /* No messages state */
@@ -328,15 +301,80 @@ let currentPartnerId = null;
     background: var(--muted, #cbb8a3);
 }
 </style>
+<!-- Conversation Section -->
+<div class="message-section" id="conversationSection" style="display: none;">
+    <div class="message-section-header">
+        <div class="section-title-container">
+            <button class="back-btn" onclick="backToMessages()" title="Back to conversations">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="conversation-partner-info">
+                <img src="<?php echo URLROOT; ?>/public/img/default-profile.png" alt="User" class="partner-avatar" id="partnerAvatar">
+                <div class="partner-details">
+                    <h3 id="partnerName">Loading...</h3>
+                    <!-- <span class="partner-status" id="partnerStatus">Online</span> -->
+                </div>
+            </div>
+        </div>
+        <div class="conversation-actions">
+            <button class="message-options-btn" title="More Options">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="conversation-content">
+        <!-- Chat Messages Area -->
+        <div class="chat-messages" id="chatMessages">
+            <!-- Messages will be loaded dynamically -->
+            <div class="loading-messages" id="loadingMessages">
+                <div class="spinner"></div>
+                <span>Loading conversation...</span>
+            </div>
+        </div>
+        
+        <!-- Message Input Area -->
+        <div class="message-input-container">
+            <div class="input-wrapper">
+                <input type="text" placeholder="Type a message..." class="message-input" id="messageInput">
+            </div>
+            <button class="send-btn" onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Global conversation variables -->
+<script>
+let currentConversationId = null;
+let currentPartnerId = null;
+</script>
+
 
 <script>
 // Function to open conversation with a specific user
-function openConversation(userId, userName) {
+function openConversation(userId, userName, userAvatar = null) {
     currentPartnerId = userId;
     
     // Update partner info
     document.getElementById('partnerName').textContent = userName;
-    document.getElementById('partnerAvatar').src = '<?php echo URLROOT; ?>/public/img/default-profile.png';
+    
+    // Set profile picture from database or use default
+    const avatarElement = document.getElementById('partnerAvatar');
+    if (userAvatar && userAvatar !== 'default-avatar.png') {
+        // Try database avatar first
+        avatarElement.src = `<?php echo URLROOT; ?>/public/uploads/profile/${userAvatar}`;
+        
+        // If database avatar fails, fall back to default
+        avatarElement.onerror = function() {
+            this.src = '<?php echo URLROOT; ?>/public/img/default-profile.png';
+            this.onerror = null; // Prevent infinite loop
+        };
+    } else {
+        // Use default avatar
+        avatarElement.src = '<?php echo URLROOT; ?>/public/img/default-profile.png';
+    }
     
     // Show conversation section and hide messages list
     document.getElementById('conversationSection').style.display = 'flex';

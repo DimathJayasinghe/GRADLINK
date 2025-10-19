@@ -55,7 +55,7 @@ function loadAvailableUsers() {
 function createUserItem(user) {
     const div = document.createElement('div');
     div.className = 'conversation-item';
-    div.onclick = () => startConversation(user.user_id, user.full_name || user.username);
+    div.onclick = () => startConversation(user.user_id, user.full_name || user.username, user.profile_picture);
     
     // Handle name display
     const displayName = user.full_name || user.username;
@@ -91,11 +91,11 @@ function createUserItem(user) {
 }
 
 // Start new conversation
-function startConversation(userId, userName) {
+function startConversation(userId, userName, userAvatar = null) {
     closeNewConversationModal();
     // Use the conversation section instead of redirecting
     if (typeof openConversation === 'function') {
-        openConversation(userId, userName);
+        openConversation(userId, userName, userAvatar);
     } else {
         console.error('openConversation function not found');
     }
@@ -225,6 +225,28 @@ function searchUsers(query) {
             }
         } else {
             console.log('Opening conversation:', conversationIdOrUserId);
+        }
+    }
+    
+    // Open existing conversation with full user details
+    function openExistingConversation(conversationId, userName, userAvatar) {
+        // Update active conversation
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        }
+        
+        // For existing conversations, we need to get the user ID first
+        // For now, we'll use a simplified approach
+        console.log('Opening existing conversation:', conversationId, userName, userAvatar);
+        
+        // You might want to fetch the user ID from the conversation
+        // For now, we'll call openConversation directly with available data
+        if (typeof openConversation === 'function' && window.openConversation) {
+            // This is a simplified approach - you might want to fetch user ID first
+            window.openConversation(conversationId, userName, userAvatar);
         }
     }
     
