@@ -2,10 +2,11 @@
 
 /* Import GRADLINK theme variables */
 @import url('../color-pallate.css');
-
+*{
+    font-family: 'poppins', sans-serif;
+}
 /* General styling for messages page */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg, #0f1518);
     color: var(--text, #e8eef2);
 }
@@ -24,10 +25,10 @@ body {
 }
 
 /* Ensure sidebar content maintains proper styling */
-.template-left .sidebar {
+/* .template-left .sidebar {
     width: 100% !important;
     padding: 20px !important;
-}
+} */
 
 .template-left .sidebar-menu li {
     font-size: 18px !important;

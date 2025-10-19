@@ -1,6 +1,7 @@
 ﻿<?php ob_start();?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/messages/messages.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/messages/messages_sections.css">
+
 <?php $styles = ob_get_clean();?>
 
 <?php 
@@ -26,29 +27,37 @@
         ]
     ];
 ?>
-<?php
+<?php ob_start();
     $leftside_buttons = [
-        ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'" ],
+        ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'" , 'active' => true],
         ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
         ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'notifications' => $notifications],
-        ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'", 'active' => true],
+        ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
+        // ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile/watch/".$_SESSION['user_id'] . "'"],
         ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=".$_SESSION['user_id'] . "'"],
+        // icon for fundraiser
         ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
-        ['icon' => 'clipboard-list', 'label' => 'Post Requests', 'onclick' => "window.location.href='" . URLROOT . "/postrequest/'"],
+        // ['icon' => 'clipboard-list', 'label' => 'Post Requests', 'onclick' => "window.location.href='" . URLROOT . "/postrequest/'"],
+        ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
         ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
-        ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"],
     ];
-    require APPROOT . '/views/inc/commponents/leftSideBar.php'; 
-?>
+    //  new portal to approve new alumnis only available for special alumnis
+    if ($_SESSION['special_alumni']){
+        $leftside_buttons[] = [
+            'icon'=>'user-check','label'=>'Approve Alumni','onclick'=>"window.location.href='".URLROOT."/alumni/approve'"
+        ];
+    };
+    $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
+    require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 <?php $leftsidebar = ob_get_clean(); ?>
 
 <?php ob_start();?>
     <!-- Message categories -->
     <?php 
         $message_categories = [
-            ['icon' => 'inbox', 'label' => 'All Messages', 'link' => URLROOT . '/messages/all', 'active' => $data['section'] === 'all'? true : false],
-            ['icon' => 'users', 'label' => 'Groups', 'link' => URLROOT . '/messages/groups','active' => $data['section'] === 'groups'? true : false],
-            ['icon' => 'graduation-cap', 'label' => 'Batch', 'link' => URLROOT . '/messages/batch','active' => $data['section'] === 'batch'? true : false],
+            // ['icon' => 'inbox', 'label' => 'All Messages', 'link' => URLROOT . '/messages/all', 'active' => $data['section'] === 'all'? true : false],
+            // ['icon' => 'users', 'label' => 'Groups', 'link' => URLROOT . '/messages/groups','active' => $data['section'] === 'groups'? true : false],
+            // ['icon' => 'graduation-cap', 'label' => 'Batch', 'link' => URLROOT . '/messages/batch','active' => $data['section'] === 'batch'? true : false],
             //['icon' => 'star', 'label' => 'Starred', 'link' => URLROOT . '/messages/starred','active' => $data['section'] === 'starred'? true : false],
         ];
         require APPROOT . '/views/inc/commponents/messages_categories.php';
