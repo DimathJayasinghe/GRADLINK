@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardStyles.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/profile_styles.css"> <!-- Import profile specific styles -->
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css"> <!-- Import main feed styles -->
+
 <?php $styles = ob_get_clean();?>
 <?php
     $notifications = [
@@ -230,47 +231,37 @@
                 
                 <!-- Certificate Cards -->
                 <div id="certificatesContainer">
-                    <?php 
-                    // Sample certificate data - this would come from your database
-                    $sampleCertificates = [
-                        ['id' => 1, 'title' => 'Machine Learning Expert', 'issuer' => 'Coursera', 'date' => '2022-05-15'],
-                        ['id' => 2, 'title' => 'AWS Solutions Architect', 'issuer' => 'Amazon', 'date' => '2021-11-20']
-                    ];
-                    
-                    if(!empty($sampleCertificates)):
-                        foreach($sampleCertificates as $cert):
-                            $date = new DateTime($cert['date']);
-                            $formattedDate = $date->format('F Y');
-                    ?>
-                    <div class="certificate-card" data-id="<?= $cert['id'] ?>">
-                        <div class="certificate-card-image">
-                            <i class="fas fa-certificate"></i>
-                        </div>
-                        <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($cert['title']) ?></div>
-                            <div class="certificate-issuer"><?= htmlspecialchars($cert['issuer']) ?></div>
-                            <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
-                        </div>
-                        <?php if($isOwner){
-                            echo '
-                                <div class="certificate-actions">
-                            <div class="certificate-action-btn edit-btn" title="Edit Certificate">
-                                <i class="fas fa-pencil-alt"></i>
-                            </div>
-                            <div class="certificate-action-btn delete-btn" title="Delete Certificate">
-                                <i class="fas fa-trash-alt"></i>
-                            </div>
-                        </div>
-                            ';
-                        }?>
-                        
-                    </div>
-                    <?php 
-                        endforeach; 
-                    else: 
-                    ?>
-                    <div>No certificates added yet.</div>
-                    <?php endif; ?>
+                    <?php
+if(!empty($data['certificates'])):
+    foreach($data['certificates'] as $cert):
+        $date = new DateTime($cert->issued_date);
+        $formattedDate = $date->format('F Y');
+?>
+<div class="certificate-card"
+     data-id="<?= htmlspecialchars($cert->id) ?>"
+     data-name="<?= htmlspecialchars($cert->name) ?>"
+     data-issuer="<?= htmlspecialchars($cert->issuer) ?>"
+     data-issued_date="<?= htmlspecialchars($cert->issued_date) ?>"
+     data-file="<?= htmlspecialchars($cert->certificate_file ?? '') ?>">
+    <div class="certificate-card-image"><i class="fas fa-certificate"></i></div>
+    <div class="certificate-details">
+        <div class="certificate-card-title"><?= htmlspecialchars($cert->name) ?></div>
+        <div class="certificate-issuer"><?= htmlspecialchars($cert->issuer) ?></div>
+        <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
+    </div>
+    <?php if($isOwner): ?>
+    <div class="certificate-actions">
+        <div class="certificate-action-btn edit-btn" title="Edit Certificate"><i class="fas fa-pencil-alt"></i></div>
+        <div class="certificate-action-btn delete-btn" title="Delete Certificate"><i class="fas fa-trash-alt"></i></div>
+    </div>
+    <?php endif; ?>
+</div>
+<?php
+    endforeach;
+else:
+?>
+<div>No certificates added yet.</div>
+<?php endif; ?>
                 </div>
 
                 <!-- Projects Section -->
@@ -327,44 +318,105 @@
 
 
 
-    <!-- Certificate Add Popup -->
-    <div id="certificateAddPopup" class="certificate-add-popup">
+    <!-- Add Certificate Popup (separate form) -->
+    <div id="addCertificatePopup" class="certificate-add-popup" style="display:none;">
         <div class="certificate-add">
-            <button class="close-popup" title="Close">
-                <i class="fas fa-times"></i>
-            </button>
-            
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Add New Certificate</div>
-            
-            <form class="certificate-form" id="certificateForm">
+
+            <form id="addCertificateForm" method="post" action="<?= URLROOT; ?>/profile/addCertificate" enctype="multipart/form-data" class="certificate-form">
                 <div class="form-group">
-                    <label for="certificateName">Name</label>
-                    <input type="text" id="certificateName" name="certificateName" placeholder="Certificate name" required>
+                    <label for="certificateNameAdd">Name</label>
+                    <input type="text" id="certificateNameAdd" name="certificate_name" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="certificateIssuer">Issuing Organization</label>
-                    <input type="text" id="certificateIssuer" name="certificateIssuer" placeholder="Organization name" required>
+                    <label for="certificateIssuerAdd">Issuing Organization</label>
+                    <input type="text" id="certificateIssuerAdd" name="certificate_issuer" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="certificateDate">Issue Date</label>
-                    <input type="date" id="certificateDate" name="certificateDate" required>
+                    <label for="certificateDateAdd">Issue Date</label>
+                    <input type="date" id="certificateDateAdd" name="certificate_date" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="certificateFile">Upload Certificate (PDF)</label>
+                    <label for="certificateFileAdd">Upload Certificate (PDF)</label>
                     <div class="file-upload-container">
-                        <input type="file" id="certificateFile" name="certificateFile" accept=".pdf" style="display: none;">
-                        <button type="button" class="file-upload-btn" onclick="document.getElementById('certificateFile').click()">Choose File</button>
-                        <span class="file-name" id="fileName">No file chosen</span>
+                        <input type="file" id="certificateFileAdd" name="certificate_file" accept=".pdf" style="display:none;">
+                        <button type="button" class="file-upload-btn" id="chooseFileBtnAdd" onclick="document.getElementById('certificateFileAdd').click()">Choose File</button>
+                        <span class="file-name" id="fileNameAdd" style="color:var(--text)">No file chosen</span>
                     </div>
                 </div>
-                
-                <button type="submit" class="save-btn">Save Certificate</button>
+
+                <div style="margin-top:12px;">
+                    <button type="submit" class="save-btn" id="saveNewBtnAdd">Save Certificate</button>
+                </div>
             </form>
         </div>
     </div>
+
+    <!-- Edit Certificate Popup (separate form) -->
+    <div id="editCertificatePopup" class="certificate-add-popup" style="display:none;">
+        <div class="certificate-add">
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+            <div class="form-title" id="certificateFormTitleEdit">Edit Certificate</div>
+
+            <form id="editCertificateForm" method="post" action="<?= URLROOT; ?>/profile/updateCertificate" enctype="multipart/form-data" class="certificate-form">
+                <input type="hidden" name="certificate_id" id="certificateIdEdit" value="">
+                <div class="form-group">
+                    <label for="certificateNameEdit">Name</label>
+                    <input type="text" id="certificateNameEdit" name="certificate_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="certificateIssuerEdit">Issuing Organization</label>
+                    <input type="text" id="certificateIssuerEdit" name="certificate_issuer" required>
+                </div>
+                <div class="form-group">
+                    <label for="certificateDateEdit">Issue Date</label>
+                    <input type="date" id="certificateDateEdit" name="certificate_date" required>
+                </div>
+                <div class="form-group">
+                    
+                    <div class="file-upload-container" id="fileUploadContainerEdit">
+                        <label for="certificateFileEdit">Upload Certificate (PDF)</label>
+                        </br>
+                        <input type="file" id="certificateFileEdit" name="certificate_file" accept=".pdf" style="display:none;">
+                        <button type="button" class="file-upload-btn" id="chooseFileBtnEdit" onclick="document.getElementById('certificateFileEdit').click()">Choose File</button>
+                        <span class="file-name" id="fileNameEdit" style="color:var(--text)">No file chosen</span>
+                        <input type="hidden" id="removeFileInputEdit" name="remove_certificate_file" value="0">
+                        <input type="hidden" id="existingFileInputEdit" name="existing_certificate_file" value="">
+                    </div>
+                    
+                    <div id="currentFileContainerEdit" style="margin-top:8px; display:none;">
+                        <span style="color:var(--muted)">Current file: </span>
+                        <a href="#" id="currentFileLinkEdit" target="_blank" style="color:var(--link);"></a>
+                        <button type="button" id="cutFileBtnEdit" class="file-cut-btn" title="Remove current file"
+                                style="margin-left:12px;background:none;border:none;color:var(--link);cursor:pointer;font-size:1rem;">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-top:12px;">
+                    <button type="submit" class="save-btn" id="saveChangesBtnEdit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Delete Confirmation Popup (uses same styles as certificate-add-popup) -->
+    <div id="deleteCertificatePopup" class="certificate-add-popup" style="display:none;">
+        <div class="certificate-add">
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+            <div class="form-title">Delete Certificate</div>
+            <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
+                <p>Are you sure you want to permanently delete this certificate? This action cannot be undone.</p>
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 20px;">
+                <button type="button" id="cancelDeleteCertBtn" class="save-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+                <button type="button" id="confirmDeleteCertBtn" class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
+            </div>
+        </div>
+    </div>
+
 <?php $center_content = ob_get_clean();?>
 <?php ob_start() ?>
     <!-- Include the right sidebar component -->
@@ -421,17 +473,18 @@
             setupEditModeForSection('editCertificatesBtn', 'certificatesContainer', 'certificate-card');
             setupEditModeForSection('editProjectsBtn', 'projectsContainer', 'project-card');
             
-            // Open add certificate popup
-            const addCertificateBtn = document.getElementById('addCertificateBtn');
-            if (addCertificateBtn) {
-                addCertificateBtn.addEventListener('click', function() {
-                    document.getElementById('certificateAddPopup').style.display = 'flex';
-                });
-            }
-            
             // Setup card action buttons for all card types
             setupCardActionButtons('.certificate-card');
             setupCardActionButtons('.project-card');
+            
+            // Removed obsolete certificate handlers that referenced old IDs:
+            // - document.getElementById('certificateAddPopup')
+            // - document.getElementById('certificateForm')
+            // - document.getElementById('certificateFile')
+            // These selectors no longer exist and threw JS errors preventing the new handlers from executing.
+            //
+            // The new per-form handlers (addCertificatePopup / editCertificatePopup / addCertificateForm / editCertificateForm)
+            // defined later in this file handle add/update flows and should remain.
             
             // Close certificate add popup
             const closePopupBtn = document.querySelector('.certificate-add-popup .close-popup');
@@ -446,7 +499,19 @@
             if (certificateForm) {
                 certificateForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    console.log('Certificate form submitted - will be implemented later');
+                    
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: new FormData(this)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Success:', data);
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+
                     document.getElementById('certificateAddPopup').style.display = 'none';
                 });
             }
@@ -568,5 +633,224 @@
             });
         }
     </script>
-<?php $scripts = ob_get_clean();?>
+    <script>
+        // --- New: per-form element references ---
+const addCertificateBtn = document.getElementById('addCertificateBtn'); // existing in page
+const addCertificatePopup = document.getElementById('addCertificatePopup');
+const addCertificateForm = document.getElementById('addCertificateForm');
+const chooseFileBtnAdd = document.getElementById('chooseFileBtnAdd');
+const certificateFileAdd = document.getElementById('certificateFileAdd');
+const fileNameAdd = document.getElementById('fileNameAdd');
+
+const editCertificatePopup = document.getElementById('editCertificatePopup');
+const editCertificateForm = document.getElementById('editCertificateForm');
+const certificateIdEdit = document.getElementById('certificateIdEdit');
+const chooseFileBtnEdit = document.getElementById('chooseFileBtnEdit');
+const certificateFileEdit = document.getElementById('certificateFileEdit');
+const fileNameEdit = document.getElementById('fileNameEdit');
+const currentFileContainerEdit = document.getElementById('currentFileContainerEdit');
+const currentFileLinkEdit = document.getElementById('currentFileLinkEdit');
+const cutFileBtnEdit = document.getElementById('cutFileBtnEdit');
+const removeFileInputEdit = document.getElementById('removeFileInputEdit');
+const existingFileInputEdit = document.getElementById('existingFileInputEdit');
+// NEW: reference to the upload container so we can hide/show it
+const fileUploadContainerEdit = document.getElementById('fileUploadContainerEdit');
+
+// close buttons for both popups (reuse existing selector)
+document.querySelectorAll('.certificate-add .close-popup').forEach(btn=>{
+    btn.addEventListener('click', function(){
+        const popup = this.closest('.certificate-add-popup');
+        if (popup) popup.style.display = 'none';
+    });
+});
+
+// Open add popup
+if (addCertificateBtn && addCertificatePopup) {
+    addCertificateBtn.addEventListener('click', function(){
+        // clear add form
+        addCertificateForm.reset();
+        fileNameAdd.textContent = 'No file chosen';
+        if (chooseFileBtnAdd) chooseFileBtnAdd.style.display = 'inline-block';
+        addCertificatePopup.style.display = 'flex';
+    });
+}
+
+// Edit button behavior: populate edit form and open edit popup
+document.querySelectorAll('.certificate-card .edit-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const card = this.closest('.certificate-card');
+        const id = card.dataset.id || '';
+        const name = card.dataset.name || '';
+        const issuer = card.dataset.issuer || '';
+        const issued_date = card.dataset.issued_date || '';
+        const file = card.dataset.file || '';
+
+        certificateIdEdit.value = id;
+        document.getElementById('certificateNameEdit').value = name;
+        document.getElementById('certificateIssuerEdit').value = issuer;
+        document.getElementById('certificateDateEdit').value = issued_date || '';
+
+        if (file) {
+            // show current-file area; hide upload area (per requirement #1)
+            currentFileContainerEdit.style.display = 'block';
+            currentFileLinkEdit.href = URLROOT + '/storage/certificates/' + file;
+            currentFileLinkEdit.textContent = file;
+            removeFileInputEdit.value = '0';
+            if (existingFileInputEdit) existingFileInputEdit.value = file;
+            if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'none';
+            fileNameEdit.textContent = 'No file chosen';
+        } else {
+            // no existing file: hide current-file area and show upload area
+            currentFileContainerEdit.style.display = 'none';
+            currentFileLinkEdit.href = '#';
+            currentFileLinkEdit.textContent = '';
+            if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'block';
+            removeFileInputEdit.value = '0';
+            if (existingFileInputEdit) existingFileInputEdit.value = '';
+            fileNameEdit.textContent = 'No file chosen';
+        }
+
+        editCertificatePopup.style.display = 'flex';
+    });
+});
+
+// Cut (X) behavior in edit popup: reveal upload container, mark remove flag
+if (cutFileBtnEdit) {
+    cutFileBtnEdit.addEventListener('click', function(){
+        removeFileInputEdit.value = '1';
+        currentFileContainerEdit.style.display = 'none';
+        if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'block';
+        if (chooseFileBtnEdit) chooseFileBtnEdit.style.display = 'inline-block';
+        fileNameEdit.textContent = 'No file chosen';
+        if (certificateFileEdit) certificateFileEdit.value = '';
+        if (existingFileInputEdit) existingFileInputEdit.value = '';
+    });
+}
+
+// File selection handler for edit form
+if (certificateFileEdit) {
+    certificateFileEdit.addEventListener('change', function() {
+        const f = this.files[0];
+        fileNameEdit.textContent = f ? f.name : 'No file chosen';
+        if (f) {
+            // new file will replace existing -> unset remove flag and clear existing filename
+            removeFileInputEdit.value = '0';
+            if (existingFileInputEdit) existingFileInputEdit.value = '';
+            // hide current-file display (we're in upload-flow)
+            if (currentFileContainerEdit) currentFileContainerEdit.style.display = 'none';
+            // keep upload container visible so filename shows
+            if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'block';
+        }
+    });
+}
+
+// Submit handlers (use fetch like before, per form)
+if (addCertificateForm) {
+    addCertificateForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const fd = new FormData(this);
+        fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
+        .then(r => r.json()).then(json => {
+            if (json.success) {
+                // show uploaded original filename if provided
+                if (json.original_name) {
+                    alert('Certificate uploaded: ' + json.original_name);
+                }
+                window.location.reload();
+            } else {
+                alert(json.error || 'Failed to save certificate');
+            }
+        }).catch(()=>alert('Error while saving certificate'));
+    });
+}
+
+if (editCertificateForm) {
+    editCertificateForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        const fd = new FormData(this);
+        fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
+        .then(r => r.json()).then(json => {
+            if (json.success) {
+                // if server returned original uploaded name, show it
+                if (json.original_name) {
+                    alert('Certificate updated. Uploaded file: ' + json.original_name);
+                } else if (json.file) {
+                    // no new upload, show stored filename
+                    alert('Certificate updated. File: ' + json.file);
+                }
+                window.location.reload();
+            } else {
+                alert(json.error || 'Failed to update certificate');
+            }
+        }).catch(()=>alert('Error while updating certificate'));
+    });
+}
+
+// New: delete-certificate popup logic
+(function(){
+    const deletePopup = document.getElementById('deleteCertificatePopup');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteCertBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteCertBtn');
+    let pendingDeleteCertId = null;
+    // open delete popup when any certificate-card delete-btn clicked
+    document.querySelectorAll('.certificate-card .delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e){
+            e.stopPropagation();
+            const card = this.closest('.certificate-card');
+            const id = card ? card.dataset.id : null;
+            if (!id) {
+                alert('Invalid certificate id');
+                return;
+            }
+            pendingDeleteCertId = id;
+            if (deletePopup) deletePopup.style.display = 'flex';
+        });
+    });
+
+    // close handlers (reuse close-popup buttons)
+    document.querySelectorAll('.certificate-add .close-popup').forEach(btn=>{
+        btn.addEventListener('click', function(){
+            const popup = this.closest('.certificate-add-popup');
+            if (popup) popup.style.display = 'none';
+        });
+    });
+
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', function(){
+            pendingDeleteCertId = null;
+            if (deletePopup) deletePopup.style.display = 'none';
+        });
+    }
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async function(){
+            if (!pendingDeleteCertId) return;
+            try {
+                const fd = new FormData();
+                fd.append('certificate_id', pendingDeleteCertId);
+                const res = await fetch(window.URLROOT + '/profile/deleteCertificate', {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'same-origin'
+                });
+                const json = await res.json();
+                if (json.success) {
+                    // remove card from DOM if present
+                    const card = document.querySelector('.certificate-card[data-id="'+pendingDeleteCertId+'"]');
+                    if (card) card.remove();
+                    // hide popup
+                    if (deletePopup) deletePopup.style.display = 'none';
+                    pendingDeleteCertId = null;
+                } else {
+                    alert(json.error || 'Failed to delete certificate');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error while deleting certificate');
+            }
+        });
+    }
+})();
+    </script>
+<?php $scripts = ob_get_clean(); ?>
 <?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>
