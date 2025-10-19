@@ -33,7 +33,7 @@ class eventrequest extends Controller{
         $allRequests = [
             (object)[
                 'req_id'=>1,
-                'status'=>'Approved',
+                'status'=>'Pending',
                 'created_at'=>'2025-10-01 10:00:00',
                 'user_id'=>2,
                 'user_name'=>'D. Jayasinghe',
