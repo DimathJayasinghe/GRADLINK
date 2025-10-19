@@ -34,11 +34,11 @@ ob_start();
         ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
         ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=".$_SESSION['user_id'] . "'"],
         // icon for fundraiser
-        ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'", 'active' => $is_fundraiser],
+        ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
         //icon for event requests
         // ['icon' => 'clipboard-list', 'label' => 'event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'", 'active' => $is_eventrequest],
-        ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'", 'active' => $is_eventrequest],
-        ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
+        ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
+        ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'",'active' => true],
     ];
     //  new portal to approve new alumnis only available for special alumnis
     if ($_SESSION['special_alumni']){
@@ -128,7 +128,7 @@ ob_start();
     </ul>
 </div>
 <?php
-$center_topic = ($is_fundraiser) ? "Fundraiser" : (($is_eventrequest) ? "Event Request" : "Event Request");
+$center_topic = "Events";
 // Save center content
 $center_content = ob_get_clean();
 

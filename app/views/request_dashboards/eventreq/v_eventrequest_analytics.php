@@ -1,9 +1,5 @@
 <?php ob_start(); ?>
 <style>
-.analytics-container {
-    /* padding: 1rem; */
-}
-
 .analytics-header {
     margin-bottom: 1.5rem;
 }

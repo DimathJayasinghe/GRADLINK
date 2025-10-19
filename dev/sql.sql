@@ -57,3 +57,7 @@ CREATE TABLE post_likes (
 INSERT INTO users (name,email,password,role) VALUES
  ('Sample User','user@example.com','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','undergrad');
 
+-- Add special_alumni column to users table
+ ALTER TABLE users ADD COLUMN special_alumni BOOLEAN DEFAULT 0;
+
+

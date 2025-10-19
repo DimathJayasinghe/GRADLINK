@@ -142,31 +142,27 @@
 
 <?php
     $sidebar_left = [
-        ['label'=>'My Event Requests', 'url'=>'/eventrequest/all','active'=>true, 'icon'=>'user'],
-        ['label'=>'Create Event Request', 'url'=>'/eventrequest','active'=>false, 'icon'=>'plus-circle']
+        ['label' => 'View Calendar', 'url'=>'/calender', 'active'=>false, 'icon'=>'calendar'],
+        ['label'=>'Bookmarked Events', 'url'=>'/calender/bookmarks', 'active'=>true, 'icon'=>'bookmark'],
     ]
 ?>
 
 <?php ob_start(); ?>
 <!-- Main content goes here -->
 <div>
-    <h2>My Event Requests</h2>
-    <?php if(!empty($data['myrequests'])): ?>
+    <h2>Bookmarked Events</h2>
+    <?php if(!empty($data['bookmarked_events'])): ?>
         <div class="cards-container">
-            <?php foreach($data['myrequests'] as $request): ?>
+            <?php foreach($data['bookmarked_events'] as $request): ?>
                 <div class="card">
                     <h3>
                         <?php echo htmlspecialchars($request->title); ?>
-                        <span class="status-badge status-<?php echo strtolower($request->status); ?>">
-                            <?php echo htmlspecialchars($request->status); ?>
-                        </span>
                     </h3>
-                    <p class="description"><?php echo htmlspecialchars(substr($request->description, 0, 100)) . (strlen($request->description) > 100 ? '...' : ''); ?></p>
                     <p class="club-name">Club: <?php echo htmlspecialchars($request->club_name); ?></p>
-                    <p class="created-at">Created: <?php echo date('M d, Y', strtotime($request->created_at)); ?></p>
-                    
+                    <p class="description"><?php echo htmlspecialchars($request->description); ?></p>
                     <div class="event-details">
-                        <p><span class="event-icon">EVENT</span> Details:</p>
+                        <p><span class="event-icon">EVENT Details:</span></p>
+                        <!-- <p><span class="event-icon">EVENT</span> Details:</p> -->
                         <p class="event-date-time">
                             <span>Date: <?php echo date('M d, Y', strtotime($request->event_date)); ?></span>
                             <span>Time: <?php echo date('h:i A', strtotime($request->event_time)); ?></span>
@@ -175,24 +171,19 @@
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <a href="<?php echo URLROOT; ?>/eventrequest/show/<?php echo $request->req_id; ?>" style="flex: 1;">View Details</a>
-                        <?php if($request->status === 'Approved'): ?>
-                            <a href="<?php echo URLROOT; ?>/eventrequest/analytics/<?php echo $request->req_id; ?>" style="flex: 1; background: #6c5ce7;">Analytics</a>
-                        <?php else: ?>
-                            <a href="<?php echo URLROOT; ?>/eventrequest/edit/<?php echo $request->req_id; ?>" style="flex: 1; background: #1ec38fff;">Edit</a>
-                        <?php endif; ?>
+                        <a href="<?php echo URLROOT; ?>/calender/show/<?php echo $request->event_id; ?>" style="flex: 1;">View Details</a>
+                        <a href="<?php echo URLROOT; ?>/calender/bookmark?remove?=/<?php echo $request->event_id; ?>" style="flex: 1; background: #ec2424ff;">Remove</a>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
     <?php else: ?>
         <div class="empty-state">
-            <h3>You haven't created any event requests yet</h3>
-            <p>Create your first event request to promote campus activities and events.</p>
-            <a href="<?php echo URLROOT; ?>/eventrequest" class="btn">Create Event Request</a>
+            <h3>You haven't added any events to bookmarks!</h3>
+            <p>Add your first event to here.</p>
         </div>
     <?php endif; ?>
 </div>
 
 <?php $content = ob_get_clean(); ?>
-<?php require APPROOT . '/views/request_dashboards/request_dashboard_layout_adapter.php';?>
+<?php require APPROOT . '/views/calender/v_layout_adapter.php';?>
