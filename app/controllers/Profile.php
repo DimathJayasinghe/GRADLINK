@@ -3,6 +3,25 @@ class Profile extends Controller{
     protected $Model;
    
     public function __construct() {
+        // If it's an API/AJAX call to certificate endpoints, return JSON on unauthenticated
+        $isApi = (
+            (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
+            || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+        );
+        $isCertApiPath = isset($_SERVER['REQUEST_URI']) && preg_match('#/profile/(addCertificate|updateCertificate|deleteCertificate)#i', $_SERVER['REQUEST_URI']);
+
+        if (!isset($_SESSION)) { @session_start(); }
+
+        if (!isset($_SESSION['user_id'])) {
+            if ($isApi && $isCertApiPath) {
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode(['success' => false, 'error' => 'Not authenticated']);
+                exit;
+            }
+        }
+
+        // For normal page routes, keep default redirect behavior
         SessionManager:: redirectToAuthIfNotLoggedIn();
         $this->Model = $this->model('M_Profile');
     }
@@ -36,7 +55,12 @@ class Profile extends Controller{
   
     public function addCertificate()
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); return; }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
 
         header('Content-Type: application/json');
 
@@ -101,7 +125,12 @@ class Profile extends Controller{
 
     public function updateCertificate()
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); return; }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
         header('Content-Type: application/json');
 
         $cert_id = intval($_POST['certificate_id'] ?? 0);
@@ -220,7 +249,12 @@ class Profile extends Controller{
 
     public function deleteCertificate()
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); return; }
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE') {
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
         header('Content-Type: application/json');
 
         // Ensure user logged in
@@ -229,7 +263,7 @@ class Profile extends Controller{
             return;
         }
 
-        $cert_id = intval($_POST['certificate_id'] ?? 0);
+        $cert_id = $this->getQueryParam('id', null);
         if ($cert_id <= 0) {
             echo json_encode(['success' => false, 'error' => 'Invalid certificate id']);
             return;

@@ -48,7 +48,6 @@
     };
     $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
     require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
-    require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
     <?php $leftsidebar = ob_get_clean(); ?>
 
 
@@ -181,7 +180,7 @@
                     if(!empty($sampleWork)):
                         foreach($sampleWork as $work):
                     ?>
-                    <div class="certificate-card" data-id="<?= $work['id'] ?>">
+                    <div class="certificate-card work-card" data-id="<?= $work['id'] ?>">
                         <div class="certificate-card-image">
                             <i class="fas fa-briefcase"></i>
                         </div>
@@ -469,61 +468,15 @@ else:
             showTab('posts');
             
             // Set up edit mode functionality for all sections
-            setupEditModeForSection('editWorkBtn', 'workContainer', 'certificate-card');
+            setupEditModeForSection('editWorkBtn', 'workContainer', 'work-card');
             setupEditModeForSection('editCertificatesBtn', 'certificatesContainer', 'certificate-card');
             setupEditModeForSection('editProjectsBtn', 'projectsContainer', 'project-card');
             
             // Setup card action buttons for all card types
-            setupCardActionButtons('.certificate-card');
+            setupCardActionButtons('.work-card');
             setupCardActionButtons('.project-card');
             
-            // Removed obsolete certificate handlers that referenced old IDs:
-            // - document.getElementById('certificateAddPopup')
-            // - document.getElementById('certificateForm')
-            // - document.getElementById('certificateFile')
-            // These selectors no longer exist and threw JS errors preventing the new handlers from executing.
-            //
-            // The new per-form handlers (addCertificatePopup / editCertificatePopup / addCertificateForm / editCertificateForm)
-            // defined later in this file handle add/update flows and should remain.
-            
-            // Close certificate add popup
-            const closePopupBtn = document.querySelector('.certificate-add-popup .close-popup');
-            if (closePopupBtn) {
-                closePopupBtn.addEventListener('click', function() {
-                    document.getElementById('certificateAddPopup').style.display = 'none';
-                });
-            }
-            
-            // Handle certificate form submission
-            const certificateForm = document.getElementById('certificateForm');
-            if (certificateForm) {
-                certificateForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    fetch(this.action, {
-                        method: 'POST',
-                        body: new FormData(this)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Success:', data);
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                    });
-
-                    document.getElementById('certificateAddPopup').style.display = 'none';
-                });
-            }
-            
-            // File upload display filename
-            const certificateFile = document.getElementById('certificateFile');
-            if (certificateFile) {
-                certificateFile.addEventListener('change', function() {
-                    const fileName = this.files[0] ? this.files[0].name : 'No file chosen';
-                    document.getElementById('fileName').textContent = fileName;
-                });
-            }
+            // No-op: certificate handlers are implemented in the later script block per-form
             
             // Profile edit button
             const profileEditBtn = document.querySelector('.profile-edit-btn');
@@ -606,26 +559,22 @@ else:
 
         // Setup action buttons for different card types
         function setupCardActionButtons(cardSelector) {
+            // Keep generic handlers for non-certificate cards only
             const cards = document.querySelectorAll(cardSelector);
-            
             cards.forEach(card => {
+                if (card.classList.contains('certificate-card')) return; // certificate has custom logic
                 const editBtn = card.querySelector('.edit-btn');
                 const deleteBtn = card.querySelector('.delete-btn');
-                
                 if (editBtn) {
                     editBtn.addEventListener('click', function() {
                         const cardId = card.dataset.id;
                         console.log('Edit item:', cardId);
-                        // Future implementation for editing
                     });
                 }
-                
                 if (deleteBtn) {
                     deleteBtn.addEventListener('click', function() {
                         const cardId = card.dataset.id;
                         if (confirm('Are you sure you want to delete this item?')) {
-                            console.log('Delete item:', cardId);
-                            // Future implementation for deletion
                             card.remove();
                         }
                     });
@@ -676,7 +625,7 @@ if (addCertificateBtn && addCertificatePopup) {
 }
 
 // Edit button behavior: populate edit form and open edit popup
-document.querySelectorAll('.certificate-card .edit-btn').forEach(btn => {
+document.querySelectorAll('#certificatesContainer .certificate-card .edit-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         const card = this.closest('.certificate-card');
         const id = card.dataset.id || '';
@@ -693,7 +642,7 @@ document.querySelectorAll('.certificate-card .edit-btn').forEach(btn => {
         if (file) {
             // show current-file area; hide upload area (per requirement #1)
             currentFileContainerEdit.style.display = 'block';
-            currentFileLinkEdit.href = URLROOT + '/storage/certificates/' + file;
+            currentFileLinkEdit.href = window.URLROOT + '/storage/certificates/' + file;
             currentFileLinkEdit.textContent = file;
             removeFileInputEdit.value = '0';
             if (existingFileInputEdit) existingFileInputEdit.value = file;
@@ -745,6 +694,13 @@ if (certificateFileEdit) {
 }
 
 // Submit handlers (use fetch like before, per form)
+// Reflect selected file name in Add form
+if (certificateFileAdd) {
+    certificateFileAdd.addEventListener('change', function(){
+        const f = this.files[0];
+        if (fileNameAdd) fileNameAdd.textContent = f ? f.name : 'No file chosen';
+    });
+}
 if (addCertificateForm) {
     addCertificateForm.addEventListener('submit', function(e){
         e.preventDefault();
@@ -753,9 +709,6 @@ if (addCertificateForm) {
         .then(r => r.json()).then(json => {
             if (json.success) {
                 // show uploaded original filename if provided
-                if (json.original_name) {
-                    alert('Certificate uploaded: ' + json.original_name);
-                }
                 window.location.reload();
             } else {
                 alert(json.error || 'Failed to save certificate');
@@ -772,12 +725,6 @@ if (editCertificateForm) {
         .then(r => r.json()).then(json => {
             if (json.success) {
                 // if server returned original uploaded name, show it
-                if (json.original_name) {
-                    alert('Certificate updated. Uploaded file: ' + json.original_name);
-                } else if (json.file) {
-                    // no new upload, show stored filename
-                    alert('Certificate updated. File: ' + json.file);
-                }
                 window.location.reload();
             } else {
                 alert(json.error || 'Failed to update certificate');
@@ -793,7 +740,7 @@ if (editCertificateForm) {
     const cancelDeleteBtn = document.getElementById('cancelDeleteCertBtn');
     let pendingDeleteCertId = null;
     // open delete popup when any certificate-card delete-btn clicked
-    document.querySelectorAll('.certificate-card .delete-btn').forEach(btn => {
+    document.querySelectorAll('#certificatesContainer .certificate-card .delete-btn').forEach(btn => {
         btn.addEventListener('click', function(e){
             e.stopPropagation();
             const card = this.closest('.certificate-card');
@@ -826,27 +773,29 @@ if (editCertificateForm) {
         confirmDeleteBtn.addEventListener('click', async function(){
             if (!pendingDeleteCertId) return;
             try {
-                const fd = new FormData();
-                fd.append('certificate_id', pendingDeleteCertId);
-                const res = await fetch(window.URLROOT + '/profile/deleteCertificate', {
-                    method: 'POST',
-                    body: fd,
-                    credentials: 'same-origin'
+                const url = '<?php echo URLROOT; ?>/profile/deleteCertificate?id=' + encodeURIComponent(pendingDeleteCertId);
+                const res = await fetch(url, {
+                    method: 'DELETE',
+                    credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json' }
                 });
+                const ct = res.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) {
+                    const text = await res.text();
+                    console.error('Non-JSON response:', text);
+                    alert('Failed to delete certificate: unexpected server response');
+                    return;
+                }
                 const json = await res.json();
-                if (json.success) {
-                    // remove card from DOM if present
-                    const card = document.querySelector('.certificate-card[data-id="'+pendingDeleteCertId+'"]');
-                    if (card) card.remove();
-                    // hide popup
-                    if (deletePopup) deletePopup.style.display = 'none';
-                    pendingDeleteCertId = null;
+                if (json && json.success) {
+                    // Refresh to ensure server state is reflected in UI
+                    window.location.reload();
                 } else {
-                    alert(json.error || 'Failed to delete certificate');
+                    alert((json && json.error) || 'Failed to delete certificate');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error while deleting certificate');
+                alert('Error while deleting certificate: ' + (err && err.message ? err.message : 'unknown error'));
             }
         });
     }

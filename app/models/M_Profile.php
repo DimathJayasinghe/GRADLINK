@@ -26,6 +26,15 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
+    /**
+     * Fetch a single certificate by id.
+     */
+    public function getCertificateById($cert_id){
+        $this->db->query('SELECT * FROM certificates WHERE id = :id LIMIT 1');
+        $this->db->bind(':id', $cert_id);
+        return $this->db->single();
+    }
+
 
 // ...existing code...
 
