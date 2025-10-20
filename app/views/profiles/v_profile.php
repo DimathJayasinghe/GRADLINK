@@ -550,6 +550,40 @@ else:
         </div>
     </div>
 
+    <!-- Delete Work Experience Popup (visual only) -->
+    <?php if ($isOwner): ?>
+    <div id="deleteWorkPopup" class="certificate-add-popup" style="display:none;">
+        <div class="certificate-add">
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+            <div class="form-title">Delete Work Experience</div>
+            <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
+                <p>Are you sure you want to permanently delete this work experience? This action cannot be undone.</p>
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 20px;">
+                <button type="button" id="cancelDeleteWorkBtn" class="save-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+                <button type="button" id="confirmDeleteWorkBtn" class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Delete Project Popup (visual only) -->
+    <?php if ($isOwner): ?>
+    <div id="deleteProjectPopup" class="certificate-add-popup" style="display:none;">
+        <div class="certificate-add">
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+            <div class="form-title">Delete Project</div>
+            <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
+                <p>Are you sure you want to permanently delete this project? This action cannot be undone.</p>
+            </div>
+            <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 20px;">
+                <button type="button" id="cancelDeleteProjectBtn" class="save-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+                <button type="button" id="confirmDeleteProjectBtn" class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
 <?php $center_content = ob_get_clean();?>
 <?php ob_start() ?>
     <!-- Include the right sidebar component -->
@@ -1044,7 +1078,7 @@ if (editCertificateForm) {
             editWorkPopup.style.display = 'flex';
         });
         if (deleteBtn) deleteBtn.addEventListener('click', function(){
-            if (confirm('Are you sure you want to delete this work experience?')) card.remove();
+            // if (confirm('Are you sure you want to delete this work experience?')) card.remove();
         });
     }
     // bind existing
@@ -1136,6 +1170,95 @@ if (editCertificateForm) {
             editProjectPopup.style.display = 'none';
         });
     }
+})();
+
+// Delegated handler to ensure Project edit popup always opens
+(function(){
+    const container = document.getElementById('projectsContainer');
+    const editProjectPopup = document.getElementById('editProjectPopup');
+    if (!container || !editProjectPopup) return;
+    container.addEventListener('click', function(e){
+        const btn = e.target.closest('.project-card .edit-btn');
+        if (!btn) return;
+        const card = btn.closest('.project-card');
+        if (!card) return;
+        const id = card.dataset.id || '';
+        const title = card.dataset.title || card.querySelector('.project-card-title')?.textContent || '';
+        const idInput = document.getElementById('projectIdEdit');
+        const titleInput = document.getElementById('projectTitleEdit');
+        if (idInput) idInput.value = id;
+        if (titleInput) titleInput.value = title;
+        editProjectPopup.style.display = 'flex';
+    });
+})();
+
+// Work/Project delete confirmation popups (visual only)
+(function(){
+    // Work delete
+    const workContainer = document.getElementById('workContainer');
+    const deleteWorkPopup = document.getElementById('deleteWorkPopup');
+    const confirmWorkBtn = document.getElementById('confirmDeleteWorkBtn');
+    const cancelWorkBtn = document.getElementById('cancelDeleteWorkBtn');
+    let pendingWorkCard = null;
+    if (workContainer && deleteWorkPopup) {
+        workContainer.addEventListener('click', function(e){
+            const btn = e.target.closest('.work-card .delete-btn');
+            if (!btn) return;
+            e.stopPropagation();
+            pendingWorkCard = btn.closest('.work-card');
+            deleteWorkPopup.style.display = 'flex';
+        });
+    }
+    if (cancelWorkBtn) {
+        cancelWorkBtn.addEventListener('click', function(){
+            pendingWorkCard = null;
+            if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+        });
+    }
+    if (confirmWorkBtn) {
+        confirmWorkBtn.addEventListener('click', function(){
+            if (pendingWorkCard) pendingWorkCard.remove();
+            pendingWorkCard = null;
+            if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+        });
+    }
+
+    // Project delete
+    const projectsContainer = document.getElementById('projectsContainer');
+    const deleteProjectPopup = document.getElementById('deleteProjectPopup');
+    const confirmProjectBtn = document.getElementById('confirmDeleteProjectBtn');
+    const cancelProjectBtn = document.getElementById('cancelDeleteProjectBtn');
+    let pendingProjectCard = null;
+    if (projectsContainer && deleteProjectPopup) {
+        projectsContainer.addEventListener('click', function(e){
+            const btn = e.target.closest('.project-card .delete-btn');
+            if (!btn) return;
+            e.stopPropagation();
+            pendingProjectCard = btn.closest('.project-card');
+            deleteProjectPopup.style.display = 'flex';
+        });
+    }
+    if (cancelProjectBtn) {
+        cancelProjectBtn.addEventListener('click', function(){
+            pendingProjectCard = null;
+            if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
+        });
+    }
+    if (confirmProjectBtn) {
+        confirmProjectBtn.addEventListener('click', function(){
+            if (pendingProjectCard) pendingProjectCard.remove();
+            pendingProjectCard = null;
+            if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
+        });
+    }
+
+    // Allow using the small X close button for both popups
+    document.querySelectorAll('#deleteWorkPopup .close-popup, #deleteProjectPopup .close-popup').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const popup = this.closest('.certificate-add-popup');
+            if (popup) popup.style.display = 'none';
+        });
+    });
 })();
     </script>
 <?php $scripts = ob_get_clean(); ?>
