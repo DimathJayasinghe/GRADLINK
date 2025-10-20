@@ -28,28 +28,6 @@
             // Call the controller
             require_once '../app/controllers/' . $this->currentContoller . '.php';
 
-            // Canonicalize URL: if request included 'index.php' in the path (e.g. /index.php/controller/method)
-            // redirect to the pretty URL form to keep routing consistent (and keep query params except 'url')
-            $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-            $pathInfo = $_SERVER['PATH_INFO'] ?? '';
-            $usedIndexPhp = (strpos($requestUri, 'index.php') !== false) || (strpos($pathInfo, 'index.php') === 0);
-            if ($usedIndexPhp && is_array($url) && count($url) > 0) {
-                // Build canonical path
-                $canonicalPath = '/' . implode('/', $url);
-                // Rebuild query string excluding the internal 'url' param
-                $qsArr = $_GET;
-                if (isset($qsArr['url'])) unset($qsArr['url']);
-                $qs = http_build_query($qsArr);
-                $target = rtrim(URLROOT, '/') . $canonicalPath;
-                if ($qs) $target .= '?' . $qs;
-                // Avoid redirect loops: only redirect if current request URI is not already the canonical target
-                $currentFull = (isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '');
-                if (strpos($currentFull, $canonicalPath) === false) {
-                    header('Location: ' . $target, true, 301);
-                    exit();
-                }
-            }
-
             // Instantiate the controller class
             $this->currentContoller = new $this->currentContoller;
 
@@ -77,36 +55,14 @@
 
 
         public function getUrl() {
-            // 1) Prefer explicit 'url' GET param (used by RewriteRule index.php?url=...)
-            if (isset($_GET['url']) && $_GET['url'] !== '') {
+            if (isset($_GET['url'])){
                 $url = rtrim($_GET['url'], '/');
                 $url = filter_var($url, FILTER_SANITIZE_URL);
-                return explode('/', $url);
+                $url = explode('/', $url);
+
+                return $url;
             }
-
-            // 2) PATH_INFO (when calling index.php/controller/method)
-            if (!empty($_SERVER['PATH_INFO'])) {
-                $path = trim($_SERVER['PATH_INFO'], '/');
-                $path = filter_var($path, FILTER_SANITIZE_URL);
-                return explode('/', $path);
-            }
-
-            // 3) As a final fallback, parse REQUEST_URI and strip script/base path
-            $requestUri = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-            $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-
-            // Remove script directory portion (e.g. /GRADLINK/public)
-            $base = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
-            if ($base && strpos($requestUri, $base) === 0) {
-                $requestUri = substr($requestUri, strlen($base));
-            }
-
-            // Remove leading /index.php if present
-            $requestUri = preg_replace('#^/index\\.php#', '', $requestUri);
-            $requestUri = trim($requestUri, '/');
-            if ($requestUri === '') return null;
-            $requestUri = filter_var($requestUri, FILTER_SANITIZE_URL);
-            return explode('/', $requestUri);
+            return null; // Explicitly return null when no URL parameter
         }
         private function show404() {
             // Set HTTP 404 status code
