@@ -141,6 +141,7 @@
     }
 
     .empty-state {
+        text-align: center;
         color: var(--muted);
         margin-top: 20px;
     }
@@ -249,20 +250,23 @@
 <?php $content = ob_get_clean(); ?>
 
 <?php ob_start(); ?>
-// Placeholder actions; integrate with backend endpoints when ready
+// Approve action: call backend GET route and refresh
 document.addEventListener('click', (e) => {
-const approveBtn = e.target.closest('.btn-approve');
-const rejectBtn = e.target.closest('.btn-reject');
-if (approveBtn) {
-const id = approveBtn.getAttribute('data-req-id');
-// TODO: POST to backend to approve
-alert('Approved request #' + id + ' (wire up backend)');
-}
-if (rejectBtn) {
-const id = rejectBtn.getAttribute('data-req-id');
-// TODO: POST to backend to reject
-alert('Rejected request #' + id + ' (wire up backend)');
-}
+    const approveBtn = e.target.closest('.btn-approve');
+    const rejectBtn = e.target.closest('.btn-reject');
+    if (approveBtn) {
+        const id = approveBtn.getAttribute('data-req-id');
+        if (!id) return;
+        // Uses Signup controller approval endpoint secured by admin session
+        window.location.href = `${"<?php echo URLROOT; ?>"}/signup/alumni?id=${encodeURIComponent(id)}`;
+    }
+    if (rejectBtn) {
+        const id = rejectBtn.getAttribute('data-req-id');
+        if (!id) return;
+        if (confirm('Are you sure you want to reject this request?')) {
+            window.location.href = `${"<?php echo URLROOT; ?>"}/signup/alumni?reject_id=${encodeURIComponent(id)}`;
+        }
+    }
 });
 <?php $scripts = ob_get_clean(); ?>
 

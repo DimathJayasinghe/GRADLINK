@@ -12,6 +12,62 @@ class Signup extends Controller{
     }
 
     public function alumni(){
+        // Admin/special-alumni approval via GET /signup/alumni?id={pendingId}
+        if ($_SERVER['REQUEST_METHOD'] === 'GET' && $this->getQueryParam('id', null) !== null) {
+            $pendingIdRaw = $this->getQueryParam('id', null);
+            $pendingId = is_numeric($pendingIdRaw) ? (int)$pendingIdRaw : null;
+            if (!$pendingId) {
+                SessionManager::setFlash('error', 'Invalid approval request ID.');
+                // Decide redirect target
+                $target = (SessionManager::hasRole('admin') ? '/admin/verifications' : '/alumni/approve');
+                $this->redirect($target);
+                return;
+            }
+
+            // Ensure privileges: admin OR special alumni
+            if (!SessionManager::isLoggedIn() || (!SessionManager::hasRole('admin') && !SessionManager::isSpecialAlumni())) {
+                // Not authorized
+                $this->redirect('/auth');
+                return;
+            }
+
+            $newUserId = $this->signupModel->approveAlumni($pendingId);
+            if ($newUserId) {
+                SessionManager::setFlash('success', 'Alumni approved successfully. New User ID: ' . $newUserId);
+            } else {
+                SessionManager::setFlash('error', 'Approval failed. It may already be approved or invalid.');
+            }
+            // Redirect back depending on actor
+            $redirectTo = SessionManager::hasRole('admin') ? '/admin/verifications' : '/alumni/approve';
+            $this->redirect($redirectTo);
+            return;
+        }
+        // Admin/special-alumni rejection via GET /signup/alumni?reject_id={pendingId}
+        if ($_SERVER['REQUEST_METHOD'] === 'GET' && $this->getQueryParam('reject_id', null) !== null) {
+            $pendingIdRaw = $this->getQueryParam('reject_id', null);
+            $pendingId = is_numeric($pendingIdRaw) ? (int)$pendingIdRaw : null;
+            if (!$pendingId) {
+                SessionManager::setFlash('error', 'Invalid rejection request ID.');
+                $target = (SessionManager::hasRole('admin') ? '/admin/verifications' : '/alumni/approve');
+                $this->redirect($target);
+                return;
+            }
+
+            if (!SessionManager::isLoggedIn() || (!SessionManager::hasRole('admin') && !SessionManager::isSpecialAlumni())) {
+                $this->redirect('/auth');
+                return;
+            }
+
+            $ok = $this->signupModel->rejectPendingAlumni($pendingId);
+            if ($ok) {
+                SessionManager::setFlash('success', 'Pending alumni request rejected.');
+            } else {
+                SessionManager::setFlash('error', 'Rejection failed. Please try again.');
+            }
+            $redirectTo = SessionManager::hasRole('admin') ? '/admin/verifications' : '/alumni/approve';
+            $this->redirect($redirectTo);
+            return;
+        }
         if($_SERVER['REQUEST_METHOD'] === 'POST'){
             $this->signupAlumniHandler();
             return;
@@ -67,31 +123,33 @@ class Signup extends Controller{
         ];
         
         $this->validateSignup($data);
+        // Also prevent duplicate pending requests
+        if (empty($data['errors']) && $this->signupModel->findPendingAlumniByEmail($data['email'])) {
+            $data['errors'][] = 'An approval request for this email is already pending.';
+        }
         
         // If no errors, register the user
         if (empty($data['errors'])) {
             // Hash password
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-            
-            // Set role for alumni
-            $data['role'] = 'alumni';
-            
+
             // Store skills as JSON string
             $data['skills_json'] = !empty($data['skills']) ? json_encode($data['skills']) : null;
-            
-            // Register the user
-            $userId = $this->signupModel->registerAlumni($data);
-            
-            if ($userId) {
-                // Handle profile pic upload if a file was submitted
-                $profileImage = $this->saveProfilePic($userId);
-                
-                // Create user session and redirect
-                $user = $this->signupModel->getUserById($userId);
-                SessionManager::createUserSession($user);
-                
-                // Redirect to main feed
-                $this->redirect("/mainfeed");
+
+            // Create a pending alumni record instead of direct user
+            $pendingId = $this->signupModel->registerPendingAlumni($data);
+
+            if ($pendingId) {
+                // Handle profile pic upload if a file was submitted and save to pending table
+                $profileImage = $this->saveProfilePic($pendingId, true);
+
+                // Show success message and redirect to alumni login
+                $viewData = [
+                    'pending_success' => true,
+                    'login_url' => URLROOT . '/login/alumni',
+                    'errors' => []
+                ];
+                $this->view('auth/signup/v_signup_alumni', $viewData);
             } else {
                 $data['errors'][] = 'Something went wrong. Please try again.';
                 $this->view('auth/signup/v_signup_alumni', $data);
@@ -165,7 +223,7 @@ class Signup extends Controller{
         }
     }
 
-    private function saveProfilePic($userId) {
+    private function saveProfilePic($entityId, $isPending = false) {
         // Initialize return value
         $newFilename = false;
         
@@ -182,7 +240,7 @@ class Signup extends Controller{
                 
                 if (in_array($fileExt, $allowed)) {
                     // Create unique filename
-                    $newFilename = $userId . '_' . time() . '.' . $fileExt;
+                    $newFilename = $entityId . '_' . time() . '.' . $fileExt;
                     $destination = APPROOT . '/storage/profile_pic/' . $newFilename;
                     
                     // Create directory if it doesn't exist
@@ -195,9 +253,15 @@ class Signup extends Controller{
                     if ($imageInfo !== false) {
                         // Move the uploaded file to destination
                         if (move_uploaded_file($file['tmp_name'], $destination)) {
-                            // Update user's profile_image in database
-                            if ($this->signupModel->updateProfileImage($userId, $newFilename)) {
-                                return $newFilename;
+                            // Update profile_image in the appropriate table
+                            if ($isPending) {
+                                if ($this->signupModel->updatePendingProfileImage($entityId, $newFilename)) {
+                                    return $newFilename;
+                                }
+                            } else {
+                                if ($this->signupModel->updateProfileImage($entityId, $newFilename)) {
+                                    return $newFilename;
+                                }
                             }
                         }
                     }

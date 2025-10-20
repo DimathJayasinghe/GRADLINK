@@ -43,6 +43,18 @@ $skills = require APPROOT . '/data/skills_data.php';
             echo "<p class='error-message'>$error</p>";
         }
     }
+        // Success pending approval popup
+        if (!empty($data['pending_success'])) {
+            echo "<div class='approval-popup' role='dialog' aria-live='assertive'>"
+                ."<div class='popup-card'>"
+                ."<h2>Signup submitted</h2>"
+                ."<p>Your alumni registration has been submitted for approval. You'll receive access once an admin approves your request.</p>"
+                ."<p>You will be redirected to the alumni login page in a moment…</p>"
+                ."<a class='popup-btn' href='" . htmlspecialchars($data['login_url'] ?? (URLROOT . '/login/alumni')) . "'>Go to Alumni Login</a>"
+                ."</div>"
+                ."</div>";
+            echo "<script>setTimeout(function(){ window.location.href = '" . addslashes($data['login_url'] ?? (URLROOT . '/login/alumni')) . "'; }, 10000);</script>";
+        }
     ?>
 
     <form class="signup-form" method="post" action="<?php echo URLROOT; ?>/signup/alumni" enctype="multipart/form-data">
@@ -566,6 +578,15 @@ body {
         grid-template-columns: 1fr;
     }
 }
+</style>
+
+<style>
+/* Simple centered popup styles */
+.approval-popup { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.approval-popup .popup-card { background: var(--card); color: var(--text); padding: 24px; border-radius: 10px; max-width: 520px; width: 92%; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+.approval-popup h2 { margin-bottom: 8px; }
+.approval-popup p { color: var(--muted); margin: 6px 0; }
+.approval-popup .popup-btn { display: inline-block; margin-top: 14px; padding: 10px 16px; background: var(--btn); color: var(--btn-text); text-decoration: none; border-radius: 6px; }
 </style>
 
 <?php require APPROOT . '/views/inc/footer.php'; ?>
