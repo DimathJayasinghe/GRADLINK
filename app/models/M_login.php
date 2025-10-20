@@ -43,5 +43,23 @@
             
             return false; // Authentication failed
         }
+
+        /**
+         * If alumni not found in users table, check the unregistered table and return status
+         * Returns 'pending' | 'rejected' on password match, or false otherwise
+         */
+        public function checkUnregisteredAlumniStatus($email, $password) {
+            $this->db->query('SELECT email, password, status FROM unregisted_alumni WHERE email = :email LIMIT 1');
+            $this->db->bind(':email', $email);
+            $row = $this->db->single();
+            if (!$row) return false;
+            // Verify the password
+            if (!password_verify($password, $row->password)) return false;
+            $status = strtolower(trim((string)($row->status ?? '')));
+            if ($status === 'pending' || $status === 'rejected') {
+                return $status;
+            }
+            return false;
+        }
     }
 ?>

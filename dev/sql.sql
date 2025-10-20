@@ -6,6 +6,9 @@ DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS users;
 
+-- NOTE: If this table already exists, run:
+-- ALTER TABLE users ADD COLUMN gender ENUM('male','female') NULL AFTER display_name;
+
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -13,6 +16,7 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     role ENUM('admin','alumni','undergrad') NOT NULL DEFAULT 'undergrad',
     display_name VARCHAR(100) NULL,
+    gender ENUM('male','female') NULL,
     profile_image VARCHAR(255) NOT NULL DEFAULT 'default.jpg',
     bio TEXT NULL,
     skills TEXT NULL,
@@ -151,6 +155,12 @@ INSERT INTO messages (sender_id, receiver_id, conversation_id, message_text) VAL
     CONSTRAINT fk_certificates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_issued (user_id, issued_date)
 );
+
+-- Users table
+ALTER TABLE users ADD COLUMN gender ENUM('male','female') NULL AFTER display_name;
+
+-- Pending alumni table
+ALTER TABLE unregisted_alumni ADD COLUMN gender ENUM('male','female') NULL AFTER display_name;
 
 
 
