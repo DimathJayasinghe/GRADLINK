@@ -1,4 +1,4 @@
-        /* Reset and base styles */
+/* Reset and base styles */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -332,6 +332,29 @@
             font-size: 0.8rem;
         }
 
+        /* Override: remove left-side vertical bar (disable pseudo-elements and left borders) */
+        .signup-container::before,
+        .progress-container::before,
+        .form-section::before {
+            display: none !important;
+            content: none !important;
+        }
+        
+        /* Ensure no visible left border remains on major containers */
+        .signup-container,
+        .progress-container,
+        .form-section,
+        .progress-bar,
+        .progress-step {
+            border-left: none !important;
+            box-shadow: none !important; /* in case a shadow creates a line */
+        }
+        
+        /* Specific: neutralize any element that used the primary color on the left edge */
+        .form-section {
+            border-left-color: transparent !important;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .signature-row {
@@ -353,4 +376,7 @@
                 width: 100%;
                 justify-content: space-between;
             }
+
+          
+
         }
