@@ -182,7 +182,7 @@
     <?php else: ?>
         <div class="empty-state">
             <h3>You haven't added any events to bookmarks!</h3>
-            <p>Add your first event to here.</p>
+            <!-- <p>Add your first event to here.</p> -->
         </div>
     <?php endif; ?>
 </div>
