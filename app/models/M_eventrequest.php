@@ -6,19 +6,22 @@ class M_eventrequest{
     }
 
     public function getById(int $id){
-        $this->db->query('SELECT er.*, u.name AS user_name FROM event_requests er LEFT JOIN users u ON u.id = er.user_id WHERE er.id = :id LIMIT 1');
+        // Include a req_id alias for compatibility with views expecting req_id
+        $this->db->query('SELECT er.*, er.id AS req_id, u.name AS user_name FROM event_requests er LEFT JOIN users u ON u.id = er.user_id WHERE er.id = :id LIMIT 1');
         $this->db->bind(':id', $id);
         return $this->db->single();
     }
 
     public function getAllForUser(int $userId){
-        $this->db->query('SELECT * FROM event_requests WHERE user_id = :uid ORDER BY created_at DESC');
+        // Alias id as req_id for backward compatibility with views
+        $this->db->query('SELECT er.*, er.id AS req_id FROM event_requests er WHERE er.user_id = :uid ORDER BY er.created_at DESC');
         $this->db->bind(':uid', $userId);
         return $this->db->resultSet();
     }
 
     public function getAll(array $filters = []){
-        $sql = 'SELECT er.*, u.name AS user_name FROM event_requests er LEFT JOIN users u ON u.id = er.user_id';
+        // Select req_id alias so callers can reference req_id consistently
+        $sql = 'SELECT er.*, er.id AS req_id, u.name AS user_name FROM event_requests er LEFT JOIN users u ON u.id = er.user_id';
         $where = [];
         $params = [];
         if(!empty($filters['status'])){ $where[] = 'er.status = :status'; $params[':status'] = $filters['status']; }

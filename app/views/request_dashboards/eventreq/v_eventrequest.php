@@ -104,8 +104,8 @@
 
     <div >
         <h2>Create a New Event Request</h2>
-        <?php require_once APPROOT . '/helpers/Csrf.php'; ?>
-        <form method="post" action="/eventrequest/create" enctype="multipart/form-data" class="event-request-form">
+    <?php require_once APPROOT . '/helpers/Csrf.php'; ?>
+    <form method="post" action="<?php echo URLROOT; ?>/eventrequest/create" enctype="multipart/form-data" class="event-request-form">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
             <div class="form-section">
                 <div class="form-group">
