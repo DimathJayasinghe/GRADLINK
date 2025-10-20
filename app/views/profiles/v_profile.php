@@ -248,6 +248,10 @@ if(!empty($data['certificates'])):
         <div class="certificate-issuer"><?= htmlspecialchars($cert->issuer) ?></div>
         <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
     </div>
+    <!-- Always-visible View button -->
+    <div class="certificate-view-btn-wrapper" style="display:flex; gap:8px; align-items:center;">
+        <div class="certificate-action-btn view-btn" title="View Certificate"><i class="fas fa-eye"></i></div>
+    </div>
     <?php if($isOwner): ?>
     <div class="certificate-actions">
         <div class="certificate-action-btn edit-btn" title="Edit Certificate"><i class="fas fa-pencil-alt"></i></div>
@@ -596,6 +600,17 @@ else:
             </div>
         </div>
     </div>
+
+    <!-- Certificate PDF Preview Modal -->
+    <div id="certificatePreviewModal" class="certificate-add-popup" style="display:none;">
+        <div class="certificate-add" style="max-width: 900px; width: 90%; height: 85vh; display: flex; flex-direction: column;">
+            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+            <div class="form-title" id="certificatePreviewTitle" style="margin-bottom: 8px;">Certificate Preview</div>
+            <div style="flex: 1; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: #fff;">
+                <iframe id="certificatePreviewFrame" src="about:blank" title="Certificate PDF" style="width:100%;height:100%;border:0;"></iframe>
+            </div>
+        </div>
+    </div>
     <?php endif; ?>
 
 <?php $center_content = ob_get_clean();?>
@@ -608,6 +623,7 @@ else:
 <?php $rightsidebar = ob_get_clean(); ?>
 
 <?php ob_start()?>
+    
     <script>
         window.URLROOT = "<?php echo URLROOT; ?>";
     </script>
@@ -772,6 +788,60 @@ else:
         }
     </script>
     <script>
+        // Certificate Preview Modal logic (uses explicit View button)
+        (function(){
+            const container = document.getElementById('certificatesContainer');
+            const modal = document.getElementById('certificatePreviewModal');
+            const iframe = document.getElementById('certificatePreviewFrame');
+            const titleEl = document.getElementById('certificatePreviewTitle');
+            if (!container || !modal || !iframe) return;
+
+            function openCertPreview(card){
+                if (!card) return;
+                const file = card.dataset.file || '';
+                if (!file) return;
+                if (titleEl) {
+                    const nm = card.dataset.name || 'Certificate Preview';
+                    titleEl.textContent = nm;
+                }
+                iframe.src = `${window.URLROOT}/media/certificate/${encodeURIComponent(file)}`;
+                modal.style.display = 'flex';
+            }
+
+            // open on View button click only
+            container.addEventListener('click', function(e){
+                const viewBtn = e.target.closest('.certificate-card .view-btn');
+                if (!viewBtn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const card = viewBtn.closest('.certificate-card');
+                openCertPreview(card);
+            });
+
+            // Also bind directly like edit button mechanism for robustness
+            document.querySelectorAll('#certificatesContainer .certificate-card .view-btn').forEach(btn => {
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const card = this.closest('.certificate-card');
+                    openCertPreview(card);
+                });
+            });
+
+            // close button
+            modal.querySelector('.close-popup')?.addEventListener('click', function(){
+                modal.style.display = 'none';
+                iframe.src = 'about:blank';
+            });
+
+            // optional: close on backdrop click
+            modal.addEventListener('click', function(e){
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                    iframe.src = 'about:blank';
+                }
+            });
+        })();
         // --- New: per-form element references ---
 const addCertificateBtn = document.getElementById('addCertificateBtn'); // existing in page
 const addCertificatePopup = document.getElementById('addCertificatePopup');
