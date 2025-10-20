@@ -219,3 +219,200 @@
     transform: translateY(-2px);
     box-shadow: var(--shadow-3, 0 8px 30px rgba(0, 0, 0, 0.4));
 }
+
+/* --------------------------------------- */
+/* Users list (left/center panel) styles   */
+/* --------------------------------------- */
+
+.usersList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+.conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.conversation-item:hover {
+    background-color: var(--surface-2, #1b2126);
+}
+
+.user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background-color: var(--surface-1, #151b1f);
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0; /* enable ellipsis */
+}
+
+.user-name {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text, #e8eef2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.loading_users,
+.loading,
+.no-users,
+.error,
+.chat_error {
+    color: var(--muted, #cbb8a3);
+    font-size: 14px;
+    padding: 12px;
+}
+
+/* --------------------------------------- */
+/* Chat section (right panel) styles       */
+/* --------------------------------------- */
+
+.message-section {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg, #0f1518);
+}
+
+.message-section-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border, #3a3a3a);
+    background-color: var(--surface-1, #151b1f);
+}
+
+.conversation-partner-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.partner-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--surface-2, #1b2126);
+}
+
+.partner-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.partner-name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text, #e8eef2);
+}
+
+.conversation-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message {
+    max-width: 72%;
+    width: fit-content;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+.message.sent {
+    align-self: flex-end;
+    background-color: var(--primary, #9ed4dc);
+    color: var(--bg, #0f1518);
+    border-bottom-right-radius: 4px;
+}
+
+.message.received {
+    align-self: flex-start;
+    background-color: var(--surface-2, #1b2126);
+    color: var(--text, #e8eef2);
+    border-bottom-left-radius: 4px;
+}
+
+.message-time {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* Align with existing input styles but for class names used in JS */
+.message-input-container {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border, #3a3a3a);
+    background-color: var(--surface-1, #151b1f);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.input-wrapper { flex: 1; }
+
+.message-input {
+    width: 100%;
+    padding: 12px 14px;
+    background-color: var(--input, #2b3237);
+    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+    border-radius: 20px;
+    color: var(--text, #e8eef2);
+    font-size: 14px;
+    outline: none;
+}
+
+.send-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    background-color: var(--primary, #9ed4dc);
+    color: var(--bg, #0f1518);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.send-btn:hover { background-color: var(--primary-600, #8fcbd4); transform: scale(1.05); }
+.send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
