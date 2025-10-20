@@ -1,7 +1,6 @@
 <?php ob_start(); ?>
 <style>
     /* Center column: event / request list */
-    .event-card,
     .event-card { /* new event-friendly class */
         display: flex;
         align-items: center;
@@ -13,13 +12,9 @@
         text-decoration: none;
         color: inherit;
     }
-
-    .event-card:hover,
     .event-card:hover {
         background: rgba(255, 255, 255, 0.04);
     }
-
-    .event-card.active-selected-event,
     .event-card.active-selected-event {
         background: rgba(158, 212, 220, 0.1);
     }
@@ -32,14 +27,12 @@
         object-fit: cover;
     }
 
-    .event-details h3,
     .event-details h3 {
         margin: 0;
         font-size: 15px;
         color: var(--text);
     }
 
-    .event-details p,
     .event-details p {
         margin: 2px 0 6px;
         font-size: 12px;
@@ -354,6 +347,39 @@
     .bookmark-btn.not-bookmarked {
         background-color: #4caf50;
     }
+
+    /* Event actions for items in the details panel */
+    .event-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 6px;
+    }
+
+    .event-actions .btn {
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        text-decoration: none;
+        color: #fff;
+    }
+
+    .btn-rsvp {
+        background-color: #007bff;
+    }
+
+    .btn-view {
+        background-color: #6c757d;
+    }
+
+    .bookmark-btn {
+        min-width: 140px;
+    }
 </style>
 <?php $styles = ob_get_clean(); ?>
 
@@ -618,18 +644,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="event-time">${formattedTime}</p>
                         <p>${event.description}</p>
                     </div>
-                    <div style="display:flex; flex-direction:row; gap:6px;">
-                        <button class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}" style="margin:0px; margin-top:4px;">
-                            <span class="btn" style="color: #ffffff;">
+                    <div class="event-actions">
+                        <button class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}">
                             ${event.bookmarked ? 'Remove Bookmark' : 'Add to Bookmarks'}
-                            </span>
                         </button>
-                        <button class="rsvp-btn" data-event-id="${event.id}" style="margin:0px; margin-top:4px;background-color: #007bff; color:#fff; padding:8px 10px; border-radius:6px; border:none;">
-                            RSVP
-                        </button>
-                        <a class="btn" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" style="color: #ffffff; background:#6c757d; padding:8px 10px; border-radius:6px; text-decoration:none; display:inline-flex; align-items:center;" value=${event.id}>
-                            View Details
-                        </a>
+                        <button class="btn btn-rsvp" data-event-id="${event.id}">RSVP</button>
+                        <a class="btn btn-view" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" value=${event.id}>View Details</a>
                     </div>
                     `;
 

@@ -169,20 +169,11 @@
                         </p>
                         <p class="event-venue">Venue: <?php echo htmlspecialchars($request->event_venue); ?></p>
                     </div>
-                    
+                    <!-- Action buttons Final -->
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <div style="flex:1; display:flex; align-items:center;">
-                            <a href="<?php echo URLROOT; ?>/calender/show/<?php echo $request->event_id; ?>">View Details</a>
-                        </div>
-                        <div style="flex:1; display:flex; gap:8px;">
-                            <button class="gl-remove-bookmark" data-event-id="<?php echo $request->event_id; ?>" style="flex:1; padding:0.5rem 1rem; background: #ec2424ff; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
-                                <noscript>
-                                    <?php require_once APPROOT . '/helpers/Csrf.php'; ?>
-                                    <form action="<?php echo URLROOT; ?>/calender/removeBookmark/<?php echo $request->event_id; ?>" method="post" style="flex:1; margin:0;">
-                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
-                                        <button type="submit" style="width:100%; padding:0.5rem 1rem; background: #ec2424ff; color: #fff; border: none; border-radius: 4px;">Remove</button>
-                                    </form>
-                                </noscript>
+                        <a href="<?php echo URLROOT; ?>/calender/show/<?php echo $request->event_id; ?>" style="flex: 1;">View Details</a>
+                        <div class="gl-remove-bookmark" style="flex: 1; background: #ec2424ff; align-items: center; display: flex; justify-content: center; border-radius: 3px;" data-event-id="<?php echo $request->event_id; ?>">
+                            Remove
                         </div>
                     </div>
                 </div>
