@@ -4,6 +4,8 @@
     height: calc(var(--vh, 1vh) * 100);
     padding: 0px;
     margin: 0px;
+    display: flex;
+    flex-direction: column;
 }
 .messages-right-panel {
     height: 100%;
@@ -12,14 +14,17 @@
     display: flex;
     flex-direction: column;
     background-color: var(--bg, #0f1518);
+    min-height: 0; /* allow children to shrink */
 }
 
 .section-container {
     padding: 30px 30px 30px;
     height: 100%;
-    overflow: auto;
+    overflow: hidden; /* don't scroll the whole panel */
     display: flex;
     flex-direction: column;
+    box-sizing: border-box; /* include padding in height */
+    min-height: 0; /* enable inner scroll areas */
 }
 
 .section-header {
@@ -298,10 +303,11 @@
 /* --------------------------------------- */
 
 .message-section {
-    height: 100%;
     display: flex;
     flex-direction: column;
     background-color: var(--bg, #0f1518);
+    flex: 1 1 auto; /* fill available space */
+    min-height: 0;
 }
 
 .message-section-header {
@@ -339,16 +345,18 @@
 .conversation-content {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .chat-messages {
-    flex: 1;
+    flex: 1 1 auto; /* fill available space */
     padding: 16px;
-    overflow-y: auto;
+    overflow-y: auto; /* only this scrolls */
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-height: 0;
 }
 
 .message {
@@ -389,6 +397,14 @@
     display: flex;
     gap: 12px;
     align-items: center;
+    flex: 0 0 auto; /* pin to bottom */
+}
+
+/* Ensure main content flex container allows inner scrolling without clipping bottom */
+.main_content_section {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .input-wrapper { 

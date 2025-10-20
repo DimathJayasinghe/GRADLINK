@@ -66,7 +66,7 @@
 
 <!-- Right side section, Opened chats -->
 <?php ob_start();?>
-    <div class="main_content_section" id="chatRoom" style="padding: 0px; margin:0px; height: 100%; max-height: 100;">
+    <div class="main_content_section" id="chatRoom" style="padding:0; margin:0; height:100%; max-height:100%; display:flex; flex-direction:column; overflow:hidden;">
         <?php require APPROOT . '/views/messages/sections/' . $data['section']. '_section.php'; ?>
     </div>
 <?php $rightsidebar = ob_get_clean(); ?>
