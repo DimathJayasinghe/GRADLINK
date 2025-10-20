@@ -55,8 +55,10 @@ $skills = require APPROOT . '/data/skills_data.php';
                 </div>
                 
                 <div class="form-group">
-                    <input type="email" id="email" name="email" placeholder="Email" required
-                        value="<?php echo htmlspecialchars($data['email'] ?? ''); ?>">
+                    <input type="email" id="email" name="email" placeholder="Student Email" required
+                        value="<?php echo htmlspecialchars($data['email'] ?? ''); ?>"
+                        pattern="^[0-9]{4}(?:[cC][sS]|[iI][sS])[0-9]{3}@stu\.ucsc\.cmb\.ac\.lk$"
+                        title="Use your student email (e.g., 20XXcsXXX@stu.ucsc.cmb.ac.lk)">
                 </div>
                 
                 <div class="form-group">

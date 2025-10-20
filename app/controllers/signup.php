@@ -191,6 +191,13 @@ class Signup extends Controller{
         } else if (!preg_match('/^\d{4}\/(?:cs|is)\/\d{3}$/i', $data['student_id'])) {
             $data['errors'][] = 'Student ID must be in the format YYYY/cs/XXX or YYYY/is/XXX';
         }
+
+        // Student email format validation: <year><cs|is><xxx>@stu.ucsc.cmb.ac.lk
+        if (empty($data['email'])) {
+            // already handled in validateSignup but keeping structure consistent
+        } else if (!preg_match('/^[0-9]{4}(?:cs|is)[0-9]{3}@stu\.ucsc\.cmb\.ac\.lk$/i', $data['email'])) {
+            $data['errors'][] = 'Student email must match e.g. 20XXcsXXXX@stu.ucsc.cmb.ac.lk';
+        }
         
         // If no errors, register the user
         if (empty($data['errors'])) {
