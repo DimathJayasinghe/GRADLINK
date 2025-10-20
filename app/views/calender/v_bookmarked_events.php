@@ -172,7 +172,16 @@
                     
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
                         <a href="<?php echo URLROOT; ?>/calender/show/<?php echo $request->event_id; ?>" style="flex: 1;">View Details</a>
-                        <a href="<?php echo URLROOT; ?>/calender/bookmark?remove?=/<?php echo $request->event_id; ?>" style="flex: 1; background: #ec2424ff;">Remove</a>
+                            <div style="flex:1; display:flex; gap:8px;">
+                                <button class="gl-remove-bookmark" data-event-id="<?php echo $request->event_id; ?>" style="flex:1; padding:0.5rem 1rem; background: #ec2424ff; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                                <noscript>
+                                    <?php require_once APPROOT . '/helpers/Csrf.php'; ?>
+                                    <form action="<?php echo URLROOT; ?>/calender/removeBookmark/<?php echo $request->event_id; ?>" method="post" style="flex:1; margin:0;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
+                                        <button type="submit" style="width:100%; padding:0.5rem 1rem; background: #ec2424ff; color: #fff; border: none; border-radius: 4px;">Remove</button>
+                                    </form>
+                                </noscript>
+                            </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -187,3 +196,45 @@
 
 <?php $content = ob_get_clean(); ?>
 <?php require APPROOT . '/views/calender/v_layout_adapter.php';?>
+<script>
+document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.gl-remove-bookmark');
+    if(!btn) return;
+    e.preventDefault();
+    var eventId = btn.getAttribute('data-event-id');
+    if(!eventId) return;
+    btn.disabled = true;
+    btn.textContent = 'Removing...';
+
+    var __gl_headers = { 'Content-Type': 'application/json' };
+    if(typeof window !== 'undefined' && window.GL_CSRF_TOKEN){
+        __gl_headers['X-CSRF-Token'] = window.GL_CSRF_TOKEN;
+    }
+
+    fetch('<?php echo URLROOT; ?>/calender/toggleBookmark', {
+        method: 'POST',
+        headers: __gl_headers,
+        body: JSON.stringify({ event_id: parseInt(eventId,10) })
+    }).then(function(res){
+        return res.json();
+    }).then(function(json){
+        if(json && json.ok){
+            // remove containing card
+            var card = btn.closest('.card');
+            if(card) card.remove();
+            // if no cards left, reload the page to show empty state
+            if(!document.querySelector('.cards-container .card')){
+                window.location.reload();
+            }
+        } else {
+            btn.disabled = false;
+            btn.textContent = 'Remove';
+            alert(json && json.error ? json.error : 'Could not remove bookmark');
+        }
+    }).catch(function(){
+        btn.disabled = false;
+        btn.textContent = 'Remove';
+        alert('Network error while removing bookmark');
+    });
+});
+</script>

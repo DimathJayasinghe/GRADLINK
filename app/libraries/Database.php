@@ -74,5 +74,13 @@
         public function rowCount(){
             return $this->stmt->rowCount();
         }
+
+        // Return last inserted ID from the PDO instance
+        public function lastInsertId(){
+            if($this->dbh){
+                return $this->dbh->lastInsertId();
+            }
+            return null;
+        }
     }
 ?>

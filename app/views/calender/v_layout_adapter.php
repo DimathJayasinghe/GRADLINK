@@ -139,6 +139,10 @@ if (!isset($scripts)) {
 
 // The $content variable from dashboard views becomes the $rightsidebar in three-column layout
 $rightsidebar = $content;
+// Expose CSRF token for client-side JS
+require_once APPROOT . '/helpers/Csrf.php';
+$__gl_csrf = Csrf::getToken();
+echo "<script>window.GL_CSRF_TOKEN = '" . htmlspecialchars($__gl_csrf, ENT_QUOTES) . "';</script>\n";
 
 // Include the three-column layout template
 require APPROOT . '/views/layouts/threeColumnMiniLayout.php';

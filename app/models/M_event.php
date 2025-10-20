@@ -30,7 +30,8 @@ class M_event {
 
         try{
             $this->db->execute();
-            return $this->db->rowCount() ? $this->db->stmt->rowCount() : $this->db->stmt->rowCount();
+            $lastId = $this->db->lastInsertId();
+            return $lastId ? (int)$lastId : ($this->db->rowCount() ? $this->db->rowCount() : false);
         } catch (Exception $e){
             return false;
         }
@@ -72,7 +73,8 @@ class M_event {
     }
 
     public function findById(int $id){
-        $this->db->query('SELECT e.*, u.name AS organizer_name, u.email AS organizer_email FROM events e LEFT JOIN users u ON u.id = e.organizer_id WHERE e.id = :id LIMIT 1');
+        // include primary image (if any) as attachment_image
+        $this->db->query('SELECT e.*, u.name AS organizer_name, u.email AS organizer_email, ei.file_path AS attachment_image FROM events e LEFT JOIN users u ON u.id = e.organizer_id LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1 WHERE e.id = :id LIMIT 1');
         $this->db->bind(':id', $id);
         return $this->db->single();
     }
@@ -86,7 +88,8 @@ class M_event {
         if(!empty($filters['start'])){ $where[] = 'e.start_datetime >= :start'; $params[':start'] = $filters['start']; }
         if(!empty($filters['end'])){ $where[] = 'e.start_datetime <= :end'; $params[':end'] = $filters['end']; }
         if(!empty($filters['visibility'])){ $where[] = 'e.visibility = :visibility'; $params[':visibility'] = $filters['visibility']; }
-        $sql = 'SELECT e.*, u.name AS organizer_name FROM events e LEFT JOIN users u ON u.id = e.organizer_id';
+    // include primary image (attachment_image) via left join to event_images
+        $sql = 'SELECT e.*, u.name AS organizer_name, ei.file_path AS attachment_image FROM events e LEFT JOIN users u ON u.id = e.organizer_id LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1';
         if($where) $sql .= ' WHERE ' . implode(' AND ', $where);
         $sql .= ' ORDER BY e.start_datetime ASC';
         if(!empty($filters['limit'])){ $sql .= ' LIMIT ' . (int)$filters['limit']; }
@@ -97,7 +100,7 @@ class M_event {
     }
 
     public function search(string $q, int $limit = 20, int $offset = 0){
-        $sql = "SELECT e.*, u.name AS organizer_name FROM events e LEFT JOIN users u ON u.id = e.organizer_id WHERE MATCH(e.title,e.description) AGAINST(:q IN NATURAL LANGUAGE MODE) LIMIT :limit OFFSET :offset";
+    $sql = "SELECT e.*, u.name AS organizer_name, ei.file_path AS attachment_image FROM events e LEFT JOIN users u ON u.id = e.organizer_id LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1 WHERE MATCH(e.title,e.description) AGAINST(:q IN NATURAL LANGUAGE MODE) LIMIT :limit OFFSET :offset";
         $this->db->query($sql);
         $this->db->bind(':q',$q);
         $this->db->bind(':limit',$limit);

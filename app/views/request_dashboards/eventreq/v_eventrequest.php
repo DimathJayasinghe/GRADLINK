@@ -104,7 +104,9 @@
 
     <div >
         <h2>Create a New Event Request</h2>
-        <form method="post" action="/events/request" enctype="multipart/form-data" class="event-request-form">
+        <?php require_once APPROOT . '/helpers/Csrf.php'; ?>
+        <form method="post" action="/eventrequest/create" enctype="multipart/form-data" class="event-request-form">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
             <div class="form-section">
                 <div class="form-group">
                     <label for="event_title" class="form-label">Event Title:</label>

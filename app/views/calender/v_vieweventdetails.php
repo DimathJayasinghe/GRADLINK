@@ -220,7 +220,7 @@
             <!-- <h3>Event Details</h3> -->
             <?php if($request->attachment_image): ?>
                 <div class="image-container">
-                    <img src="<?php echo URLROOT; ?>/Media/event/<?php echo htmlspecialchars($request->attachment_image); ?>" alt="Event Image" class="request-image">
+                    <img src="<?php echo M_event_image::getUrl($request->attachment_image); ?>" alt="Event Image" class="request-image">
                 </div>
             <?php else: ?>
                 <div class="image-container">
