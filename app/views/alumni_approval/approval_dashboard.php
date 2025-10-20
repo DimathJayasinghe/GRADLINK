@@ -233,6 +233,8 @@
             <div class="detail-value"><?php echo htmlspecialchars($selected->display_name); ?></div>
             <div class="detail-label">Bio</div>
             <div class="detail-value"><?php echo htmlspecialchars($selected->bio); ?></div>
+            <div class="detail-label">Explain Yourself</div>
+            <div class="detail-value"><?php echo nl2br(htmlspecialchars($selected->explain_yourself ?? '')); ?></div>
             <div class="detail-label">Status</div>
             <div class="detail-value"><span class="status status-<?php echo strtolower($selected->status); ?>"><?php echo htmlspecialchars($selected->status); ?></span></div>
         </div>

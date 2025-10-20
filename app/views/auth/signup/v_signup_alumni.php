@@ -72,11 +72,11 @@ $skills = require APPROOT . '/data/skills_data.php';
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" id="password" name="password" placeholder="Password" required>
+                    <input type="password" id="password" name="password" placeholder="Password" required minlength="6">
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required minlength="6">
                 </div>
                 
                 <div class="form-group">
@@ -126,7 +126,8 @@ $skills = require APPROOT . '/data/skills_data.php';
                 
                 <div class="form-group">
                     <input type="text" id="nic" name="nic" placeholder="NIC" 
-                        value="<?php echo htmlspecialchars($data['nic'] ?? ''); ?>">
+                        value="<?php echo htmlspecialchars($data['nic'] ?? ''); ?>"
+                        pattern="^\d{12}$" title="12-digit NIC (e.g., 200012345678)">
                 </div>
                 
                 <div class="form-group">
@@ -136,6 +137,10 @@ $skills = require APPROOT . '/data/skills_data.php';
                 
                 <div class="form-group bio-group">
                     <textarea id="bio" name="bio" placeholder="Add bio"><?php echo htmlspecialchars($data['bio'] ?? ''); ?></textarea>
+                </div>
+
+                <div class="form-group bio-group">
+                    <textarea id="explain_yourself" name="explain_yourself" placeholder="Explain yourself (help reviewers approve you)" required><?php echo htmlspecialchars($data['explain_yourself'] ?? ''); ?></textarea>
                 </div>
             </div>
             

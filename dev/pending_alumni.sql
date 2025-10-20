@@ -1,3 +1,6 @@
+-- NOTE: If this table already exists in your DB, run the following to add the new column used during approval:
+-- ALTER TABLE `unregisted_alumni` ADD COLUMN `explain_yourself` text DEFAULT NULL AFTER `bio`;
+
 CREATE TABLE IF NOT EXISTS `unregisted_alumni` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -7,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `unregisted_alumni` (
   `display_name` varchar(100) DEFAULT NULL,
   `profile_image` varchar(255) NOT NULL DEFAULT 'default.jpg',
   `bio` text DEFAULT NULL,
+  `explain_yourself` text DEFAULT NULL,
   `skills` text DEFAULT NULL,
   `nic` varchar(20) DEFAULT NULL,
   `batch_no` int(11) DEFAULT NULL,

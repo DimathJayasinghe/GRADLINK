@@ -13,7 +13,7 @@
          * - Name, Batch, profile, status, email, display_name, bio, nic, student_no
          */
         public function getPendingRequests(): array {
-            $this->db->query("SELECT id, name, email, display_name, profile_image, bio, nic, batch_no, status FROM unregisted_alumni WHERE status = 'pending' ORDER BY created_at DESC");
+            $this->db->query("SELECT id, name, email, display_name, profile_image, bio, explain_yourself, nic, batch_no, status FROM unregisted_alumni WHERE status = 'pending' ORDER BY created_at DESC");
             $rows = [];
             try {
                 $rows = $this->db->resultSet();
@@ -32,6 +32,7 @@
                 $obj->email = $r->email;
                 $obj->display_name = $r->display_name ?? $r->name;
                 $obj->bio = $r->bio ?? '';
+                $obj->explain_yourself = $r->explain_yourself ?? '';
                 $obj->nic = $r->nic ?? '';
                 $obj->student_no = '';
                 $list[] = $obj;
@@ -43,7 +44,7 @@
          * Fetch one request by ID from the list
          */
         public function getRequestById($req_id) {
-            $this->db->query("SELECT id, name, email, display_name, profile_image, bio, nic, batch_no, status FROM unregisted_alumni WHERE id = :id LIMIT 1");
+            $this->db->query("SELECT id, name, email, display_name, profile_image, bio, explain_yourself, nic, batch_no, status FROM unregisted_alumni WHERE id = :id LIMIT 1");
             $this->db->bind(':id', $req_id);
             try {
                 $r = $this->db->single();
@@ -60,6 +61,7 @@
             $obj->email = $r->email;
             $obj->display_name = $r->display_name ?? $r->name;
             $obj->bio = $r->bio ?? '';
+            $obj->explain_yourself = $r->explain_yourself ?? '';
             $obj->nic = $r->nic ?? '';
             $obj->student_no = '';
             return $obj;

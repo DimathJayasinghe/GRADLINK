@@ -60,11 +60,11 @@ $skills = require APPROOT . '/data/skills_data.php';
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" id="password" name="password" placeholder="Password" required>
+                    <input type="password" id="password" name="password" placeholder="Password" required minlength="6">
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required minlength="6">
                 </div>
                 
                 <div class="form-group">
@@ -97,7 +97,8 @@ $skills = require APPROOT . '/data/skills_data.php';
             <div class="form-column">
                 <div class="form-group">
                     <input type="text" id="student_id" name="student_id" placeholder="Student ID" 
-                        value="<?php echo htmlspecialchars($data['student_id'] ?? ''); ?>" required>
+                        value="<?php echo htmlspecialchars($data['student_id'] ?? ''); ?>" required
+                        pattern="^\d{4}/(?:[cC][sS]|[iI][sS])/\d{3}$" title="Format: YYYY/cs/XXX or YYYY/is/XXX (e.g., 2021/cs/123)">
                 </div>
                 
                 <div class="form-group">
@@ -122,7 +123,8 @@ $skills = require APPROOT . '/data/skills_data.php';
                 
                 <div class="form-group">
                     <input type="text" id="nic" name="nic" placeholder="NIC" 
-                        value="<?php echo htmlspecialchars($data['nic'] ?? ''); ?>">
+                        value="<?php echo htmlspecialchars($data['nic'] ?? ''); ?>"
+                        pattern="^\d{12}$" title="12-digit NIC (e.g., 200012345678)">
                 </div>
                 
                 <div class="form-group">

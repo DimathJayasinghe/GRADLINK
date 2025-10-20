@@ -118,6 +118,7 @@ class Signup extends Controller{
             'batch_no' => $_POST['graduation_year'] ?? '',
             'nic' => $_POST['nic'] ?? '',
             'bio' => $_POST['bio'] ?? '',
+            'explain_yourself' => $_POST['explain_yourself'] ?? '',
             'skills' => $_POST['skills'] ?? [],
             'errors' => []
         ];
@@ -187,6 +188,8 @@ class Signup extends Controller{
         // Additional validation for student ID (specific to undergrads)
         if (empty($data['student_id'])) {
             $data['errors'][] = 'Please enter your student ID';
+        } else if (!preg_match('/^\d{4}\/(?:cs|is)\/\d{3}$/i', $data['student_id'])) {
+            $data['errors'][] = 'Student ID must be in the format YYYY/cs/XXX or YYYY/is/XXX';
         }
         
         // If no errors, register the user
@@ -300,6 +303,13 @@ class Signup extends Controller{
             $data['errors'][] = 'Passwords do not match';
         }
         
+        // NIC format validation (if provided)
+        if (isset($data['nic']) && $data['nic'] !== '') {
+            if (!preg_match('/^\d{12}$/', $data['nic'])) {
+                $data['errors'][] = 'NIC must be a 12-digit number';
+            }
+        }
+
         // Batch number validation
         if (empty($data['batch_no'])) {
             $data['errors'][] = 'Please select your batch';
