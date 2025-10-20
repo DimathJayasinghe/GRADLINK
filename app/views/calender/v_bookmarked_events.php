@@ -171,9 +171,11 @@
                     </div>
                     
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <a href="<?php echo URLROOT; ?>/calender/show/<?php echo $request->event_id; ?>" style="flex: 1;">View Details</a>
-                            <div style="flex:1; display:flex; gap:8px;">
-                                <button class="gl-remove-bookmark" data-event-id="<?php echo $request->event_id; ?>" style="flex:1; padding:0.5rem 1rem; background: #ec2424ff; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                        <div style="flex:1; display:flex; align-items:center;">
+                            <a href="<?php echo URLROOT; ?>/calender/show/<?php echo $request->event_id; ?>">View Details</a>
+                        </div>
+                        <div style="flex:1; display:flex; gap:8px;">
+                            <button class="gl-remove-bookmark" data-event-id="<?php echo $request->event_id; ?>" style="flex:1; padding:0.5rem 1rem; background: #ec2424ff; color: #fff; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
                                 <noscript>
                                     <?php require_once APPROOT . '/helpers/Csrf.php'; ?>
                                     <form action="<?php echo URLROOT; ?>/calender/removeBookmark/<?php echo $request->event_id; ?>" method="post" style="flex:1; margin:0;">
@@ -181,7 +183,7 @@
                                         <button type="submit" style="width:100%; padding:0.5rem 1rem; background: #ec2424ff; color: #fff; border: none; border-radius: 4px;">Remove</button>
                                     </form>
                                 </noscript>
-                            </div>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>

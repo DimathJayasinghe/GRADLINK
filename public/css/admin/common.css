@@ -52,7 +52,7 @@
 .status-rejected { background:#f8d7da; color:#721c24; }
 .status-reported { background:#f5c6cb; color:#721c24; }
 
-.admin-btn { padding:0.4em 1em; margin:0 0.2em; border:none; border-radius:3px; background:#007bff; color:#fff; cursor:pointer; font-size:0.95em; }
+.admin-btn { padding:0.4em 1em; margin:0em 0.2em; border:none; border-radius:3px; background:#007bff; color:#fff; cursor:pointer; font-size:0.95em; }
 .admin-btn-danger { background:#dc3545 }
 .admin-btn:disabled { opacity:0.6; cursor:not-allowed }
 

@@ -45,7 +45,6 @@
 <div class="admin-header">
     <h1>Reports & Exports</h1>
     <div class="admin-actions">
-        <button class="admin-btn" id="export-analytics">Export Analytics</button>
         <button class="admin-btn" id="export-users">Export User Reports</button>
         <button class="admin-btn" id="export-content">Export Content Reports</button>
     </div>

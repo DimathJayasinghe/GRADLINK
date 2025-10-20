@@ -25,6 +25,15 @@
         <p style="color: var(--muted); margin: 1rem;">Track user activity, engagement, and platform usage.</p>
     </div>
 
+    <section class="filters">
+        <h3>Filter Options</h3>
+        <form class="filters-form" method="get" action="<?php echo URLROOT; ?>/admin">
+            <input type="text" name="date_range" placeholder="Date Range">
+            <input type="text" name="user_type" placeholder="User Type">
+            <button class="btn">Apply</button>
+        </form>
+    </section>
+
     <section class="kpis">
         <div class="kpi">
             <span class="kpi-label">Total Users</span>
@@ -68,15 +77,6 @@
             <h3>Active Users Over Time</h3>
             <canvas id="activeOverTime" height="100"></canvas>
         </div>
-    </section>
-
-    <section class="filters">
-        <h3>Filter Options</h3>
-        <form class="filters-form" method="get" action="<?php echo URLROOT; ?>/admin">
-            <input type="text" name="date_range" placeholder="Date Range">
-            <input type="text" name="user_type" placeholder="User Type">
-            <button class="btn">Apply</button>
-        </form>
     </section>
 </div>
 
