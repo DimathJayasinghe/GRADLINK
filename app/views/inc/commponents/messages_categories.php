@@ -152,3 +152,37 @@
         </div>
     </div>
 </div>
+
+<!-- Fallback shim: ensure openExistingConversation exists globally for inline onclicks -->
+<script>
+// Define a minimal handler if not already defined by v_messages.php
+if (typeof window.openExistingConversation !== 'function') {
+    window.openExistingConversation = function(el, conversationId, userName, userAvatar, partnerUserId) {
+        try {
+            // Visual active state
+            document.querySelectorAll('.conversation-item').forEach(function(i){ i.classList.remove('active'); });
+            if (el && el.classList) el.classList.add('active');
+
+            // If partner id known and opener exists
+            if (partnerUserId && typeof window.openUserConversation === 'function') {
+                window.openUserConversation(partnerUserId, userName, userAvatar);
+                return;
+            }
+
+            // Try to resolve partner via conversation details
+            fetch('<?php echo URLROOT; ?>/messages/getMessages/' + conversationId)
+                .then(function(res){ return res.ok ? res.json() : Promise.reject(); })
+                .then(function(data){
+                    if (data && data.success && data.conversation && data.conversation.other_user_id && typeof window.openUserConversation === 'function') {
+                        window.openUserConversation(data.conversation.other_user_id, userName, userAvatar);
+                    } else if (typeof window.openUserConversation !== 'function') {
+                        console.warn('Conversation opener not loaded yet.');
+                    }
+                })
+                .catch(function(){ console.warn('Failed to resolve conversation details'); });
+        } catch (e) {
+            console.error('openExistingConversation shim error:', e);
+        }
+    };
+}
+</script>
