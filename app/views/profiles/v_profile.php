@@ -339,7 +339,14 @@ else:
                     </div>
                     <div class="form-group">
                         <label for="profileBioInput">Bio</label>
-                        <textarea id="profileBioInput" rows="3" placeholder="Tell others about you..."></textarea>
+                        <textarea id="profileBioInput" style="
+                                max-width: 100%;
+                                background: rgba(255, 255, 255, 0.05);
+                                border: 1px solid var(--border);
+                                border-radius: 5px;
+                                color: var(--text);
+                                padding:5px;
+                        " rows="3" placeholder="Tell others about you..."></textarea>
                     </div>
                     <div style="margin-top:12px;">
                         <button type="submit" class="save-btn" id="saveProfileBtn">Save Changes</button>
@@ -417,7 +424,14 @@ else:
                     </div>
                     <div class="form-group">
                         <label for="projectDescAdd">Description (optional)</label>
-                        <textarea id="projectDescAdd" rows="3" placeholder="Brief description..."></textarea>
+                        <textarea id="projectDescAdd" style="
+                                max-width: 100%;
+                                background: rgba(255, 255, 255, 0.05);
+                                border: 1px solid var(--border);
+                                border-radius: 5px;
+                                color: var(--text);
+                                padding:5px;
+                        " rows="3" placeholder="Brief description..."></textarea>
                     </div>
                     <div style="margin-top:12px;">
                         <button type="submit" class="save-btn">Add Project</button>
