@@ -131,24 +131,17 @@ console.log(result); // { success: true, message_id: 123, conversation_id: 1 }
 app/
 ├── models/
 │   ├── M_message.php          # Main messaging model
-│   ├── M_message_backup.php   # Backup of previous version
-│   └── M_message_simple.php   # Simple version
+│                              
 ├── controllers/
 │   └── messages.php           # Messages controller
 └── views/
     └── messages/              # Message views
 
-public/
-├── api.php                    # Simple API endpoints
-└── test_backend.html          # Backend testing interface
-
 dev/
 └── sql.sql                    # Database schema
 ```
 
-## Testing
-
-Visit `http://localhost:8000/test_backend.html` to test all backend functionality with a simple interface.
+## Testin
 
 ## Production Notes
 

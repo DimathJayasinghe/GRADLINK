@@ -34,101 +34,7 @@
             </div>
             
             <!-- Conversations List -->
-            <div class="conversations-list">
-                <?php
-                // Get real conversations from database
-                try {
-                    $messageModel = new M_message();
-                    $conversations = $messageModel->getUserConversations($_SESSION['user_id']);
-                } catch (Exception $e) {
-                    $conversations = [];
-                }
-                
-                // If no conversations, use sample data for demo
-                if (empty($conversations)) {
-                    $conversations = [
-                        (object)[
-                            'conversation_id' => 1,
-                            'other_full_name' => 'Alice Johnson',
-                            'other_avatar' => 'alice.jpg',
-                            'last_message' => 'Hey! Are you coming to the meeting?',
-                            'last_message_time' => '2024-01-15 14:30:00',
-                            'unread_count' => 2
-                        ],
-                        (object)[
-                            'conversation_id' => 2,
-                            'other_full_name' => 'Bob Smith',
-                            'other_avatar' => 'bob.jpg',
-                            'last_message' => 'Thanks for the help yesterday',
-                            'last_message_time' => '2024-01-15 13:15:00',
-                            'unread_count' => 0
-                        ],
-                        (object)[
-                            'conversation_id' => 3,
-                            'other_full_name' => 'Sarah Williams',
-                            'other_avatar' => 'sarah.jpg',
-                            'last_message' => 'Can you share the project files?',
-                            'last_message_time' => '2024-01-15 12:45:00',
-                            'unread_count' => 1
-                        ]
-                    ];
-                }
-                
-                foreach($conversations as $conversation):
-                    // Normalize values assuming $conversation is an object (stdClass)
-                    $userName = $conversation->other_full_name ?? ($conversation->user_name ?? 'User');
-                    $nameParts = explode(' ', trim($userName));
-                    if (strlen($userName) > 15 && count($nameParts) > 1) {
-                        $displayName = $nameParts[0] . ' ' . strtoupper(substr($nameParts[count($nameParts)-1], 0, 1)) . '.';
-                    } else {
-                        $displayName = $userName;
-                    }
-
-                    // Format time (prefer last_message_time)
-                    $lastTimeRaw = $conversation->last_message_time ?? ($conversation->last_time ?? null);
-                    $lastTime = $lastTimeRaw ? date('g:i A', strtotime($lastTimeRaw)) : '';
-
-                    // IDs and other fields with safe fallbacks
-                    $conversationId = $conversation->conversation_id ?? ($conversation->id ?? 0);
-                    $lastMessage = $conversation->last_message ?? '';
-                    $unreadCount = isset($conversation->unread_count) ? (int)$conversation->unread_count : 0;
-                    $userAvatar = $conversation->other_avatar ?? ($conversation->user_avatar ?? 'default-avatar.png');
-                    $otherUserId = $conversation->other_user_id ?? null;
-                ?>
-                <div class="conversation-item" onclick='openExistingConversation(this, <?php echo (int)$conversationId; ?>, <?php echo json_encode($userName); ?>, <?php echo json_encode($userAvatar); ?>, <?php echo (int)$otherUserId; ?>)'>
-                    <div class="user-avatar">
-                        <img src="<?php echo URLROOT; ?>/media/profile/<?php echo $userAvatar; ?>" 
-                             alt="<?php echo $userName; ?>" class="avatar-img" 
-                             onerror="this.src='<?php echo URLROOT; ?>/img/default-avatar.png'">
-                    </div>
-                    <div class="user-info">
-                        <h4 class="user-name"><?php echo $displayName; ?></h4>
-                        <p class="last-message"><?php echo $lastMessage; ?></p>
-                    </div>
-                    <div class="message-meta">
-                        <span class="time-text"><?php echo $lastTime; ?></span>
-                        <?php if($unreadCount > 0): ?>
-                        <div class="unread-badge"><?php echo $unreadCount; ?></div>
-                        <?php endif; ?>
-                        <div class="conversation-options">
-                            <button class="options-btn" onclick="event.stopPropagation(); toggleConversationDropdown(<?php echo $conversationId; ?>)">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <div class="conversation-dropdown" id="dropdown-<?php echo $conversationId; ?>" style="display: none;">
-                                <div class="dropdown-item" onclick="event.stopPropagation(); reportConversation(<?php echo $conversationId; ?>, '<?php echo htmlspecialchars($userName); ?>')">
-                                    <i class="fas fa-flag"></i>
-                                    <span>Report conversation</span>
-                                </div>
-                                <div class="dropdown-item danger" onclick="event.stopPropagation(); deleteConversation(<?php echo $conversationId; ?>, '<?php echo htmlspecialchars($userName); ?>')">
-                                    <i class="fas fa-trash"></i>
-                                    <span>Delete conversation</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
+            <div class="conversations-list" id="conversationsList"></div>
         </div>
     </div>
 </div>
@@ -155,6 +61,99 @@
 
 <!-- Fallback shim: ensure openExistingConversation exists globally for inline onclicks -->
 <script>
+// Load conversations via secure AJAX so only this user's threads are shown
+document.addEventListener('DOMContentLoaded', function() {
+    loadConversationsList();
+});
+
+function loadConversationsList() {
+    const list = document.getElementById('conversationsList');
+    if (!list) return;
+    list.innerHTML = '<div class="loading">Loading conversations...</div>';
+    fetch('<?php echo URLROOT; ?>/messages/getConversations')
+        .then(res => res.json())
+        .then(data => {
+            list.innerHTML = '';
+            if (!data || !data.success) {
+                list.innerHTML = '<div class="error">Failed to load conversations</div>';
+                return;
+            }
+            const conversations = Array.isArray(data.conversations) ? data.conversations : [];
+            if (conversations.length === 0) {
+                list.innerHTML = '<div class="no-conversations">No conversations yet. Click the + button to start a new one.</div>';
+                return;
+            }
+            conversations.forEach(c => list.appendChild(createConversationItem(c)));
+        })
+        .catch(err => {
+            console.error('loadConversationsList error', err);
+            list.innerHTML = '<div class="error">Failed to load conversations</div>';
+        });
+}
+
+function createConversationItem(conversation) {
+    const conversationId = conversation.conversation_id || 0;
+    const userName = conversation.other_full_name || 'User';
+    const userAvatar = conversation.other_avatar || 'default-avatar.png';
+    const otherUserId = conversation.other_user_id || null;
+    const lastMessage = conversation.last_message || '';
+    const lastTimeRaw = conversation.last_message_time || null;
+    const lastTime = lastTimeRaw ? new Date(lastTimeRaw.replace(' ', 'T')).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+    const unreadCount = Number(conversation.unread_count || 0);
+
+    // Name shortening
+    let displayName = userName;
+    const parts = userName.trim().split(/\s+/);
+    if (userName.length > 15 && parts.length > 1) {
+        displayName = parts[0] + ' ' + (parts[parts.length - 1].charAt(0).toUpperCase()) + '.';
+    }
+
+    const div = document.createElement('div');
+    div.className = 'conversation-item';
+    div.onclick = function() { openExistingConversation(div, conversationId, userName, userAvatar, otherUserId); };
+
+    div.innerHTML = `
+        <div class="user-avatar">
+            <img src="<?php echo URLROOT; ?>/media/profile/${userAvatar}"
+                 alt="${userName}" class="avatar-img"
+                 onerror="this.src='<?php echo URLROOT; ?>/img/default-avatar.png'">
+        </div>
+        <div class="user-info">
+            <h4 class="user-name">${displayName}</h4>
+            <p class="last-message">${escapeHtml(lastMessage)}</p>
+        </div>
+        <div class="message-meta">
+            <span class="time-text">${lastTime}</span>
+            ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+            <div class="conversation-options">
+                <button class="options-btn" onclick="event.stopPropagation(); toggleConversationDropdown(${conversationId})">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <div class="conversation-dropdown" id="dropdown-${conversationId}" style="display: none;">
+                    <div class="dropdown-item" onclick="event.stopPropagation(); reportConversation(${conversationId}, ${JSON.stringify(userName)})">
+                        <i class="fas fa-flag"></i>
+                        <span>Report conversation</span>
+                    </div>
+                    <div class="dropdown-item danger" onclick="event.stopPropagation(); deleteConversation(${conversationId}, ${JSON.stringify(userName)})">
+                        <i class="fas fa-trash"></i>
+                        <span>Delete conversation</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    return div;
+}
+
+function escapeHtml(text) {
+    if (text == null) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // Define a minimal handler if not already defined by v_messages.php
 if (typeof window.openExistingConversation !== 'function') {
     window.openExistingConversation = function(el, conversationId, userName, userAvatar, partnerUserId) {

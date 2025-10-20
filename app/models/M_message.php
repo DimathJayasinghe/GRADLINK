@@ -52,7 +52,9 @@ class M_message extends Database {
     
     // Get messages in a conversation - Simple Backend Structure
     public function getConversationMessages($conversationId, $userId, $limit = 50, $offset = 0) {
-        $this->query("
+        $limit = max(1, (int)$limit);
+        $offset = max(0, (int)$offset);
+        $sql = "
             SELECT 
                 m.message_id,
                 m.sender_id,
@@ -70,26 +72,32 @@ class M_message extends Database {
                 AND (c.user1_id = :user_id OR c.user2_id = :user_id)
                 AND c.is_deleted = 0
             ORDER BY m.message_time ASC
-            LIMIT :limit OFFSET :offset
-        ");
+            LIMIT $limit OFFSET $offset
+        ";
+        $this->query($sql);
         $this->bind(':conversation_id', $conversationId);
         $this->bind(':user_id', $userId);
-        $this->bind(':limit', $limit);
-        $this->bind(':offset', $offset);
         return $this->resultSet();
     }
     
     // Send a message - Exact fields: message_id, sender_id, receiver_id, conversation_id, message_text, message_time
     public function sendMessage($senderId, $receiverId, $messageText, $conversationId = null) {
-        // First, find or create conversation
-        if (!$conversationId) {
+        // If a conversationId is provided, validate it and derive the actual receiver from participants
+        if ($conversationId) {
+            $this->query("SELECT user1_id, user2_id FROM conversations WHERE conversation_id = :cid AND is_deleted = 0 LIMIT 1");
+            $this->bind(':cid', $conversationId);
+            $c = $this->single();
+            if (!$c) { return false; }
+            // Ensure sender is a participant
+            if ($c->user1_id != $senderId && $c->user2_id != $senderId) { return false; }
+            // Derive the receiver strictly from the conversation participants
+            $receiverId = ($c->user1_id == $senderId) ? (int)$c->user2_id : (int)$c->user1_id;
+        } else {
+            // Find or create a conversation for this unordered pair
             $conversationId = $this->findOrCreateConversation($senderId, $receiverId);
+            if (!$conversationId) { return false; }
         }
-        
-        if (!$conversationId) {
-            return false;
-        }
-        
+
         // Insert message with exact backend structure
         $this->query("
             INSERT INTO messages (sender_id, receiver_id, conversation_id, message_text, message_time)
@@ -99,12 +107,12 @@ class M_message extends Database {
         $this->bind(':receiver_id', $receiverId);
         $this->bind(':conversation_id', $conversationId);
         $this->bind(':message_text', $messageText);
-        
+
         if ($this->execute()) {
             // Update conversation last_activity
             $this->updateConversationActivity($conversationId);
             $messageId = $this->lastInsertId();
-            
+
             return [
                 'message_id' => $messageId,
                 'conversation_id' => $conversationId
@@ -115,32 +123,35 @@ class M_message extends Database {
     
     // Find or create conversation between two users
     private function findOrCreateConversation($user1Id, $user2Id) {
-        // Check if conversation already exists (order doesn't matter)
+        // Always normalize order (smallest id first) to enforce a single row per pair
+        $a = min((int)$user1Id, (int)$user2Id);
+        $b = max((int)$user1Id, (int)$user2Id);
+
+        // Check if conversation already exists in normalized order
         $this->query("
             SELECT conversation_id 
             FROM conversations 
-            WHERE ((user1_id = :user1 AND user2_id = :user2) 
-                OR (user1_id = :user2 AND user2_id = :user1))
-                AND is_deleted = 0
+            WHERE user1_id = :a AND user2_id = :b AND is_deleted = 0
+            LIMIT 1
         ");
-        $this->bind(':user1', $user1Id);
-        $this->bind(':user2', $user2Id);
+        $this->bind(':a', $a);
+        $this->bind(':b', $b);
         $conversation = $this->single();
-        
+
         if ($conversation) {
-            return $conversation->conversation_id;
+            return (int)$conversation->conversation_id;
         }
-        
-        // Create new conversation
+
+        // Create new conversation in normalized order
         $this->query("
             INSERT INTO conversations (user1_id, user2_id, created_at, last_activity)
-            VALUES (:user1_id, :user2_id, NOW(), NOW())
+            VALUES (:a, :b, NOW(), NOW())
         ");
-        $this->bind(':user1_id', $user1Id);
-        $this->bind(':user2_id', $user2Id);
-        
+        $this->bind(':a', $a);
+        $this->bind(':b', $b);
+
         if ($this->execute()) {
-            return $this->lastInsertId();
+            return (int)$this->lastInsertId();
         }
         return false;
     }
@@ -158,16 +169,17 @@ class M_message extends Database {
     
     // Get conversation between two users
     public function getConversation($userId1, $userId2) {
-        // First, find conversation
+        // Find conversation using normalized order
+        $a = min((int)$userId1, (int)$userId2);
+        $b = max((int)$userId1, (int)$userId2);
         $this->query("
             SELECT conversation_id 
             FROM conversations 
-            WHERE ((user1_id = :user1 AND user2_id = :user2) 
-                OR (user1_id = :user2 AND user2_id = :user1))
-                AND is_deleted = 0
+            WHERE user1_id = :a AND user2_id = :b AND is_deleted = 0
+            LIMIT 1
         ");
-        $this->bind(':user1', $userId1);
-        $this->bind(':user2', $userId2);
+        $this->bind(':a', $a);
+        $this->bind(':b', $b);
         $conversation = $this->single();
         
         if (!$conversation) {

@@ -301,13 +301,17 @@
 }
 
 .conversation-item.active {
-    background-color: var(--primary, #9ed4dc);
+    background-color: var(--surface-2, #1b2126);
+    border: 1px solid var(--primary, #9ed4dc);
 }
 
-.conversation-item.active .user-name,
+.conversation-item.active .user-name {
+    color: var(--text, #e8eef2);
+}
+
 .conversation-item.active .last-message,
 .conversation-item.active .time-text {
-    color: var(--bg, #0f1518);
+    color: var(--muted, #cbb8a3);
 }
 
 .conversation-item .user-avatar {
