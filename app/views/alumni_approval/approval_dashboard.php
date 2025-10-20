@@ -141,6 +141,7 @@
     }
 
     .empty-state {
+        text-align: center;
         color: var(--muted);
         margin-top: 20px;
     }
@@ -232,6 +233,8 @@
             <div class="detail-value"><?php echo htmlspecialchars($selected->display_name); ?></div>
             <div class="detail-label">Bio</div>
             <div class="detail-value"><?php echo htmlspecialchars($selected->bio); ?></div>
+            <div class="detail-label">Explain Yourself</div>
+            <div class="detail-value"><?php echo nl2br(htmlspecialchars($selected->explain_yourself ?? '')); ?></div>
             <div class="detail-label">Status</div>
             <div class="detail-value"><span class="status status-<?php echo strtolower($selected->status); ?>"><?php echo htmlspecialchars($selected->status); ?></span></div>
         </div>
@@ -249,20 +252,23 @@
 <?php $content = ob_get_clean(); ?>
 
 <?php ob_start(); ?>
-// Placeholder actions; integrate with backend endpoints when ready
+// Approve action: call backend GET route and refresh
 document.addEventListener('click', (e) => {
-const approveBtn = e.target.closest('.btn-approve');
-const rejectBtn = e.target.closest('.btn-reject');
-if (approveBtn) {
-const id = approveBtn.getAttribute('data-req-id');
-// TODO: POST to backend to approve
-alert('Approved request #' + id + ' (wire up backend)');
-}
-if (rejectBtn) {
-const id = rejectBtn.getAttribute('data-req-id');
-// TODO: POST to backend to reject
-alert('Rejected request #' + id + ' (wire up backend)');
-}
+    const approveBtn = e.target.closest('.btn-approve');
+    const rejectBtn = e.target.closest('.btn-reject');
+    if (approveBtn) {
+        const id = approveBtn.getAttribute('data-req-id');
+        if (!id) return;
+        // Uses Signup controller approval endpoint secured by admin session
+        window.location.href = `${"<?php echo URLROOT; ?>"}/signup/alumni?id=${encodeURIComponent(id)}`;
+    }
+    if (rejectBtn) {
+        const id = rejectBtn.getAttribute('data-req-id');
+        if (!id) return;
+        if (confirm('Are you sure you want to reject this request?')) {
+            window.location.href = `${"<?php echo URLROOT; ?>"}/signup/alumni?reject_id=${encodeURIComponent(id)}`;
+        }
+    }
 });
 <?php $scripts = ob_get_clean(); ?>
 

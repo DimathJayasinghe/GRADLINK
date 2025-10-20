@@ -35,7 +35,7 @@ class eventrequest extends Controller{
                 'req_id'=>1,
                 'status'=>'Approved',
                 'created_at'=>'2025-10-01 10:00:00',
-                'user_id'=>3,
+                'user_id'=>2,
                 'user_name'=>'D. Jayasinghe',
                 'Position'=>'Design Lead, IEEE CS Chapter',
                 'title'=>'IEEE CS Annual General Meeting 2025',
@@ -51,7 +51,7 @@ class eventrequest extends Controller{
                 'going_count' => 23
             ],
             (object)[
-                'req_id'=>2,
+                'req_id'=>1,
                 'status'=>'Pending',
                 'created_at'=>'2025-10-01 10:00:00',
                 'user_id'=>3,

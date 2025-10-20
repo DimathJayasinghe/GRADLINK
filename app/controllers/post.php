@@ -150,7 +150,7 @@ class Post extends Controller
         }
         
         // Update post in database
-        if ($this->m->updatePost($id, $content, $imgName)) {
+        if ($this->m->updatePost($id, $content, $imgName)) { /* returns success */ 
             echo json_encode([
                 'status' => 'success',
                 'message' => 'Post updated successfully',
