@@ -1,5 +1,6 @@
 <script>
 let messageInterval = null; // store the chat refresh interval
+let pausedByScroll = false; // track if polling paused due to user scrolling up
 
 // Load available users asynchronously
 async function loadAvailableUsers() {
@@ -88,6 +89,10 @@ async function startConversation(userId) {
                     <!-- Messages will be loaded here -->
                 </div>
 
+                <button id="scrollToLatestBtn" class="scroll-to-latest-btn" style="display:none;" title="Jump to latest" onclick="scrollToLatest(${userId})">
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+
                 <div class="message-input-container">
                     <div class="input-wrapper">
                         <input type="text" placeholder="Type a message..." class="message-input" id="messageInput">
@@ -114,6 +119,9 @@ async function startConversation(userId) {
                 }
             });
         }
+
+        // Setup scroll listener to pause/resume polling based on position
+        setupChatScroll(userId);
 
     } catch (error) {
         console.error('Error starting conversation:', error);
@@ -160,6 +168,8 @@ async function sendMessage(userId) {
 async function loadMessages(userId) {
     const chatMessages = document.getElementById('chatMessages');
     try {
+        // Determine if user was at bottom before re-render
+        const wasAtBottom = isAtBottom(chatMessages);
         const response = await fetch(`<?php echo URLROOT; ?>/messages/getMessages?userId=${userId}`);
         const data = await response.json();
 
@@ -208,14 +218,69 @@ async function loadMessages(userId) {
                 chatMessages.appendChild(container);
             });
 
-            // auto-scroll to bottom
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            // auto-scroll only if not paused by scroll and user was at bottom
+            if (!pausedByScroll && wasAtBottom) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
         }
 
     } catch (error) {
         console.error('Error loading messages:', error);
         chatMessages.innerHTML = '<div class="error">Failed to load messages</div>';
     }
+}
+
+// Determine if the user is at (or near) the bottom of the chat
+function isAtBottom(el, threshold = 8) {
+    if (!el) return true;
+    return (el.scrollHeight - el.scrollTop - el.clientHeight) <= threshold;
+}
+
+// Setup scroll listener for pausing/resuming polling
+function setupChatScroll(userId) {
+    const chatMessages = document.getElementById('chatMessages');
+    const scrollBtn = document.getElementById('scrollToLatestBtn');
+    if (!chatMessages) return;
+
+    const onScroll = () => {
+        const atBottom = isAtBottom(chatMessages);
+        if (!atBottom) {
+            // User scrolled up: pause polling and show button
+            if (messageInterval) {
+                clearInterval(messageInterval);
+                messageInterval = null;
+            }
+            pausedByScroll = true;
+            if (scrollBtn) scrollBtn.style.display = 'flex';
+        } else {
+            // Back at bottom: resume polling and hide button
+            if (pausedByScroll && !messageInterval) {
+                messageInterval = setInterval(() => loadMessages(userId), 1000);
+            }
+            pausedByScroll = false;
+            if (scrollBtn) scrollBtn.style.display = 'none';
+        }
+    };
+
+    chatMessages.removeEventListener('scroll', chatMessages._onScrollHandler || (()=>{}));
+    chatMessages.addEventListener('scroll', onScroll);
+    chatMessages._onScrollHandler = onScroll;
+}
+
+// Scroll to bottom and resume polling
+async function scrollToLatest(userId) {
+    const chatMessages = document.getElementById('chatMessages');
+    const scrollBtn = document.getElementById('scrollToLatestBtn');
+    if (chatMessages) {
+        chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+    }
+    if (!messageInterval) {
+        messageInterval = setInterval(() => loadMessages(userId), 1000);
+    }
+    pausedByScroll = false;
+    if (scrollBtn) scrollBtn.style.display = 'none';
+    // Optionally refresh once immediately
+    await loadMessages(userId);
 }
 
 function deleteMessageConfirm(messageId,userId) {

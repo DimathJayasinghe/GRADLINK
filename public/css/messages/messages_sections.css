@@ -564,3 +564,26 @@
     height: 32px;
     flex: 0 0 32px;
 }
+
+/* Scroll to latest floating button */
+.scroll-to-latest-btn {
+    position: absolute;
+    right: 30%;
+    bottom: 15%; /* above input bar */
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface-1, #151b1f);
+    color: var(--text, #e8eef2);
+    border: 1px solid var(--border, #3a3a3a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    z-index: 5;
+}
+
+.scroll-to-latest-btn:hover {
+    background: var(--surface-2, #1b2126);
+}
