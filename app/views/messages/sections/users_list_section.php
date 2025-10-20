@@ -194,15 +194,15 @@ async function loadMessages(userId) {
 
                 const actions = document.createElement('div');
                 actions.className = 'msg-actions';
-                actions.innerHTML = `
+                actions.innerHTML = isSent? `
                     <button class="msg-actions-btn" onclick="toggleMsgDropdown(event)">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div class="msg-dropdown" style="display:none;">
-                        ${isSent ? `<div class=\"msg-dropdown-item\" onclick=\"event.stopPropagation(); editMessagePrompt('${message.message_id || ''}', '${safeText.replace(/'/g, "\\'")}')\"><i class=\"fas fa-edit\"></i> Edit</div>` : ''}
+                        <div class=\"msg-dropdown-item\" onclick=\"event.stopPropagation(); editMessagePrompt(this, '${message.message_id || ''}', '${safeText.replace(/'/g, "\\'")}')\"><i class=\"fas fa-edit\"></i> Edit</div>
                         <div class=\"msg-dropdown-item danger\" onclick=\"event.stopPropagation(); deleteMessageConfirm('${message.message_id || ''}', ${userId})\"><i class=\"fas fa-trash\"></i> Delete</div>
                     </div>
-                `;
+                ` : '';
 
                 if (isSent) {
                     // Sent: actions > message (right side), no avatar
@@ -352,26 +352,15 @@ document.addEventListener('click', function(event) {
 });
 
 // Edit message prompt (placeholder function)
-function editMessagePrompt(messageId, currentText) {
+function editMessagePrompt(triggerEl, messageId, currentText) {
     // Close dropdowns
     document.querySelectorAll('.msg-dropdown').forEach(dd => dd.style.display = 'none');
 
     // Pause refresh while editing
     if (messageInterval) clearInterval(messageInterval);
 
-    // Find the message container by traversing from the clicked dropdown
-    // We'll look for the nearest .single-message-container preceding the open dropdown
-    // Simpler approach: find all message containers and replace the first one whose dropdown was just closed
-    const containers = document.querySelectorAll('.single-message-container');
-    let targetContainer = null;
-    for (const c of containers) {
-        // heuristic: the container having a msg-actions with a dropdown hidden most recently
-        const dd = c.querySelector('.msg-dropdown');
-        if (dd) { targetContainer = c; }
-    }
-    // Fallback: use last message container
-    if (!targetContainer && containers.length) targetContainer = containers[containers.length - 1];
-
+    // Find the correct message container from the clicked element
+    const targetContainer = triggerEl.closest('.single-message-container');
     if (!targetContainer) return;
 
     const msgDiv = targetContainer.querySelector('.message');
@@ -391,7 +380,7 @@ function editMessagePrompt(messageId, currentText) {
         </div>
     `;
 
-    // Store a way to restore if cancel
+    // Store a way to restore if cancel (on the specific element)
     msgDiv.dataset.original = originalHtml;
 }
 
@@ -427,15 +416,11 @@ async function submitEditMessage(messageId, inputId){
 }
 
 function cancelEditMessage(messageId){
-    // Restore original content and resume interval
-    const containers = document.querySelectorAll('.single-message-container');
-    for (const c of containers) {
-        const msgDiv = c.querySelector('.message');
-        if (msgDiv && msgDiv.dataset.original) {
-            msgDiv.innerHTML = msgDiv.dataset.original;
-            delete msgDiv.dataset.original;
-            break;
-        }
+    // Restore original content and resume interval for the edited message
+    const edited = document.querySelector('.message[data-original]');
+    if (edited) {
+        edited.innerHTML = edited.dataset.original;
+        delete edited.dataset.original;
     }
 
     const userIdAttr = document.querySelector('.send-btn[onclick^="sendMessage("]')?.getAttribute('onclick');
