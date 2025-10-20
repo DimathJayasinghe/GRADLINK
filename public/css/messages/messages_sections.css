@@ -1,5 +1,10 @@
 /* Messages Sections Styles */
 
+.template-right{
+    height: calc(var(--vh, 1vh) * 100);
+    padding: 0px;
+    margin: 0px;
+}
 .messages-right-panel {
     height: 100%;
     width: 100%;
@@ -300,7 +305,7 @@
 }
 
 .message-section-header {
-    padding: 12px 16px;
+    padding: 22.5px 30px;
     border-bottom: 1px solid var(--border, #3a3a3a);
     background-color: var(--surface-1, #151b1f);
 }
@@ -366,7 +371,7 @@
     align-self: flex-start;
     background-color: var(--surface-2, #1b2126);
     color: var(--text, #e8eef2);
-    border-bottom-left-radius: 4px;
+    border-top-left-radius: 4px;
 }
 
 .message-time {
@@ -382,14 +387,20 @@
     border-top: 1px solid var(--border, #3a3a3a);
     background-color: var(--surface-1, #151b1f);
     display: flex;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
 }
 
-.input-wrapper { flex: 1; }
+.input-wrapper { 
+    flex: 1; 
+    min-width: 0; /* allow input to shrink in flex */
+    display: flex;
+}
 
 .message-input {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0; /* prevent overflow that can push button */
+    width: auto;
     padding: 12px 14px;
     background-color: var(--input, #2b3237);
     border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
@@ -400,8 +411,8 @@
 }
 
 .send-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border: none;
     background-color: var(--primary, #9ed4dc);
     color: var(--bg, #0f1518);
@@ -411,8 +422,129 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    flex-shrink: 0;
+    flex: 0 0 44px; /* fixed, avoids overlaying input */
 }
 
 .send-btn:hover { background-color: var(--primary-600, #8fcbd4); transform: scale(1.05); }
 .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* --------------------------------------- */
+/* Message actions dropdown                */
+/* --------------------------------------- */
+
+.single-message-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.single-message-container.received {
+    justify-content: flex-start;
+}
+
+.single-message-container.sent {
+    justify-content: flex-end; /* push towards right */
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.avatar-small {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.msg-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+}
+
+/* Keep actions compact and vertically aligned with bubbles */
+.single-message-container .msg-actions {
+    height: 28px;
+}
+
+.msg-actions-btn {
+    background: none;
+    border: none;
+    color: var(--muted, #cbb8a3);
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.single-message-container:hover .msg-actions-btn {
+    opacity: 1;
+}
+
+.msg-actions-btn:hover {
+    background-color: var(--surface-2, #1b2126);
+    color: var(--text, #e8eef2);
+}
+
+.msg-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: var(--surface-1, #151b1f);
+    border: 1px solid var(--border, #3a3a3a);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    min-width: 140px;
+    z-index: 1000;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.msg-dropdown-item {
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text, #e8eef2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.15s ease;
+}
+
+.msg-dropdown-item:hover {
+    background-color: var(--surface-2, #1b2126);
+}
+
+.msg-dropdown-item.danger {
+    color: #ff6b6b;
+}
+
+.msg-dropdown-item.danger:hover {
+    background-color: rgba(255, 107, 107, 0.1);
+}
+
+.msg-dropdown-item i {
+    font-size: 13px;
+    width: 16px;
+}
+
+/* Ensure message bubbles don't stretch full width when right-aligned */
+.single-message-container.sent .message {
+    align-self: flex-end;
+}
+
+/* Fine tune max width for better layout */
+.message { max-width: 70%; }
+
+/* Inline edit actions: smaller buttons next to edit field */
+.edit-actions .send-btn {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+}
