@@ -71,6 +71,10 @@
             $data = [];
             $this->view('admin/v_verifications', $data);
         }
+        public function eventrequests(){
+            $data = [];
+            $this->view('admin/v_eventrequests', $data);
+        }
     }
 ?>
 

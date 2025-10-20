@@ -237,8 +237,8 @@
 
 <?php
     $sidebar_left = [
-    ['label'=>'My Event Requests', 'url'=> URLROOT . '/eventrequest/all', 'active'=>false, 'icon'=>'user'],
-    ['label'=>'Create Event Request', 'url'=> URLROOT . '/eventrequest', 'active'=>false, 'icon'=>'plus-circle'],
+    ['label'=>'My Event Requests', 'url'=> '/eventrequest/all', 'active'=>false, 'icon'=>'user'],
+    ['label'=>'Create Event Request', 'url'=> '/eventrequest', 'active'=>false, 'icon'=>'plus-circle'],
     ['label'=>'Analytics', 'url'=> URLROOT . '/eventrequest/analytics/'. $data['request']->req_id, 'active'=>true, 'icon'=>'chart-line'],
     ]
 ?>

@@ -1,6 +1,7 @@
 <?php
 class M_event_image {
     private $db;
+
     public function __construct(){
         $this->db = new Database();
     }
@@ -29,9 +30,8 @@ class M_event_image {
         if(empty($eventIds)) return [];
         $placeholders = implode(',', array_fill(0, count($eventIds), '?'));
         $sql = "SELECT event_id, file_path, caption, is_primary FROM event_images WHERE event_id IN ($placeholders)";
-        $this->db->query($sql);
 
-        // bind by numeric index (Database wrapper supports bind with named parameters only; fallback to execute raw)
+        // Use a direct PDO statement for dynamic IN-list binding
         try {
             $stmt = $this->db->dbh->prepare($sql);
             foreach ($eventIds as $i => $id) {
@@ -44,13 +44,30 @@ class M_event_image {
         }
     }
 
-    /** Return full public URL for an event media filename */
+    /**
+     * Return a public URL for an event image.
+     * Preference order:
+     *  - if $file is already a full URL, return as-is
+     *  - if a file exists under APPROOT/storage/posts/<basename>, return URLROOT/storage/posts/<basename>
+     *  - otherwise fall back to URLROOT/Media/event/<basename>
+     */
     public static function getUrl(?string $file){
         if(!$file) return '';
-        $safe = rawurlencode(basename($file));
-        return rtrim(URLROOT, '/') . '/Media/event/' . $safe;
-    }
+        // If absolute URL, return as-is
+        if(strpos($file, 'http://') === 0 || strpos($file, 'https://') === 0) return $file;
 
+        $name = basename($file);
+        $encoded = rawurlencode($name);
+
+        // Check local storage posts
+        $localPath = APPROOT . '/storage/posts/' . $name;
+        if(file_exists($localPath)){
+            return rtrim(URLROOT, '/') . '/storage/posts/' . $encoded;
+        }
+
+        // Fallback path used elsewhere in the app
+        return rtrim(URLROOT, '/') . '/Media/event/' . $encoded;
+    }
 }
 
 ?>

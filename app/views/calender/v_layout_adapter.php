@@ -48,7 +48,7 @@ ob_start();
     };
     $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
     require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
-    require APPROOT . '/views/inc/commponents/leftSideBar.php'; 
+    
 ?>
 <?php
 // Save leftsidebar content
@@ -143,6 +143,34 @@ $rightsidebar = $content;
 require_once APPROOT . '/helpers/Csrf.php';
 $__gl_csrf = Csrf::getToken();
 echo "<script>window.GL_CSRF_TOKEN = '" . htmlspecialchars($__gl_csrf, ENT_QUOTES) . "';</script>\n";
+// Expose current user id for client-side checks
+\SessionManager::ensureStarted();
+echo "<script>window.GL_CURRENT_USER_ID = " . (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 'null') . ";</script>\n";
+
+// Include reusable RSVP modal so it's available on calendar and detail pages
+require_once APPROOT . '/views/inc/commponents/rsvp_modal.php';
+
+// Expose a global helper to open the RSVP modal and handle confirm/cancel centrally
+echo "<script>\n";
+echo "(function(){\n";
+echo "  window.__GL_openRsvpModal = function(eventId, title){\n";
+echo "    var modal = document.getElementById('rsvp-modal'); if(!modal) return;\n";
+echo "    var titleEl = document.getElementById('rsvp-event-title'); if(titleEl) titleEl.textContent = title || 'Event';\n";
+echo "    modal.style.display = 'flex';\n";
+echo "    window.__GL_rsvp_current = { eventId: eventId };\n";
+echo "  };\n";
+echo "  document.addEventListener('click', function(e){\n";
+echo "    if(!document.getElementById('rsvp-modal')) return;\n";
+echo "    if(e.target && e.target.id === 'rsvp-cancel'){ document.getElementById('rsvp-modal').style.display='none'; return; }\n";
+echo "    if(e.target && e.target.id === 'rsvp-confirm'){\n";
+echo "      var statusEl = document.querySelector('input[name=\\'rsvp-status\\']:checked');\n";
+echo "      var status = statusEl ? statusEl.value : 'attending';\n";
+echo "      var ev = window.__GL_rsvp_current && window.__GL_rsvp_current.eventId; if(!ev){ alert('Missing event id'); return; }\n";
+echo "      fetch('" . URLROOT . "/calender/rsvp', { method: 'POST', credentials: 'same-origin', headers: Object.assign({'Content-Type':'application/json'}, (window.GL_CSRF_TOKEN?{'X-CSRF-Token':window.GL_CSRF_TOKEN}:{})), body: JSON.stringify({ event_id: Number(ev), status: status, guests: 0, csrf_token: (window.GL_CSRF_TOKEN||null) }) }).then(r=>r.json()).then(function(data){ if(data && data.ok){ document.getElementById('rsvp-modal').style.display='none'; if(window.__GL_onRsvpConfirmed) window.__GL_onRsvpConfirmed(ev); } else { alert('RSVP failed: ' + (data && data.error?data.error:'unknown')); } }).catch(function(err){ console.error('RSVP request failed', err); alert('Network error'); });\n";
+echo "    }\n";
+echo "  });\n";
+echo "})();\n";
+echo "</script>\n";
 
 // Include the three-column layout template
 require APPROOT . '/views/layouts/threeColumnMiniLayout.php';

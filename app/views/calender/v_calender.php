@@ -1,4 +1,5 @@
-<?php ob_start(); ?>
+<?php // vim: ft=php
+ob_start(); ?>
 <style>
     /* Center column: event / request list */
     .event-card { /* new event-friendly class */
@@ -521,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const start = `${year}-${String(month+1).padStart(2,'0')}-01`;
             const end = `${year}-${String(month+1).padStart(2,'0')}-${String(new Date(year, month+1, 0).getDate()).padStart(2,'0')}`;
-            const resp = await fetch(`<?php echo URLROOT; ?>/calender/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+            const resp = await fetch(`<?php echo URLROOT; ?>/calender/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`, { credentials: 'same-origin' });
             if(resp.ok){
                 const json = await resp.json();
                 // replace events payload with server data (fallback preserved)
@@ -648,7 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}">
                             ${event.bookmarked ? 'Remove Bookmark' : 'Add to Bookmarks'}
                         </button>
-                        <button class="btn btn-rsvp" data-event-id="${event.id}">RSVP</button>
+                        <button class="btn btn-rsvp" data-event-id="${event.id}">RSVP <span class="rsvp-count" data-event-id="${event.id}">0</span></button>
                         <a class="btn btn-view" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" value=${event.id}>View Details</a>
                     </div>
                     `;
@@ -685,54 +686,94 @@ document.addEventListener('DOMContentLoaded', () => {
                 const eventId = btn.getAttribute('data-event-id');
                 if(!eventId) return;
 
-                // optimistic UI: toggle locally
+                // Determine current bookmarked state for this event
+                let idx = -1;
                 if (selectedDate && events[selectedDate]) {
-                    const idx = events[selectedDate].findIndex(ev => String(ev.id) === String(eventId));
-                    if(idx !== -1){
-                        events[selectedDate][idx].bookmarked = !events[selectedDate][idx].bookmarked;
-                        showEventsForDate(selectedDate);
-                    }
+                    idx = events[selectedDate].findIndex(ev => String(ev.id) === String(eventId));
                 }
 
-                fetch('<?php echo URLROOT; ?>/calender/toggleBookmark', {
+                const currentlyBookmarked = (idx !== -1) ? !!events[selectedDate][idx].bookmarked : false;
+                const endpoint = currentlyBookmarked ? '<?php echo URLROOT; ?>/calender/removeBookmarkAjax' : '<?php echo URLROOT; ?>/calender/addBookmark';
+                const payload = { event_id: Number(eventId), csrf_token: (window.GL_CSRF_TOKEN || null) };
+
+                fetch(endpoint, {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: Object.assign({ 'Content-Type': 'application/json' }, (window.GL_CSRF_TOKEN ? { 'X-CSRF-Token': window.GL_CSRF_TOKEN } : {})),
-                    body: JSON.stringify({ event_id: Number(eventId) })
-                }).then(r=>r.json()).then(data=>{
-                    if(!data.ok){
+                    body: JSON.stringify(payload)
+                }).then(r => r.json()).then(data => {
+                    if (data && data.ok) {
+                        // update local state from server response
+                        if (selectedDate && idx !== -1) {
+                            events[selectedDate][idx].bookmarked = !!data.bookmarked;
+                            showEventsForDate(selectedDate);
+                        } else {
+                            // If we couldn't find it by selectedDate, try to update anywhere in events
+                            for (const d in events) {
+                                const i = events[d].findIndex(ev => String(ev.id) === String(eventId));
+                                if (i !== -1) {
+                                    events[d][i].bookmarked = !!data.bookmarked;
+                                    if (d === selectedDate) showEventsForDate(selectedDate);
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
                         console.warn('Bookmark update failed', data);
+                        // Optionally show an error to the user here
                     }
-                }).catch(err=>{
+                }).catch(err => {
                     console.error('Bookmark request failed', err);
                 });
                 return;
             }
 
             // RSVP clicked
-            if (e.target.closest('.rsvp-btn')){
-                const btn = e.target.closest('.rsvp-btn');
+            if (e.target.closest('.btn-rsvp')){
+                const btn = e.target.closest('.btn-rsvp');
                 const eventId = btn.getAttribute('data-event-id');
                 if(!eventId) return;
-
-                const guests = 0; // simple flow: no guests field in this UI
-                fetch('<?php echo URLROOT; ?>/calender/rsvp', {
-                    method: 'POST',
-                    headers: Object.assign({ 'Content-Type': 'application/json' }, (window.GL_CSRF_TOKEN ? { 'X-CSRF-Token': window.GL_CSRF_TOKEN } : {})),
-                    body: JSON.stringify({ event_id: Number(eventId), status: 'attending', guests: guests })
-                }).then(r=>r.json()).then(data=>{
-                    if(data.ok){
-                        btn.textContent = 'RSVPd';
-                        btn.disabled = true;
-                    } else {
-                        alert('RSVP failed: ' + (data.error||'unknown'));
-                    }
-                }).catch(err=>{
-                    console.error('RSVP request failed', err);
-                    alert('RSVP failed, see console');
-                });
+                // Open RSVP modal and set selected event id via global helper
+                if(window.__GL_openRsvpModal){
+                    window.__GL_openRsvpModal(Number(eventId));
+                } else if(typeof openRsvpModal === 'function'){
+                    openRsvpModal(Number(eventId));
+                }
                 return;
             }
     });
+});
+
+// Use the central RSVP modal included by the layout adapter. Register a handler
+// that will be called by the adapter after a successful RSVP so we can refresh counts.
+if(!window.__GL_onRsvpConfirmed){
+    window.__GL_onRsvpConfirmed = function(ev){
+        try{ refreshAttendeeCountForEvent(ev); }catch(e){console.error(e);} 
+    };
+}
+function refreshAttendeeCountForEvent(eventId){
+    fetch('<?php echo URLROOT; ?>/calender/attendees?event_id=' + encodeURIComponent(eventId), { credentials: 'same-origin' })
+        .then(r=>r.json()).then(data=>{
+            if(data && data.ok){
+                const countEls = document.querySelectorAll('.rsvp-count[data-event-id="'+eventId+'"]');
+                countEls.forEach(el=> el.textContent = data.attendees.length);
+                // If on details page, update attendees list too (in that view we'll fetch attendees separately)
+            }
+        }).catch(err=>console.error('Could not refresh attendees',err));
+}
+
+// Initialize rsvp counts for visible events
+document.addEventListener('DOMContentLoaded', function(){
+    // for each unique event id in events, fetch attendees count
+    const seen = new Set();
+    for(const d in events){
+        events[d].forEach(ev=>{
+            if(!seen.has(String(ev.id))){
+                seen.add(String(ev.id));
+                refreshAttendeeCountForEvent(ev.id);
+            }
+        });
+    }
 });
 
 // Original event handling

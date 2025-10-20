@@ -103,63 +103,71 @@
 <?php ob_start(); ?>
 
     <div >
-        <h2>Create a New Event Request</h2>
+        <?php
+            $isEdit = isset($data['event']) && $data['event'];
+        ?>
+        <h2><?php echo $isEdit ? 'Edit Event Request' : 'Create a New Event Request'; ?></h2>
     <?php require_once APPROOT . '/helpers/Csrf.php'; ?>
-    <form method="post" action="<?php echo URLROOT; ?>/eventrequest/create" enctype="multipart/form-data" class="event-request-form">
+    <form method="post" action="<?php echo URLROOT; ?><?php echo $isEdit ? '/eventrequest/update/'.$data['event']->req_id : '/eventrequest/create'; ?>" enctype="multipart/form-data" class="event-request-form">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
+            <?php if($isEdit): ?>
+                <input type="hidden" name="req_id" value="<?php echo (int)$data['event']->req_id; ?>">
+            <?php endif; ?>
             <div class="form-section">
                 <div class="form-group">
                     <label for="event_title" class="form-label">Event Title:</label>
-                    <input type="text" id="event_title" name="event_title" class="form-control" required>
+                    <input type="text" id="event_title" name="event_title" class="form-control" required value="<?php echo $isEdit ? htmlspecialchars($data['event']->title, ENT_QUOTES) : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="short_tagline" class="form-label">Short Tagline:</label>
-                    <input type="text" id="short_tagline" name="short_tagline" class="form-control" placeholder="A short catchy line about the event">
+                    <input type="text" id="short_tagline" name="short_tagline" class="form-control" placeholder="A short catchy line about the event" value="<?php echo $isEdit && isset($data['event']->short_tagline) ? htmlspecialchars($data['event']->short_tagline, ENT_QUOTES) : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="organizer" class="form-label">Organizer (Club/Society Name):</label>
-                    <input type="text" id="organizer" name="organizer" class="form-control" required>
+                    <input type="text" id="organizer" name="organizer" class="form-control" required value="<?php echo $isEdit ? htmlspecialchars($data['event']->club_name ?? $data['event']->organizer ?? '', ENT_QUOTES) : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="requester_position" class="form-label">Requesting Person's Position in Club:</label>
-                    <input type="text" id="requester_position" name="requester_position" class="form-control" placeholder="e.g., President, Secretary, Event Lead">
+                    <input type="text" id="requester_position" name="requester_position" class="form-control" placeholder="e.g., President, Secretary, Event Lead" value="<?php echo $isEdit ? htmlspecialchars($data['event']->position ?? '', ENT_QUOTES) : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="event_date" class="form-label">Date of Event:</label>
-                    <input type="date" id="event_date" name="event_date" class="form-control" required>
+                    <input type="date" id="event_date" name="event_date" class="form-control" required value="<?php echo $isEdit ? htmlspecialchars($data['event']->event_date ?? '', ENT_QUOTES) : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="event_time" class="form-label">Time of Event:</label>
-                    <input type="time" id="event_time" name="event_time" class="form-control" required>
+                    <input type="time" id="event_time" name="event_time" class="form-control" required value="<?php echo $isEdit ? htmlspecialchars($data['event']->event_time ?? '', ENT_QUOTES) : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="venue" class="form-label">Venue/Location:</label>
-                    <input type="text" id="venue" name="venue" class="form-control" required>
+                    <input type="text" id="venue" name="venue" class="form-control" required value="<?php echo $isEdit ? htmlspecialchars($data['event']->event_venue ?? '', ENT_QUOTES) : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="event_type" class="form-label">Event Type:</label>
                     <select id="event_type" name="event_type" class="form-control" required>
-                        <option value="" disabled selected>Select Event Type</option>
-                        <option value="Workshop">Workshop</option>
-                        <option value="Seminar">Seminar</option>
-                        <option value="Competition">Competition</option>
-                        <option value="Cultural Event">Cultural Event</option>
-                        <option value="Fundraiser">Fundraiser</option>
-                        <option value="Other">Other</option>
+                        <option value="" disabled <?php echo !$isEdit ? 'selected' : ''; ?>>Select Event Type</option>
+                        <?php
+                            $types = ['Workshop','Seminar','Competition','Cultural Event','Fundraiser','Other'];
+                            $currentType = $isEdit ? ($data['event']->event_type ?? '') : '';
+                            foreach($types as $t){
+                                $sel = ($currentType === $t) ? 'selected' : '';
+                                echo "<option value=\"".htmlspecialchars($t,ENT_QUOTES)."\" $sel>".htmlspecialchars($t)."</option>";
+                            }
+                        ?>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="description" class="form-label">Purpose/Objective of Event:</label>
-                    <textarea id="description" name="description" class="form-control" rows="4"></textarea>
+                    <textarea id="description" name="description" class="form-control" rows="4"><?php echo $isEdit ? htmlspecialchars($data['event']->description ?? '', ENT_QUOTES) : ''; ?></textarea>
                 </div>
                 <div class="form-group">
                     <label for="post_caption" class="form-label">Caption for the Post:</label>
-                    <textarea id="post_caption" name="post_caption" class="form-control" rows="3" placeholder="Optional caption to use when posting about this event"></textarea>
+                    <textarea id="post_caption" name="post_caption" class="form-control" rows="3" placeholder="Optional caption to use when posting about this event"><?php echo $isEdit && isset($data['event']->post_caption) ? htmlspecialchars($data['event']->post_caption, ENT_QUOTES) : ''; ?></textarea>
                 </div>
                 <div class="form-group">
                     <div class="form-check">
                         <input type="hidden" name="add_to_calendar" value="0">
-                        <input type="checkbox" id="add_to_calendar" name="add_to_calendar" value="1">
+                        <input type="checkbox" id="add_to_calendar" name="add_to_calendar" value="1" <?php echo $isEdit && !empty($data['event']->add_to_calendar) ? 'checked' : ''; ?>>
                         <label for="add_to_calendar">Add this event to the calendar</label>
                     </div>
                 </div>
@@ -168,23 +176,26 @@
                     <div style="display:flex; gap:16px; flex-wrap:wrap;">
                         <div style="flex:1; min-width:240px;">
                             <label for="president_name" class="form-label">President's Name:</label>
-                            <input type="text" id="president_name" name="president_name" class="form-control">
+                            <input type="text" id="president_name" name="president_name" class="form-control" value="<?php echo $isEdit && isset($data['event']->president_name) ? htmlspecialchars($data['event']->president_name, ENT_QUOTES) : ''; ?>">
                         </div>
                         <div style="flex:1; min-width:240px;">
                             <label for="approval_date" class="form-label">Approval Date:</label>
-                            <input type="date" id="approval_date" name="approval_date" class="form-control">
+                            <input type="date" id="approval_date" name="approval_date" class="form-control" value="<?php echo $isEdit && isset($data['event']->approval_date) ? htmlspecialchars($data['event']->approval_date, ENT_QUOTES) : ''; ?>">
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="event_image" class="form-label">Add event (image):</label>
                     <div class="upload-area" id="uploadArea">
-                        <span>Click to upload or drag and drop</span>
+                        <span <?php echo ($isEdit && !empty($data['event']->attachment_image)) ? 'style="display:none;"' : ''; ?>>Click to upload or drag and drop</span>
                         <input type="file" id="event_image" name="event_image" accept="image/*" style="display:none;">
-                    </div>
+                        <?php if($isEdit && !empty($data['event']->attachment_image)): ?>
+                            <?php $imgUrl = URLROOT . '/storage/posts/' . $data['event']->attachment_image; ?>
+                            <script>document.addEventListener('DOMContentLoaded', function(){ var ua = document.getElementById('uploadArea'); if(ua){ ua.style.backgroundImage = 'url(<?php echo $imgUrl; ?>)'; ua.style.backgroundSize='cover'; ua.style.backgroundPosition='center'; } });</script>
+                        <?php endif; ?>
                 </div>
             </div>
-            <button type="submit" class="next-btn">Request Event</button>
+            <button type="submit" class="next-btn"><?php echo $isEdit ? 'Update Event Request' : 'Request Event'; ?></button>
         </form>
     </div>
     <script>
