@@ -470,4 +470,15 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <!-- Users List Section -->
-<div id="usersList" class="usersList"></div>
+ <div>
+    <style>
+        .user-search-input:focus {
+            outline: none;
+            border-bottom: 2px solid #1da1f2;
+        }
+    </style>
+    <div class="search-bar-message" style="width: 100%; height: 40px;box-sizing: border-box;">
+        <input style="width: 100%; padding:5px 10px;;height:100%; background:#111518;border: 0px;color:white;border-bottom:1px solid #3a3a3a;" type="text" id="userSearchInput" class="user-search-input" placeholder="Search users..." oninput="searchUsers(this.value)">
+    </div>
+    <div id="usersList" class="usersList"></div>
+ </div>

@@ -12,7 +12,8 @@ class M_message extends Database {
                     u.email,
                     u.profile_image as profile_picture
                 FROM users u
-                WHERE u.id != :current_user_id";
+                WHERE u.id != :current_user_id
+                    AND u.role <> 'admin'";
         
         // Add search filter if provided
         if ($searchTerm) {
