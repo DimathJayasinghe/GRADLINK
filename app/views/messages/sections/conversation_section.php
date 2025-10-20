@@ -361,13 +361,16 @@
 <script>
 let currentConversationId = null;
 let currentPartnerId = null;
+let currentLoadToken = 0; // guards against out-of-order async loads
 </script>
 
 
 <script>
 // Function to open conversation with a specific user
 function openUserConversation(userId, userName, userAvatar = null) {
+    // Switch partner: reset conversation context immediately so first send can't use previous thread
     currentPartnerId = userId;
+    currentConversationId = null;
     
     // Update partner info
     document.getElementById('partnerName').textContent = userName;
@@ -411,6 +414,7 @@ function backToMessages() {
 function loadConversation(partnerId) {
     const chatMessages = document.getElementById('chatMessages');
     const loadingMessages = document.getElementById('loadingMessages');
+    const myToken = ++currentLoadToken;
     
     // Show loading
     loadingMessages.style.display = 'flex';
@@ -429,7 +433,11 @@ function loadConversation(partnerId) {
     .then(response => response.json())
     .then(data => {
         loadingMessages.style.display = 'none';
-        
+        // If user switched partners while this was loading, ignore this result
+        if (myToken !== currentLoadToken || partnerId !== currentPartnerId) {
+            return;
+        }
+
         if (data.success) {
             currentConversationId = data.conversation_id;
             displayMessages(data.messages);
