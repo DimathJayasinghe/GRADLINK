@@ -115,6 +115,7 @@ class Signup extends Controller{
             'password' => $_POST['password'] ?? '',
             'confirm_password' => $_POST['confirm_password'] ?? '',
             'display_name' => $_POST['display_name'] ?? '',
+            'gender' => isset($_POST['gender']) ? strtolower(trim($_POST['gender'])) : null,
             'batch_no' => $_POST['graduation_year'] ?? '',
             'nic' => $_POST['nic'] ?? '',
             'bio' => $_POST['bio'] ?? '',
@@ -124,6 +125,10 @@ class Signup extends Controller{
         ];
         
         $this->validateSignup($data);
+        // Gender validation for alumni
+        if (empty($data['gender']) || !in_array($data['gender'], ['male','female'], true)) {
+            $data['errors'][] = 'Please select your gender';
+        }
         // Also prevent duplicate pending requests
         if (empty($data['errors']) && $this->signupModel->findPendingAlumniByEmail($data['email'])) {
             $data['errors'][] = 'An approval request for this email is already pending.';
@@ -175,6 +180,7 @@ class Signup extends Controller{
             'password' => $_POST['password'] ?? '',
             'confirm_password' => $_POST['confirm_password'] ?? '',
             'display_name' => $_POST['display_name'] ?? '',
+            'gender' => isset($_POST['gender']) ? strtolower(trim($_POST['gender'])) : null,
             'batch_no' => $_POST['batch_no'] ?? '',
             'student_id' => $_POST['student_id'] ?? '',
             'bio' => $_POST['bio'] ?? '',
@@ -190,6 +196,11 @@ class Signup extends Controller{
             $data['errors'][] = 'Please enter your student ID';
         } else if (!preg_match('/^\d{4}\/(?:cs|is)\/\d{3}$/i', $data['student_id'])) {
             $data['errors'][] = 'Student ID must be in the format YYYY/cs/XXX or YYYY/is/XXX';
+        }
+
+        // Gender validation for undergrads
+        if (empty($data['gender']) || !in_array($data['gender'], ['male','female'], true)) {
+            $data['errors'][] = 'Please select your gender';
         }
 
         // Student email format validation: <year><cs|is><xxx>@stu.ucsc.cmb.ac.lk

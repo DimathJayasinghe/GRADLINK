@@ -78,16 +78,17 @@ class M_signup {
      * Returns ID on success, false on failure
      */
     public function registerPendingAlumni($data) {
-        $this->db->query("INSERT INTO unregisted_alumni (name, email, password, role, display_name, profile_image, bio, explain_yourself, skills, nic, batch_no) 
-                          VALUES (:name, :email, :password, 'alumni', :display_name, :profile_image, :bio, :explain_yourself, :skills, :nic, :batch_no)");
+        $this->db->query("INSERT INTO unregisted_alumni (name, email, password, role, display_name, gender, profile_image, bio, explain_yourself, skills, nic, batch_no) 
+                          VALUES (:name, :email, :password, 'alumni', :display_name, :gender, :profile_image, :bio, :explain_yourself, :skills, :nic, :batch_no)");
 
         $this->db->bind(':name', $data['name']);
         $this->db->bind(':email', $data['email']);
         $this->db->bind(':password', $data['password']);
         $this->db->bind(':display_name', $data['display_name'] ?? $data['name']);
+        $this->db->bind(':gender', isset($data['gender']) && in_array($data['gender'], ['male','female'], true) ? $data['gender'] : null);
         $this->db->bind(':profile_image', 'default.jpg');
-    $this->db->bind(':bio', $data['bio'] ?? null);
-    $this->db->bind(':explain_yourself', $data['explain_yourself'] ?? null);
+        $this->db->bind(':bio', $data['bio'] ?? null);
+        $this->db->bind(':explain_yourself', $data['explain_yourself'] ?? null);
         $this->db->bind(':skills', $data['skills_json'] ?? null);
         $this->db->bind(':nic', $data['nic'] ?? null);
         $this->db->bind(':batch_no', $data['batch_no'] ?? null);
@@ -108,15 +109,16 @@ class M_signup {
      */
     public function registerUndergrad($data) {
         // Prepare SQL statement
-        $this->db->query("INSERT INTO users (name, email, password, role, display_name, profile_image, bio, skills, student_id, batch_no) 
-                          VALUES (:name, :email, :password, :role, :display_name, :profile_image, :bio, :skills, :student_id, :batch_no)");
+    $this->db->query("INSERT INTO users (name, email, password, role, display_name, gender, profile_image, bio, skills, student_id, batch_no) 
+              VALUES (:name, :email, :password, :role, :display_name, :gender, :profile_image, :bio, :skills, :student_id, :batch_no)");
         
         // Bind values
         $this->db->bind(':name', $data['name']);
         $this->db->bind(':email', $data['email']);
         $this->db->bind(':password', $data['password']);
         $this->db->bind(':role', $data['role']);
-        $this->db->bind(':display_name', $data['display_name'] ?? $data['name']);
+    $this->db->bind(':display_name', $data['display_name'] ?? $data['name']);
+    $this->db->bind(':gender', isset($data['gender']) && in_array($data['gender'], ['male','female'], true) ? $data['gender'] : null);
         $this->db->bind(':profile_image', 'default.jpg');
         $this->db->bind(':bio', $data['bio'] ?? null);
         $this->db->bind(':skills', $data['skills_json'] ?? null);
@@ -196,12 +198,13 @@ class M_signup {
             $this->db->beginTransaction();
 
             // Insert into users
-            $this->db->query("INSERT INTO users (name, email, password, role, display_name, profile_image, bio, skills, nic, batch_no) 
-                              VALUES (:name, :email, :password, 'alumni', :display_name, :profile_image, :bio, :skills, :nic, :batch_no)");
+            $this->db->query("INSERT INTO users (name, email, password, role, display_name, gender, profile_image, bio, skills, nic, batch_no) 
+                              VALUES (:name, :email, :password, 'alumni', :display_name, :gender, :profile_image, :bio, :skills, :nic, :batch_no)");
             $this->db->bind(':name', $pending->name);
             $this->db->bind(':email', $pending->email);
             $this->db->bind(':password', $pending->password);
             $this->db->bind(':display_name', $pending->display_name ?? $pending->name);
+            $this->db->bind(':gender', $pending->gender ?? null);
             $this->db->bind(':profile_image', $pending->profile_image ?? 'default.jpg');
             $this->db->bind(':bio', $pending->bio ?? null);
             $this->db->bind(':skills', $pending->skills ?? null);

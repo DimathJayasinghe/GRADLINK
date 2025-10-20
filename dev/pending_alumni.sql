@@ -1,5 +1,6 @@
--- NOTE: If this table already exists in your DB, run the following to add the new column used during approval:
+-- NOTE: If this table already exists in your DB, run the following to add the new columns:
 -- ALTER TABLE `unregisted_alumni` ADD COLUMN `explain_yourself` text DEFAULT NULL AFTER `bio`;
+-- ALTER TABLE `unregisted_alumni` ADD COLUMN `gender` ENUM('male','female') NULL AFTER `display_name`;
 
 CREATE TABLE IF NOT EXISTS `unregisted_alumni` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -8,6 +9,7 @@ CREATE TABLE IF NOT EXISTS `unregisted_alumni` (
   `password` varchar(255) NOT NULL,
   `role` enum('alumni') NOT NULL DEFAULT 'alumni',
   `display_name` varchar(100) DEFAULT NULL,
+  `gender` enum('male','female') DEFAULT NULL,
   `profile_image` varchar(255) NOT NULL DEFAULT 'default.jpg',
   `bio` text DEFAULT NULL,
   `explain_yourself` text DEFAULT NULL,

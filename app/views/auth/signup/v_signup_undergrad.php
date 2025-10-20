@@ -68,6 +68,15 @@ $skills = require APPROOT . '/data/skills_data.php';
                 <div class="form-group">
                     <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required minlength="6">
                 </div>
+
+                <!-- Gender moved above Skills -->
+                <div class="form-group">
+                    <div class="gender-group" role="radiogroup" aria-label="Gender">
+                        <span class="gender-label">Gender:</span>
+                        <label class="gender-option"><input type="radio" name="gender" value="male" <?php echo (isset($data['gender']) && $data['gender']==='male') ? 'checked' : ''; ?> required> Male</label>
+                        <label class="gender-option"><input type="radio" name="gender" value="female" <?php echo (isset($data['gender']) && $data['gender']==='female') ? 'checked' : ''; ?> required> Female</label>
+                    </div>
+                </div>
                 
                 <div class="form-group">
                     <div class="custom-select">
@@ -134,6 +143,8 @@ $skills = require APPROOT . '/data/skills_data.php';
                         value="<?php echo htmlspecialchars($data['display_name'] ?? ''); ?>">
                 </div>
                 
+                
+
                 <div class="form-group bio-group">
                     <textarea id="bio" name="bio" placeholder="Add bio"><?php echo htmlspecialchars($data['bio'] ?? ''); ?></textarea>
                 </div>
@@ -575,6 +586,14 @@ body {
         grid-template-columns: 1fr;
     }
 }
+</style>
+
+<style>
+/* Gender compact styles (match alumni) */
+.gender-group { display:flex; gap:10px; align-items:center; }
+.gender-group .gender-label { font-size: 0.85rem; color: var(--muted); }
+.gender-group .gender-option { font-size: 0.85rem; display:inline-flex; align-items:center; gap:6px; }
+.gender-group input[type="radio"] { transform: scale(0.9); margin-right: 0; }
 </style>
 
 <?php require APPROOT . '/views/inc/footer.php'; ?>
