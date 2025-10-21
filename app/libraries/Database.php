@@ -75,7 +75,19 @@
             return $this->stmt->rowCount();
         }
 
-        // Return last inserted ID from the PDO instance
+        // Transaction helpers
+        public function beginTransaction() {
+            return $this->dbh->beginTransaction();
+        }
+
+        public function commit() {
+            return $this->dbh->commit();
+        }
+
+        public function rollBack() {
+            return $this->dbh->rollBack();
+        }
+                // Return last inserted ID from the PDO instance
         public function lastInsertId(){
             if($this->dbh){
                 return $this->dbh->lastInsertId();

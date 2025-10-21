@@ -55,16 +55,27 @@ $skills = require APPROOT . '/data/skills_data.php';
                 </div>
                 
                 <div class="form-group">
-                    <input type="email" id="email" name="email" placeholder="Email" required
-                        value="<?php echo htmlspecialchars($data['email'] ?? ''); ?>">
+                    <input type="email" id="email" name="email" placeholder="Student Email" required
+                        value="<?php echo htmlspecialchars($data['email'] ?? ''); ?>"
+                        pattern="^[0-9]{4}(?:[cC][sS]|[iI][sS])[0-9]{3}@stu\.ucsc\.cmb\.ac\.lk$"
+                        title="Use your student email (e.g., 20XXcsXXX@stu.ucsc.cmb.ac.lk)">
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" id="password" name="password" placeholder="Password" required>
+                    <input type="password" id="password" name="password" placeholder="Password" required minlength="6">
                 </div>
                 
                 <div class="form-group">
-                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required>
+                    <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm Password" required minlength="6">
+                </div>
+
+                <!-- Gender moved above Skills -->
+                <div class="form-group">
+                    <div class="gender-group" role="radiogroup" aria-label="Gender">
+                        <span class="gender-label">Gender:</span>
+                        <label class="gender-option"><input type="radio" name="gender" value="male" <?php echo (isset($data['gender']) && $data['gender']==='male') ? 'checked' : ''; ?> required> Male</label>
+                        <label class="gender-option"><input type="radio" name="gender" value="female" <?php echo (isset($data['gender']) && $data['gender']==='female') ? 'checked' : ''; ?> required> Female</label>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -97,7 +108,8 @@ $skills = require APPROOT . '/data/skills_data.php';
             <div class="form-column">
                 <div class="form-group">
                     <input type="text" id="student_id" name="student_id" placeholder="Student ID" 
-                        value="<?php echo htmlspecialchars($data['student_id'] ?? ''); ?>" required>
+                        value="<?php echo htmlspecialchars($data['student_id'] ?? ''); ?>" required
+                        pattern="^\d{4}/(?:[cC][sS]|[iI][sS])/\d{3}$" title="Format: YYYY/cs/XXX or YYYY/is/XXX (e.g., 2021/cs/123)">
                 </div>
                 
                 <div class="form-group">
@@ -122,7 +134,8 @@ $skills = require APPROOT . '/data/skills_data.php';
                 
                 <div class="form-group">
                     <input type="text" id="nic" name="nic" placeholder="NIC" 
-                        value="<?php echo htmlspecialchars($data['nic'] ?? ''); ?>">
+                        value="<?php echo htmlspecialchars($data['nic'] ?? ''); ?>"
+                        pattern="^\d{12}$" title="12-digit NIC (e.g., 200012345678)">
                 </div>
                 
                 <div class="form-group">
@@ -130,6 +143,8 @@ $skills = require APPROOT . '/data/skills_data.php';
                         value="<?php echo htmlspecialchars($data['display_name'] ?? ''); ?>">
                 </div>
                 
+                
+
                 <div class="form-group bio-group">
                     <textarea id="bio" name="bio" placeholder="Add bio"><?php echo htmlspecialchars($data['bio'] ?? ''); ?></textarea>
                 </div>
@@ -571,6 +586,14 @@ body {
         grid-template-columns: 1fr;
     }
 }
+</style>
+
+<style>
+/* Gender compact styles (match alumni) */
+.gender-group { display:flex; gap:10px; align-items:center; }
+.gender-group .gender-label { font-size: 0.85rem; color: var(--muted); }
+.gender-group .gender-option { font-size: 0.85rem; display:inline-flex; align-items:center; gap:6px; }
+.gender-group input[type="radio"] { transform: scale(0.9); margin-right: 0; }
 </style>
 
 <?php require APPROOT . '/views/inc/footer.php'; ?>
