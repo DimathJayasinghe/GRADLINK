@@ -212,7 +212,7 @@
                 </button>
             </div>
             <div class="details-info-item" style="padding: 0px;display: flex; align-items: center; justify-content: center;">
-                <button id="detail-rsvp-btn" style="background-color:#4caf50; padding: 13px 60px" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
+                <button id="detail-rsvp-btn" style="background-color:#455663; padding: 13px 60px" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
                     <span class="btn" style="color:#ffffff">RSVP</span>
                 </button>
             </div>
