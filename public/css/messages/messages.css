@@ -1,0 +1,66 @@
+/* Messages Page Styles */
+
+/* Import GRADLINK theme variables */
+@import url('../color-pallate.css');
+*{
+    font-family: 'poppins', sans-serif;
+}
+/* General styling for messages page */
+body {
+    background-color: var(--bg, #0f1518);
+    color: var(--text, #e8eef2);
+}
+
+/* Messages specific styling will go here */
+.messages-container {
+    /* height: 100vh; */
+    overflow: hidden;
+}
+
+/* Force sidebar to maintain settings page styling */
+.template-left {
+    width: 275px !important;
+    min-width: 275px !important;
+    max-width: 275px !important;
+}
+
+/* Ensure sidebar content maintains proper styling */
+/* .template-left .sidebar {
+    width: 100% !important;
+    padding: 20px !important;
+} */
+
+.template-left .sidebar-menu li {
+    font-size: 18px !important;
+    margin-bottom: 25px !important;
+    font-weight: 500 !important;
+}
+
+.template-left .sidebar-menu li i {
+    font-size: 22px !important;
+    margin-right: 15px !important;
+}
+
+.template-left .logo-name {
+    font-size: 24px !important;
+    font-weight: 700 !important;
+}
+
+/* Override responsive behavior to maintain full sidebar */
+@media (max-width: 768px) {
+    .template-left {
+        width: 275px !important;
+        min-width: 275px !important;
+    }
+    
+    .template-left .sidebar-menu li span {
+        display: inline !important;
+    }
+    
+    .template-left .sidebar-menu li i {
+        margin-right: 15px !important;
+        font-size: 22px !important;
+    }
+}
+
+/* Additional messages-specific styles can be added here */
