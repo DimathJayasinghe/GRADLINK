@@ -17,11 +17,11 @@
 ?>
 
 <?php ob_start(); ?>
-<div class="admin-header">
+<div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;">
     <h1>Event Requests Moderation</h1>
     <div class="admin-actions">
         <button id="bulk-approve" class="admin-btn">Approve Selected</button>
-        <button id="bulk-reject" class="admin-btn">Reject Selected</button>
+        <button id="bulk-reject" class="admin-btn" style="background-color: #b32d2dff;">Reject Selected</button>
     </div>
 </div>
 <div class="admin-card">
@@ -60,7 +60,7 @@
 
 <!-- Modal -->
 <div id="reqModal" class="admin-modal" style="display:none;">
-    <div class="admin-modal-content">
+    <div class="admin-modal-content" style="background-color:var(--surface-4);">
         <span class="admin-modal-close">&times;</span>
         <h2>Request Details</h2>
         <div id="modalReqContent"></div>
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 <td>${escapeHtml(r.event_date||'')}</td>
                 <td>${escapeHtml(r.status||'')}</td>
                 <td>
-                    <button class="admin-btn view-req">View</button>
+                    <button class="admin-btn view-req" style="background-color: #525253ff; color: white;">View</button>
                     <button class="admin-btn approve-req">Approve</button>
                     <button class="admin-btn admin-btn-danger reject-req">Reject</button>
                 </td>
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 <b>Date:</b> ${escapeHtml(req.event_date||'')}<br>
                 <b>Time:</b> ${escapeHtml(req.event_time||'')}<br>
                 <b>Venue:</b> ${escapeHtml(req.event_venue||'')}<br>
-                <b>Description:</b><div style='white-space:pre-line;background:#f8f8f8;padding:0.5em;border-radius:4px;'>${escapeHtml(req.description||'')}</div>
+                <b>Description:</b><div style='white-space:pre-line;background:#f8f8f8;padding:0.5em;border-radius:4px; color: black'>${escapeHtml(req.description||'')}</div>
             `;
             document.getElementById('reqModal').style.display='block';
         });

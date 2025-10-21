@@ -24,6 +24,26 @@
     .admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.3); }
     .admin-modal-content { background: var(--surface-4); margin: 5% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
     .admin-modal-close { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
+
+    .report-id{
+        width: 5%;
+    }
+    .report-user{
+        width: 20%;
+    }
+    .report-type{
+        width: 15%;
+    }
+    .report-status{
+        width: 15%;
+    }
+    .report-date{
+        width: 20%;
+    }
+    .report-actions{
+        width: 25%;
+    }
+
     </style> 
 <?php $styles = ob_get_clean()?>
 
@@ -43,12 +63,12 @@
 ?>
 
 <?php ob_start();?>
-<div class="admin-header">
+<div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;">
     <h1>Reports & Exports</h1>
-    <div class="admin-actions">
+    <!-- <div class="admin-actions">
         <button class="admin-btn" id="export-users">Export User Reports</button>
         <button class="admin-btn" id="export-content">Export Content Reports</button>
-    </div>
+    </div> -->
 </div>
 
 <div class="admin-card" style="margin-bottom:1.5rem;">
@@ -59,12 +79,12 @@
         <table class="admin-table" id="userReportsTable">
             <thead>
                 <tr>
-                    <th>Report ID</th>
-                    <th>User</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
+                    <th class="report-id">Report ID</th>
+                    <th class="report-user">User</th>
+                    <th class="report-type">Type</th>
+                    <th class="report-status">Status</th>
+                    <th class="report-date">Date</th>
+                    <th class="report-actions">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -74,7 +94,14 @@
                     <td>Abuse</td>
                     <td><span class="status-badge status-pending">Pending</span></td>
                     <td>2025-09-01</td>
-                    <td><button class="admin-btn view-report">View</button></td>
+                    <td style="display:flex; gap:0.5rem;">
+                        <button class="admin-btn view-report">View</button>
+                        <select class="admin-select">
+                            <option value="">Change Status</option>
+                            <option value="resolved">Mark as Resolved</option>
+                            <option value="rejected">Reject Report</option>
+                        </select>
+                    </td>
                 </tr>
                 <tr>
                     <td>102</td>
@@ -82,7 +109,13 @@
                     <td>Spam</td>
                     <td><span class="status-badge status-resolved">Resolved</span></td>
                     <td>2025-09-03</td>
-                    <td><button class="admin-btn view-report">View</button></td>
+                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
+                        <select class="admin-select">
+                            <option value="">Change Status</option>
+                            <option value="pending">Mark as Pending</option>
+                            <option value="rejected">Reject Report</option>
+                        </select>
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -96,12 +129,12 @@
         <table class="admin-table" id="contentReportsTable">
             <thead>
                 <tr>
-                    <th>Report ID</th>
-                    <th>Content</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
+                    <th class="report-id">Report ID</th>
+                    <th class="report-content">Content</th>
+                    <th class="report-type">Type</th>
+                    <th class="report-status">Status</th>
+                    <th class="report-date">Date</th>
+                    <th class="report-actions">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -111,7 +144,13 @@
                     <td>Inappropriate</td>
                     <td><span class="status-badge status-pending">Pending</span></td>
                     <td>2025-09-02</td>
-                    <td><button class="admin-btn view-report">View</button></td>
+                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
+                        <select class="admin-select">
+                            <option value="">Change Status</option>
+                            <option value="resolved">Mark as Resolved</option>
+                            <option value="rejected">Reject Report</option>
+                        </select>
+                    </td>
                 </tr>
                 <tr>
                     <td>202</td>
@@ -119,7 +158,14 @@
                     <td>Spam</td>
                     <td><span class="status-badge status-rejected">Rejected</span></td>
                     <td>2025-09-04</td>
-                    <td><button class="admin-btn view-report">View</button></td>
+                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
+                        <select class="admin-select">
+                            <option value="">Change Status</option>
+                            <option value="pending">Mark as Pending</option>
+                            <option value="resolved">Mark as Resolved</option>
+                            <option value="rejected">Reject Report</option>
+                        </select>
+                    </td>
                 </tr>
             </tbody>
         </table>

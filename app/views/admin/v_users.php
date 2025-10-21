@@ -19,9 +19,8 @@
 
 <?php ob_start();?>
 <div class="admin-dashboard">
-    <div class="admin-header">
+    <div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 10px;">
         <h1>Users</h1>
-        
     </div>
 
     <div class="card">
@@ -52,25 +51,111 @@
             <button id="clear-filters" class="clear-btn" type="button">Clear</button>
         </div>
 
-        <div class="admin-table-wrapper">
+        <?php
+            // Partition users by role
+            $allUsers = $data['users'] ?? [];
+            $undergrads = [];
+            $alumni = [];
+            $admins = [];
+            foreach($allUsers as $u){
+                $r = strtolower(trim((string)($u->role ?? '')));
+                if($r === 'undergrad' || $r === 'student' || $r === 'undergraduate') $undergrads[] = $u;
+                else if($r === 'alumni' || $r === 'alumnus') $alumni[] = $u;
+                else if($r === 'admin' || $r === 'administrator') $admins[] = $u;
+                else $undergrads[] = $u; // default bucket
+            }
+        ?>
+
+            <div class="admin-table-wrapper">
+            <h2>Undergraduates</h2>
             <table class="admin-table" role="table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Batch</th>
+                        <th class="uid">ID</th>
+                        <th class="name">Name</th>
+                        <th class="email">Email</th>
+                        <th class="role">Role</th>
+                        <th class="batch">Batch</th>
+                        <th class="actions">Actions</th>
                     </tr>
                 </thead>
-                <tbody id="users-tbody">
-                    <?php foreach (($data['users'] ?? []) as $u): ?>
+                <tbody id="users-tbody-undergrad">
+                    <?php foreach ($undergrads as $u): ?>
                         <tr>
                             <td data-label="ID"><?php echo (int)$u->id; ?></td>
                             <td data-label="Name"><?php echo htmlspecialchars($u->name ?? ''); ?></td>
                             <td data-label="Email"><?php echo htmlspecialchars($u->email ?? ''); ?></td>
                             <td data-label="Role"><?php echo htmlspecialchars($u->role ?? ''); ?></td>
                             <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->graduation_year ?? '')); ?></td>
+                            <td data-label="Actions">
+                                <button class="admin-btn view-user" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
+                                <button class="admin-btn admin-btn-danger delete-user">Delete</button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-table-wrapper">
+            <h2>Alumni</h2>
+            <table class="admin-table" role="table">
+                <thead>
+                    <tr>
+                        <th class="uid">ID</th>
+                        <th class="name">Name</th>
+                        <th class="email">Email</th>
+                        <th class="role">Role</th>
+                        <th class="batch">Batch</th>
+                        <th class="actions">Actions</th>
+                        <th class="special-alumni">Special Alumni</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody-alumni">
+                    <?php foreach ($alumni as $u): ?>
+                        <tr>
+                            <td data-label="ID"><?php echo (int)$u->id; ?></td>
+                            <td data-label="Name"><?php echo htmlspecialchars($u->name ?? ''); ?></td>
+                            <td data-label="Email"><?php echo htmlspecialchars($u->email ?? ''); ?></td>
+                            <td data-label="Role"><?php echo htmlspecialchars($u->role ?? ''); ?></td>
+                            <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->graduation_year ?? '')); ?></td>
+                            <td data-label="Actions">
+                                <button class="admin-btn view-user" style="margin: 3px;" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
+                                <button class="admin-btn admin-btn-danger delete-user">Delete</button>
+                            </td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="yes_special_alumni[<?php echo (int)$u->id; ?>]" value="yes">
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-table-wrapper">
+            <h2>Admins</h2>
+            <table class="admin-table" role="table">
+                <thead>
+                    <tr>
+                        <th class="uid">ID</th>
+                        <th class="name">Name</th>
+                        <th class="email">Email</th>
+                        <th class="role">Role</th>
+                        <th class="batch">Batch</th>
+                        <th class="actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-tbody-admins">
+                    <?php foreach ($admins as $u): ?>
+                        <tr>
+                            <td data-label="ID"><?php echo (int)$u->id; ?></td>
+                            <td data-label="Name"><?php echo htmlspecialchars($u->name ?? ''); ?></td>
+                            <td data-label="Email"><?php echo htmlspecialchars($u->email ?? ''); ?></td>
+                            <td data-label="Role"><?php echo htmlspecialchars($u->role ?? ''); ?></td>
+                            <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->graduation_year ?? '')); ?></td>
+                            <td data-label="Actions">
+                                <button class="admin-btn view-user" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -83,20 +168,25 @@
             const searchEl = document.getElementById('user-search');
             const roleEl = document.getElementById('role-filter');
             const clearBtn = document.getElementById('clear-filters');
-            const tbody = document.getElementById('users-tbody');
+            const tbodyUnder = document.getElementById('users-tbody-undergrad');
+            const tbodyAlumni = document.getElementById('users-tbody-alumni');
+            const tbodyAdmins = document.getElementById('users-tbody-admins');
+            const allTBodies = [tbodyUnder, tbodyAlumni, tbodyAdmins].filter(Boolean);
 
             function normalize(s){ return (s||'').toString().toLowerCase(); }
 
             function filterRows(){
                 const q = normalize(searchEl.value);
                 const role = normalize(roleEl.value);
-                Array.from(tbody.rows).forEach(row=>{
-                    const name = normalize(row.cells[1].textContent);
-                    const email = normalize(row.cells[2].textContent);
-                    const r = normalize(row.cells[3].textContent);
-                    const matchesQuery = q === '' || name.includes(q) || email.includes(q);
-                    const matchesRole = role === '' || r === role;
-                    row.style.display = (matchesQuery && matchesRole) ? '' : 'none';
+                allTBodies.forEach(tb=>{
+                    Array.from(tb.rows).forEach(row=>{
+                        const name = normalize(row.cells[1].textContent);
+                        const email = normalize(row.cells[2].textContent);
+                        const r = normalize(row.cells[3].textContent);
+                        const matchesQuery = q === '' || name.includes(q) || email.includes(q);
+                        const matchesRole = role === '' || r === role;
+                        row.style.display = (matchesQuery && matchesRole) ? '' : 'none';
+                    });
                 });
             }
 
