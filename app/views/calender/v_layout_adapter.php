@@ -1,7 +1,7 @@
+<link rel="shortcut icon" href="<?php echo URLROOT ?>/img/favicon_white.png" type="image/x-icon">
 <?php
 // This is a template adapter for request dashboards to use threeColumnMiniLayout
 // It helps maintain the original sidebar structure while integrating with the three-column layout
-
 // Start capturing leftsidebar content for standard sidebar
 ob_start();
 ?>
