@@ -18,11 +18,11 @@
 ?>
 
 <?php ob_start();?>
-<div class="admin-header">
+<div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;">
     <h1>Content Management</h1>
     <div class="admin-actions">
         <button id="bulk-approve" class="admin-btn">Approve Selected</button>
-        <button id="bulk-reject" class="admin-btn">Reject Selected</button>
+        <button id="bulk-reject" class="admin-btn" style="background-color: #454545ff;">Reject Selected</button>
         <button id="bulk-delete" class="admin-btn admin-btn-danger">Delete Selected</button>
     </div>
 </div>

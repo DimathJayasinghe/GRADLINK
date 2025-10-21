@@ -5,7 +5,7 @@
 .admin-table-wrapper { overflow-x: auto; }
 .admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
 .admin-table th, .admin-table td { padding: 0.75rem; border-bottom: 1px solid #eee; text-align: left; }
-.admin-table th { background: #f8f8f8; }
+.admin-table th { background: #f8f8f8; background-color: var(--bg);}
 .status-badge { padding: 0.25em 0.75em; border-radius: 1em; font-size: 0.9em; }
 .status-pending { background: #ffeeba; color: #856404; }
 .status-verified { background: #d4edda; color: #155724; }
@@ -37,7 +37,7 @@
 ?>
 
 <?php ob_start();?>
-<div class="admin-header">
+<div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;">
     <h1>Alumni Verifications</h1>
     <div class="admin-actions">
         <button id="bulk-verify" class="admin-btn">Verify Selected</button>
@@ -79,9 +79,9 @@
                     <td>991234567V</td>
                     <td><span class="status-badge status-pending">Pending</span></td>
                     <td>
+                        <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
                         <button class="admin-btn verify-alumni">Verify</button>
                         <button class="admin-btn admin-btn-danger reject-alumni">Reject</button>
-                        <button class="admin-btn view-alumni">View</button>
                     </td>
                 </tr>
                 <tr>
@@ -92,7 +92,7 @@
                     <td>9823456782221</td>
                     <td><span class="status-badge status-verified">Verified</span></td>
                     <td>
-                        <button class="admin-btn view-alumni">View</button>
+                        <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
                     </td>
                 </tr>
                 <tr>
@@ -103,7 +103,7 @@
                     <td>993456789V</td>
                     <td><span class="status-badge status-rejected">Rejected</span></td>
                     <td>
-                        <button class="admin-btn view-alumni">View</button>
+                        <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
                     </td>
                 </tr>
             </tbody>

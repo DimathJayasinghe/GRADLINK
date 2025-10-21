@@ -378,6 +378,7 @@ ob_start(); ?>
 
     .btn-rsvp {
         background-color: #007bff;
+        color: #303030ff;
     }
 
     .btn-view {

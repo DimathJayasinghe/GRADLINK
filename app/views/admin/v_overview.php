@@ -21,9 +21,9 @@
 <div class="admin-header">
     <h1>System Overview</h1>
     <div class="admin-actions">
-        <button class="btn btn-primary"><i class="fas fa-file-export"></i> Export Data</button>
-        <button class="btn btn-secondary"><i class="fas fa-database"></i> Backup</button>
-        <button class="btn btn-warning"><i class="fas fa-tools"></i> Maintenance</button>
+        <button class="btn btn-primary" style="padding: 8px; color: white;"><i class="fas fa-file-export"></i> Export Data</button>
+        <button class="btn btn-secondary" style="padding: 8px; color: white;"><i class="fas fa-database"></i> Backup</button>
+        <button class="btn btn-warning" style="padding: 8px; color: black;"><i class="fas fa-tools"></i> Maintenance</button>
     </div>
 </div>
 
@@ -96,21 +96,21 @@
             <h3>Quick Actions</h3>
         </div>
         <div class="quick-actions-grid">
-            <button class="quick-action-btn" data-section="verifications">
+            <button class="quick-action-btn" data-section="verifications" onclick="location.href='<?php echo URLROOT; ?>/admin/verifications';">
                 <span class="action-icon"><i class="fas fa-check-circle"></i></span>
                 <span class="action-text">Review Verifications</span>
                 <span class="action-badge">—</span>
             </button>
-            <button class="quick-action-btn" data-section="reports">
+            <button class="quick-action-btn" data-section="reports" onclick="location.href='<?php echo URLROOT; ?> /admin/reports';">
                 <span class="action-icon"><i class="fas fa-exclamation-triangle"></i></span>
                 <span class="action-text">Review Reports</span>
                 <span class="action-badge">—</span>
             </button>
-            <button class="quick-action-btn" data-section="posts">
+            <button class="quick-action-btn" data-section="posts" onclick="location.href='';">
                 <span class="action-icon"><i class="fas fa-bullhorn"></i></span>
                 <span class="action-text">Create Announcement</span>
             </button>
-            <button class="quick-action-btn" data-section="analytics">
+            <button class="quick-action-btn" data-section="analytics" onclick="location.href='<?php echo URLROOT; ?>/admin/engagement';">
                 <span class="action-icon"><i class="fas fa-chart-line"></i></span>
                 <span class="action-text">View Analytics</span>
             </button>

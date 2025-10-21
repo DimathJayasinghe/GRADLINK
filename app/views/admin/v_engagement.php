@@ -21,13 +21,13 @@
 
 <?php ob_start();?>
 <div class="admin-dashboard">
-    <div class="admin-header">
-        <h1>Analytics Dashboard</h1>
-        <p style="color: var(--muted); margin: 1rem;">Track user activity, engagement, and platform usage.</p>
+    <div class="admin-header" >
+        <h1 style="border-bottom: 2px solid #3a3a3a; padding-bottom: 10px; text-align: left;">Analytics Dashboard</h1>
+        <p style="color: var(--muted); margin-top: 1.5rem; margin-bottom: 1rem;">Track user activity, engagement, and platform usage.</p>
     </div>
 
     <section class="filters">
-        <h3>Filter Options</h3>
+        <h3 style="color: var(--muted); margin-bottom: .25rem;">Filter Options</h3>
         <form class="filters-form" method="get" action="<?php echo URLROOT; ?>/admin">
             <input type="text" name="date_range" placeholder="Date Range">
             <input type="text" name="user_type" placeholder="User Type">
@@ -53,11 +53,11 @@
     <section class="charts">
         <div class="card">
             <h3>User Distribution by Graduation/Batch</h3>
-            <div class="chart-wrap-batch"><canvas id="batchChart"></canvas></div>
+            <div class="chart-wrap-batch" style="height: 300px; width: 300px; display: flex; align-items: center; justify-content: center;"><canvas id="batchChart"></canvas></div>
         </div>
         <div class="card">
             <h3>Distribution by Role</h3>
-            <div class="chart-wrap"><canvas id="roleChart"></canvas></div>
+            <div class="chart-wrap" style="height: 300px; width: 300px; display: flex; align-items: center; justify-content: center;"><canvas id="roleChart"></canvas></div>
         </div>
     </section>
 
@@ -72,17 +72,51 @@
     <section class="grid-2">
         <div class="card map-placeholder">
             <h3>Alumni Locations</h3>
-            <div class="map-box">Map placeholder</div>
+            <div id="workMap" style="width: 100%; height: 300px; background: #f0f0f0; border-radius: 8px;"></div>
         </div>
         <div class="card">
             <h3>Active Users Over Time</h3>
-            <canvas id="activeOverTime" height="100"></canvas>
+            <div class="chart-wrap" style="height: auto; width: 100%; display: flex; align-items: center; justify-content: center;">
+                <canvas id="activeOverTime" height="100"></canvas>
+            </div>
         </div>
     </section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script>
+    // Initialize work location map
+    document.addEventListener('DOMContentLoaded', () => {
+        const map = L.map('workMap').setView([7.8731, 80.7718], 7); // Centered on Sri Lanka
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+
+        // Sample alumni work locations (replace with actual data from server)
+        const workLocations = <?php echo json_encode($data['work_locations'] ?? [
+            ['name' => 'Colombo', 'lat' => 6.9271, 'lng' => 79.8612, 'count' => 45],
+            ['name' => 'Kandy', 'lat' => 7.2906, 'lng' => 80.6337, 'count' => 23],
+            ['name' => 'Galle', 'lat' => 6.0535, 'lng' => 80.2210, 'count' => 12]
+        ]); ?>;
+
+        workLocations.forEach(location => {
+            const marker = L.circleMarker([location.lat, location.lng], {
+                radius: Math.sqrt(location.count) * 3,
+                fillColor: '#60a5fa',
+                color: '#2563eb',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.6
+            }).addTo(map);
+            
+            marker.bindPopup(`<b>${location.name}</b><br>${location.count} alumni working here`);
+        });
+    });
+
     const roleData = <?php echo json_encode($data['charts']['roles'] ?? []); ?>;
     const batchData = <?php echo json_encode($data['charts']['batches'] ?? []); ?>;
     const engagement = <?php echo json_encode((new M_admin())->getEngagementMetrics()); ?>;
