@@ -207,8 +207,13 @@
                 <?php
                     $isBookmarked = !empty($request->bookmarked);
                 ?>
-                <button id="bookmark-btn" class="btn <?php echo $isBookmarked ? 'btn-primary' : 'btn-danger'; ?>" data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
-                    <span id="bookmark-label"><?php echo $isBookmarked ? 'Bookmarked' : 'Add Bookmark'; ?></span>
+                <button id="bookmark-btn" style="background-color:<?php echo $isBookmarked ? '#ec2424ff' : '#4caf50'; ?>" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
+                    <span class="btn" style="color: ffffff;" id="bookmark-label"><?php echo $isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'; ?></span>
+                </button>
+            </div>
+            <div class="details-info-item" style="padding: 0px;display: flex; align-items: center; justify-content: center;">
+                <button id="detail-rsvp-btn" style="background-color:#4caf50; padding: 13px 60px" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
+                    <span class="btn" style="color:#ffffff">RSVP</span>
                 </button>
             </div>
         </div>
@@ -251,9 +256,9 @@
 
         <div class="action-buttons">
             <a href="<?php echo URLROOT; ?>/calender/" class="btn btn-back">Back to All Event Requests</a>
-            <button id="detail-rsvp-btn" class="btn btn-primary" data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">RSVP</button>
-            <button id="detail-cancel-rsvp-btn" class="btn btn-danger" style="display:none;">Cancel My RSVP</button>
+            <!-- <button id="detail-cancel-rsvp-btn" class="btn btn-danger" style="display:none;">Cancel My RSVP</button> -->
         </div>
+        
     <?php else: ?>
         <p>Event request not found.</p>
         <div class="action-buttons">

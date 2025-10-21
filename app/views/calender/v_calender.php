@@ -284,6 +284,12 @@ ob_start(); ?>
         margin-top: 20px;
     }
 
+    .details-info-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
     .selected-date {
         margin: 0 0 12px;
         font-size: 16px;
@@ -646,11 +652,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>${event.description}</p>
                     </div>
                     <div class="event-actions">
-                        <button class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}">
+                        <button style="padding: 8px;" class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}">
                             ${event.bookmarked ? 'Remove Bookmark' : 'Add to Bookmarks'}
                         </button>
                         <button class="btn btn-rsvp" data-event-id="${event.id}">RSVP <span class="rsvp-count" data-event-id="${event.id}">0</span></button>
-                        <a class="btn btn-view" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" value=${event.id}>View Details</a>
+                        <a style="padding: 8px;" class="btn btn-view" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" value=${event.id}>View Details</a>
                     </div>
                     `;
 
