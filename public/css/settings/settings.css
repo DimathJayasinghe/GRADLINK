@@ -1,4 +1,9 @@
 /* Centralized Settings Styles - applies to Account, Privacy & Safety, Notifications, Help & Support */
+.account_content *,
+.account_content *::before,
+.account_content *::after {
+    box-sizing: border-box; /* Prevent width + padding/border from overflowing */
+}
 .account_content {
     max-width: 800px;
     margin: 0 auto;
@@ -64,10 +69,10 @@
     border: none;
     border-radius: var(--radius-lg);
     background-color: var(--primary);
-    color: var(--bg);
     cursor: pointer;
     font-weight: 500;
     transition: background-color 0.2s ease;
+    color: var(--bg);
 }
 
 .settings-btn:hover {
@@ -75,6 +80,12 @@
 }
 
 .settings-btn-secondary {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
     background-color: var(--btn);
     color: var(--btn-text);
 }
@@ -84,6 +95,12 @@
 }
 
 .settings-btn-danger {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
     background-color: var(--danger);
     color: #fff;
 }
@@ -124,6 +141,14 @@
 .toggle input:checked + .slider:before { transform: translateX(20px); }
 
 .select-inline {
+    padding: 8px 16px;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    background-color: var(--input);
+    color: aliceblue;
     min-width: 200px;
 }
 
@@ -207,6 +232,8 @@
 .form-group select,
 .form-group textarea {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box; /* Ensure padding/border are included in width */
     padding: 10px;
     background-color: var(--input);
     border: 1px solid var(--border);
@@ -214,6 +241,11 @@
     font-size: 16px; color: var(--text);
 }
 .form-group textarea { resize: vertical; min-height: 80px; }
+
+/* Avoid horizontal scroll in modals due to child widths */
+.settings-modal-body {
+    overflow-x: hidden;
+}
 
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
 

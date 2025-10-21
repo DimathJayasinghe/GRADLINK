@@ -61,8 +61,16 @@ class login extends Controller{
                 SessionManager::setFlash('success', 'Welcome back, ' . ($user->name ?? 'Alumni') . '!');
                 SessionManager::redirectIfLoggedIn("/mainfeed");
             }else{
-                 // Invalid credentials
-                $data['errors'][] = 'Invalid email or password';
+                // If not found in users, check unregistered table for status
+                $status = $this->loginModel->checkUnregisteredAlumniStatus($data['email'], $data['password']);
+                if ($status === 'pending') {
+                    $data['pending_status'] = true;
+                } else if ($status === 'rejected') {
+                    $data['rejected_status'] = true;
+                } else {
+                    // Invalid credentials
+                    $data['errors'][] = 'Invalid email or password';
+                }
             }
         }
         $this->view('auth/login/v_login_alumni', $data);

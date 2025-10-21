@@ -67,6 +67,34 @@
             $data = [];
             $this->view('admin/v_verifications', $data);
         }
+
+            // POST: Approve a pending alumni signup
+            public function approvePendingAlumni() {
+                // Ensure admin auth via constructor
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                    header('Location: ' . URLROOT . '/admin/verifications');
+                    exit();
+                }
+
+                $pendingId = $_POST['pending_id'] ?? null;
+                $pendingId = is_numeric($pendingId) ? (int)$pendingId : null;
+                if (!$pendingId) {
+                    SessionManager::setFlash('error', 'Invalid approval request.');
+                    header('Location: ' . URLROOT . '/admin/verifications');
+                    exit();
+                }
+
+                // Use signup model to approve
+                $signupModel = $this->model('M_signup');
+                $newUserId = $signupModel->approveAlumni($pendingId);
+                if ($newUserId) {
+                    SessionManager::setFlash('success', 'Alumni approved and activated (User ID: ' . $newUserId . ').');
+                } else {
+                    SessionManager::setFlash('error', 'Approval failed. Please try again.');
+                }
+                header('Location: ' . URLROOT . '/admin/verifications');
+                exit();
+            }
     }
 ?>
 

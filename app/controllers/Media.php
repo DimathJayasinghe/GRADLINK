@@ -34,9 +34,15 @@ class Media extends Controller {
             'png' => 'image/png',
             'jpg', 'jpeg' => 'image/jpeg',
             'gif' => 'image/gif',
+            'pdf' => 'application/pdf',
             default => 'application/octet-stream'
         };
         header('Content-Type: ' . $mime);
+        if ($mime === 'application/pdf') {
+            // Display PDFs inline with a friendly filename
+            $disposition = 'inline; filename="' . basename($path) . '"';
+            header('Content-Disposition: ' . $disposition);
+        }
         header('Content-Length: ' . filesize($path));
         header('Cache-Control: public, max-age=86400');
         readfile($path);
@@ -44,6 +50,11 @@ class Media extends Controller {
     }
     public function event($filename = '') {
         $this->serve('posts', $filename);
+    }
+
+    // /media/certificate/{filename}
+    public function certificate($filename = '') {
+        $this->serve('certificates', $filename);
     }
 }
 ?>
