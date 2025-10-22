@@ -190,7 +190,7 @@
                         <span <?php echo ($isEdit && !empty($data['event']->attachment_image)) ? 'style="display:none;"' : ''; ?>>Click to upload or drag and drop</span>
                         <input type="file" id="event_image" name="event_image" accept="image/*" style="display:none;">
                         <?php if($isEdit && !empty($data['event']->attachment_image)): ?>
-                            <?php $imgUrl = URLROOT . '/storage/posts/' . $data['event']->attachment_image; ?>
+                            <?php $imgUrl = URLROOT . '/media/post/' . $data['event']->attachment_image; ?>
                             <script>document.addEventListener('DOMContentLoaded', function(){ var ua = document.getElementById('uploadArea'); if(ua){ ua.style.backgroundImage = 'url(<?php echo $imgUrl; ?>)'; ua.style.backgroundSize='cover'; ua.style.backgroundPosition='center'; } });</script>
                         <?php endif; ?>
                 </div>
