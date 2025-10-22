@@ -96,13 +96,20 @@ class eventrequest extends Controller{
 
         // Build update payload
         $data = [];
-        $data['title'] = $_POST['event_title'] ?? '';
-        $data['description'] = $_POST['description'] ?? null;
-        $data['club_name'] = $_POST['organizer'] ?? null;
-        $data['position'] = $_POST['requester_position'] ?? null;
-        $data['event_date'] = $_POST['event_date'] ?? null;
-        $data['event_time'] = $_POST['event_time'] ?? null;
-        $data['event_venue'] = $_POST['venue'] ?? null;
+    $data['title'] = $_POST['event_title'] ?? '';
+    $data['description'] = $_POST['description'] ?? null;
+    $data['club_name'] = $_POST['organizer'] ?? null;
+    $data['position'] = $_POST['requester_position'] ?? null;
+    $data['event_date'] = $_POST['event_date'] ?? null;
+    $data['event_time'] = $_POST['event_time'] ?? null;
+    $data['event_venue'] = $_POST['venue'] ?? null;
+    // additional optional fields
+    $data['short_tagline'] = $_POST['short_tagline'] ?? null;
+    $data['event_type'] = $_POST['event_type'] ?? null;
+    $data['post_caption'] = $_POST['post_caption'] ?? null;
+    $data['add_to_calendar'] = isset($_POST['add_to_calendar']) && $_POST['add_to_calendar'] == '1' ? 1 : 0;
+    $data['president_name'] = $_POST['president_name'] ?? null;
+    $data['approval_date'] = $_POST['approval_date'] ?? null;
         $data['status'] = $row->status ?? 'Pending';
 
         // handle uploaded image (optional)
@@ -164,7 +171,14 @@ class eventrequest extends Controller{
         $data['event_date'] = $_POST['event_date'] ?? null;
         $data['event_time'] = $_POST['event_time'] ?? null;
         $data['event_venue'] = $_POST['venue'] ?? null;
-        $data['status'] = 'Pending';
+    $data['status'] = 'Pending';
+    // additional optional fields
+    $data['short_tagline'] = $_POST['short_tagline'] ?? null;
+    $data['event_type'] = $_POST['event_type'] ?? null;
+    $data['post_caption'] = $_POST['post_caption'] ?? null;
+    $data['add_to_calendar'] = isset($_POST['add_to_calendar']) && $_POST['add_to_calendar'] == '1' ? 1 : 0;
+    $data['president_name'] = $_POST['president_name'] ?? null;
+    $data['approval_date'] = $_POST['approval_date'] ?? null;
 
         // handle uploaded image
         $imgName = null;
@@ -244,41 +258,9 @@ class eventrequest extends Controller{
             SessionManager::setFlash('info','Request already approved');
             header('Location: ' . URLROOT . '/eventrequest/all'); exit();
         }
-
-        // Prepare event payload
-        $eventModel = $this->model('M_event');
-        $startDatetime = null;
-        if(!empty($req->event_date)){
-            $time = !empty($req->event_time) ? $req->event_time : '00:00:00';
-            $startDatetime = $req->event_date . ' ' . $time;
-        }
-
-        $eventData = [
-            'slug' => null,
-            'title' => $req->title,
-            'description' => $req->description ?? null,
-            'start_datetime' => $startDatetime ?? date('Y-m-d H:i:s'),
-            'end_datetime' => null,
-            'all_day' => 0,
-            'timezone' => 'UTC',
-            'venue' => $req->event_venue ?? null,
-            'capacity' => null,
-            'organizer_id' => $req->user_id ?? 0,
-            'status' => 'published',
-            'visibility' => 'public',
-            'series_id' => null
-        ];
-
-        $newEventId = $eventModel->create($eventData);
+        // Use shared creator to create event (and post) and set status
+        $newEventId = $this->createEventFromRequest($req);
         if($newEventId){
-            // attach image if present
-            if(!empty($req->attachment_image)){
-                $eiModel = $this->model('M_event_image');
-                // we stored files as safe filename in storage/posts
-                $eiModel->addForEvent((int)$newEventId, $req->attachment_image, 1);
-            }
-            // mark request approved
-            $this->model->setStatus((int)$id, 'Approved');
             SessionManager::setFlash('success','Event request approved and published');
         } else {
             SessionManager::setFlash('error','Could not create event from request');
@@ -321,9 +303,38 @@ class eventrequest extends Controller{
                 $eiModel->addForEvent((int)$newEventId, $req->attachment_image, 1);
             }
             $this->model->setStatus((int)$req->id, 'Approved');
+            // If request indicates adding to calendar, also publish a post
+            $shouldPost = isset($req->add_to_calendar) ? (int)$req->add_to_calendar === 1 : true; // default true if column not present
+            if($shouldPost){
+                $this->publishEventPost($req, (int)$newEventId);
+            }
             return $newEventId;
         }
         return false;
+    }
+
+    // Create a post announcing the approved event
+    protected function publishEventPost($req, int $eventId){
+        try{
+            $postModel = $this->model('M_post');
+            // $uid = $req->user_id ?? SessionManager::getUserId();
+            $uid = SessionManager::getUserId();
+            // Build a friendly content: prefer provided post_caption; fallback to a default template
+            $dateStr = !empty($req->event_date) ? date('M d, Y', strtotime($req->event_date)) : '';
+            $timeStr = !empty($req->event_time) ? date('h:i A', strtotime($req->event_time)) : '';
+            $when = trim(($dateStr.' '.$timeStr));
+            $venue = $req->event_venue ?? '';
+            $caption = trim((string)($req->post_caption ?? ''));
+            if($caption === ''){
+                $caption = ($req->title ?? 'Untitled Event');
+                if($when !== '') $caption .= " on $when";
+                if($venue !== '') $caption .= " at $venue";
+            }
+            // Optionally include a simple link hint if event pages exist
+            // $caption .= "\n\nSee it on the calendar.";
+            $image = !empty($req->attachment_image) ? $req->attachment_image : null;
+            $postModel->createPost((int)$uid, $caption, $image);
+        }catch(Throwable $e){ /* swallow to avoid blocking approval flow */ }
     }
 
     // ADMIN: JSON listing for event requests with filters
