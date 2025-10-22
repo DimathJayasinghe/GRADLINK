@@ -193,18 +193,27 @@ class eventrequest extends Controller{
         }
     }
 
-    // Delete an event request (POST) - user or admin
-    public function delete($id = null){
+    // Delete an event request (allow GET for existing UI link; POST validated with CSRF)
+    public function delete($id){
         SessionManager::ensureStarted();
-        if($_SERVER['REQUEST_METHOD'] !== 'POST' || $id === null){
+        if($id === null){
             header('Location: ' . URLROOT . '/eventrequest/all');
             exit();
         }
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
+
+        // If POST, require CSRF validation. If GET, allow (legacy UI uses a simple link).
+        if($_SERVER['REQUEST_METHOD'] === 'POST'){
+            require_once APPROOT . '/helpers/Csrf.php';
+            if(!Csrf::validateRequest()){
+                header('Location: ' . URLROOT . '/eventrequest/all');
+                exit();
+            }
+        } elseif($_SERVER['REQUEST_METHOD'] !== 'GET'){
+            // Only accept GET or POST for deletion
             header('Location: ' . URLROOT . '/eventrequest/all');
             exit();
         }
+
         $row = $this->model->getById((int)$id);
         if(!$row){ header('Location: ' . URLROOT . '/eventrequest/all'); exit(); }
         $userId = SessionManager::getUserId();
