@@ -656,7 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button style="padding: 9px; color:white;" class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}">
                             ${event.bookmarked ? 'Remove Bookmark' : 'Add to Bookmarks'}
                         </button>
-                        <button class="btn btn-rsvp" style="background-color: #455663;padding:9px;" data-event-id="${event.id}">RSVP <span class="rsvp-count" data-event-id="${event.id}">0</span></button>
+                        <button class="btn btn-rsvp" style="background-color: #455663;padding:9px;" data-event-id="${event.id}">RSVP <span class="rsvp-count" data-event-id="${event.id}"></span></button>
                         <a style="padding: 9px;" class="btn btn-view" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" value=${event.id}>View Details</a>
                     </div>
                     `;

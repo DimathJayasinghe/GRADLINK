@@ -6,22 +6,6 @@
     </a>
 
     <div class="nav-links">
-        <a href="<?php echo URLROOT;
-                    if ($_SESSION['user_role'] === 'admin') {
-                        echo '/admin';
-                    } else {
-                        echo '/profile';
-                    } ?>" class="active">
-            
-            <?php 
-            if ($_SESSION['user_role'] === 'admin'){
-                echo '<i class="fas fa-home"></i> Home';
-            }else{
-                echo '<i class="fas fa-user"></i> Profile';
-            }
-            ?>
-            
-        </a>
             <!-- Dynamic buttons rendered here -->
         <?php foreach($topnavbar_content as $element):?>
         <a href="<?php echo $element['url']; ?>" class="<?php if($element['active']){echo "active";}?>">

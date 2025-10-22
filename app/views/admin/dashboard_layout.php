@@ -1,7 +1,7 @@
 <?php require APPROOT . '/views/inc/header.php';?>
 <?php $topnavbar_content = [
-    ['url' => URLROOT . '/messages', 'label' => 'Messages', 'icon' => 'envelope', 'active' => false],
-    ['url' => URLROOT . '/settings', 'label' => 'Settings', 'icon' => 'cog', 'active' => false],
+    // ['url' => URLROOT . '/messages', 'label' => 'Messages', 'icon' => 'envelope', 'active' => false],
+    // ['url' => URLROOT . '/settings', 'label' => 'Settings', 'icon' => 'cog', 'active' => false],
 ]?>
 <?php require APPROOT . '/views/inc/commponents/topnavbar.php';?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/dashboard_layout.css">
