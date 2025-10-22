@@ -226,17 +226,17 @@
         <?php endif; ?>
 
         <div class="action-buttons">
-            <a href="<?php echo URLROOT; ?>/eventrequest/all" class="btn btn-back">Back to All Event Requests</a>
+            <a href="<?php echo URLROOT; ?>/eventrequest/all" class="btn btn-back">Back</a>
             
             <?php if($request->status === 'Pending' && isset($_SESSION['user_id']) && $_SESSION['user_id'] === $request->user_id): ?>
-                <a href="<?php echo URLROOT; ?>/eventrequest/edit/<?php echo $request->req_id; ?>" class="btn btn-primary">Edit Event Request</a>
+                <a href="<?php echo URLROOT; ?>/eventrequest/edit/<?php echo $request->req_id; ?>" class="btn btn-primary" style="border-radius: 3px;">Edit Event Request</a>
                 <a href="<?php echo URLROOT; ?>/eventrequest/delete/<?php echo $request->req_id; ?>" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this event request?')">Delete Event Request</a>
             <?php endif; ?>
         </div>
     <?php else: ?>
         <p>Event request not found.</p>
         <div class="action-buttons">
-            <a href="<?php echo URLROOT; ?>/eventrequest/all" class="btn btn-back">Back to All Event Requests</a>
+            <a href="<?php echo URLROOT; ?>/eventrequest/all" class="btn btn-back">Back</a>
         </div>
     <?php endif; ?>
 </div>
