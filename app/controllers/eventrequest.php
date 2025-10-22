@@ -335,7 +335,10 @@ class eventrequest extends Controller{
             // Optionally include a simple link hint if event pages exist
             // $caption .= "\n\nSee it on the calendar.";
             $image = !empty($req->attachment_image) ? $req->attachment_image : null;
-            $postModel->createPost((int)$uid, $caption, $image);
+            $postId = $postModel->createPost((int)$uid, $caption, $image);
+            if($postId){
+                $this->model->setPostId((int)$req->id, is_int($postId) ? $postId : null);
+            }
         }catch(Throwable $e){ /* swallow to avoid blocking approval flow */ }
     }
 
@@ -378,13 +381,18 @@ class eventrequest extends Controller{
         SessionManager::ensureStarted();
         if(!SessionManager::hasRole('admin')){ http_response_code(403); echo json_encode(['ok'=>false,'error'=>'forbidden']); return; }
         if($id === null){ http_response_code(400); echo json_encode(['ok'=>false,'error'=>'missing id']); return; }
-        // Fetch the request to see if it has a linked event
+        // Fetch the request to see if it has a linked event or post
         $req = $this->model->getById((int)$id);
         if($req && !empty($req->event_id)){
             $eventModel = $this->model('M_event');
             $eventModel->delete((int)$req->event_id); // cascades remove images, tags, attendees
             // clear link
             $this->model->setEventId((int)$id, null);
+        }
+        if($req && (int)($req->add_to_calendar ?? 0) === 1 && !empty($req->post_id)){
+            $postModel = $this->model('M_post');
+            $postModel->adminDeletePost((int)$req->post_id);
+            $this->model->setPostId((int)$id, null);
         }
         $ok = $this->model->setStatus((int)$id, 'Rejected');
         header('Content-Type: application/json');
@@ -399,13 +407,18 @@ class eventrequest extends Controller{
         $allowed = ['Pending','Approved','Rejected'];
         $status = ucfirst(strtolower($status));
         if(!in_array($status, $allowed)){ http_response_code(400); echo json_encode(['ok'=>false,'error'=>'invalid status']); return; }
-        // If moving to Rejected and an event exists, delete it
+        // If moving to Rejected and an event/post exist, delete them
         if($status === 'Rejected'){
             $req = $this->model->getById((int)$id);
             if($req && !empty($req->event_id)){
                 $eventModel = $this->model('M_event');
                 $eventModel->delete((int)$req->event_id);
                 $this->model->setEventId((int)$id, null);
+            }
+            if($req && (int)($req->add_to_calendar ?? 0) === 1 && !empty($req->post_id)){
+                $postModel = $this->model('M_post');
+                $postModel->adminDeletePost((int)$req->post_id);
+                $this->model->setPostId((int)$id, null);
             }
         }
         $ok = $this->model->setStatus((int)$id, $status);
@@ -418,12 +431,17 @@ class eventrequest extends Controller{
         SessionManager::ensureStarted();
         SessionManager::requireRole('admin');
         if($id === null){ header('Location: ' . URLROOT . '/eventrequest/all'); exit(); }
-        // If the request was previously approved and an event exists, remove it
+        // If the request was previously approved and an event/post exists, remove them
         $req = $this->model->getById((int)$id);
         if($req && !empty($req->event_id)){
             $eventModel = $this->model('M_event');
             $eventModel->delete((int)$req->event_id);
             $this->model->setEventId((int)$id, null);
+        }
+        if($req && (int)($req->add_to_calendar ?? 0) === 1 && !empty($req->post_id)){
+            $postModel = $this->model('M_post');
+            $postModel->adminDeletePost((int)$req->post_id);
+            $this->model->setPostId((int)$id, null);
         }
         $this->model->setStatus((int)$id, 'Rejected');
         SessionManager::setFlash('success','Event request rejected');

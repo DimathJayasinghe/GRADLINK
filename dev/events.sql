@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS `event_requests` (
   `event_time` TIME DEFAULT NULL,
   `event_venue` VARCHAR(255) DEFAULT NULL,
   `event_id` INT DEFAULT NULL,
+  `post_id` BIGINT DEFAULT NULL,
   `status` ENUM('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
   `views` INT NOT NULL DEFAULT 0,
   `unique_viewers` INT NOT NULL DEFAULT 0,
@@ -132,7 +133,9 @@ CREATE TABLE IF NOT EXISTS `event_requests` (
   PRIMARY KEY (`id`),
   KEY `idx_user` (`user_id`),
   KEY `idx_event_id` (`event_id`),
+  KEY `idx_post_id` (`post_id`),
   CONSTRAINT `event_requests_fk_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `event_requests_fk_post` FOREIGN KEY (`post_id`) REFERENCES `posts` (`id`) ON DELETE SET NULL,
   CONSTRAINT `event_requests_fk_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
