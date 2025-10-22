@@ -34,7 +34,7 @@ class M_eventrequest{
     }
 
     public function create(array $data){
-        $sql = 'INSERT INTO event_requests (user_id,title,description,club_name,position,attachment_image,event_date,event_time,event_venue,status,short_tagline,event_type,post_caption,add_to_calendar,president_name,approval_date) VALUES (:user_id,:title,:description,:club_name,:position,:attachment_image,:event_date,:event_time,:event_venue,:status,:short_tagline,:event_type,:post_caption,:add_to_calendar,:president_name,:approval_date)';
+        $sql = 'INSERT INTO event_requests (user_id,title,description,club_name,position,attachment_image,event_date,event_time,event_venue,status,short_tagline,event_type,post_caption,add_to_calendar,president_name,approval_date,event_id) VALUES (:user_id,:title,:description,:club_name,:position,:attachment_image,:event_date,:event_time,:event_venue,:status,:short_tagline,:event_type,:post_caption,:add_to_calendar,:president_name,:approval_date,:event_id)';
         $this->db->query($sql);
         $this->db->bind(':user_id', $data['user_id']);
         $this->db->bind(':title', $data['title']);
@@ -53,6 +53,7 @@ class M_eventrequest{
         $this->db->bind(':add_to_calendar', isset($data['add_to_calendar']) ? (int)$data['add_to_calendar'] : 0);
         $this->db->bind(':president_name', $data['president_name'] ?? null);
         $this->db->bind(':approval_date', $data['approval_date'] ?? null);
+        $this->db->bind(':event_id', $data['event_id'] ?? null);
         try{
             $this->db->execute();
             return (int)$this->db->lastInsertId();
@@ -62,7 +63,7 @@ class M_eventrequest{
     }
 
     public function update(int $id, array $data){
-        $sql = 'UPDATE event_requests SET title=:title,description=:description,club_name=:club_name,position=:position,attachment_image=:attachment_image,event_date=:event_date,event_time=:event_time,event_venue=:event_venue,status=:status,short_tagline=:short_tagline,event_type=:event_type,post_caption=:post_caption,add_to_calendar=:add_to_calendar,president_name=:president_name,approval_date=:approval_date WHERE id = :id';
+        $sql = 'UPDATE event_requests SET title=:title,description=:description,club_name=:club_name,position=:position,attachment_image=:attachment_image,event_date=:event_date,event_time=:event_time,event_venue=:event_venue,status=:status,short_tagline=:short_tagline,event_type=:event_type,post_caption=:post_caption,add_to_calendar=:add_to_calendar,president_name=:president_name,approval_date=:approval_date,event_id=:event_id WHERE id = :id';
         $this->db->query($sql);
         $this->db->bind(':title', $data['title']);
         $this->db->bind(':description', $data['description'] ?? null);
@@ -80,7 +81,25 @@ class M_eventrequest{
         $this->db->bind(':add_to_calendar', isset($data['add_to_calendar']) ? (int)$data['add_to_calendar'] : 0);
         $this->db->bind(':president_name', $data['president_name'] ?? null);
         $this->db->bind(':approval_date', $data['approval_date'] ?? null);
+        $this->db->bind(':event_id', $data['event_id'] ?? null);
         $this->db->bind(':id', $id);
+        try{
+            $this->db->execute();
+            return $this->db->rowCount();
+        }catch(Exception $e){
+            return false;
+        }
+    }
+
+    // Set or clear the linked published event id for a request
+    public function setEventId(int $requestId, $eventId){
+        $this->db->query('UPDATE event_requests SET event_id = :eid WHERE id = :id');
+        if($eventId === null){
+            $this->db->bind(':eid', null);
+        } else {
+            $this->db->bind(':eid', (int)$eventId);
+        }
+        $this->db->bind(':id', $requestId);
         try{
             $this->db->execute();
             return $this->db->rowCount();

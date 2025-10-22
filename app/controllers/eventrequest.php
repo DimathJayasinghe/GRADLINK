@@ -302,6 +302,8 @@ class eventrequest extends Controller{
                 $eiModel = $this->model('M_event_image');
                 $eiModel->addForEvent((int)$newEventId, $req->attachment_image, 1);
             }
+            // link created event back to request for later management
+            $this->model->setEventId((int)$req->id, (int)$newEventId);
             $this->model->setStatus((int)$req->id, 'Approved');
             // If request indicates adding to calendar, also publish a post
             $shouldPost = isset($req->add_to_calendar) ? (int)$req->add_to_calendar === 1 : true; // default true if column not present
@@ -376,6 +378,14 @@ class eventrequest extends Controller{
         SessionManager::ensureStarted();
         if(!SessionManager::hasRole('admin')){ http_response_code(403); echo json_encode(['ok'=>false,'error'=>'forbidden']); return; }
         if($id === null){ http_response_code(400); echo json_encode(['ok'=>false,'error'=>'missing id']); return; }
+        // Fetch the request to see if it has a linked event
+        $req = $this->model->getById((int)$id);
+        if($req && !empty($req->event_id)){
+            $eventModel = $this->model('M_event');
+            $eventModel->delete((int)$req->event_id); // cascades remove images, tags, attendees
+            // clear link
+            $this->model->setEventId((int)$id, null);
+        }
         $ok = $this->model->setStatus((int)$id, 'Rejected');
         header('Content-Type: application/json');
         echo json_encode(['ok' => $ok ? true : false]);
@@ -389,6 +399,15 @@ class eventrequest extends Controller{
         $allowed = ['Pending','Approved','Rejected'];
         $status = ucfirst(strtolower($status));
         if(!in_array($status, $allowed)){ http_response_code(400); echo json_encode(['ok'=>false,'error'=>'invalid status']); return; }
+        // If moving to Rejected and an event exists, delete it
+        if($status === 'Rejected'){
+            $req = $this->model->getById((int)$id);
+            if($req && !empty($req->event_id)){
+                $eventModel = $this->model('M_event');
+                $eventModel->delete((int)$req->event_id);
+                $this->model->setEventId((int)$id, null);
+            }
+        }
         $ok = $this->model->setStatus((int)$id, $status);
         header('Content-Type: application/json');
         echo json_encode(['ok' => $ok ? true : false]);
@@ -399,7 +418,14 @@ class eventrequest extends Controller{
         SessionManager::ensureStarted();
         SessionManager::requireRole('admin');
         if($id === null){ header('Location: ' . URLROOT . '/eventrequest/all'); exit(); }
-    $this->model->setStatus((int)$id, 'Rejected');
+        // If the request was previously approved and an event exists, remove it
+        $req = $this->model->getById((int)$id);
+        if($req && !empty($req->event_id)){
+            $eventModel = $this->model('M_event');
+            $eventModel->delete((int)$req->event_id);
+            $this->model->setEventId((int)$id, null);
+        }
+        $this->model->setStatus((int)$id, 'Rejected');
         SessionManager::setFlash('success','Event request rejected');
         header('Location: ' . URLROOT . '/eventrequest/all');
         exit();
