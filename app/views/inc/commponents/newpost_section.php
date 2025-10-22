@@ -1,8 +1,22 @@
+<style>
+    .mini-text{
+        font-size: 11px;
+        padding-left: 5px;
+        color: rgba(255, 236, 236, 0.4);
+        margin-left: 8px;
+    }
+    /* Hidden by default; shown when image > 2MB */
+    #not-allowed{ display:none; }
+</style>
 <form class="compose-post" method="post" action="<?php echo URLROOT; ?>/post/create" enctype="multipart/form-data">
     <div class="compose-input">
         <img src="<?php echo URLROOT; ?>/media/profile/<?php echo $_SESSION['profile_image'] ?? 'default.jpg'; ?>" alt="Profile" class="profile-photo">
         <input name="content" required maxlength="500" placeholder="What's happening?" />
-        <input type="file" name="image" accept="image/*" style="display:none" id="postImageInput" />
+        <div>
+            
+            <input type="file" name="image" accept="image/*" style="display:none" id="postImageInput" />
+            <span class="mini-text" style="color: red;" id="not-allowed">Attached pic is more than 2MB</span>
+        </div>
     </div>
     <div id="imagePreview" style="display:none;margin-top:8px;position:relative;max-width:300px">
         <img id="imagePreviewImg" src="" alt="Preview" style="max-width:100%;border:1px solid var(--border);border-radius:8px;display:block" />
@@ -10,8 +24,10 @@
     </div>
     <div class="compose-actions">
         <div class="action-buttons">
-            <button type="button" id="attachBtn" class="attach-btn"><i class="far fa-image"></i> Attach</button>
-            <button class="post-btn" type="submit">Post</button>
+            <div>
+                <button type="button" id="attachBtn" class="attach-btn"><i class="far fa-image"></i> Attach </br> <span class="mini-text">*MAX 2MB</span> </button>
+            </div>
+            <button class="post-btn" id="postBtn" type="submit">Post</button>
         </div>
     </div>
 </form>
@@ -65,6 +81,13 @@
         background-color: var(--link-hover);
         transform: translateY(-1px);
     }
+
+    /* Disabled state for post button */
+    .post-btn:disabled{
+        opacity: 0.6;
+        cursor: not-allowed;
+        filter: grayscale(0.2);
+    }
 </style>
 
 <script>
@@ -73,15 +96,35 @@
         const previewWrap=document.getElementById('imagePreview');
         const previewImg=document.getElementById('imagePreviewImg');
         const removeImage=document.getElementById('removeImage');
+        const notAllowed=document.getElementById('not-allowed');
+        const postBtn=document.getElementById('postBtn');
+        const MAX_SIZE=2*1024*1024; // 2MB
         attachBtn?.addEventListener('click',()=>fileInput.click());
         fileInput?.addEventListener('change',e=>{
             const f=e.target.files[0];
             if(f){
                 const url=URL.createObjectURL(f);
                 previewImg.src=url; previewWrap.style.display='block';
+                if(f.size>MAX_SIZE){
+                    // Too large: warn and disable post
+                    if(notAllowed) notAllowed.style.display='inline';
+                    if(postBtn){ postBtn.disabled=true; postBtn.title='Attached image exceeds 2MB'; }
+                } else {
+                    if(notAllowed) notAllowed.style.display='none';
+                    if(postBtn){ postBtn.disabled=false; postBtn.removeAttribute('title'); }
+                }
             } else { previewWrap.style.display='none'; previewImg.src=''; }
         });
-        removeImage?.addEventListener('click',()=>{ fileInput.value=''; previewImg.src=''; previewWrap.style.display='none'; });
+        removeImage?.addEventListener('click',()=>{ 
+            fileInput.value=''; 
+            previewImg.src=''; 
+            previewWrap.style.display='none'; 
+            if(notAllowed) notAllowed.style.display='none';
+            if(postBtn){ postBtn.disabled=false; postBtn.removeAttribute('title'); }
+        });
+        // Ensure initial state is clean (no warning, enabled button)
+        if(notAllowed) notAllowed.style.display='none';
+        if(postBtn) postBtn.disabled=false;
         (async function(){
             try {
                 const feedEl=document.getElementById('feed');

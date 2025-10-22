@@ -470,6 +470,10 @@ else:
         <?php endif; ?>
 
     <!-- Add Certificate Popup (separate form) -->
+    <style>
+        /* Disabled state for generic save button */
+        .save-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.2); }
+    </style>
     <div id="addCertificatePopup" class="certificate-add-popup" style="display:none;">
         <div class="certificate-add">
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
@@ -495,6 +499,7 @@ else:
                         <button type="button" class="file-upload-btn" id="chooseFileBtnAdd" onclick="document.getElementById('certificateFileAdd').click()">Choose File</button>
                         <span class="file-name" id="fileNameAdd" style="color:var(--text)">No file chosen</span>
                     </div>
+                    <span id="certAddTooLarge" style="display:none;color:red;font-size:12px;">Attached file is more than 5MB</span>
                 </div>
 
                 <div style="margin-top:12px;">
@@ -544,6 +549,7 @@ else:
                             &times;
                         </button>
                     </div>
+                    <span id="certEditTooLarge" style="display:none;color:red;font-size:12px;">Attached file is more than 5MB</span>
                 </div>
 
                 <div style="margin-top:12px;">
@@ -849,6 +855,8 @@ const addCertificateForm = document.getElementById('addCertificateForm');
 const chooseFileBtnAdd = document.getElementById('chooseFileBtnAdd');
 const certificateFileAdd = document.getElementById('certificateFileAdd');
 const fileNameAdd = document.getElementById('fileNameAdd');
+const saveNewBtnAdd = document.getElementById('saveNewBtnAdd');
+const certAddTooLarge = document.getElementById('certAddTooLarge');
 
 const editCertificatePopup = document.getElementById('editCertificatePopup');
 const editCertificateForm = document.getElementById('editCertificateForm');
@@ -863,6 +871,9 @@ const removeFileInputEdit = document.getElementById('removeFileInputEdit');
 const existingFileInputEdit = document.getElementById('existingFileInputEdit');
 // NEW: reference to the upload container so we can hide/show it
 const fileUploadContainerEdit = document.getElementById('fileUploadContainerEdit');
+const saveChangesBtnEdit = document.getElementById('saveChangesBtnEdit');
+const certEditTooLarge = document.getElementById('certEditTooLarge');
+const CERT_MAX_SIZE = 5*1024*1024; // 5MB
 
 // close buttons for both popups (reuse existing selector)
 document.querySelectorAll('.certificate-add .close-popup').forEach(btn=>{
@@ -879,6 +890,8 @@ if (addCertificateBtn && addCertificatePopup) {
         addCertificateForm.reset();
         fileNameAdd.textContent = 'No file chosen';
         if (chooseFileBtnAdd) chooseFileBtnAdd.style.display = 'inline-block';
+        if (certAddTooLarge) certAddTooLarge.style.display = 'none';
+        if (saveNewBtnAdd) { saveNewBtnAdd.disabled = false; saveNewBtnAdd.removeAttribute('title'); }
         addCertificatePopup.style.display = 'flex';
     });
 }
@@ -948,6 +961,16 @@ if (certificateFileEdit) {
             if (currentFileContainerEdit) currentFileContainerEdit.style.display = 'none';
             // keep upload container visible so filename shows
             if (fileUploadContainerEdit) fileUploadContainerEdit.style.display = 'block';
+            if (f.size > CERT_MAX_SIZE) {
+                if (certEditTooLarge) certEditTooLarge.style.display = 'inline';
+                if (saveChangesBtnEdit) { saveChangesBtnEdit.disabled = true; saveChangesBtnEdit.title = 'Certificate exceeds 5MB'; }
+            } else {
+                if (certEditTooLarge) certEditTooLarge.style.display = 'none';
+                if (saveChangesBtnEdit) { saveChangesBtnEdit.disabled = false; saveChangesBtnEdit.removeAttribute('title'); }
+            }
+        } else {
+            if (certEditTooLarge) certEditTooLarge.style.display = 'none';
+            if (saveChangesBtnEdit) { saveChangesBtnEdit.disabled = false; saveChangesBtnEdit.removeAttribute('title'); }
         }
     });
 }
@@ -958,11 +981,28 @@ if (certificateFileAdd) {
     certificateFileAdd.addEventListener('change', function(){
         const f = this.files[0];
         if (fileNameAdd) fileNameAdd.textContent = f ? f.name : 'No file chosen';
+        if (f) {
+            if (f.size > CERT_MAX_SIZE) {
+                if (certAddTooLarge) certAddTooLarge.style.display = 'inline';
+                if (saveNewBtnAdd) { saveNewBtnAdd.disabled = true; saveNewBtnAdd.title = 'Certificate exceeds 5MB'; }
+            } else {
+                if (certAddTooLarge) certAddTooLarge.style.display = 'none';
+                if (saveNewBtnAdd) { saveNewBtnAdd.disabled = false; saveNewBtnAdd.removeAttribute('title'); }
+            }
+        } else {
+            if (certAddTooLarge) certAddTooLarge.style.display = 'none';
+            if (saveNewBtnAdd) { saveNewBtnAdd.disabled = false; saveNewBtnAdd.removeAttribute('title'); }
+        }
     });
 }
 if (addCertificateForm) {
     addCertificateForm.addEventListener('submit', function(e){
         e.preventDefault();
+        const f = certificateFileAdd && certificateFileAdd.files ? certificateFileAdd.files[0] : null;
+        if (f && f.size > CERT_MAX_SIZE) {
+            alert('Certificate file exceeds 5MB');
+            return;
+        }
         const fd = new FormData(this);
         fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
         .then(r => r.json()).then(json => {
@@ -979,6 +1019,11 @@ if (addCertificateForm) {
 if (editCertificateForm) {
     editCertificateForm.addEventListener('submit', function(e){
         e.preventDefault();
+        const f = certificateFileEdit && certificateFileEdit.files ? certificateFileEdit.files[0] : null;
+        if (f && f.size > CERT_MAX_SIZE) {
+            alert('Certificate file exceeds 5MB');
+            return;
+        }
         const fd = new FormData(this);
         fetch(this.action, { method:'POST', body: fd, headers: { 'Accept': 'application/json' } })
         .then(r => r.json()).then(json => {
