@@ -13,6 +13,7 @@
     .admin-btn { padding: 0.4em 1em; margin: 0 0.2em; border: none; border-radius: 3px; background: #007bff; color: #fff; cursor: pointer; font-size: 0.95em; }
     .admin-btn-danger { background: #dc3545; }
     .admin-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .admin-select{background-color: #3a3a3a; color: #fff; border: none; padding: 0.4em 0.8em; border-radius: 4px; font-size: 0.95em; cursor: pointer;}
     .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .admin-actions { display: flex; gap: 0.5rem; }
     .card-header { display: flex; justify-content: space-between; align-items: center; }

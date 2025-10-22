@@ -1,7 +1,12 @@
 <?php ob_start()?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/common.css">   
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard-common.css">  
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/users.css">  
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/users.css"> 
+<style>
+    .admin-table-wrapper{
+        border-color: #3a3a3a;
+    } 
+</style>
 <?php $styles = ob_get_clean()?>
 
 <?php
@@ -41,7 +46,7 @@
             <input id="user-search" type="search" placeholder="Search name or email..." aria-label="Search users">
 
             <label for="role-filter" class="sr-only">Filter by role</label>
-            <select id="role-filter" aria-label="Filter by role">
+            <select id="role-filter" style="color: #736f68ff;" aria-label="Filter by role">
                 <option value="">All roles</option>
                 <?php foreach ($roles as $r): ?>
                     <option value="<?php echo htmlspecialchars($r); ?>"><?php echo htmlspecialchars(ucfirst($r)); ?></option>
