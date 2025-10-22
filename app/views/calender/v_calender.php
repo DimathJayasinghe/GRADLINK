@@ -1,7 +1,7 @@
-<?php ob_start(); ?>
+<?php // vim: ft=php
+ob_start(); ?>
 <style>
     /* Center column: event / request list */
-    .event-card,
     .event-card { /* new event-friendly class */
         display: flex;
         align-items: center;
@@ -13,13 +13,9 @@
         text-decoration: none;
         color: inherit;
     }
-
-    .event-card:hover,
     .event-card:hover {
         background: rgba(255, 255, 255, 0.04);
     }
-
-    .event-card.active-selected-event,
     .event-card.active-selected-event {
         background: rgba(158, 212, 220, 0.1);
     }
@@ -32,14 +28,12 @@
         object-fit: cover;
     }
 
-    .event-details h3,
     .event-details h3 {
         margin: 0;
         font-size: 15px;
         color: var(--text);
     }
 
-    .event-details p,
     .event-details p {
         margin: 2px 0 6px;
         font-size: 12px;
@@ -290,6 +284,12 @@
         margin-top: 20px;
     }
 
+    .details-info-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
     .selected-date {
         margin: 0 0 12px;
         font-size: 16px;
@@ -353,6 +353,40 @@
     
     .bookmark-btn.not-bookmarked {
         background-color: #4caf50;
+    }
+
+    /* Event actions for items in the details panel */
+    .event-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 6px;
+    }
+
+    .event-actions .btn {
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        text-decoration: none;
+        color: #fff;
+    }
+
+    .btn-rsvp {
+        background-color: #007bff;
+        color: #303030ff;
+    }
+
+    .btn-view {
+        background-color: #6c757d;
+    }
+
+    .bookmark-btn {
+        min-width: 140px;
     }
 </style>
 <?php $styles = ob_get_clean(); ?>
@@ -438,9 +472,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDate = new Date();
     let selectedDate = null;
 
-    // Sample events data (replace with actual data from your backend)
-    // Format: 'YYYY-MM-DD': [{ title: 'Event Title', time: '10:00 AM', description: 'Event description' }]
-    const events = {
+    // Events payload: prefer server-provided events_payload injected by controller (PHP), otherwise fall back to a small local sample
+    <?php
+        // Prepare a safe JSON representation of the events payload
+        $events_json = '{}';
+        if(!empty($data['events_payload']) && is_array($data['events_payload'])){
+            $events_json = json_encode($data['events_payload'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        }
+    ?>
+    const events = <?php echo $events_json; ?> || {
         '2025-10-20': [
             { title: 'Alumni Networking Event', time: '14:00', description: 'Virtual networking session with industry professionals.' ,bookmarked: false,id:1},
             { title: 'Resume Workshop', time: '16:30', description: 'Learn how to create an effective resume.' ,bookmarked: true,id:2}
@@ -456,24 +496,24 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    // Initialize the calendar
-    function initCalendar() {
-        renderCalendar(currentDate);
-        
+    // Initialize the calendar; renderCalendar is async now and fetches events for the month
+    async function initCalendar() {
+        await renderCalendar(currentDate);
+
         // Set up event listeners
-        prevMonthBtn.addEventListener('click', () => {
+        prevMonthBtn.addEventListener('click', async () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
-            renderCalendar(currentDate);
+            await renderCalendar(currentDate);
         });
-        
-        nextMonthBtn.addEventListener('click', () => {
+
+        nextMonthBtn.addEventListener('click', async () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar(currentDate);
+            await renderCalendar(currentDate);
         });
     }
 
     // Render the calendar for a specific month
-    function renderCalendar(date) {
+    async function renderCalendar(date) {
         const year = date.getFullYear();
         const month = date.getMonth();
         
@@ -484,6 +524,25 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Clear the calendar
         calendarDays.innerHTML = '';
+
+        // Fetch events for this month from server (start..end)
+        try {
+            const start = `${year}-${String(month+1).padStart(2,'0')}-01`;
+            const end = `${year}-${String(month+1).padStart(2,'0')}-${String(new Date(year, month+1, 0).getDate()).padStart(2,'0')}`;
+            const resp = await fetch(`<?php echo URLROOT; ?>/calender/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`, { credentials: 'same-origin' });
+            if(resp.ok){
+                const json = await resp.json();
+                // replace events payload with server data (fallback preserved)
+                if(json && Object.keys(json).length){
+                    // assign new object to events variable
+                    for(const k in events) { if(Object.prototype.hasOwnProperty.call(events,k)) delete events[k]; }
+                    Object.assign(events, json);
+                }
+            }
+        } catch(err) {
+            // network or server error — leave embedded events as fallback
+            console.warn('Could not fetch events for month, using embedded payload', err);
+        }
         
         // Get the first day of the month and the number of days in the month
         const firstDayOfMonth = new Date(year, month, 1);
@@ -593,16 +652,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="event-time">${formattedTime}</p>
                         <p>${event.description}</p>
                     </div>
-                    <div style="display:flex; flex-direction:row; gap:6px;">
-                        <button class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-title="${event.title}" style="margin:0px; margin-top:4px;">
-                            <span class="btn" style="color: #ffffff;">
+                    <div class="event-actions">
+                        <button style="padding: 9px; color:white;" class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}">
                             ${event.bookmarked ? 'Remove Bookmark' : 'Add to Bookmarks'}
-                            </span>
                         </button>
-                        <button class="bookmark-btn" style="margin:0px; margin-top:4px;background-color: #6c757d;">
-                            <a class="btn" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" style="color: #ffffff;" value=${event.id}>
-                                View Details
-                            </a>
+                        <button class="btn btn-rsvp" style="background-color: #455663;padding:9px;" data-event-id="${event.id}">RSVP <span class="rsvp-count" data-event-id="${event.id}"></span></button>
+                        <a style="padding: 9px;" class="btn btn-view" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" value=${event.id}>View Details</a>
                     </div>
                     `;
 
@@ -632,49 +687,100 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Event listener for bookmark buttons
     document.addEventListener('click', function(e) {
-        if (e.target.closest('.bookmark-btn')) {
-            const bookmarkBtn = e.target.closest('.bookmark-btn');
-            const eventTitle = bookmarkBtn.getAttribute('data-event-title');
-            
-            // Find the event in our events data
-            if (selectedDate && events[selectedDate]) {
-                const eventIndex = events[selectedDate].findIndex(event => event.title === eventTitle);
-                
-                if (eventIndex !== -1) {
-                    // Toggle the bookmarked status
-                    events[selectedDate][eventIndex].bookmarked = !events[selectedDate][eventIndex].bookmarked;
-                    
-                    // Update the display
-                    showEventsForDate(selectedDate);
-                    
-                    // Here you would typically send an AJAX request to update the backend
-                    console.log(`Event "${eventTitle}" bookmark status changed to: ${events[selectedDate][eventIndex].bookmarked}`);
-                    
-                    // Example of what an AJAX call might look like (commented out)
-                    /*
-                    fetch('/calender/toggleBookmark', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            date: selectedDate,
-                            eventTitle: eventTitle,
-                            bookmarked: events[selectedDate][eventIndex].bookmarked
-                        }),
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Success:', data);
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                    });
-                    */
+            // Bookmark clicked
+            if (e.target.closest('.bookmark-btn')) {
+                const btn = e.target.closest('.bookmark-btn');
+                const eventId = btn.getAttribute('data-event-id');
+                if(!eventId) return;
+
+                // Determine current bookmarked state for this event
+                let idx = -1;
+                if (selectedDate && events[selectedDate]) {
+                    idx = events[selectedDate].findIndex(ev => String(ev.id) === String(eventId));
                 }
+
+                const currentlyBookmarked = (idx !== -1) ? !!events[selectedDate][idx].bookmarked : false;
+                const endpoint = currentlyBookmarked ? '<?php echo URLROOT; ?>/calender/removeBookmarkAjax' : '<?php echo URLROOT; ?>/calender/addBookmark';
+                const payload = { event_id: Number(eventId), csrf_token: (window.GL_CSRF_TOKEN || null) };
+
+                fetch(endpoint, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: Object.assign({ 'Content-Type': 'application/json' }, (window.GL_CSRF_TOKEN ? { 'X-CSRF-Token': window.GL_CSRF_TOKEN } : {})),
+                    body: JSON.stringify(payload)
+                }).then(r => r.json()).then(data => {
+                    if (data && data.ok) {
+                        // update local state from server response
+                        if (selectedDate && idx !== -1) {
+                            events[selectedDate][idx].bookmarked = !!data.bookmarked;
+                            showEventsForDate(selectedDate);
+                        } else {
+                            // If we couldn't find it by selectedDate, try to update anywhere in events
+                            for (const d in events) {
+                                const i = events[d].findIndex(ev => String(ev.id) === String(eventId));
+                                if (i !== -1) {
+                                    events[d][i].bookmarked = !!data.bookmarked;
+                                    if (d === selectedDate) showEventsForDate(selectedDate);
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        console.warn('Bookmark update failed', data);
+                        // Optionally show an error to the user here
+                    }
+                }).catch(err => {
+                    console.error('Bookmark request failed', err);
+                });
+                return;
             }
-        }
+
+            // RSVP clicked
+            if (e.target.closest('.btn-rsvp')){
+                const btn = e.target.closest('.btn-rsvp');
+                const eventId = btn.getAttribute('data-event-id');
+                if(!eventId) return;
+                // Open RSVP modal and set selected event id via global helper
+                if(window.__GL_openRsvpModal){
+                    window.__GL_openRsvpModal(Number(eventId));
+                } else if(typeof openRsvpModal === 'function'){
+                    openRsvpModal(Number(eventId));
+                }
+                return;
+            }
     });
+});
+
+// Use the central RSVP modal included by the layout adapter. Register a handler
+// that will be called by the adapter after a successful RSVP so we can refresh counts.
+if(!window.__GL_onRsvpConfirmed){
+    window.__GL_onRsvpConfirmed = function(ev){
+        try{ refreshAttendeeCountForEvent(ev); }catch(e){console.error(e);} 
+    };
+}
+function refreshAttendeeCountForEvent(eventId){
+    fetch('<?php echo URLROOT; ?>/calender/attendees?event_id=' + encodeURIComponent(eventId), { credentials: 'same-origin' })
+        .then(r=>r.json()).then(data=>{
+            if(data && data.ok){
+                const countEls = document.querySelectorAll('.rsvp-count[data-event-id="'+eventId+'"]');
+                countEls.forEach(el=> el.textContent = data.attendees.length);
+                // If on details page, update attendees list too (in that view we'll fetch attendees separately)
+            }
+        }).catch(err=>console.error('Could not refresh attendees',err));
+}
+
+// Initialize rsvp counts for visible events
+document.addEventListener('DOMContentLoaded', function(){
+    // for each unique event id in events, fetch attendees count
+    const seen = new Set();
+    for(const d in events){
+        events[d].forEach(ev=>{
+            if(!seen.has(String(ev.id))){
+                seen.add(String(ev.id));
+                refreshAttendeeCountForEvent(ev.id);
+            }
+        });
+    }
 });
 
 // Original event handling

@@ -4,7 +4,42 @@ class calender extends Controller{
         SessionManager::redirectToAuthIfNotLoggedIn();
     }
     public function index() {
-        $this->view("/calender/v_calender");
+        // Load events for the current month to populate the calendar JS
+        $eventModel = $this->model('M_event');
+
+        // Default: current month range
+        $start = date('Y-m-01');
+        $end = date('Y-m-t');
+
+        $events = $eventModel->findList(['start' => $start . ' 00:00:00', 'end' => $end . ' 23:59:59', 'visibility' => 'public']);
+
+        // Normalize events into the lightweight JS-friendly payload
+        $payload = [];
+        // Attempt to determine current user so we can mark bookmarked state
+        SessionManager::ensureStarted();
+        $currentUserId = SessionManager::getUserId();
+        $bmModel = $this->model('M_event_bookmark');
+        foreach($events as $e){
+            $date = date('Y-m-d', strtotime($e->start_datetime));
+            $time = date('H:i', strtotime($e->start_datetime));
+            $isBookmarked = false;
+            if($currentUserId){
+                $isBookmarked = $bmModel->isBookmarked($currentUserId, (int)$e->id);
+            }
+            $payload[$date][] = [
+                'id' => $e->id,
+                'title' => $e->title,
+                'time' => $time,
+                'description' => $e->description,
+                'attachment_image' => $e->attachment_image ?? null,
+                'club_name' => $e->organizer_name ?? null,
+                'event_venue' => $e->venue ?? null,
+                'bookmarked' => $isBookmarked
+            ];
+        }
+
+        $data = ['events_payload' => $payload];
+        $this->view("/calender/v_calender", $data);
     }
     public function show($id = null) {
         // If no id is provided, redirect to the all page
@@ -13,89 +48,330 @@ class calender extends Controller{
             exit();
         }
 
-        // In a real app, we would fetch the request from the database
-        // For now, we'll use mock data
-        $mockEvents = [
-            1=>(object)[
-                'event_id'=>1,
-                'status'=>'Approved',
-                'created_at'=>'2025-10-01 10:00:00',
-                'user_id'=>3,
-                'user_name'=>'D. Jayasinghe',
-                'Position'=>'Design Lead, IEEE CS Chapter',
-                'title'=>'IEEE CS Annual General Meeting 2025',
-                'description'=>'We are conducting our annual general meeting of the IEEE CS Chapter 2025. And we need to publish this event to invite all members and interested students to join us for this important gathering. The AGM will include presentations on our activities, elections for new committee members, and discussions on future plans for the chapter.',
-                'attachment_image'=>'IEEE_CS_AGM_25.png',
-                'club_name'=>'IEEE CS Chapter',
-                'event_date'=>'2024-11-15',
-                'event_time'=>'8:00',
-                'event_venue'=>'@S104, Main Building',
-                'views' => 328,
-                'unique_viewers' => 215,
-                'interested_count' => 45,
-                'going_count' => 23,
-                'bookmarked' => false
-            ],
-            4=>(object)[
-                'event_id'=>4,
-                'status'=>'Pending',
-                'created_at'=>'2025-10-05 11:20:00',
-                'user_id'=>101,
-                'user_name'=>'D. Jayasinghe',
-                'Position'=>'Member, Drama Club',
-                'title'=>'Drama Club Annual Performance: Shakespeare Reimagined',
-                'description'=>'The Drama Club presents its annual performance, featuring modern interpretations of classic Shakespeare plays. Don\'t miss this creative showcase of student talent!',
-                'attachment_image'=>'Drama_Performance.png',
-                'club_name'=>'Drama Club',
-                'event_date'=>'2025-12-10',
-                'event_time'=>'18:30',
-                'event_venue'=>'University Theater',
-                'bookmarked' => false
-            ],
+        // Load real event by id
+        $eventModel = $this->model('M_event');
+        $event = null;
+        if(ctype_digit((string)$id)){
+            $event = $eventModel->findById((int)$id);
+        }
+
+        if(!$event){
+            $data = ['event' => null];
+            $this->view("/calender/v_vieweventdetails", $data);
+            return;
+        }
+
+        // normalize to view expected property names (backwards-compatible)
+        // Determine bookmark status for this user
+        SessionManager::ensureStarted();
+        $currentUserId = SessionManager::getUserId();
+        $bmModel = $this->model('M_event_bookmark');
+        $isBookmarked = false;
+        if($currentUserId){
+            $isBookmarked = $bmModel->isBookmarked($currentUserId, (int)$event->id);
+        }
+
+        $normalized = (object)[
+            'event_id' => $event->id,
+            'title' => $event->title,
+            'description' => $event->description,
+            'attachment_image' => $event->attachment_image ?? null,
+            'club_name' => $event->organizer_name ?? null,
+            'event_date' => date('Y-m-d', strtotime($event->start_datetime)),
+            'event_time' => date('H:i', strtotime($event->start_datetime)),
+            'event_venue' => $event->venue ?? null,
+            'bookmarked' => $isBookmarked
         ];
 
-        // Check if the request exists
-        if(isset($mockEvents[$id])) {
-            $data = [
-                'event' => $mockEvents[$id]
-            ];
-            $this->view("/calender/v_vieweventdetails", $data);
-        } else {
-            // If the request doesn't exist, show a blank page with not found message
-            $data = [
-                'event' => null
-            ];
-            $this->view("/calender/v_vieweventdetails", $data);
-        }
+        // Ensure the event image helper/model is loaded so the view can call M_event_image::getUrl()
+        // This avoids a fatal 'Class not found' if the view references the helper.
+        $this->model('M_event_image');
+        // Fetch current attendee snapshot for this event so the view can render attendees
+        $attModel = $this->model('M_attendee');
+        $attendees = $attModel->getAttendees((int)$event->id);
+
+        $data = ['event' => $normalized, 'attendees' => $attendees];
+        $this->view("/calender/v_vieweventdetails", $data);
     }
 
     public function bookmarks() {
         // In a real app, we would fetch the bookmarked events from the database
         // For now, we'll use mock data
-        $mockBookmarkedEvents = [
-            (object)[
-                'event_id'=>1,
-                'status'=>'Approved',
-                'created_at'=>'2025-10-01 10:00:00',
-                'user_id'=>3,
-                'user_name'=>'D. Jayasinghe',
-                'Position'=>'Design Lead, IEEE CS Chapter',
-                'title'=>'IEEE CS Annual General Meeting 2025',
-                'description'=>'We are conducting our annual general meeting of the IEEE CS Chapter 2025. And we need to publish this event to invite all members and interested students to join us for this important gathering. The AGM will include presentations on our activities, elections for new committee members, and discussions on future plans for the chapter.',
-                'attachment_image'=>'IEEE_CS_AGM_25.png',
-                'club_name'=>'IEEE CS Chapter',
-                'event_date'=>'2024-11-15',
-                'event_time'=>'8:00',
-                'event_venue'=>'@S104, Main Building',
-                'bookmarked' => true
-            ],
-        ];
+            // Ensure user is logged in
+            SessionManager::ensureStarted();
+            $userId = SessionManager::getUserId();
+            if(!$userId){
+                // Redirect to calendar if not authenticated
+                header('Location: ' . URLROOT . '/calender');
+                exit();
+            }
+        
+            $bm = $this->model('M_event_bookmark');
+            $bookmarks = $bm->getBookmarksForUser($userId);
+        
+            // Normalize rows to match the view's expectations
+            $normalized = [];
+            foreach($bookmarks as $b){
+                $normalized[] = (object)[
+                    'event_id' => $b->event_id,
+                    'title' => $b->title,
+                    'description' => $b->description,
+                    'attachment_image' => $b->attachment_image ?? null,
+                    'club_name' => $b->club_name ?? null,
+                    'event_date' => date('Y-m-d', strtotime($b->start_datetime)),
+                    'event_time' => date('H:i', strtotime($b->start_datetime)),
+                    'event_venue' => $b->event_venue ?? null,
+                    'created_at' => $b->created_at,
+                    'bookmarked' => true
+                ];
+            }
+        
+            $data = ['bookmarked_events' => $normalized];
+            $this->view("/calender/v_bookmarked_events", $data);
+        }
+    
+        /**
+         * Remove a bookmarked event for the current user.
+         * Called as: /calender/removeBookmark/{eventId}
+         */
+        public function removeBookmark($eventId = null){
+            SessionManager::ensureStarted();
+            $userId = SessionManager::getUserId();
+            // Only accept POST to delete a bookmark
+            if($_SERVER['REQUEST_METHOD'] !== 'POST'){
+                header('Location: ' . URLROOT . '/calender/bookmarks');
+                exit();
+            }
 
-        $data = [
-            'bookmarked_events' => $mockBookmarkedEvents
-        ];
+            // Validate CSRF
+            require_once APPROOT . '/helpers/Csrf.php';
+            if(!Csrf::validateRequest()){
+                header('Location: ' . URLROOT . '/calender/bookmarks');
+                exit();
+            }
 
-        $this->view("/calender/v_bookmarked_events", $data);
+            if(!$userId || $eventId === null){
+                header('Location: ' . URLROOT . '/calender/bookmarks');
+                exit();
+            }
+
+            $bm = $this->model('M_event_bookmark');
+            $bm->remove($userId, (int)$eventId);
+            header('Location: ' . URLROOT . '/calender/bookmarks');
+            exit();
+        }
+
+        // JSON endpoint: return events grouped by date for a start/end range
+    public function events(){
+        $start = isset($_GET['start']) ? $_GET['start'] : null;
+        $end = isset($_GET['end']) ? $_GET['end'] : null;
+
+        header('Content-Type: application/json; charset=utf-8');
+        $payload = [];
+
+        if(!$start || !$end){
+            echo json_encode((object)[]);
+            return;
+        }
+
+        $eventModel = $this->model('M_event');
+        $events = $eventModel->findList(['start' => $start . ' 00:00:00', 'end' => $end . ' 23:59:59', 'visibility' => 'public']);
+
+        // Determine current user so we can include bookmark state
+        SessionManager::ensureStarted();
+        $currentUserId = SessionManager::getUserId();
+        $bmModel = $this->model('M_event_bookmark');
+
+        foreach($events as $e){
+            $date = date('Y-m-d', strtotime($e->start_datetime));
+            $time = date('H:i', strtotime($e->start_datetime));
+            $isBookmarked = false;
+            if($currentUserId){
+                $isBookmarked = $bmModel->isBookmarked($currentUserId, (int)$e->id);
+            }
+            $payload[$date][] = [
+                'id' => $e->id,
+                'title' => $e->title,
+                'time' => $time,
+                'description' => $e->description,
+                'attachment_image' => property_exists($e,'attachment_image') ? $e->attachment_image : null,
+                'club_name' => property_exists($e,'organizer_name') ? $e->organizer_name : null,
+                'event_venue' => $e->venue ?? null,
+                'bookmarked' => $isBookmarked
+            ];
+        }
+
+        echo json_encode($payload);
+        return;
+    }
+
+    // Toggle bookmark for the current user and given event_id (POST { event_id })
+    public function toggleBookmark(){
+        SessionManager::ensureStarted();
+        header('Content-Type: application/json; charset=utf-8');
+        $userId = SessionManager::getUserId();
+        if(!$userId){
+            echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
+            return;
+        }
+        // Validate CSRF token for AJAX POSTs
+        require_once APPROOT . '/helpers/Csrf.php';
+        if(!Csrf::validateRequest()){
+            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
+        if(!$eventId){
+            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
+            return;
+        }
+
+        $bmModel = $this->model('M_event_bookmark');
+        $newState = $bmModel->toggle($userId, $eventId);
+        echo json_encode(['ok'=>true,'bookmarked'=>$newState]);
+        return;
+    }
+
+    // Add a bookmark for the current user via AJAX (POST { event_id })
+    public function addBookmark(){
+        SessionManager::ensureStarted();
+        header('Content-Type: application/json; charset=utf-8');
+        $userId = SessionManager::getUserId();
+        if(!$userId){
+            echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
+            return;
+        }
+        require_once APPROOT . '/helpers/Csrf.php';
+        if(!Csrf::validateRequest()){
+            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
+            return;
+        }
+        $input = json_decode(file_get_contents('php://input'), true);
+        $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
+        if(!$eventId){
+            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
+            return;
+        }
+        try {
+            $bmModel = $this->model('M_event_bookmark');
+            $added = $bmModel->add($userId, $eventId);
+            echo json_encode(['ok'=> (bool)$added, 'bookmarked' => (bool)$added]);
+        } catch(Exception $ex) {
+            // Return error details in dev; still safe to expose a message for debugging
+            echo json_encode(['ok' => false, 'error' => 'Exception: ' . $ex->getMessage()]);
+        }
+        return;
+    }
+
+    // Remove a bookmark via AJAX (POST { event_id })
+    public function removeBookmarkAjax(){
+        SessionManager::ensureStarted();
+        header('Content-Type: application/json; charset=utf-8');
+        $userId = SessionManager::getUserId();
+        if(!$userId){
+            echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
+            return;
+        }
+        require_once APPROOT . '/helpers/Csrf.php';
+        if(!Csrf::validateRequest()){
+            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
+            return;
+        }
+        $input = json_decode(file_get_contents('php://input'), true);
+        $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
+        if(!$eventId){
+            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
+            return;
+        }
+        try {
+            $bmModel = $this->model('M_event_bookmark');
+            $removed = $bmModel->remove($userId, $eventId);
+            echo json_encode(['ok'=> (bool)$removed, 'bookmarked' => false]);
+        } catch(Exception $ex) {
+            echo json_encode(['ok' => false, 'error' => 'Exception: ' . $ex->getMessage()]);
+        }
+        return;
+    }
+
+    // RSVP endpoint (POST { event_id, status, guests }) - returns attendee record id or false
+    public function rsvp(){
+        SessionManager::ensureStarted();
+        header('Content-Type: application/json; charset=utf-8');
+        $userId = SessionManager::getUserId();
+        if(!$userId){
+            echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
+            return;
+        }
+        // Validate CSRF token for AJAX POSTs
+        require_once APPROOT . '/helpers/Csrf.php';
+        if(!Csrf::validateRequest()){
+            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
+        $status = isset($input['status']) ? $input['status'] : 'attending';
+        $guests = isset($input['guests']) ? (int)$input['guests'] : 0;
+        if(!$eventId){
+            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
+            return;
+        }
+
+        $attModel = $this->model('M_attendee');
+        $attId = $attModel->rsvp($eventId, $userId, $status, $guests);
+        if($attId){
+            echo json_encode(['ok'=>true,'attendee_id'=>$attId]);
+        } else {
+            echo json_encode(['ok'=>false,'error'=>'Could not RSVP']);
+        }
+        return;
+    }
+
+    // Cancel an RSVP for the current user (POST { event_id })
+    public function cancelRsvp(){
+        SessionManager::ensureStarted();
+        header('Content-Type: application/json; charset=utf-8');
+        $userId = SessionManager::getUserId();
+        if(!$userId){
+            echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
+            return;
+        }
+        require_once APPROOT . '/helpers/Csrf.php';
+        if(!Csrf::validateRequest()){
+            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
+            return;
+        }
+        $input = json_decode(file_get_contents('php://input'), true);
+        $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
+        if(!$eventId){
+            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
+            return;
+        }
+        $attModel = $this->model('M_attendee');
+        $count = $attModel->cancel($eventId, $userId);
+        echo json_encode(['ok'=>true,'removed' => (bool)$count]);
+        return;
+    }
+
+    /**
+     * Return attendees for an event as JSON.
+     * GET parameter: event_id
+     */
+    public function attendees(){
+        header('Content-Type: application/json; charset=utf-8');
+        $eventId = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
+        if(!$eventId){
+            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
+            return;
+        }
+
+        $attModel = $this->model('M_attendee');
+        $rows = $attModel->getAttendees($eventId);
+        echo json_encode(['ok'=>true,'attendees'=>$rows]);
+        return;
     }
 }
 ?>

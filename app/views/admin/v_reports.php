@@ -1,6 +1,6 @@
 <?php ob_start()?>
-    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/admin.css">   
-    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard.css">  
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/common.css">   
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard-common.css">   
     <style>
     .admin-table-wrapper { overflow-x: auto; }
     .admin-table { width: 100%; border-collapse: collapse; margin-top: 0rem; }
@@ -24,9 +24,28 @@
     .admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.3); }
     .admin-modal-content { background: var(--surface-4); margin: 5% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
     .admin-modal-close { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
+
+    .report-id{
+        width: 5%;
+    }
+    .report-user{
+        width: 20%;
+    }
+    .report-type{
+        width: 15%;
+    }
+    .report-status{
+        width: 15%;
+    }
+    .report-date{
+        width: 20%;
+    }
+    .report-actions{
+        width: 25%;
+    }
+
     </style> 
 <?php $styles = ob_get_clean()?>
-
 
 
 
@@ -35,7 +54,8 @@
         ['label'=>'Overview', 'url'=>'/admin','active'=>false, 'icon'=>'tachometer-alt'],
         ['label'=>'User Management', 'url'=>'/admin/users','active'=>false, 'icon' => 'users'],
         ['label'=>'Engagement Metrics', 'url'=>'/admin/engagement','active'=>false, 'icon' => 'chart-bar'],
-        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>true, 'icon' => 'file-alt'],
+        ['label'=>'Reports', 'url'=>'/admin/reports','active'=>true, 'icon' => 'fas fa-exclamation-triangle'],
+        ['label'=>'Event Moderation', 'url'=>'/admin/eventrequests','active'=>false, 'icon' => 'clipboard-list'],
         ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>false, 'icon' => 'pencil-alt'],
         ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
         ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>false, 'icon' => 'check-circle']
@@ -43,37 +63,14 @@
 ?>
 
 <?php ob_start();?>
-<div class="admin-header">
+<div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;">
     <h1>Reports & Exports</h1>
-    <div class="admin-actions">
-        <button class="admin-btn" id="export-analytics">Export Analytics</button>
+    <!-- <div class="admin-actions">
         <button class="admin-btn" id="export-users">Export User Reports</button>
         <button class="admin-btn" id="export-content">Export Content Reports</button>
-    </div>
+    </div> -->
 </div>
-<div class="admin-card" style="margin-bottom:1.5rem;">
-    <div class="card-header">
-        <h3>Analytics Overview</h3>
-    </div>
-    <div class="analytics-section">
-        <div class="analytics-item">
-            <span class="analytics-label">Total Users:</span>
-            <span class="analytics-value" id="analytics-users">—</span>
-        </div>
-        <div class="analytics-item">
-            <span class="analytics-label">Total Posts:</span>
-            <span class="analytics-value" id="analytics-posts">—</span>
-        </div>
-        <div class="analytics-item">
-            <span class="analytics-label">Active Users (30d):</span>
-            <span class="analytics-value" id="analytics-active">—</span>
-        </div>
-        <div class="analytics-item">
-            <span class="analytics-label">Growth (3mo):</span>
-            <span class="analytics-value" id="analytics-growth">—</span>
-        </div>
-    </div>
-</div>
+
 <div class="admin-card" style="margin-bottom:1.5rem;">
     <div class="card-header">
         <h3>User Reports</h3>
@@ -82,12 +79,12 @@
         <table class="admin-table" id="userReportsTable">
             <thead>
                 <tr>
-                    <th>Report ID</th>
-                    <th>User</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
+                    <th class="report-id">Report ID</th>
+                    <th class="report-user">User</th>
+                    <th class="report-type">Type</th>
+                    <th class="report-status">Status</th>
+                    <th class="report-date">Date</th>
+                    <th class="report-actions">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -97,7 +94,14 @@
                     <td>Abuse</td>
                     <td><span class="status-badge status-pending">Pending</span></td>
                     <td>2025-09-01</td>
-                    <td><button class="admin-btn view-report">View</button></td>
+                    <td style="display:flex; gap:0.5rem;">
+                        <button class="admin-btn view-report">View</button>
+                        <select class="admin-select">
+                            <option value="">Change Status</option>
+                            <option value="resolved">Mark as Resolved</option>
+                            <option value="rejected">Reject Report</option>
+                        </select>
+                    </td>
                 </tr>
                 <tr>
                     <td>102</td>
@@ -105,7 +109,13 @@
                     <td>Spam</td>
                     <td><span class="status-badge status-resolved">Resolved</span></td>
                     <td>2025-09-03</td>
-                    <td><button class="admin-btn view-report">View</button></td>
+                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
+                        <select class="admin-select">
+                            <option value="">Change Status</option>
+                            <option value="pending">Mark as Pending</option>
+                            <option value="rejected">Reject Report</option>
+                        </select>
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -119,12 +129,12 @@
         <table class="admin-table" id="contentReportsTable">
             <thead>
                 <tr>
-                    <th>Report ID</th>
-                    <th>Content</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
+                    <th class="report-id">Report ID</th>
+                    <th class="report-content">Content</th>
+                    <th class="report-type">Type</th>
+                    <th class="report-status">Status</th>
+                    <th class="report-date">Date</th>
+                    <th class="report-actions">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -134,7 +144,13 @@
                     <td>Inappropriate</td>
                     <td><span class="status-badge status-pending">Pending</span></td>
                     <td>2025-09-02</td>
-                    <td><button class="admin-btn view-report">View</button></td>
+                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
+                        <select class="admin-select">
+                            <option value="">Change Status</option>
+                            <option value="resolved">Mark as Resolved</option>
+                            <option value="rejected">Reject Report</option>
+                        </select>
+                    </td>
                 </tr>
                 <tr>
                     <td>202</td>
@@ -142,7 +158,14 @@
                     <td>Spam</td>
                     <td><span class="status-badge status-rejected">Rejected</span></td>
                     <td>2025-09-04</td>
-                    <td><button class="admin-btn view-report">View</button></td>
+                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
+                        <select class="admin-select">
+                            <option value="">Change Status</option>
+                            <option value="pending">Mark as Pending</option>
+                            <option value="resolved">Mark as Resolved</option>
+                            <option value="rejected">Reject Report</option>
+                        </select>
+                    </td>
                 </tr>
             </tbody>
         </table>

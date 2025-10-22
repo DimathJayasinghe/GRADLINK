@@ -4,7 +4,6 @@
     define('DB_USER', 'root');
     define('DB_PASSWORD', '1234');
     define('DB_NAME', 'GL_db');
-    
     define('APPROOT', dirname(dirname(__FILE__)));
 
     // URL_ROOT (dynamic: works for localhost, vhost, or LAN IP)
