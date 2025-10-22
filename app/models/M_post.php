@@ -9,16 +9,28 @@ class M_post {
 		if($image === null){
 			// Simple path (no image provided)
 			$this->db->query('INSERT INTO posts (user_id,content) VALUES (:u,:c)');
-			$this->db->bind(':u',$uid); $this->db->bind(':c',$content); return $this->db->execute();
+			$this->db->bind(':u',$uid); $this->db->bind(':c',$content);
+			$ok = $this->db->execute();
+			if(!$ok) return false;
+			$id = $this->db->lastInsertId();
+			return $id ? (int)$id : true; // return inserted id when possible
 		}
 		try {
 			$this->db->query('INSERT INTO posts (user_id,content,image) VALUES (:u,:c,:i)');
-			$this->db->bind(':u',$uid); $this->db->bind(':c',$content); $this->db->bind(':i',$image); return $this->db->execute();
+			$this->db->bind(':u',$uid); $this->db->bind(':c',$content); $this->db->bind(':i',$image);
+			$ok = $this->db->execute();
+			if(!$ok) return false;
+			$id = $this->db->lastInsertId();
+			return $id ? (int)$id : true;
 		} catch (Throwable $e) {
 			// If schema not updated yet (Unknown column 'image'), retry without image
 			if(stripos($e->getMessage(),'unknown column')!==false && stripos($e->getMessage(),"image")!==false){
 				$this->db->query('INSERT INTO posts (user_id,content) VALUES (:u,:c)');
-				$this->db->bind(':u',$uid); $this->db->bind(':c',$content); return $this->db->execute();
+				$this->db->bind(':u',$uid); $this->db->bind(':c',$content);
+				$ok = $this->db->execute();
+				if(!$ok) return false;
+				$id = $this->db->lastInsertId();
+				return $id ? (int)$id : true;
 			}
 			throw $e; // Different error, rethrow
 		}

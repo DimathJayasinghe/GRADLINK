@@ -30,8 +30,8 @@
     <div class="card-header">
         <h3>Posts Moderation</h3>
         <div class="card-tools">
-            <input type="text" id="postSearch" placeholder="Search posts by user, content, status...">
-            <select id="postStatusFilter">
+            <input type="text" id="postSearch" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;" placeholder="Search posts by user, content, status...">
+            <select id="postStatusFilter" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;">
                 <option value="all">All</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>

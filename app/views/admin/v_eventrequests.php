@@ -28,8 +28,8 @@
     <div class="card-header">
         <h3>Event Requests</h3>
         <div class="card-tools">
-            <input type="text" id="reqSearch" placeholder="Search requests by title, club, user...">
-            <select id="reqStatusFilter">
+            <input type="text" id="reqSearch" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;" placeholder="Search requests by title, club, user...">
+            <select id="reqStatusFilter" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;">
                 <option value="all">All</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
