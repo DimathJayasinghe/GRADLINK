@@ -60,11 +60,11 @@
                 <div class="analytics-trend">0% <span class="trend-icon">→</span></div>
             </div>
             
-            <div class="analytics-card">
+            <!-- <div class="analytics-card">
                 <div class="analytics-value"><?= isset($userAnalytics) ? $userAnalytics['avg_response_time'] : '0' ?>h</div>
                 <div class="analytics-label">Avg. Response Time</div>
                 <div class="analytics-trend down">-8% <span class="trend-icon">↓</span></div>
-            </div>
+            </div> -->
         </div>
         
         <div class="view-more-analytics">
