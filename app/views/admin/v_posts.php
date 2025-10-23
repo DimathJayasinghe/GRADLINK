@@ -109,8 +109,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${escapeHtml(post.created_at || post.date || '')}</td>
                 <td><span class="status-badge status-na">${status}</span></td>
                 <td>
-                    <button class="admin-btn" style="margin:0.2em;" view-post">View</button>
-                    <button class="admin-btn admin-btn-danger delete-post">Delete</button>
+                    <button class="admin-btn" style="margin:0.2em; width:80px;" view-post">View</button>
+                    <button class="admin-btn admin-btn-danger delete-post" style="width:80px;">Delete</button>
                 </td>
             `;
             postsTableBody.appendChild(tr);
