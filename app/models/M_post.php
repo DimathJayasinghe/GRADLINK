@@ -40,7 +40,7 @@ class M_post {
 		$this->db->bind(':l',(int)$limit,PDO::PARAM_INT); return $this->db->resultSet(); }
 		
 	public function addComment($pid,$uid,$content){ $this->db->query('INSERT INTO comments (post_id,user_id,content) VALUES (:p,:u,:c)'); $this->db->bind(':p',$pid); $this->db->bind(':u',$uid); $this->db->bind(':c',$content); return $this->db->execute(); }
-	public function getComments($pid){ $this->db->query('SELECT c.id,c.content,c.created_at,u.name,u.profile_image,u.role FROM comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=:p ORDER BY c.created_at ASC'); $this->db->bind(':p',$pid); return $this->db->resultSet(); }
+	public function getComments($pid){ $this->db->query('SELECT c.id,c.content,c.created_at,u.name,u.profile_image,u.role,u.id FROM comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=:p ORDER BY c.created_at ASC'); $this->db->bind(':p',$pid); return $this->db->resultSet(); }
 	public function toggleLike($pid, $uid) { 
 		try {
 			// Check if the post exists first

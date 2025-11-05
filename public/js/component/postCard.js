@@ -41,10 +41,10 @@ class PostCard extends HTMLElement {
       <div class="post ${(postOwnerRole == "admin") ? "admin-post":""}">
         <div class="post-header">
           <div class="post-user">
-            <img src="${mediaProfile(profileImg)}" alt="User" class="profile-photo" onerror="this.onerror=null;this.src='${mediaProfile("default.jpg")}'">
+            <img src="${mediaProfile(profileImg)}" alt="User" style="cursor: pointer;" class="profile-photo" onerror="this.onerror=null;this.src='${mediaProfile("default.jpg")}'">
             <div class="post-user-info">
-              <span class="post-user-name">${userName + ((postOwnerRole == "admin") ? "⭐⭐" : (postOwnerRole == "alumni") ? "⭐" : "")}</span>
-              <span class="post-user-handle">${userHandle}</span>
+              <span class="post-user-name" style="cursor: pointer;">${userName + ((postOwnerRole == "admin") ? "⭐⭐" : (postOwnerRole == "alumni") ? "⭐" : "")}</span>
+              <span class="post-user-handle" style="cursor: pointer;">${userHandle}</span>
               <span class="post-time"> · ${postTime}</span>
               <div class="post-content"><p class="post-text">${truncatePostText(postText)}</p></div>
             </div>
@@ -89,6 +89,19 @@ class PostCard extends HTMLElement {
 
       </div>`;
 
+    // Wire up profile navigation without inline handlers
+    const clickableProfileEls = this.querySelectorAll('.profile-photo, .post-user-name, .post-user-handle');
+    if (postUserId) {
+      clickableProfileEls.forEach(el => {
+        el.addEventListener('click', () => routeToProfile(postUserId));
+      });
+    }
+
+
+
+    function  routeToProfile(userId){
+      window.location.href = `${window.URLROOT}/profile?userid=${userId}`;
+    }
     // Dropdown logic
     const menu = this.querySelector('.post-menu');
     const menuBtn = this.querySelector('.post-menu-btn');
@@ -340,7 +353,7 @@ class PostCard extends HTMLElement {
         const body = needsTruncate
           ? `${short} <span class=\"seemore-btn\" data-action=\"expand-comment\" data-full=\"${encodeURIComponent(full)}\">Show more</span>`
           : full;
-        return `<div class=\"comment-item\" style=\"margin-bottom:10px\"><div class=\"bubble\"><strong>${this._esc((c.name || "User") + star)}</strong><br><span class=\"comment-text post-text">${body}</span><span class=\"meta\">${rel}</span></div></div>`;
+        return `<div class=\"comment-item\" style=\"margin-bottom:10px\"><div class=\"bubble\"><strong style="cursor: pointer;">${this._esc((c.name || "User") + star)}</strong><br><span class=\"comment-text post-text">${body}</span><span class=\"meta\">${rel}</span></div></div>`;
       })
       .join("");
   }
