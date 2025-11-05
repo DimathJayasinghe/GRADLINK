@@ -204,6 +204,15 @@ class PostCard extends HTMLElement {
     // Delegated click handler (post + comments)
     this.addEventListener('click', (e)=>{
       const target = e.target;
+      // Comment author click -> navigate to profile
+      const author = target.closest('.comment-author');
+      if (author) {
+        const uid = author.getAttribute('data-user-id');
+        if (uid) {
+          routeToProfile(uid);
+          return;
+        }
+      }
       // Post text expand/collapse
       if(postText.length > 100){
         const expandBtn = target.closest('[data-action="expand-post"]');
@@ -353,7 +362,8 @@ class PostCard extends HTMLElement {
         const body = needsTruncate
           ? `${short} <span class=\"seemore-btn\" data-action=\"expand-comment\" data-full=\"${encodeURIComponent(full)}\">Show more</span>`
           : full;
-        return `<div class=\"comment-item\" style=\"margin-bottom:10px\"><div class=\"bubble\"><strong style="cursor: pointer;">${this._esc((c.name || "User") + star)}</strong><br><span class=\"comment-text post-text">${body}</span><span class=\"meta\">${rel}</span></div></div>`;
+        const uid = c.user_id || c.id; // fallback for older API
+        return `<div class=\"comment-item\" style=\"margin-bottom:10px\"><div class=\"bubble\"><strong class=\"comment-author\" data-user-id=\"${this._esc(uid)}\" style=\"cursor: pointer;\">${this._esc((c.name || "User") + star)}</strong><br><span class=\"comment-text post-text\">${body}</span><span class=\"meta\">${rel}</span></div></div>`;
       })
       .join("");
   }
