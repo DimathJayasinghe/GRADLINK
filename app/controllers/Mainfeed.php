@@ -35,4 +35,30 @@ class Mainfeed extends Controller
         $data = [];
         $this->view('v_mainfeed', $data);
     }
+
+    public function newPosts(){
+        // Return new posts since a given timestamp
+        SessionManager::redirectToAuthIfNotLoggedIn();
+        header('Content-Type: application/json');
+
+        $feed_type = strtolower($this->getQueryParam('feed_type', 'for_you'));
+        $since = $this->getQueryParam('since', null);
+        if ($since === null) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'missing_param', 'message' => 'Missing ?since=<timestamp> parameter']);
+            return;
+        }
+
+        // Fetch posts newer than the given timestamp
+        $allPosts = $this->pagesModel->getPosts($feed_type, 1); // Fetch first round of posts
+        $data = ['succcess' => false, 'count' => 0];
+        foreach ($allPosts as $p) {
+            if (strtotime($p->created_at) > strtotime($since)) {
+                $data['succcess'] = true;
+                $data['count'] += 1;
+            }
+        }
+
+        echo json_encode($data);
+    }
 }

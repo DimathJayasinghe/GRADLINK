@@ -29,6 +29,7 @@ body {
     /* border-right: 1px solid var(--border); */
     max-width: 600px;
     overflow-y: auto;
+    position: relative; /* for absolutely-positioned children like new posts banner */
 }
 
 .tabs {
@@ -797,4 +798,65 @@ button.show-more:disabled {
 .error-btn{
     background-color: #ff4d4d !important;
     border-color: #ff4d4d !important;
+}
+
+/* New posts available floating button */
+.newPostsAvailable {
+    /* Use fixed so it doesn't scroll with the feed container */
+    position: fixed !important;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+
+    display: none; 
+    align-items: center;
+    gap: 8px;
+
+    background: var(--link);
+    color: var(--btn-text);
+    border: 1px solid var(--link);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.newPostsAvailable:hover {
+    transform: translateX(-50%) translateY(-1px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.25);
+}
+
+.newPostsAvailable:active {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Visible state to toggle from JS */
+.newPostsAvailable.is-visible {
+    display: inline-flex;
+    position: absolute;
+}
+
+/* Count badge */
+.newPostsAvailable #newPostCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    margin-left: 4px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Slightly adjust top spacing on narrow screens */
+@media (max-width: 700px) {
+    .newPostsAvailable { top: 8px; }
 }

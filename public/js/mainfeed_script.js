@@ -2,12 +2,14 @@
 import "./component/postCard.js";
 
 /**
- * Plan is to load maximum 10 posts at a time. and count how many 
+ * Plan is to load maximum 10 posts at a time. and count how many
  * times we have loaded for that we use POST FETCH OFFSET ROUND variable
- * 
+ *
  */
 
 let POST_FETCH_OFFSET_ROUND = 1;
+let lastCheckedTimestamp = null;
+
 document.addEventListener("DOMContentLoaded", async function () {
   document
     .getElementById("loadMoreBtn")
@@ -21,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     noPostsMessage();
   } finally {
     hidePostSkeletons();
+    startPollingNewPosts();
   }
 
   const tabs = document.querySelectorAll(".tab");
@@ -90,7 +93,9 @@ function createPostCard(post) {
 async function fetchFeed(feedType) {
   // Build URL with URLROOT when available
   const response = await fetch(
-    `mainfeed?feed_type=${encodeURIComponent(feedType)}&offsetRound=${encodeURIComponent(POST_FETCH_OFFSET_ROUND)}`,
+    `mainfeed?feed_type=${encodeURIComponent(
+      feedType
+    )}&offsetRound=${encodeURIComponent(POST_FETCH_OFFSET_ROUND)}`,
     { headers: { "X-Requested-With": "XMLHttpRequest" } }
   );
   const data = await response.json();
@@ -98,6 +103,7 @@ async function fetchFeed(feedType) {
     if (!data.posts || data.posts.length === 0) {
       throw new Error("No posts available");
     }
+    lastCheckedTimestamp = new Date().toISOString();
     return data.posts;
   }
   throw new Error("Failed to fetch feed");
@@ -169,4 +175,58 @@ function resetLoadMoreButton() {
   loadMoreBtn.textContent = "Load More Posts";
   loadMoreBtn.disabled = false;
   loadMoreBtn.classList.remove("error-btn");
+}
+
+/**
+ *
+ * Polling to find new posts every 2 minutes
+ */
+function startPollingNewPosts() {
+  setInterval(async () => {
+    try {
+      let activeTab = document.querySelector(".tab.active");
+      let feedType = activeTab.getAttribute("value");
+      const posts = await fetchNewPosts(feedType);
+    } catch (error) {}
+  }, 120000); // 2 minutes interval
+}
+
+async function fetchNewPosts(feedType) {
+  try {
+    const res = await fetch(
+      `mainfeed/newPosts?feed_type=${encodeURIComponent(
+        feedType
+      )}&since=${encodeURIComponent(lastCheckedTimestamp)}`,
+      { headers: { "X-Requested-With": "XMLHttpRequest" } }
+    );
+    const data = await res.json();
+    if (data && data.success) {
+      /**
+       * Show new posts notification
+       */
+      const newPostsAvailableButton = document.querySelector(".newPostsAvailable");
+      if (!newPostsAvailableButton) return;
+      newPostsAvailableButton.classList.add("is-visible");
+      const newPostCountSpan = document.getElementById("newPostCount");
+      if (newPostCountSpan) newPostCountSpan.textContent = `(${data.count})`;
+      newPostsAvailableButton.onclick = async () => {
+        POST_FETCH_OFFSET_ROUND = 1;
+        try {
+          await showPostSkeletons(3);
+          const posts = await fetchFeed(feedType);
+          // Replace current feed with new posts
+          const feed = document.getElementById("feed");
+          if (feed) feed.innerHTML = "";
+          renderFeed(posts);
+        } catch (err) {
+          console.error("Error loading new posts:", err);
+        } finally {
+          hidePostSkeletons();
+          newPostsAvailableButton.classList.remove("is-visible");
+        }
+      };
+    }
+  } catch (err) {
+    console.error("Error fetching new posts:", err);
+  }
 }

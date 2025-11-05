@@ -68,6 +68,9 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
         <button id="loadMoreBtn" class="show-more" type="button" aria-label="Load more posts">Load More Posts</button>
     </div>
 
+
+    <!-- New posts available button Z max float default display hidden-->
+     <button class="newPostsAvailable" style="z-index: 1000; position:absolute"> New Posts <span id="newPostCount"></span></button>
 </div>
 <?php $center_content = ob_get_clean(); ?>
 <?php ob_start() ?>
