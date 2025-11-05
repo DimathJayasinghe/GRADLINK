@@ -32,12 +32,6 @@ class Mainfeed extends Controller
 
         // Otherwise render the page with initial data
         $data = [];
-        // Use richer feed for initial SSR view (includes user and counts)
-        $data['posts'] = $this->postModel->getFeed();
-        $uid = $_SESSION['user_id'];
-        foreach ($data['posts'] as $p) {
-            $p->liked = $this->postModel->isLiked($p->id, $uid);
-        }
         $this->view('v_mainfeed', $data);
     }
 }

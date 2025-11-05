@@ -55,9 +55,15 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
         <div id="feed-toggle" class="tab" value="following">Following</div>
     </div>
     <?php require APPROOT . '/views/inc/commponents/newpost_section.php'; ?>
+
+
+
     <div class="feed" id="feed">
-        <
+        <!-- Placeholder till posts load 3 -->
     </div>
+
+
+
     <div class="load-more-post">
         <button id="loadMoreBtn" class="show-more" type="button" aria-label="Load more posts">Load More Posts</button>
     </div>
@@ -73,14 +79,14 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
 <?php $rightsidebar = ob_get_clean(); ?>
 
 <?php ob_start() ?>
-    window.URLROOT = "<?php echo URLROOT; ?>";
-    // Optional: you can add a simple loading state toggle if your JS expects it
-    // document.getElementById('loadMoreBtn')?.addEventListener('click', function(){
-    //     this.disabled = true;
-    //     this.textContent = 'Loading...';
-    // });
-    
-    <?php $scripts = ob_get_clean(); ?>
+window.URLROOT = "<?php echo URLROOT; ?>";
+// Optional: you can add a simple loading state toggle if your JS expects it
+// document.getElementById('loadMoreBtn')?.addEventListener('click', function(){
+// this.disabled = true;
+// this.textContent = 'Loading...';
+// });
+
+<?php $scripts = ob_get_clean(); ?>
 <script type="module" src="<?php echo URLROOT; ?>/js/mainfeed_script.js"></script>
 <!-- <script src="<?php echo URLROOT; ?>/js/component/postCard.js"></script> -->
 <?php require APPROOT . '\views\layouts\threeColumnLayout.php'; ?>
