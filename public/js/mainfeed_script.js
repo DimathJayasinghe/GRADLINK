@@ -1,6 +1,17 @@
 // Main feed functionality
 import "./component/postCard.js";
+
+/**
+ * Plan is to load maximum 10 posts at a time. and count how many 
+ * times we have loaded for that we use POST FETCH OFFSET ROUND variable
+ * 
+ */
+
+let POST_FETCH_OFFSET_ROUND = 1;
 document.addEventListener("DOMContentLoaded", async function () {
+  document
+    .getElementById("loadMoreBtn")
+    .addEventListener("click", loadMorePosts);
   try {
     await showPostSkeletons(3);
     const posts = await fetchFeed("for_you");
@@ -37,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 function renderFeed(posts) {
   const feed = document.getElementById("feed");
-  feed.innerHTML = "";
+  //   feed.innerHTML = "";
   posts.forEach((post) => {
     const postCard = createPostCard(post);
     feed.appendChild(postCard);
@@ -78,7 +89,10 @@ function createPostCard(post) {
 
 async function fetchFeed(feedType) {
   // Build URL with URLROOT when available
-  const response = await fetch(`mainfeed?feed_type=${encodeURIComponent(feedType)}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+  const response = await fetch(
+    `mainfeed?feed_type=${encodeURIComponent(feedType)}&offsetRound=${encodeURIComponent(POST_FETCH_OFFSET_ROUND)}`,
+    { headers: { "X-Requested-With": "XMLHttpRequest" } }
+  );
   const data = await response.json();
   if (data.success) {
     if (!data.posts || data.posts.length === 0) {
@@ -98,6 +112,9 @@ function noPostsMessage() {
 async function showPostSkeletons(count = 2) {
   const feed = document.getElementById("feed");
   if (!feed) return;
+  feed.innerHTML = "";
+  POST_FETCH_OFFSET_ROUND = 1;
+  resetLoadMoreButton();
   // Avoid duplicating skeletons
   if (document.getElementById("feed-skeletons")) return;
   const wrap = document.createElement("div");
@@ -106,11 +123,15 @@ async function showPostSkeletons(count = 2) {
 
   const skUrl = `GetSkeleton?require=postSkeleton`;
   {
-    const res = await fetch(skUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-    if (!res.ok) throw new Error('skeleton_fetch_failed');
+    const res = await fetch(skUrl, {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    });
+    if (!res.ok) throw new Error("skeleton_fetch_failed");
     const html = await res.text();
-    wrap.innerHTML = Array.from({ length: count }).map(() => html).join("");
-  } 
+    wrap.innerHTML = Array.from({ length: count })
+      .map(() => html)
+      .join("");
+  }
 }
 
 function hidePostSkeletons() {
@@ -118,6 +139,34 @@ function hidePostSkeletons() {
   if (sk) sk.remove();
 }
 
+async function loadMorePosts() {
+  try {
+    POST_FETCH_OFFSET_ROUND += 1;
+    let activeTab = document.querySelector(".tab.active");
+    let feedType = activeTab.getAttribute("value");
+    const posts = await fetchFeed(feedType);
+    if (!posts || posts.length === 0) {
+      let loadMoreBtn = document.getElementById("loadMoreBtn");
+      loadMoreBtn.textContent = "No more posts to load";
+      loadMoreBtn.disabled = true;
+    } else {
+      renderFeed(posts);
+    }
+  } catch (error) {
+    let loadMoreBtn = document.getElementById("loadMoreBtn");
+    if (String(error && error.message).includes("No posts available")) {
+      loadMoreBtn.textContent = "No more posts to load";
+      loadMoreBtn.disabled = true;
+    } else {
+      loadMoreBtn.textContent = "Error loading posts";
+      loadMoreBtn.classList.add("error-btn");
+    }
+  }
+}
 
-
-
+function resetLoadMoreButton() {
+  let loadMoreBtn = document.getElementById("loadMoreBtn");
+  loadMoreBtn.textContent = "Load More Posts";
+  loadMoreBtn.disabled = false;
+  loadMoreBtn.classList.remove("error-btn");
+}

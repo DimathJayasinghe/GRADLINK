@@ -21,7 +21,8 @@ class Mainfeed extends Controller
         if ($this->getQueryParam('feed_type', null) !== null) {
             header('Content-Type: application/json');
             // Use pagesModel for both 'for_you' and 'following' feeds to avoid invalid arg to getFeed
-            $posts = $this->pagesModel->getPosts($feed_type);
+            $offsetRound = $this->getQueryParam('offsetRound', 1);
+            $posts = $this->pagesModel->getPosts($feed_type, $offsetRound);
             $uid = $_SESSION['user_id'];
             foreach ($posts as $p) {
                 $p->liked = $this->postModel->isLiked($p->id, $uid);
