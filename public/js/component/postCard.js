@@ -122,7 +122,7 @@ class PostCard extends HTMLElement {
         }
       });
       
-      // simple action handlers (placeholder)
+      // simple action handlers with popups
       dropdown.addEventListener('click', async (e)=>{
         const item = e.target.closest('.dropdown-item');
         if(!item) return;
@@ -133,13 +133,11 @@ class PostCard extends HTMLElement {
         const isAdmin = currentUserRole.toLowerCase() === 'admin';
         
         if(act === 'bookmark'){
-          // TODO: implement bookmark endpoint
-          // Backend API: POST /api/bookmarks/{postId}
-          console.log('Bookmark placeholder');
+          // Open bookmark confirmation popup
+          this._openBookmarkPopup(postId);
         } else if(act === 'report') {
-          // Available to all users
-          // Backend API: POST /api/reports/post/{postId}
-          console.log('Report placeholder for post', postId);
+          // Open report form popup
+          this._openReportPopup(postId);
         } else if(act === 'suspend') {
           // Only admin can suspend (not themselves)
           if(!isAdmin || isOwner) return;
@@ -148,35 +146,7 @@ class PostCard extends HTMLElement {
         } else if(act === 'delete-post') {
           // Owner OR admin can delete
           if(!isOwner && !isAdmin) return;
-          
-          // Confirm deletion
-          if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-            return;
-          }
-          
-          // Send delete request
-          const r = await fetch(`${window.URLROOT}/post/delete`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ post_id: postId})
-          });
-        
-          try {
-            const response = await r.json();
-            
-            if (r.ok && response.status === 'success') {
-              // Remove post element from DOM after successful deletion
-              const postElement = this.closest('.post-container') || this;
-              postElement.remove();
-            } else {
-              alert(`Error: ${response.message || 'Failed to delete post'}`);
-              console.error("Failed to delete post", response);
-            }
-          } catch (err) {
-            console.error("Error parsing delete response", err);
-          }
+          this._openDeletePopup(postId);
         } else if(act === 'edit-post') {
           // Only owner can edit
           if(!isOwner) return;
@@ -685,6 +655,146 @@ class PostCard extends HTMLElement {
     if (text.length <= 100) return text;
     const short = text.slice(0, 100).trim() + "...";
     return `${short} <span class="seemore-btn" data-action="expand-post">Show more</span>`;
+  }
+
+  /**
+   * UI Popups (delete, bookmark, report) using shared styles from profile popups
+   */
+  _ensureOverlay(id) {
+    let el = document.getElementById(id);
+    if (!el) {
+      el = document.createElement('div');
+      el.id = id;
+      el.className = 'certificate-add-popup';
+      el.style.display = 'none';
+      document.body.appendChild(el);
+      // backdrop close
+      el.addEventListener('click', (e)=>{ if (e.target === el) el.style.display = 'none'; });
+    }
+    return el;
+  }
+
+  _openDeletePopup(postId){
+    const overlay = this._ensureOverlay(`post-delete-popup-${postId}`);
+    overlay.innerHTML = `
+      <div class="certificate-add">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Delete Post</div>
+        <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
+          <p>Are you sure you want to permanently delete this post? This action cannot be undone.</p>
+        </div>
+        <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 4px;">
+          <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+          <button type="button" class="save-btn" data-action="confirm" style="background:var(--danger);color:#fff;">Delete</button>
+        </div>
+      </div>`;
+    const close = overlay.querySelector('.close-popup');
+    close?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', async ()=>{
+      try {
+        const r = await fetch(`${window.URLROOT}/post/delete`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ post_id: postId })
+        });
+        const js = await r.json().catch(()=>null);
+        if (r.ok && js && js.status === 'success'){
+          (this.closest('.post-container') || this).remove();
+          overlay.style.display='none';
+        } else {
+          alert(js && js.message ? js.message : 'Failed to delete post');
+        }
+      } catch(err){
+        console.error('Delete error', err);
+        alert('Network error while deleting');
+      }
+    });
+    overlay.style.display = 'flex';
+  }
+
+  _openBookmarkPopup(postId){
+    const overlay = this._ensureOverlay(`post-bookmark-popup-${postId}`);
+    overlay.innerHTML = `
+      <div class="certificate-add">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Add to Bookmarks</div>
+        <div style="color:var(--text); padding:16px;">
+          <p>Add this post to your bookmarks?</p>
+        </div>
+        <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 4px;">
+          <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+          <button type="button" class="save-btn" data-action="confirm" style="background:var(--primary);color:#fff;">Add Bookmark</button>
+        </div>
+      </div>`;
+    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', async ()=>{
+      // Dispatch an event for app-level handling; backend can listen or we can add later
+      const ev = new CustomEvent('post:bookmark', { bubbles: true, detail: { postId } });
+      this.dispatchEvent(ev);
+      overlay.style.display='none';
+      // Optional UX hint
+      // alert('Bookmarked');
+    });
+    overlay.style.display = 'flex';
+  }
+
+  _openReportPopup(postId){
+    const overlay = this._ensureOverlay(`post-report-popup-${postId}`);
+    overlay.innerHTML = `
+      <div class="certificate-add" style="max-width:560px;">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Report Post</div>
+        <form class="certificate-form" id="reportForm-${postId}" novalidate>
+          <div class="form-group">
+            <label for="reportCategory-${postId}">Category</label>
+            <select id="reportCategory-${postId}" required>
+              <option value="" disabled selected>Select a category</option>
+              <option>Spam</option>
+              <option>Harassment or bullying</option>
+              <option>Hate or abusive content</option>
+              <option>Misinformation</option>
+              <option>Self-harm or suicide</option>
+              <option>Illegal or dangerous acts</option>
+              <option>Sexual content</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportDetails-${postId}">Details (optional)</label>
+            <textarea id="reportDetails-${postId}" rows="4" placeholder="Add any details or context..." style="padding:10px;border-radius: var(--radius-lg);border:1px solid var(--border);background:var(--input);color:var(--text);"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="reportLink-${postId}">Reference link (optional)</label>
+            <input type="url" id="reportLink-${postId}" placeholder="https://..." />
+          </div>
+          <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+            <button type="submit" class="save-btn" style="background:var(--primary);color:#fff;">Submit Report</button>
+          </div>
+        </form>
+      </div>`;
+    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    const form = overlay.querySelector(`#reportForm-${postId}`);
+    form?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const cat = overlay.querySelector(`#reportCategory-${postId}`);
+      if (!cat || !cat.value){
+        alert('Please select a category');
+        return;
+      }
+      const details = overlay.querySelector(`#reportDetails-${postId}`)?.value || '';
+      const link = overlay.querySelector(`#reportLink-${postId}`)?.value || '';
+      // Emit an event; backend integration can be added later
+      const ev = new CustomEvent('post:report', { bubbles: true, detail: { postId, category: cat.value, details, link } });
+      this.dispatchEvent(ev);
+      overlay.style.display = 'none';
+      // Optional: optimistic toast
+      // alert('Thanks for your report');
+    });
+    overlay.style.display = 'flex';
   }
 }
 
