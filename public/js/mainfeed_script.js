@@ -227,7 +227,7 @@ function startPollingNewPosts() {
       let feedType = activeTab.getAttribute("value");
       const posts = await fetchNewPosts(feedType);
     } catch (error) {}
-  }, 120000); // 2 minutes interval
+  }, 30000); // 30 seconds interval we check for new posts
 }
 
 async function fetchNewPosts(feedType) {
