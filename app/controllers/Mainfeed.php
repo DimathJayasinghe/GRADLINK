@@ -50,15 +50,19 @@ class Mainfeed extends Controller
         }
 
         // Fetch posts newer than the given timestamp
-        $allPosts = $this->pagesModel->getPosts($feed_type, 1); // Fetch first round of posts
-        $data = ['succcess' => false, 'count' => 0];
+        $allPosts = $this->pagesModel->getPosts($feed_type, 1); // Fetch first page (latest posts)
+        $count = 0;
+        $sinceTs = strtotime($since);
         foreach ($allPosts as $p) {
-            if (strtotime($p->created_at) > strtotime($since)) {
-                $data['succcess'] = true;
-                $data['count'] += 1;
+            $createdTs = isset($p->created_at) ? strtotime($p->created_at) : null;
+            if ($createdTs !== null && $sinceTs !== false && $createdTs > $sinceTs) {
+                $count++;
             }
         }
 
-        echo json_encode($data);
+        echo json_encode([
+            'success' => $count > 0,
+            'count' => $count
+        ]);
     }
 }

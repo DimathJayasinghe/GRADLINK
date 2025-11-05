@@ -103,7 +103,16 @@ async function fetchFeed(feedType) {
     if (!data.posts || data.posts.length === 0) {
       throw new Error("No posts available");
     }
-    lastCheckedTimestamp = new Date().toISOString();
+    // Only update 'since' marker when loading the top of the feed (round 1)
+    // to avoid regressing the timestamp during pagination (Load More)
+    const latest = getLatestCreatedAt(data.posts);
+    if (POST_FETCH_OFFSET_ROUND === 1 && latest) {
+      // Guard against clock drift/regression: only move forward
+      if (!lastCheckedTimestamp ||
+          new Date(latest.replace(" ", "T")) > new Date(String(lastCheckedTimestamp).replace(" ", "T"))) {
+        lastCheckedTimestamp = latest;
+      }
+    }
     return data.posts;
   }
   throw new Error("Failed to fetch feed");
@@ -127,22 +136,51 @@ async function showPostSkeletons(count = 2) {
   wrap.id = "feed-skeletons";
   feed.prepend(wrap);
 
-  const skUrl = `GetSkeleton?require=postSkeleton`;
-  {
-    const res = await fetch(skUrl, {
-      headers: { "X-Requested-With": "XMLHttpRequest" },
-    });
-    if (!res.ok) throw new Error("skeleton_fetch_failed");
-    const html = await res.text();
-    wrap.innerHTML = Array.from({ length: count })
-      .map(() => html)
-      .join("");
-  }
+  // Client-side skeletons (no network fetch)
+  const html = skeletonCardHTML();
+  wrap.innerHTML = Array.from({ length: count })
+    .map(() => html)
+    .join("");
 }
 
 function hidePostSkeletons() {
   const sk = document.getElementById("feed-skeletons");
   if (sk) sk.remove();
+}
+
+// Returns markup for a single skeleton post card
+function skeletonCardHTML() {
+  return `
+  <div class="post skeleton" aria-hidden="true">
+    <div class="post-header">
+      <div class="post-user">
+        <div class="profile-photo skeleton-circle skeleton-box"></div>
+        <div class="post-user-info skeleton-info" style="width: 190px;">
+          <div class="skeleton-line lg skeleton-box" style="width: 80%;"></div>
+          <div class="skeleton-line sm skeleton-box" style="width: 60%;"></div>
+          <div class="skeleton-line sm skeleton-box" style="width: 40%;"></div>
+          <div class="post-content" style="margin-top:8px;">
+            <br><br>
+            <div class="post-content skeleton-line sm skeleton-box"><p class="post-text">                                  </p></div>
+          </div>
+        </div>
+      </div>
+      <div class="post-menu" role="button" aria-hidden="true">
+        <div class="skeleton-line sm skeleton-box" style="width: 18px; height: 18px; border-radius: 4px;"></div>
+      </div>
+    </div>
+    <div class="post-media">
+      <div class="skeleton-rect skeleton-box"></div>
+    </div>
+    <div class="post-actions">
+      <div class="liked" aria-hidden="true">
+        <div class="skeleton-line sm skeleton-box" style="width: 50px;"></div>
+      </div>
+      <div class="comment-btn" aria-hidden="true">
+        <div class="skeleton-line sm skeleton-box" style="width: 60px;"></div>
+      </div>
+    </div>
+  </div>`;
 }
 
 async function loadMorePosts() {
@@ -184,6 +222,7 @@ function resetLoadMoreButton() {
 function startPollingNewPosts() {
   setInterval(async () => {
     try {
+      if (!lastCheckedTimestamp) return; // don't poll until initial timestamp is set
       let activeTab = document.querySelector(".tab.active");
       let feedType = activeTab.getAttribute("value");
       const posts = await fetchNewPosts(feedType);
@@ -200,11 +239,16 @@ async function fetchNewPosts(feedType) {
       { headers: { "X-Requested-With": "XMLHttpRequest" } }
     );
     const data = await res.json();
-    if (data && data.success) {
+    const ok =
+      data &&
+      (data.success === true || data.succcess === true) &&
+      Number(data.count) > 0;
+    if (ok) {
       /**
        * Show new posts notification
        */
-      const newPostsAvailableButton = document.querySelector(".newPostsAvailable");
+      const newPostsAvailableButton =
+        document.querySelector(".newPostsAvailable");
       if (!newPostsAvailableButton) return;
       newPostsAvailableButton.classList.add("is-visible");
       const newPostCountSpan = document.getElementById("newPostCount");
@@ -218,6 +262,9 @@ async function fetchNewPosts(feedType) {
           const feed = document.getElementById("feed");
           if (feed) feed.innerHTML = "";
           renderFeed(posts);
+          // After rendering, set since to newest post created_at to prevent re-popping
+          lastCheckedTimestamp =
+            getLatestCreatedAt(posts) || lastCheckedTimestamp;
         } catch (err) {
           console.error("Error loading new posts:", err);
         } finally {
@@ -229,4 +276,26 @@ async function fetchNewPosts(feedType) {
   } catch (err) {
     console.error("Error fetching new posts:", err);
   }
+}
+
+// Helper: get newest created_at value from posts array (assumes DESC order fallback)
+function getLatestCreatedAt(posts) {
+  if (!Array.isArray(posts) || posts.length === 0) return null;
+  // Prefer first item (DESC by created_at), else reduce to max
+  const first = posts[0];
+  if (first && first.created_at) return first.created_at;
+  // Fallback: compute max
+  let max = null;
+  for (const p of posts) {
+    if (p && p.created_at) {
+      if (
+        !max ||
+        new Date(p.created_at.replace(" ", "T")) >
+          new Date(max.replace(" ", "T"))
+      ) {
+        max = p.created_at;
+      }
+    }
+  }
+  return max;
 }
