@@ -61,8 +61,8 @@ function renderFeed(posts) {
 function createPostCard(post) {
   const el = document.createElement("post-card");
   const ctx = {
-    currentUserId: "",
-    currentUserRole: "",
+    currentUserId: (window.CURRENT_USER_ID ?? "").toString(),
+    currentUserRole: (window.CURRENT_USER_ROLE ?? "").toString(),
   };
   // Map your backend fields to post-card attributes
   el.setAttribute("profile-img", post.profile_image || "default.jpg");
