@@ -1,4 +1,10 @@
 // Main feed functionality
+
+/**
+ * 
+ * ScrollToTop helper is  located in layout file
+ * 
+ */
 import "./component/postCard.js";
 
 /**
@@ -23,6 +29,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     noPostsMessage();
   } finally {
     hidePostSkeletons();
+    scrollToTop();
     startPollingNewPosts();
   }
 
@@ -43,6 +50,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           noPostsMessage();
         } finally {
           hidePostSkeletons();
+          scrollToTop();
         }
       }
     });
@@ -269,6 +277,7 @@ async function fetchNewPosts(feedType) {
           console.error("Error loading new posts:", err);
         } finally {
           hidePostSkeletons();
+          scrollToTop();
           newPostsAvailableButton.classList.remove("is-visible");
         }
       };
