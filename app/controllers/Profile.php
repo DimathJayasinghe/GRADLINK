@@ -36,20 +36,83 @@ class Profile extends Controller{
         if ($user == 1) {
             $data['userDetails'] = $this->Model->getUserDetails($user_id);
             $data['certificates'] = $this->Model->getCertificates($user_id);
-            $data['posts'] = $this->Model->getPosts($user_id);
             $data['projects'] = $this->Model->getProjects($user_id);
+            $isPublic = $this->Model->isProfilePublic($user_id);
+            $isFollwed = $this->Model->isFollowed($_SESSION['user_id'], $user_id);
+            // Ensure boolean for view logic
+            $data['public_profile'] = (bool)$isPublic;
+            $data['isfollowed'] = $isFollwed;
             
-            // Add liked status to posts - same as in mainfeed
-            $postModel = $this->model('M_post');
-            $current_user_id = $_SESSION['user_id'];
-            foreach ($data['posts'] as $p) {
-                $p->liked = $postModel->isLiked($p->id, $current_user_id);
+            if ($data['public_profile'] || $_SESSION['user_id'] == $user_id || $isFollwed) {
+                $data['posts'] = $this->Model->getPosts($user_id);
+                // Add liked status to posts - same as in mainfeed
+                $postModel = $this->model('M_post');
+                $current_user_id = $_SESSION['user_id'];
+                foreach ($data['posts'] as $p) {
+                    $p->liked = $postModel->isLiked($p->id, $current_user_id);
+                }
             }
+            
 
             $this->view('profiles/v_profile', $data);
             return;
         }
         $this->view('errors/_404', []);
+    }
+
+    public function follow(){
+        if ($_SERVER['REQUEST_METHOD'] === 'POST'){
+            header('Content-Type: application/json');
+            // Accept both form-encoded and JSON bodies
+            $payload = null;
+            $ct = isset($_SERVER['CONTENT_TYPE']) ? strtolower($_SERVER['CONTENT_TYPE']) : '';
+            if (strpos($ct, 'application/json') !== false) {
+                $raw = file_get_contents('php://input');
+                if ($raw) {
+                    $json = json_decode($raw, true);
+                    if (is_array($json)) $payload = $json;
+                }
+            }
+            $profile_user_id = 0;
+            if (is_array($payload)) {
+                $profile_user_id = intval($payload['profile_user_id'] ?? ($payload['target_id'] ?? 0));
+            } else {
+                $profile_user_id = intval($_POST['profile_user_id'] ?? ($_POST['target_id'] ?? 0));
+            }
+            $current_user_id = $_SESSION['user_id'] ?? 0;
+
+            if ($profile_user_id <= 0 || $current_user_id <= 0) {
+                echo json_encode(['success' => false, 'error' => 'Invalid user id']);
+                return;
+            }
+
+            if ($profile_user_id === $current_user_id) {
+                echo json_encode(['success' => false, 'error' => 'Cannot follow/unfollow yourself']);
+                return;
+            }
+
+            // Check current follow status
+            $isFollowed = $this->Model->isFollowed($current_user_id, $profile_user_id);
+            $result = false;
+            if ($isFollowed) {
+                // Unfollow
+                $result = $this->Model->unfollowUser($current_user_id, $profile_user_id);
+            } else {
+                // Follow
+                $result = $this->Model->followUser($current_user_id, $profile_user_id);
+            }
+
+            if ($result) {
+                echo json_encode(['success' => true, 'connected' => !$isFollowed]);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Failed to update follow status']);
+            }
+        }else{
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
     }
 
   
