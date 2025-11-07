@@ -793,3 +793,8 @@ button.show-more:disabled {
     color: var(--muted);
     margin-top: 4px;
 }
+
+.error-btn{
+    background-color: #ff4d4d !important;
+    border-color: #ff4d4d !important;
+}
