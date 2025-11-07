@@ -38,7 +38,7 @@ class PostCard extends HTMLElement {
     const isOwner = postUserId && currentUserId && postUserId === currentUserId;
 
     this.innerHTML = `
-      <div class="post ${(postOwnerRole == "admin") ? "admin-post":""}">
+      <div class="post ${(postOwnerRole == "admin") ? "admin-post":""}" id="post-${postId}">
         <div class="post-header">
           <div class="post-user">
             <img src="${mediaProfile(profileImg)}" alt="User" style="cursor: pointer;" class="profile-photo" onerror="this.onerror=null;this.src='${mediaProfile("default.jpg")}'">
@@ -54,6 +54,7 @@ class PostCard extends HTMLElement {
             <div class="post-dropdown hidden" role="menu">
               <!-- Always available -->
               <div class="dropdown-item" data-action="bookmark" role="menuitem">Bookmark</div>
+              <div class="dropdown-item" data-action="share" role="menuitem">Share</div>
               <!-- Report: Available to all users -->
               <div class="dropdown-item" data-action="report" role="menuitem">Report</div>
               <!-- Admin specific actions -->
@@ -135,6 +136,10 @@ class PostCard extends HTMLElement {
         if(act === 'bookmark'){
           // Open bookmark confirmation popup
           this._openBookmarkPopup(postId);
+        } else if (act === 'share') {
+          // Build a shareable link to this post (anchor link)
+          const shareUrl = `${window.URLROOT}/mainfeed#post-${postId}`;
+          this._openSharePopup(postId, shareUrl);
         } else if(act === 'report') {
           // Open report form popup
           this._openReportPopup(postId);
@@ -793,6 +798,44 @@ class PostCard extends HTMLElement {
       overlay.style.display = 'none';
       // Optional: optimistic toast
       // alert('Thanks for your report');
+    });
+    overlay.style.display = 'flex';
+  }
+
+  _openSharePopup(postId, shareUrl){
+    const overlay = this._ensureOverlay(`post-share-popup-${postId}`);
+    overlay.innerHTML = `
+      <div class="certificate-add" style="max-width:560px;">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Share Post</div>
+        <form class="certificate-form" id="shareForm-${postId}" onsubmit="return false;">
+          <div class="form-group">
+            <label for="shareLink-${postId}">Link to this post</label>
+            <input type="url" id="shareLink-${postId}" value="${shareUrl}" readonly />
+          </div>
+          <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" class="save-btn" data-action="copy" style="background:var(--primary);color:#fff;">Copy Link</button>
+            <a class="save-btn" href="${shareUrl}" target="_blank" rel="noopener" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Open</a>
+          </div>
+        </form>
+      </div>`;
+    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
+    const copyBtn = overlay.querySelector('[data-action="copy"]');
+    copyBtn?.addEventListener('click', async ()=>{
+      const input = overlay.querySelector(`#shareLink-${postId}`);
+      const val = input?.value || shareUrl;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(val);
+        } else {
+          input?.select();
+          document.execCommand('copy');
+        }
+        copyBtn.textContent = 'Copied!';
+        setTimeout(()=>{ copyBtn.textContent = 'Copy Link'; }, 1200);
+      } catch(err){
+        alert('Could not copy link');
+      }
     });
     overlay.style.display = 'flex';
   }

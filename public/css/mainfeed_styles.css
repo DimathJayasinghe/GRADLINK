@@ -35,6 +35,10 @@ body {
 .tabs {
     display: flex;
     border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg);
 }
 
 .tab {
@@ -120,7 +124,8 @@ body {
 }
 
 .feed {
-    overflow-y: auto;
+    /* Let the main-content be the only scroll container so sticky headers work */
+    overflow: visible;
 }
 
 .show-more {

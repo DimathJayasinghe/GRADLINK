@@ -49,11 +49,11 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 <?php $leftsidebar = ob_get_clean(); ?>
 
 <?php ob_start() ?>
+<div class="tabs">
+    <div id="feed-toggle" class="tab active" value="for_you">For you</div>
+    <div id="feed-toggle" class="tab" value="following">Following</div>
+</div>
 <div class="main-content">
-    <div class="tabs">
-        <div id="feed-toggle" class="tab active" value="for_you">For you</div>
-        <div id="feed-toggle" class="tab" value="following">Following</div>
-    </div>
     <?php require APPROOT . '/views/inc/commponents/newpost_section.php'; ?>
 
 
