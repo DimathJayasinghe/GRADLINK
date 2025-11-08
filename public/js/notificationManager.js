@@ -33,11 +33,6 @@ class NotificationManager {
     }
 
     setupModalHandlers() {
-        const closeBtn = document.getElementById('closeNotificationModal');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.closeModal());
-        }
-
         // Close on outside click
         if (this.modalElement) {
             window.addEventListener('click', (e) => {

@@ -7,7 +7,7 @@
                 <button class="mark-all-read-btn" id="markAllReadBtn" title="Mark all as read">
                     <i class="fas fa-check-double"></i>
                 </button>
-                <button class="modal-close-btn" id="closeNotificationModal">
+                <button class="modal-close-btn" id="closeNotificationModal" onclick="initNotifications()">
                     <i class="fas fa-times" style="margin-right: 0px;"></i>
                 </button>
             </div>
