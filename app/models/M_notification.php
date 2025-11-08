@@ -57,6 +57,11 @@ class M_notification {
         return $this->db->execute();
     }
 
+    public function markAllAsRead($userId) {
+        $this->db->query('UPDATE notifications SET is_read = 1 WHERE receiver_id = :receiver_id AND is_read = 0');
+        $this->db->bind(':receiver_id', $userId);
+        return $this->db->execute();
+    }
 
     public function getNotificationID($receiverId,$referenceId, $type) {
         $this->db->query('SELECT id FROM notifications WHERE receiver_id = :receiver_id AND reference_id = :reference_id AND type = :type ORDER BY created_at DESC LIMIT 1');

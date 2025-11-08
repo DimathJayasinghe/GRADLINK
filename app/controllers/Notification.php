@@ -6,35 +6,51 @@ class Notification extends Controller
         parent::__construct();
     }
 
-    public function Count()
+    public function count()
     {
-        // $this->requireAjaxRequest();
+        header('Content-Type: application/json');
         $userId = SessionManager::getUserId();
         if ($userId === null || !$this->notificationModel) {
-            return 0;
+            echo json_encode(['count' => 0, 'success' => true]);
+            return;
         }
-        return $this->notificationModel->getUserNotificationsCount($userId);
+        $count = $this->notificationModel->getUserNotificationsCount($userId);
+        echo json_encode(['count' => $count, 'success' => true]);
     }
 
     public function index()
     {
-        // $this->requireAjaxRequest();
+        header('Content-Type: application/json');
         $userId = SessionManager::getUserId();
         if ($userId === null || !$this->notificationModel) {
-            return [];
+            echo json_encode(['notifications' => [], 'success' => true]);
+            return;
         }
-        return $this->notificationModel->getUserNotifications($userId);
+        $notifications = $this->notificationModel->getUserNotifications($userId);
+        echo json_encode(['notifications' => $notifications, 'success' => true]);
     }
 
     public function markAsRead()
     {
-        // Implement logic to mark notification as read
-        // $this->requireAjaxRequest();
+        header('Content-Type: application/json');
         $notificationId = Sanitizer::cleanInput($this->getQueryParam('nId'));
         if (Sanitizer::isEmpty($notificationId) || !$this->notificationModel) {
-            return false;
+            echo json_encode(['success' => false, 'message' => 'Invalid notification ID']);
+            return;
         }
-        // Call model method to mark as read
-        return $this->notificationModel->markNotificationAsRead($notificationId);
+        $result = $this->notificationModel->markNotificationAsRead($notificationId);
+        echo json_encode(['success' => $result]);
+    }
+
+    public function markAllAsRead()
+    {
+        header('Content-Type: application/json');
+        $userId = SessionManager::getUserId();
+        if ($userId === null || !$this->notificationModel) {
+            echo json_encode(['success' => false]);
+            return;
+        }
+        $result = $this->notificationModel->markAllAsRead($userId);
+        echo json_encode(['success' => $result]);
     }
 }
