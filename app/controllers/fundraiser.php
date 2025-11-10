@@ -52,7 +52,7 @@
                         'club_name'=>'IEEE CS Chapter',
                         
                         'target_amount'=>5000,
-                        'raised_amount'=>1500,
+                        'raised_amount'=>0,
                         'deadline'=>'2025-12-31',
                     ],
                     (object)[
@@ -84,7 +84,7 @@
                         'club_name'=>'Sports Club',
                         
                         'target_amount'=>3000,
-                        'raised_amount'=>500,
+                        'raised_amount'=>0,
                         'deadline'=>'2025-12-15',
                     ],
                     (object)[
@@ -100,7 +100,7 @@
                         'club_name'=>'Environmental Club',
                         
                         'target_amount'=>4000,
-                        'raised_amount'=>1000,
+                        'raised_amount'=>0,
                         'deadline'=>'2025-01-31',
                     ],
                     (object)[
@@ -142,7 +142,7 @@
                         'club_name'=>'IEEE CS Chapter',
                         
                         'target_amount'=>5000,
-                        'raised_amount'=>1500,
+                        'raised_amount'=>0,
                         'deadline'=>'2025-12-31',
                     ],
                     (object)[

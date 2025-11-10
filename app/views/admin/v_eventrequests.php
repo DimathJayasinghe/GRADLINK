@@ -95,9 +95,9 @@ document.addEventListener('DOMContentLoaded', function(){
                 <td>${escapeHtml(r.event_date||'')}</td>
                 <td>${escapeHtml(r.status||'')}</td>
                 <td>
-                    <button class="admin-btn view-req" style="background-color: #525253ff; color: white;">View</button>
+                    <button class="admin-btn view-req" style="background-color: #525253ff; color: white; margin-bottom:8px;">View</button>
                     <button class="admin-btn approve-req">Approve</button>
-                    <button class="admin-btn admin-btn-danger reject-req">Reject</button>
+                    <button class="admin-btn admin-btn-danger reject-req" style="width:140px;">Reject</button>
                 </td>
             `;
             tableBody.appendChild(tr);

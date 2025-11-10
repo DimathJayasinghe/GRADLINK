@@ -7,7 +7,18 @@ class messages extends Controller{
     }
     
     public function index($section = 'all'){
+        // Allow initializing/opening a chat via POST (preferred) or GET (fallback)
+        $openChatUserId = null;
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Prefer form POST fields
+            $openChatUserId = $_POST['user']?? null;
+        } else {
+            // Fallback to query param if present
+            $openChatUserId = $this->getQueryParam('user', null);
+        }
+
         $data = [
+            'openChatUserId' => $openChatUserId,
             'section' => $section
         ];
         $this->view('messages/v_messages', $data);
