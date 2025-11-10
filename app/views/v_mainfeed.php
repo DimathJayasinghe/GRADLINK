@@ -49,11 +49,11 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 <?php $leftsidebar = ob_get_clean(); ?>
 
 <?php ob_start() ?>
+<div class="tabs">
+    <div id="feed-toggle" class="tab active" value="for_you">For you</div>
+    <div id="feed-toggle" class="tab" value="following">Following</div>
+</div>
 <div class="main-content">
-    <div class="tabs">
-        <div id="feed-toggle" class="tab active" value="for_you">For you</div>
-        <div id="feed-toggle" class="tab" value="following">Following</div>
-    </div>
     <?php require APPROOT . '/views/inc/commponents/newpost_section.php'; ?>
 
 
@@ -68,6 +68,9 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
         <button id="loadMoreBtn" class="show-more" type="button" aria-label="Load more posts">Load More Posts</button>
     </div>
 
+
+    <!-- New posts available button Z max float default display hidden-->
+     <button class="newPostsAvailable" style="z-index: 1000; position:absolute"> New Posts <span id="newPostCount"></span></button>
 </div>
 <?php $center_content = ob_get_clean(); ?>
 <?php ob_start() ?>
@@ -80,6 +83,10 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
 
 <?php ob_start() ?>
 window.URLROOT = "<?php echo URLROOT; ?>";
+// Expose current user context for client-side components
+<?php $currentRole = isset($_SESSION['role']) ? $_SESSION['role'] : (isset($_SESSION['user_role']) ? $_SESSION['user_role'] : ''); ?>
+window.CURRENT_USER_ID = <?php echo json_encode((string)($_SESSION['user_id'] ?? '')); ?>;
+window.CURRENT_USER_ROLE = <?php echo json_encode(strtolower($currentRole)); ?>;
 // Optional: you can add a simple loading state toggle if your JS expects it
 // document.getElementById('loadMoreBtn')?.addEventListener('click', function(){
 // this.disabled = true;

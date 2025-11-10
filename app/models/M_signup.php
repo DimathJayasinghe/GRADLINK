@@ -67,6 +67,12 @@ class M_signup {
             // Since dbh is private in Database class, we need to get last ID differently
             $this->db->query("SELECT LAST_INSERT_ID() as id");
             $result = $this->db->single();
+            // Add default public visibility row
+            if ($result && isset($result->id)) {
+                $this->db->query('INSERT INTO user_profiles_visibility (user_id, is_public) VALUES (:id, 1)');
+                $this->db->bind(':id', (int)$result->id, PDO::PARAM_INT);
+                $this->db->execute();
+            }
             return $result->id;
         } else {
             return false;
@@ -130,6 +136,12 @@ class M_signup {
             // Since dbh is private in Database class, we need to get last ID differently
             $this->db->query("SELECT LAST_INSERT_ID() as id");
             $result = $this->db->single();
+            // Add default public visibility row
+            if ($result && isset($result->id)) {
+                $this->db->query('INSERT INTO user_profiles_visibility (user_id, is_public) VALUES (:id, 1)');
+                $this->db->bind(':id', (int)$result->id, PDO::PARAM_INT);
+                $this->db->execute();
+            }
             return $result->id;
         } else {
             return false;
@@ -224,6 +236,14 @@ class M_signup {
                 return false;
             }
 
+            // Add default public visibility row for the approved user
+            $this->db->query('INSERT INTO user_profiles_visibility (user_id, is_public) VALUES (:id, 1)');
+            $this->db->bind(':id', (int)$newUserId, PDO::PARAM_INT);
+            if (!$this->db->execute()) {
+                $this->db->rollBack();
+                return false;
+            }
+
             // delete the pending row after successful approval
             $this->db->query("DELETE FROM unregisted_alumni WHERE id = :id");
             $this->db->bind(':id', $pendingId);
@@ -250,6 +270,52 @@ class M_signup {
         $this->db->query("UPDATE unregisted_alumni SET status = 'rejected' WHERE id = :id AND status <> 'rejected'");
         $this->db->bind(':id', $pendingId);
         return $this->db->execute();
+    }
+
+    /**
+     * Toggle a user's profile visibility (public <-> private)
+     * If a visibility row doesn't exist, it will be created as private (0).
+     */
+    public function toggleProfileVisibility($userId){
+        // Read current
+        $this->db->query('SELECT is_public FROM user_profiles_visibility WHERE user_id = :id');
+        $this->db->bind(':id', (int)$userId, PDO::PARAM_INT);
+        $row = $this->db->single();
+
+        if ($row) {
+            $newVal = ((int)$row->is_public) ? 0 : 1;
+            $this->db->query('UPDATE user_profiles_visibility SET is_public = :p WHERE user_id = :id');
+            $this->db->bind(':p', (int)$newVal, PDO::PARAM_INT);
+            $this->db->bind(':id', (int)$userId, PDO::PARAM_INT);
+            return $this->db->execute();
+        } else {
+            // If missing, create as private (considered a toggle from default public intent)
+            $this->db->query('INSERT INTO user_profiles_visibility (user_id, is_public) VALUES (:id, 0)');
+            $this->db->bind(':id', (int)$userId, PDO::PARAM_INT);
+            return $this->db->execute();
+        }
+    }
+
+    /**
+     * Explicitly set profile visibility
+     */
+    public function setProfileVisibility($userId, $isPublic){
+        $isPublic = $isPublic ? 1 : 0;
+        // Upsert-like behavior
+        $this->db->query('SELECT 1 FROM user_profiles_visibility WHERE user_id = :id');
+        $this->db->bind(':id', (int)$userId, PDO::PARAM_INT);
+        $exists = $this->db->single();
+        if ($exists){
+            $this->db->query('UPDATE user_profiles_visibility SET is_public = :p WHERE user_id = :id');
+            $this->db->bind(':p', (int)$isPublic, PDO::PARAM_INT);
+            $this->db->bind(':id', (int)$userId, PDO::PARAM_INT);
+            return $this->db->execute();
+        } else {
+            $this->db->query('INSERT INTO user_profiles_visibility (user_id, is_public) VALUES (:id, :p)');
+            $this->db->bind(':id', (int)$userId, PDO::PARAM_INT);
+            $this->db->bind(':p', (int)$isPublic, PDO::PARAM_INT);
+            return $this->db->execute();
+        }
     }
 }
 ?>

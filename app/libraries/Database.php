@@ -10,8 +10,10 @@
         private $error; // for exception handling
 
         public function __construct() {
-            // Set DSN
-            $dsn = 'mysql:host=' . $this->host . ';dbname=' . $this->dbname;
+            // Set DSN (include port and charset if defined)
+            $port = defined('DB_PORT') ? DB_PORT : 3306;
+            $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4';
+            $dsn = 'mysql:host=' . $this->host . ';port=' . $port . ';dbname=' . $this->dbname . ';charset=' . $charset;
 
             // Set options
             $options = array(
