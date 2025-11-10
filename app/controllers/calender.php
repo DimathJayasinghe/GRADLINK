@@ -7,11 +7,22 @@ class calender extends Controller{
         // Load events for the current month to populate the calendar JS
         $eventModel = $this->model('M_event');
 
-        // Default: current month range
+        // Default: current month range (but show only upcoming events)
         $start = date('Y-m-01');
         $end = date('Y-m-t');
 
-        $events = $eventModel->findList(['start' => $start . ' 00:00:00', 'end' => $end . ' 23:59:59', 'visibility' => 'public']);
+        // Compute effective start as the later of the month start and "now"
+        $nowTs = time();
+        $rangeStartTs = strtotime($start . ' 00:00:00');
+        $rangeEndTs = strtotime($end . ' 23:59:59');
+        $effectiveStart = date('Y-m-d H:i:s', max($rangeStartTs, $nowTs));
+        $effectiveEnd = date('Y-m-d H:i:s', $rangeEndTs);
+
+        $events = $eventModel->findList([
+            'start' => $effectiveStart,
+            'end' => $effectiveEnd,
+            'visibility' => 'public'
+        ]);
 
         // Normalize events into the lightweight JS-friendly payload
         $payload = [];
@@ -174,8 +185,14 @@ class calender extends Controller{
             return;
         }
 
-        $eventModel = $this->model('M_event');
-        $events = $eventModel->findList(['start' => $start . ' 00:00:00', 'end' => $end . ' 23:59:59', 'visibility' => 'public']);
+    $eventModel = $this->model('M_event');
+    // Only return events ahead of "now" even if the requested window is in the past
+    $nowTs = time();
+    $rangeStartTs = strtotime($start . ' 00:00:00');
+    $rangeEndTs = strtotime($end . ' 23:59:59');
+    $effectiveStart = date('Y-m-d H:i:s', max($rangeStartTs, $nowTs));
+    $effectiveEnd = date('Y-m-d H:i:s', $rangeEndTs);
+    $events = $eventModel->findList(['start' => $effectiveStart, 'end' => $effectiveEnd, 'visibility' => 'public']);
 
         // Determine current user so we can include bookmark state
         SessionManager::ensureStarted();

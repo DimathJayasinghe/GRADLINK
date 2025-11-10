@@ -20,7 +20,7 @@
 			</div>
 		</div>
 
-		<div class="settings-option">
+		<!-- <div class="settings-option">
 			<div class="settings-option-details">
 				<h4>Search Engine Indexing</h4>
 				<p>Allow search engines to link to your profile</p>
@@ -29,9 +29,9 @@
 				<input type="checkbox" id="searchIndexing" checked>
 				<span class="slider"></span>
 			</label>
-		</div>
+		</div> -->
 
-		<div class="settings-option">
+		<!-- <div class="settings-option">
 			<div class="settings-option-details">
 				<h4>Show Online Status</h4>
 				<p>Display when you're active on GRADLINK</p>
@@ -40,10 +40,10 @@
 				<input type="checkbox" id="onlineStatus" checked>
 				<span class="slider"></span>
 			</label>
-		</div>
+		</div> -->
 	</div>
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Security</h3>
 		<div class="section-divider"></div>
 
@@ -65,7 +65,7 @@
 				<span class="slider"></span>
 			</label>
 		</div>
-	</div>
+	</div> -->
 
 	<div class="settings-section">
 		<h3>Blocked Users</h3>
@@ -77,7 +77,7 @@
 		</ul>
 	</div>
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Active Sessions</h3>
 		<div class="section-divider"></div>
 		<ul class="simple-list">
@@ -99,7 +99,7 @@
 		<div class="form-actions" style="justify-content: flex-start;">
 			<button class="settings-btn-danger" id="logoutOthers">Log out of all other sessions</button>
 		</div>
-	</div>
+	</div> -->
 
 	<!-- Two Factor Modal -->
 	<div id="twoFAModal" class="settings-modal">
