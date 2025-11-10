@@ -21,7 +21,9 @@ class Profile extends Controller{
             }
         }
 
-        // For normal page routes, keep default redirect behavior
+        // For normal page routes, keep default redirect behavior  
+        // json_encode() → PHP → JSON
+        // json_decode() → JSON → PHP
         SessionManager:: redirectToAuthIfNotLoggedIn();
         $this->Model = $this->model('M_Profile');
     }

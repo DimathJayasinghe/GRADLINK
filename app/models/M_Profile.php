@@ -27,7 +27,7 @@ class M_Profile{
     }
 
     /**
-     * Fetch a single certificate by id.
+     * Fetch a single certificate by id. use to view the certificate.
      */
     public function getCertificateById($cert_id){
         $this->db->query('SELECT * FROM certificates WHERE id = :id LIMIT 1');
@@ -36,7 +36,7 @@ class M_Profile{
     }
 
 
-// ...existing code...
+
 
     /**
      * Create a certificate for a user.
