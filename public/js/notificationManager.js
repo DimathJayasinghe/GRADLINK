@@ -33,11 +33,20 @@ class NotificationManager {
     }
 
     setupModalHandlers() {
-        // Close on outside click
+        // Close button handler
+        const closeBtn = document.getElementById('closeNotificationModal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.closeModal();
+            });
+        }
+
+        // Close on outside click - redirect to notifications page
         if (this.modalElement) {
-            window.addEventListener('click', (e) => {
+            this.modalElement.addEventListener('click', (e) => {
                 if (e.target === this.modalElement) {
-                    this.closeModal();
+                    window.location.href = `${this.urlRoot}/notification`;
                 }
             });
         }
@@ -66,7 +75,7 @@ class NotificationManager {
 
     async fetchNotifications() {
         try {
-            const response = await fetch(`${this.urlRoot}/notification`, {
+            const response = await fetch(`${this.urlRoot}/notification/fetchNewNotifications`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
             const data = await response.json();
@@ -110,14 +119,11 @@ class NotificationManager {
             this.createNotificationHTML(notification)
         ).join('');
 
-        // Add click handlers for marking as read
+        // Add click handlers to redirect to notifications page
         this.listElement.querySelectorAll('.notification-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                const notifId = item.dataset.notificationId;
-                if (notifId && !item.classList.contains('read')) {
-                    this.markAsRead(notifId);
-                    item.classList.add('read');
-                }
+                // Redirect to notifications page
+                window.location.href = `${this.urlRoot}/notification`;
             });
         });
     }

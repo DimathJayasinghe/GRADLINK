@@ -20,6 +20,24 @@ class Notification extends Controller
 
     public function index()
     {
+        $userId = SessionManager::getUserId();
+        if ($userId === null) {
+            header('Location: ' . URLROOT . '/login');
+            return;
+        }
+        
+        if (!$this->notificationModel) {
+            $notifications = [];
+        } else {
+            $notifications = $this->notificationModel->getUserNotifications($userId);
+        }
+        
+        // Render the notifications page view
+        $this->view('notifications/v_notifications', ['notifications' => $notifications]);
+    }
+
+    public function fetchNewNotifications()
+    {
         header('Content-Type: application/json');
         $userId = SessionManager::getUserId();
         if ($userId === null || !$this->notificationModel) {
