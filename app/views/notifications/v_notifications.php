@@ -1,7 +1,13 @@
 <?php ob_start() ?>
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/style.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardStyles.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardShowMore.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/explore_styles.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/rightSidebarStyles.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <?php $styles = ob_get_clean(); ?>
+
 <?php
 $notifications = [
     (object)[
@@ -18,21 +24,18 @@ $notifications = [
         'time' => '3h ago',
         'userImg' => URLROOT . '/media/profile/bob.jpg'
     ]
-];
+]
 ?>
 
 <?php ob_start() ?>
 <?php
 $leftside_buttons = [
-    ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'", 'active' => true],
+    ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'"],
     ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
-    ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'badge' => true],
+    ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'badge' => true, 'active' => true],
     ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
-    // ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile/watch/".$_SESSION['user_id'] . "'"],
     ['icon' => 'user', 'label' => 'Profile', 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=" . $_SESSION['user_id'] . "'"],
-    // icon for fundraiser
     ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
-    // ['icon' => 'clipboard-list', 'label' => 'Post Requests', 'onclick' => "window.location.href='" . URLROOT . "/postrequest/'"],
     ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
     ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
 ];
@@ -46,54 +49,58 @@ if ($_SESSION['special_alumni']) {
 };
 $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
 require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
+require APPROOT . '/views/inc/commponents/leftSideBar.php';
+?>
 <?php $leftsidebar = ob_get_clean(); ?>
 
 <?php ob_start() ?>
-<div class="tabs">
-    <div id="feed-toggle" class="tab active" value="for_you">For you</div>
-    <div id="feed-toggle" class="tab" value="following">Following</div>
-</div>
 <div class="main-content">
-    <?php require APPROOT . '/views/inc/commponents/newpost_section.php'; ?>
-
-
-
-    <div class="feed" id="feed">
-        <!-- Placeholder till posts load 3 -->
+    <h2 class="Notification-headline">Notifications</h2>
+    <div class="notification-container">
+        <!-- Notifications will be rendered here -->
+         <div class="notification" data-notification-id="">
+            <div class="icon">
+                <!-- Notification icon goes here, can differe with the type of the notifiation -->
+            </div>
+            <div class="notification-content">
+                <div class="text">
+                    <p><strong>User Name</strong> <!-- notification content goes here.--></p>
+                    <span class="time">Time ago</span>
+                </div>
+                <div class="expandable-part">
+                    <!-- this part is dynamic , can differe with the type of the notification -->
+                </div>
+            </div>
+         </div>
     </div>
-
-
-
-    <div class="load-more-post">
-        <button id="loadMoreBtn" class="show-more" type="button" aria-label="Load more posts">Load More Posts</button>
-    </div>
-
-
-    <!-- New posts available button Z max float default display hidden-->
-     <button class="newPostsAvailable" style="z-index: 1000; position:absolute"> New Posts <span id="newPostCount"></span></button>
+    
 </div>
+
 <?php $center_content = ob_get_clean(); ?>
+
 <?php ob_start() ?>
 <!-- Include the right sidebar component -->
 <?php
-$rightSidebarStylesIncluded = true; // Prevent duplicate styles
 require APPROOT . '/views/inc/commponents/rightSideBar.php';
 ?>
 <?php $rightsidebar = ob_get_clean(); ?>
 
+<script src="<?php echo URLROOT; ?>/js/notifications/page.js"></script>
 <?php ob_start() ?>
-window.URLROOT = "<?php echo URLROOT; ?>";
-// Expose current user context for client-side components
-<?php $currentRole = isset($_SESSION['role']) ? $_SESSION['role'] : (isset($_SESSION['user_role']) ? $_SESSION['user_role'] : ''); ?>
-window.CURRENT_USER_ID = <?php echo json_encode((string)($_SESSION['user_id'] ?? '')); ?>;
-window.CURRENT_USER_ROLE = <?php echo json_encode(strtolower($currentRole)); ?>;
-// Optional: you can add a simple loading state toggle if your JS expects it
-// document.getElementById('loadMoreBtn')?.addEventListener('click', function(){
-// this.disabled = true;
-// this.textContent = 'Loading...';
-// });
+    let notificationPageManager;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initNotificationPage);
+    } else {
+        initNotificationPage();
+    }
 
+    function initNotificationPage() {
+        notificationPageManager = new NotificationPageManager({
+            urlRoot: '<?php echo URLROOT; ?>'
+            pollInterval: 20000 // Poll every 20 seconds
+        });
+    }
+    
 <?php $scripts = ob_get_clean(); ?>
-<script type="module" src="<?php echo URLROOT; ?>/js/mainfeed_script.js"></script>
-<!-- <script src="<?php echo URLROOT; ?>/js/component/postCard.js"></script> -->
-<?php require APPROOT . '\views\layouts\threeColumnLayout.php'; ?>
+
+<?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>

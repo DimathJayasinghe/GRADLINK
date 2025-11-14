@@ -99,6 +99,16 @@ class M_post {
 		$this->db->bind(':id', $id);
 		return $this->db->single();
 	}
+
+	/**
+	 * Get the user_id (owner) of a post
+	 */
+	public function getPostOwnerId($postId) {
+		$this->db->query('SELECT user_id FROM posts WHERE id = :id');
+		$this->db->bind(':id', (int)$postId);
+		$row = $this->db->single();
+		return $row ? (int)$row->user_id : null;
+	}
 	
 	/**
 	 * Update an existing post
