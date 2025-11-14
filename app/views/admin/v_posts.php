@@ -30,8 +30,8 @@
     <div class="card-header">
         <h3>Posts Moderation</h3>
         <div class="card-tools">
-            <input type="text" id="postSearch" placeholder="Search posts by user, content, status...">
-            <select id="postStatusFilter">
+            <input type="text" id="postSearch" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;" placeholder="Search posts by user, content, status...">
+            <select id="postStatusFilter" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;">
                 <option value="all">All</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
@@ -109,8 +109,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td>${escapeHtml(post.created_at || post.date || '')}</td>
                 <td><span class="status-badge status-na">${status}</span></td>
                 <td>
-                    <button class="admin-btn" style="margin:0.2em;" view-post">View</button>
-                    <button class="admin-btn admin-btn-danger delete-post">Delete</button>
+                    <button class="admin-btn" style="margin:0.2em; width:80px;" view-post">View</button>
+                    <button class="admin-btn admin-btn-danger delete-post" style="width:80px;">Delete</button>
                 </td>
             `;
             postsTableBody.appendChild(tr);

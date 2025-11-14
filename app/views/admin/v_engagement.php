@@ -29,8 +29,8 @@
     <section class="filters">
         <h3 style="color: var(--muted); margin-bottom: .25rem;">Filter Options</h3>
         <form class="filters-form" method="get" action="<?php echo URLROOT; ?>/admin">
-            <input type="text" name="date_range" placeholder="Date Range">
-            <input type="text" name="user_type" placeholder="User Type">
+            <input type="text" style="background-color: #000a12;" name="date_range" placeholder="Date Range">
+            <input type="text" style="background-color: #000a12;" name="user_type" placeholder="User Type">
             <button class="btn">Apply</button>
         </form>
     </section>

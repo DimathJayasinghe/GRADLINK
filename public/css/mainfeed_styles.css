@@ -29,11 +29,16 @@ body {
     /* border-right: 1px solid var(--border); */
     max-width: 600px;
     overflow-y: auto;
+    position: relative; /* for absolutely-positioned children like new posts banner */
 }
 
 .tabs {
     display: flex;
     border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg);
 }
 
 .tab {
@@ -119,7 +124,8 @@ body {
 }
 
 .feed {
-    overflow-y: auto;
+    /* Let the main-content be the only scroll container so sticky headers work */
+    overflow: visible;
 }
 
 .show-more {
@@ -132,6 +138,45 @@ body {
 
 .show-more:hover {
     background-color: rgba(158, 212, 220, 0.05);
+}
+
+/* Load more posts section */
+.load-more-post {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px 0 24px;
+    border-top: 1px solid var(--border);
+}
+
+.load-more-post i {
+    color: var(--link);
+    opacity: 0.9;
+}
+
+/* Make the load more element look like a proper button */
+button.show-more {
+    background: transparent;
+    border: 1px solid var(--link);
+    color: var(--link);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+button.show-more:hover {
+    background-color: var(--link);
+    color: var(--btn-text);
+    transform: translateY(-1px);
+}
+
+button.show-more:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* Post card styles moved to css/components/postCardStyles.css */
@@ -754,3 +799,110 @@ body {
     color: var(--muted);
     margin-top: 4px;
 }
+
+.error-btn{
+    background-color: #ff4d4d !important;
+    border-color: #ff4d4d !important;
+}
+
+/* New posts available floating button */
+.newPostsAvailable {
+    /* Use fixed so it doesn't scroll with the feed container */
+    position: fixed !important;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+
+    display: none; 
+    align-items: center;
+    gap: 8px;
+
+    background: var(--link);
+    color: var(--btn-text);
+    border: 1px solid var(--link);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.2);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.newPostsAvailable:hover {
+    transform: translateX(-50%) translateY(-1px);
+    box-shadow: 0 12px 28px rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.25);
+}
+
+.newPostsAvailable:active {
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Visible state to toggle from JS */
+.newPostsAvailable.is-visible {
+    display: inline-flex;
+    position: absolute;
+}
+
+/* Count badge */
+.newPostsAvailable #newPostCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    margin-left: 4px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Slightly adjust top spacing on narrow screens */
+@media (max-width: 700px) {
+    .newPostsAvailable { top: 8px; }
+}
+
+/* =============================
+   Skeleton loader styles (feed)
+   ============================= */
+.post.skeleton {
+    opacity: 0.95;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.skeleton-box {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg,
+            var(--skeleton-base, rgba(255, 255, 255, 0.10)) 25%,
+            var(--skeleton-highlight, rgba(255, 255, 255, 0.18)) 37%,
+            var(--skeleton-base, rgba(255, 255, 255, 0.10)) 63%);
+    background-size: 400% 100%;
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-circle { width: 48px; height: 48px; border-radius: 50%; }
+.skeleton-line { height: 12px; border-radius: 6px; margin: 6px 0; }
+.skeleton-line.sm { height: 10px; }
+.skeleton-line.lg { height: 14px; }
+.skeleton-rect { width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; }
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+.post.skeleton .post-header { display: flex; justify-content: space-between; }
+.post.skeleton .post-user { display: flex; }
+.post.skeleton .post-user-info { margin-left: 12px; width: 100%; }
+.post.skeleton .post-media { margin-top: 10px; position: relative; }
+.post.skeleton .post-media .skeleton-rect {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 15px;
+}
+.post.skeleton .post-actions { display: flex; gap: 16px; align-items: center; margin-top: 10px; }
+.skeleton-caption { width: 100%; border-radius: 12px; }

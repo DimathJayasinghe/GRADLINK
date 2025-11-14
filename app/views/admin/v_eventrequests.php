@@ -28,8 +28,8 @@
     <div class="card-header">
         <h3>Event Requests</h3>
         <div class="card-tools">
-            <input type="text" id="reqSearch" placeholder="Search requests by title, club, user...">
-            <select id="reqStatusFilter">
+            <input type="text" id="reqSearch" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;" placeholder="Search requests by title, club, user...">
+            <select id="reqStatusFilter" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;">
                 <option value="all">All</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
@@ -95,9 +95,9 @@ document.addEventListener('DOMContentLoaded', function(){
                 <td>${escapeHtml(r.event_date||'')}</td>
                 <td>${escapeHtml(r.status||'')}</td>
                 <td>
-                    <button class="admin-btn view-req" style="background-color: #525253ff; color: white;">View</button>
+                    <button class="admin-btn view-req" style="background-color: #525253ff; color: white; margin-bottom:8px;">View</button>
                     <button class="admin-btn approve-req">Approve</button>
-                    <button class="admin-btn admin-btn-danger reject-req">Reject</button>
+                    <button class="admin-btn admin-btn-danger reject-req" style="width:140px;">Reject</button>
                 </td>
             `;
             tableBody.appendChild(tr);

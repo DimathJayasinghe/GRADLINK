@@ -18,7 +18,7 @@
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .card-tools { display: flex; gap: 0.5rem; }
 .admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.3); }
-.admin-modal-content { background: #fff; margin: 5% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
+.admin-modal-content { background: #0e1b28; margin: 5% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
 .admin-modal-close { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
 </style>
 <?php $styles = ob_get_clean()?>
@@ -48,8 +48,8 @@
     <div class="card-header">
         <h3>Verification Queue</h3>
         <div class="card-tools">
-            <input type="text" id="alumniSearch" placeholder="Search by name, email, batch, NIC...">
-            <select id="alumniStatusFilter">
+            <input type="text" id="alumniSearch" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;" placeholder="Search by name, email, batch, NIC...">
+            <select id="alumniStatusFilter" style="background-color:#3a3a3a; color:aliceblue; padding:4px 8px; border:none; border-radius:4px;">
                 <option value="pending">Pending</option>
                 <option value="verified">Verified</option>
                 <option value="rejected">Rejected</option>

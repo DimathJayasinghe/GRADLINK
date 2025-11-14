@@ -1,4 +1,8 @@
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/newpost_popup.css">
+a<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/newpost_popup.css">
+<style>
+    /* Disabled state for post button in popup */
+    .modal-post-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.2); }
+</style>
 <div class="post-modal" id="postModal">
     <div class="post-modal-content">
         <div class="post-modal-header">
@@ -13,11 +17,12 @@
                     <div class="divider"></div>
                     
                     <div class="post-modal-actions" style="display:flex;justify-content:space-between;align-items:center;">
-                        <div class="post-modal-tools" style="display:flex;gap:10px;">
+                        <div class="post-modal-tools" style="display:flex;gap:10px;align-items:center;">
                             <input type="file" name="image" accept="image/*" style="display:none" id="sidebarPostImageInput" />
                             <button type="button" class="attach-btn" id="sidebarAttachBtn">Attach</button>
+                            <span id="sidebar-not-allowed" style="display:none;color:red;font-size:12px;">Attached pic is more than 2MB</span>
                         </div>
-                        <button class="modal-post-btn" type="submit">Post</button>
+                        <button class="modal-post-btn" id="sidebarPostBtn" type="submit">Post</button>
                     </div>
                 </div>
             </div>
@@ -36,15 +41,39 @@
         const sidebarPreviewWrap=document.getElementById('sidebarImagePreview');
         const sidebarPreviewImg=document.getElementById('sidebarImagePreviewImg');
         const sidebarRemoveImage=document.getElementById('sidebarRemoveImage');
+        const sidebarNotAllowed=document.getElementById('sidebar-not-allowed');
+        const sidebarPostBtn=document.getElementById('sidebarPostBtn');
+        const SIDEBAR_MAX_SIZE = 2*1024*1024; // 2MB
         sidebarAttachBtn?.addEventListener('click',()=>sidebarFileInput.click());
         sidebarFileInput?.addEventListener('change',e=>{
             const f=e.target.files[0];
             if(f){
                 const url=URL.createObjectURL(f);
                 sidebarPreviewImg.src=url; sidebarPreviewWrap.style.display='block';
-            } else { sidebarPreviewWrap.style.display='none'; sidebarPreviewImg.src=''; }
+                if(f.size > SIDEBAR_MAX_SIZE){
+                    if(sidebarNotAllowed) sidebarNotAllowed.style.display='inline';
+                    if(sidebarPostBtn){ sidebarPostBtn.disabled = true; sidebarPostBtn.title = 'Attached image exceeds 2MB'; }
+                } else {
+                    if(sidebarNotAllowed) sidebarNotAllowed.style.display='none';
+                    if(sidebarPostBtn){ sidebarPostBtn.disabled = false; sidebarPostBtn.removeAttribute('title'); }
+                }
+            } else { 
+                sidebarPreviewWrap.style.display='none'; 
+                sidebarPreviewImg.src=''; 
+                if(sidebarNotAllowed) sidebarNotAllowed.style.display='none';
+                if(sidebarPostBtn){ sidebarPostBtn.disabled = false; sidebarPostBtn.removeAttribute('title'); }
+            }
         });
-        sidebarRemoveImage?.addEventListener('click',()=>{ sidebarFileInput.value=''; sidebarPreviewImg.src=''; sidebarPreviewWrap.style.display='none'; });
+        sidebarRemoveImage?.addEventListener('click',()=>{ 
+            sidebarFileInput.value=''; 
+            sidebarPreviewImg.src=''; 
+            sidebarPreviewWrap.style.display='none';
+            if(sidebarNotAllowed) sidebarNotAllowed.style.display='none';
+            if(sidebarPostBtn){ sidebarPostBtn.disabled = false; sidebarPostBtn.removeAttribute('title'); }
+        });
+        // Ensure initial state
+        if(sidebarNotAllowed) sidebarNotAllowed.style.display='none';
+        if(sidebarPostBtn) sidebarPostBtn.disabled = false;
         // ----- FIX: define JS URL root -----
         const URLROOT_JS = "<?php echo URLROOT; ?>";
 
