@@ -9,24 +9,25 @@
             // print_r($this->getUrl());
 
             $url = $this->getUrl();
-            
-            // Check if URL exists and has controller
-            if($url && isset($url[0])) {
-                // Check if controller exists
-                if(file_exists('../app/controllers/'.ucwords($url[0]).'.php')) {
-                    // If exists, set as current controller
-                    $this->currentContoller = ucwords($url[0]);
-                    
+
+            // Resolve controller by actual filesystem case (Linux-safe)
+            if ($url && isset($url[0])) {
+                $controllerSegment = $url[0];
+                $resolvedFile = $this->resolveControllerFile($controllerSegment);
+                if ($resolvedFile) {
+                    // Set controller class name from filename and load file
+                    $this->currentContoller = pathinfo($resolvedFile, PATHINFO_FILENAME);
+                    require_once '../app/controllers/' . $resolvedFile;
                     // Unset the controller from the URL
                     unset($url[0]);
                 } else {
                     $this->show404();
                     return; // Stop further execution if controller not found
                 }
+            } else {
+                // Default controller
+                require_once '../app/controllers/' . $this->currentContoller . '.php';
             }
-
-            // Call the controller
-            require_once '../app/controllers/' . $this->currentContoller . '.php';
 
             // Instantiate the controller class
             $this->currentContoller = new $this->currentContoller;
@@ -79,6 +80,20 @@
             
             // Stop execution
             exit();
+        }
+
+        // Find the actual controller file name regardless of input case
+        private function resolveControllerFile(string $name): ?string {
+            $dir = '../app/controllers';
+            if (!is_dir($dir)) return null;
+            $target = strtolower($name);
+            foreach (scandir($dir) as $file) {
+                if (substr($file, -4) !== '.php') continue;
+                if (strtolower(pathinfo($file, PATHINFO_FILENAME)) === $target) {
+                    return $file; // Return exact-cased filename
+                }
+            }
+            return null;
         }
     }
 ?>
