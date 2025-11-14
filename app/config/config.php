@@ -42,8 +42,8 @@
     }
     $gl_host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
     $gl_script = $_SERVER['SCRIPT_NAME'] ?? '';
-    $gl_basePath = rtrim(str_replace('\\', '/', dirname($gl_script)), '/');
-    if ($gl_basePath === '/' || $gl_basePath === '\\') { $gl_basePath = ''; }
+    $gl_basePath = rtrim(str_replace('/', '/', dirname($gl_script)), '/');
+    if ($gl_basePath === '/' || $gl_basePath === '/') { $gl_basePath = ''; }
     define('URLROOT', $gl_scheme . '://' . $gl_host . $gl_basePath);
 
     // WEBSITE_NAME
