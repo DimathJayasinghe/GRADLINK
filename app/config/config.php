@@ -20,13 +20,20 @@
     // define('DB_PASSWORD', '!G1rA2dL3iN4k');
     // define('DB_NAME', 'gradlink_main');
     
-    // development database
-    define('DB_HOST', 'mysql-gradlink.alwaysdata.net');
+    define('DB_HOST', 'localhost');
     define('DB_PORT', 3306);
     define('DB_CHARSET', 'utf8mb4');
-    define('DB_USER', 'gradlink');
+    define('DB_USER', 'root');
     define('DB_PASSWORD', '!G1rA2dL3iN4k');
-    define('DB_NAME', 'gradlink_dev');
+    define('DB_NAME', 'gl_db');
+    
+    // development database
+    // define('DB_HOST', 'mysql-gradlink.alwaysdata.net');
+    // define('DB_PORT', 3306);
+    // define('DB_CHARSET', 'utf8mb4');
+    // define('DB_USER', 'gradlink');
+    // define('DB_PASSWORD', '!G1rA2dL3iN4k');
+    // define('DB_NAME', 'gradlink_dev');
     
 
     
@@ -42,10 +49,9 @@
     }
     $gl_host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
     $gl_script = $_SERVER['SCRIPT_NAME'] ?? '';
-    $gl_basePath = rtrim(str_replace('\\', '/', dirname($gl_script)), '/');
-    if ($gl_basePath === '/' || $gl_basePath === '\\') { $gl_basePath = ''; }
+    $gl_basePath = rtrim(str_replace('/', '/', dirname($gl_script)), '/');
+    if ($gl_basePath === '/' || $gl_basePath === '/') { $gl_basePath = ''; }
     define('URLROOT', $gl_scheme . '://' . $gl_host . $gl_basePath);
-
     // WEBSITE_NAME
     define('SITENAME', 'GRADLINK');
 ?>
