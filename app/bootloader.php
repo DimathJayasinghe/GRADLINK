@@ -7,7 +7,7 @@
     require_once __DIR__ . '/libraries/Database.php';
     require_once __DIR__ . '/libraries/Sanitizer.php';
     require_once __DIR__ . '/helpers/SessionManager.php';
-    require_once __DIR__ . '/libraries/Cookie.php';
+    require_once __DIR__ . '/libraries/cookie.php';
 
     // Controller depends on Notifiable trait
     require_once __DIR__ . '/libraries/Controller.php';

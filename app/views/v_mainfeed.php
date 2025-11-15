@@ -94,6 +94,9 @@ window.CURRENT_USER_ROLE = <?php echo json_encode(strtolower($currentRole)); ?>;
 // });
 
 <?php $scripts = ob_get_clean(); ?>
+<script>
+    const appBase = "<?php echo URLROOT; ?>";
+</script>
 <script type="module" src="<?php echo URLROOT; ?>/js/mainfeed_script.js"></script>
 <!-- <script src="<?php echo URLROOT; ?>/js/component/postCard.js"></script> -->
-<?php require APPROOT . '\views\layouts\threeColumnLayout.php'; ?>
+<?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>
