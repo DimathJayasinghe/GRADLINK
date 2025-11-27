@@ -13,14 +13,8 @@
     define('DB_PORT', 3306);
     define('DB_CHARSET', 'utf8mb4');
     define('DB_USER', 'root');
-<<<<<<< HEAD
-    define('DB_PASSWORD', '1234');
-    define('DB_NAME', 'GL_db');
-=======
     define('DB_PASSWORD', '1234');
     define('DB_NAME', 'gl_db');
-    
->>>>>>> dev
     define('APPROOT', dirname(dirname(__FILE__)));
 
     // URL_ROOT (dynamic: works for localhost, vhost, or LAN IP)
