@@ -145,7 +145,7 @@ async function loadMessages(userId) {
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div class="msg-dropdown" style="display:none;">
-                        <div class=\"msg-dropdown-item\" onclick=\"event.stopPropagation(); editMessagePrompt(this, '${message.message_id || ''}', '${safeText.replace(/'/g, "\\'")}')\"><i class=\"fas fa-edit\"></i> Edit</div>
+                        <div class=\"msg-dropdown-item\" onclick=\"event.stopPropagation(); editMessagePrompt(this, '${message.message_id || ''}', '${safeText.replace(/'/g, "/'")}')\"><i class=\"fas fa-edit\"></i> Edit</div>
                         <div class=\"msg-dropdown-item danger\" onclick=\"event.stopPropagation(); deleteMessageConfirm('${message.message_id || ''}', ${userId})\"><i class=\"fas fa-trash\"></i> Delete</div>
                     </div>
                 ` : '';

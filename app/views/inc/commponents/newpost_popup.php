@@ -1,4 +1,4 @@
-a<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/newpost_popup.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/newpost_popup.css">
 <style>
     /* Disabled state for post button in popup */
     .modal-post-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.2); }
