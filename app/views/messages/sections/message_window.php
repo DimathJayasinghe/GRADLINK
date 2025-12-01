@@ -13,7 +13,14 @@ async function startConversation(userId) {
     chatRoom.innerHTML = `<div class="loading">Conversation Loading...</div>`;
 
     try {
-    const response = await fetch(`<?php echo URLROOT; ?>/messages/getConversation?userId=${userId}`);
+        // Mark conversation as read
+        await fetch(`<?php echo URLROOT; ?>/messages/markAsRead`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId })
+        });
+
+        const response = await fetch(`<?php echo URLROOT; ?>/messages/getConversation?userId=${userId}`);
         const data = await response.json();
 
         chatRoom.innerHTML = `
@@ -23,9 +30,9 @@ async function startConversation(userId) {
                     <img src="${data.partner && data.partner.profile_picture 
                         ? `<?php echo URLROOT; ?>/media/profile/${data.partner.profile_picture}` 
                         : `<?php echo URLROOT; ?>/media/profile/default.jpg`}" 
-                         alt="User" class="partner-avatar" id="partnerAvatar">
+                         alt="User" class="partner-avatar" id="partnerAvatar" onclick="window.location.href='<?php echo URLROOT; ?>/profile?userid=${userId}'" style="cursor: pointer;" title="View profile">
                     <div class="partner-details">
-                        <h3 class="partner-name">${(data.partner && (data.partner.display_name || data.partner.name || data.partner.username)) || 'User'}</h3>
+                        <h3 class="partner-name" onclick="window.location.href='<?php echo URLROOT; ?>/profile?userid=${userId}'" style="cursor: pointer;" title="View profile">${(data.partner && (data.partner.display_name || data.partner.name || data.partner.username)) || 'User'}</h3>
                     </div>
                 </div>
             </div>
