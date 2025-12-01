@@ -4,12 +4,12 @@
     
     // For local hosted databse config
 
-    define('DB_HOST', 'localhost');
-    define('DB_PORT', 3306);
-    define('DB_CHARSET', 'utf8mb4');
-    define('DB_USER', 'root');
-    define('DB_PASSWORD', '1234');
-    define('DB_NAME', 'gl_db');
+    // define('DB_HOST', 'localhost');
+    // define('DB_PORT', 3306);
+    // define('DB_CHARSET', 'utf8mb4');
+    // define('DB_USER', 'root');
+    // define('DB_PASSWORD', '1234');
+    // define('DB_NAME', 'gl_db');
     
     // Main database
 
@@ -20,12 +20,12 @@
     // define('DB_PASSWORD', '!G1rA2dL3iN4k');
     // define('DB_NAME', 'gradlink_main');
     
-    // define('DB_HOST', 'localhost');
-    // define('DB_PORT', 3306);
-    // define('DB_CHARSET', 'utf8mb4');
-    // define('DB_USER', 'root');
-    // define('DB_PASSWORD', '!G1rA2dL3iN4k');
-    // define('DB_NAME', 'gl_db');
+    define('DB_HOST', 'localhost');
+    define('DB_PORT', 3306);
+    define('DB_CHARSET', 'utf8mb4');
+    define('DB_USER', 'root');
+    define('DB_PASSWORD', '!G1rA2dL3iN4k');
+    define('DB_NAME', 'gl_db');
     
     // development database
     // define('DB_HOST', 'mysql-gradlink.alwaysdata.net');
