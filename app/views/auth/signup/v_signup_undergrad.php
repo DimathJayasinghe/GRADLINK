@@ -170,12 +170,45 @@ $skills = require APPROOT . '/data/skills_data.php';
 document.addEventListener('DOMContentLoaded', function() {
     // Back button is a normal link; no JS needed
 
-    // Profile image preview
+    // Profile image preview with size validation
     const profileInput = document.getElementById('profile_image');
     const uploadArea = document.querySelector('.upload-area');
+    const signupBtn = document.querySelector('.next-btn');
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
+    
+    // Create or get error message element
+    let imageErrorDiv = document.querySelector('.image-error-message');
+    if (!imageErrorDiv) {
+        imageErrorDiv = document.createElement('div');
+        imageErrorDiv.className = 'image-error-message';
+        imageErrorDiv.style.cssText = 'background-color: rgba(220, 38, 38, 0.1); color: #ef4444; padding: 10px; border-radius: 4px; margin-top: 10px; border-left: 3px solid #dc2626; display: none;';
+        uploadArea.parentElement.appendChild(imageErrorDiv);
+    }
     
     profileInput.addEventListener('change', function(e) {
         if (this.files && this.files[0]) {
+            const file = this.files[0];
+            
+            // Validate file size
+            if (file.size > MAX_FILE_SIZE) {
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                imageErrorDiv.textContent = `Image size (${sizeMB}MB) exceeds the maximum allowed size of 2MB. Please choose a smaller image.`;
+                imageErrorDiv.style.display = 'block';
+                signupBtn.disabled = true;
+                signupBtn.style.opacity = '0.5';
+                signupBtn.style.cursor = 'not-allowed';
+                
+                // Clear the input
+                this.value = '';
+                return;
+            }
+            
+            // Clear any previous error
+            imageErrorDiv.style.display = 'none';
+            signupBtn.disabled = false;
+            signupBtn.style.opacity = '1';
+            signupBtn.style.cursor = 'pointer';
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 uploadArea.style.backgroundImage = `url(${e.target.result})`;
@@ -183,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 uploadArea.style.backgroundPosition = 'center';
                 uploadArea.querySelector('span').style.display = 'none';
             }
-            reader.readAsDataURL(this.files[0]);
+            reader.readAsDataURL(file);
         }
     });
     
