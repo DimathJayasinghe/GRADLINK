@@ -48,32 +48,32 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php';
             </form>
 
             <div class="filter-tabs">
-                <a href="<?php echo URLROOT; ?>/explore<?php echo !empty($data['query']) ? '?q=' . urlencode($data['query']) . '&filter=all' : ''; ?>"
-                    class="filter-tab <?php echo ($data['filter'] === 'all') ? 'active' : ''; ?>">
+                <a href="<?php echo URLROOT; ?>/explore?filter=all<?php echo !empty($data['query']) ? '&q=' . urlencode($data['query']) : ''; ?>"
+                    class="filter-tab <?php echo ($data['filter'] === 'all') ? 'active' : ''; ?>" data-filter="all">
                     All
                 </a>
-                <a href="<?php echo URLROOT; ?>/explore<?php echo !empty($data['query']) ? '?q=' . urlencode($data['query']) . '&filter=posts' : ''; ?>"
-                    class="filter-tab <?php echo ($data['filter'] === 'posts') ? 'active' : ''; ?>">
+                <a href="<?php echo URLROOT; ?>/explore?filter=posts<?php echo !empty($data['query']) ? '&q=' . urlencode($data['query']) : ''; ?>"
+                    class="filter-tab <?php echo ($data['filter'] === 'posts') ? 'active' : ''; ?>" data-filter="posts">
                     Posts
                 </a>
-                <a href="<?php echo URLROOT; ?>/explore<?php echo !empty($data['query']) ? '?q=' . urlencode($data['query']) . '&filter=users' : ''; ?>"
-                    class="filter-tab <?php echo ($data['filter'] === 'users') ? 'active' : ''; ?>">
+                <a href="<?php echo URLROOT; ?>/explore?filter=users<?php echo !empty($data['query']) ? '&q=' . urlencode($data['query']) : ''; ?>"
+                    class="filter-tab <?php echo ($data['filter'] === 'users') ? 'active' : ''; ?>" data-filter="users">
                     All Users
                 </a>
-                <a href="<?php echo URLROOT; ?>/explore<?php echo !empty($data['query']) ? '?q=' . urlencode($data['query']) . '&filter=alumni' : ''; ?>"
-                    class="filter-tab <?php echo ($data['filter'] === 'alumni') ? 'active' : ''; ?>">
+                <a href="<?php echo URLROOT; ?>/explore?filter=alumni<?php echo !empty($data['query']) ? '&q=' . urlencode($data['query']) : ''; ?>"
+                    class="filter-tab <?php echo ($data['filter'] === 'alumni') ? 'active' : ''; ?>" data-filter="alumni">
                     Alumni
                 </a>
-                <a href="<?php echo URLROOT; ?>/explore<?php echo !empty($data['query']) ? '?q=' . urlencode($data['query']) . '&filter=undergrad' : ''; ?>"
-                    class="filter-tab <?php echo ($data['filter'] === 'undergrad') ? 'active' : ''; ?>">
+                <a href="<?php echo URLROOT; ?>/explore?filter=undergrad<?php echo !empty($data['query']) ? '&q=' . urlencode($data['query']) : ''; ?>"
+                    class="filter-tab <?php echo ($data['filter'] === 'undergrad') ? 'active' : ''; ?>" data-filter="undergrad">
                     Undergrads
                 </a>
-                <a href="<?php echo URLROOT; ?>/explore<?php echo !empty($data['query']) ? '?q=' . urlencode($data['query']) . '&filter=events' : ''; ?>"
-                    class="filter-tab <?php echo ($data['filter'] === 'events') ? 'active' : ''; ?>">
+                <a href="<?php echo URLROOT; ?>/explore?filter=events<?php echo !empty($data['query']) ? '&q=' . urlencode($data['query']) : ''; ?>"
+                    class="filter-tab <?php echo ($data['filter'] === 'events') ? 'active' : ''; ?>" data-filter="events">
                     Events
                 </a>
-                <a href="<?php echo URLROOT; ?>/explore<?php echo !empty($data['query']) ? '?q=' . urlencode($data['query']) . '&filter=fundraisers' : ''; ?>"
-                    class="filter-tab <?php echo ($data['filter'] === 'fundraisers') ? 'active' : ''; ?>">
+                <a href="<?php echo URLROOT; ?>/explore?filter=fundraisers<?php echo !empty($data['query']) ? '&q=' . urlencode($data['query']) : ''; ?>"
+                    class="filter-tab <?php echo ($data['filter'] === 'fundraisers') ? 'active' : ''; ?>" data-filter="fundraisers">
                     Fundraisers
                 </a>
             </div>

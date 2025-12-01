@@ -59,21 +59,34 @@ class Explorer {
     attachFilterListeners() {
         this.filterTabs.forEach(tab => {
             tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                const filter = e.currentTarget.getAttribute('data-filter') || 'all';
                 const query = this.searchInput.value.trim();
                 
-                // If there's a query, prevent default and use AJAX
-                if (query.length > 0) {
-                    e.preventDefault();
-                    const url = new URL(e.target.href);
-                    const filter = url.searchParams.get('filter') || 'all';
-                    this.currentFilter = filter;
-                    this.performSearch(query);
-                    
-                    // Update active tab
-                    this.filterTabs.forEach(t => t.classList.remove('active'));
-                    e.target.classList.add('active');
+                // Update current filter
+                this.currentFilter = filter;
+                
+                // Update active tab
+                this.filterTabs.forEach(t => t.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                
+                // Update URL
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('filter', filter);
+                if (query) {
+                    newUrl.searchParams.set('q', query);
+                } else {
+                    newUrl.searchParams.delete('q');
                 }
-                // If no query, let the link navigate normally (don't prevent default)
+                history.replaceState(null, '', newUrl.toString());
+                
+                // Perform search if there's a query
+                if (query.length > 0) {
+                    this.performSearch(query);
+                } else {
+                    this.showNoQueryMessage();
+                }
             });
         });
     }
@@ -759,16 +772,9 @@ class Explorer {
         return Math.floor(diff / 2629800) + 'mo';
     }
 
-    toggleFollow(userId) {
-        // TODO: Implement follow/unfollow functionality
-        console.log('Toggle follow for user:', userId);
-        // This should make an AJAX call to the follow controller
-    }
-
     toggleBookmark(eventId) {
-        // TODO: Implement bookmark/unbookmark functionality
         console.log('Toggle bookmark for event:', eventId);
-        // This should make an AJAX call to the event bookmark controller
+        // TODO: Implement bookmark/unbookmark functionality
     }
 
     escapeHtml(text) {
