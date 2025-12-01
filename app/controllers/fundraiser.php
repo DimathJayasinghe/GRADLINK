@@ -2,7 +2,11 @@
     class fundraiser extends Controller{
         private $model = null;
         public function __construct(){
-            SessionManager::redirectToAuthIfNotLoggedIn();
+            // Check if it's the search API endpoint, skip auth
+            $uri = $_SERVER['REQUEST_URI'];
+            if (strpos($uri, '/fundraiser/search') === false) {
+                SessionManager::redirectToAuthIfNotLoggedIn();
+            }
             $this->model = $this->model('M_fundraiser');
         }
 
@@ -164,6 +168,127 @@
                 ]
             ];
             $this->view("/request_dashboards/fundraise/v_my_fundraize_req",$data);
+        }
+
+        /**
+         * API endpoint for searching fundraisers
+         * Returns JSON data for explore page
+         * Note: This is a public API endpoint, no authentication required
+         */
+        public function search() {
+            // Skip session check for API endpoint
+            // Get search query from URL parameter
+            $query = isset($_GET['q']) ? trim($_GET['q']) : '';
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+            
+            // Dummy fundraiser data
+            $allFundraisers = [
+                (object)[
+                    'id' => 1,
+                    'title' => 'IEEE Student Branch Technology Fund',
+                    'description' => 'We\'re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn.',
+                    'club_name' => 'IEEE Student Branch',
+                    'club_id' => 1,
+                    'target_amount' => 150000,
+                    'raised_amount' => 89000,
+                    'deadline' => '2025-12-31',
+                    'status' => 'Approved',
+                    'created_at' => '2024-10-01 10:00:00',
+                    'days_left' => 30
+                ],
+                (object)[
+                    'id' => 2,
+                    'title' => 'Robotics Club Equipment Drive',
+                    'description' => 'Help us purchase essential robotics equipment and components for our annual robotics competition and weekly workshops.',
+                    'club_name' => 'Robotics Club',
+                    'club_id' => 2,
+                    'target_amount' => 200000,
+                    'raised_amount' => 145000,
+                    'deadline' => '2025-11-30',
+                    'status' => 'Approved',
+                    'created_at' => '2024-09-15 14:30:00',
+                    'days_left' => 60
+                ],
+                (object)[
+                    'id' => 3,
+                    'title' => 'Music Society Instrument Fund',
+                    'description' => 'We need new music instruments for our college band and orchestra. Support us in bringing more music to campus events.',
+                    'club_name' => 'Music Society',
+                    'club_id' => 3,
+                    'target_amount' => 180000,
+                    'raised_amount' => 72000,
+                    'deadline' => '2025-12-20',
+                    'status' => 'Approved',
+                    'created_at' => '2024-09-10 13:20:00',
+                    'days_left' => 49
+                ],
+                (object)[
+                    'id' => 4,
+                    'title' => 'Environmental Club Green Campus Initiative',
+                    'description' => 'Join us in creating a sustainable campus environment with solar panels, recycling stations, and a community garden.',
+                    'club_name' => 'Environmental Club',
+                    'club_id' => 4,
+                    'target_amount' => 250000,
+                    'raised_amount' => 98000,
+                    'deadline' => '2026-01-31',
+                    'status' => 'Approved',
+                    'created_at' => '2024-10-05 11:45:00',
+                    'days_left' => 91
+                ],
+                (object)[
+                    'id' => 5,
+                    'title' => 'Drama Society Stage Equipment',
+                    'description' => 'Help us upgrade our stage lighting and sound equipment for better theatrical productions and performances.',
+                    'club_name' => 'Drama Society',
+                    'club_id' => 5,
+                    'target_amount' => 120000,
+                    'raised_amount' => 55000,
+                    'deadline' => '2025-12-15',
+                    'status' => 'Approved',
+                    'created_at' => '2024-08-20 09:00:00',
+                    'days_left' => 44
+                ],
+                (object)[
+                    'id' => 6,
+                    'title' => 'Sports Club Athletic Equipment',
+                    'description' => 'Support our athletes by helping us purchase new sports equipment for cricket, basketball, and badminton teams.',
+                    'club_name' => 'Sports Club',
+                    'club_id' => 6,
+                    'target_amount' => 175000,
+                    'raised_amount' => 131000,
+                    'deadline' => '2025-11-25',
+                    'status' => 'Approved',
+                    'created_at' => '2024-08-15 09:15:00',
+                    'days_left' => 55
+                ]
+            ];
+            
+            // Filter by search query if provided
+            $filtered = [];
+            if (!empty($query)) {
+                $queryLower = strtolower($query);
+                foreach ($allFundraisers as $fundraiser) {
+                    if (stripos($fundraiser->title, $query) !== false ||
+                        stripos($fundraiser->description, $query) !== false ||
+                        stripos($fundraiser->club_name, $query) !== false) {
+                        $filtered[] = $fundraiser;
+                    }
+                }
+            } else {
+                $filtered = $allFundraisers;
+            }
+            
+            // Apply limit
+            $filtered = array_slice($filtered, 0, $limit);
+            
+            // Return JSON response
+            header('Content-Type: application/json');
+            echo json_encode([
+                'success' => true,
+                'data' => $filtered,
+                'count' => count($filtered)
+            ]);
+            exit;
         }
     }
     
