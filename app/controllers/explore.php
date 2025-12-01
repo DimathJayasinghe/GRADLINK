@@ -98,6 +98,10 @@ class Explore extends Controller
                 $results['events'] = $this->m->searchEvents($query, $limit, $offset);
                 break;
                 
+            case 'fundraisers':
+                $results['fundraisers'] = $this->m->searchFundraisers($query, $limit, $offset);
+                break;
+                
             case 'all':
             default:
                 // Search everything - show only 2 results per section, users first
@@ -105,6 +109,7 @@ class Explore extends Controller
                     'all' => $this->m->searchUsers($query, 2, 0)
                 ];
                 $results['events'] = $this->m->searchEvents($query, 2, 0);
+                $results['fundraisers'] = $this->m->searchFundraisers($query, 2, 0);
                 $results['posts'] = $this->m->searchPosts($query, 2, 0);
                 break;
         }

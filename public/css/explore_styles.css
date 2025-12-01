@@ -634,6 +634,159 @@
     color: var(--bg);
 }
 
+/* Fundraiser Cards */
+.fundraiser-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.fundraiser-card {
+    background-color: var(--card);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.fundraiser-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.fundraiser-content {
+    padding: 15px;
+    flex: 1;
+}
+
+.fundraiser-title {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 8px;
+    color: var(--text);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+.fundraiser-title a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.fundraiser-title a:hover {
+    color: #4caf50;
+}
+
+.fundraiser-club {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.fundraiser-club i {
+    color: #4caf50;
+    font-size: 11px;
+}
+
+.fundraiser-description {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.fundraiser-progress {
+    margin-top: 12px;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.amount-raised {
+    font-weight: 600;
+    color: #4caf50;
+    font-size: 14px;
+}
+
+.amount-target {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.progress-bar-container {
+    height: 8px;
+    background-color: rgba(111, 123, 133, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #2e7d32);
+    border-radius: 10px;
+    transition: width 0.4s ease;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.progress-percent {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.days-left {
+    color: var(--muted);
+}
+
+.fundraiser-footer {
+    padding: 12px 15px;
+    border-top: 1px solid rgba(111, 123, 133, 0.15);
+}
+
+.donate-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #4caf50, #2e7d32);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.donate-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.donate-btn i {
+    margin-right: 5px;
+}
+
 /* Loading and Error States */
 .loading-state,
 .error-state {

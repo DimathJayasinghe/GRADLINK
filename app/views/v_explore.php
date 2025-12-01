@@ -72,6 +72,10 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php';
                     class="filter-tab <?php echo ($data['filter'] === 'events') ? 'active' : ''; ?>">
                     Events
                 </a>
+                <a href="<?php echo URLROOT; ?>/explore<?php echo !empty($data['query']) ? '?q=' . urlencode($data['query']) . '&filter=fundraisers' : ''; ?>"
+                    class="filter-tab <?php echo ($data['filter'] === 'fundraisers') ? 'active' : ''; ?>">
+                    Fundraisers
+                </a>
             </div>
         </div>
 
@@ -225,6 +229,66 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php';
                                                     Details
                                                 </a>
                                             </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($data['filter'] === 'all' || $data['filter'] === 'fundraisers'): ?>
+                    <?php if (isset($data['results']['fundraisers']) && !empty($data['results']['fundraisers'])): ?>
+                        <div class="results-section">
+                            <div class="results-header">
+                                <h2>Fundraisers</h2>
+                                <?php if ($data['filter'] === 'all'): ?>
+                                    <a href="<?php echo URLROOT; ?>/explore?q=<?php echo urlencode($data['query']); ?>&filter=fundraisers"
+                                        class="view-all">View all</a>
+                                <?php endif; ?>
+                            </div>
+                            <div class="fundraiser-cards" id="fundraisers-list">
+                                <?php foreach ($data['results']['fundraisers'] as $fundraiser): ?>
+                                    <?php 
+                                        $percentage = ($fundraiser->raised_amount / $fundraiser->target_amount) * 100;
+                                        $daysLeft = $fundraiser->days_left;
+                                    ?>
+                                    <div class="fundraiser-card" data-fundraiser-id="<?php echo $fundraiser->id; ?>">
+                                        <div class="fundraiser-content">
+                                            <h3 class="fundraiser-title">
+                                                <a href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $fundraiser->id; ?>">
+                                                    <?php echo htmlspecialchars($fundraiser->title); ?>
+                                                </a>
+                                            </h3>
+                                            <?php if (!empty($fundraiser->club_name)): ?>
+                                                <p class="fundraiser-club">
+                                                    <i class="fas fa-users"></i>
+                                                    <?php echo htmlspecialchars($fundraiser->club_name); ?>
+                                                </p>
+                                            <?php endif; ?>
+                                            <?php if (!empty($fundraiser->description)): ?>
+                                                <p class="fundraiser-description">
+                                                    <?php echo htmlspecialchars(substr($fundraiser->description, 0, 120)) . (strlen($fundraiser->description) > 120 ? '...' : ''); ?>
+                                                </p>
+                                            <?php endif; ?>
+                                            <div class="fundraiser-progress">
+                                                <div class="progress-info">
+                                                    <span class="amount-raised">Rs.<?php echo number_format($fundraiser->raised_amount, 0); ?></span>
+                                                    <span class="amount-target">of Rs.<?php echo number_format($fundraiser->target_amount, 0); ?></span>
+                                                </div>
+                                                <div class="progress-bar-container">
+                                                    <div class="progress-bar-fill" style="width: <?php echo min($percentage, 100); ?>%"></div>
+                                                </div>
+                                                <div class="progress-stats">
+                                                    <span class="progress-percent"><?php echo number_format($percentage, 1); ?>% funded</span>
+                                                    <span class="days-left"><?php echo $daysLeft; ?> days left</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="fundraiser-footer">
+                                            <a href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $fundraiser->id; ?>" class="donate-btn">
+                                                <i class="fas fa-hand-holding-heart"></i> Donate Now
+                                            </a>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>

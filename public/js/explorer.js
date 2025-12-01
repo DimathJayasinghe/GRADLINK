@@ -145,6 +145,12 @@ class Explorer {
             this.renderEvents(eventsToShow);
         }
 
+        // Render fundraisers third
+        if ((this.currentFilter === 'all' || this.currentFilter === 'fundraisers') && results.fundraisers && results.fundraisers.length > 0) {
+            const fundraisersToShow = isAllFilter ? results.fundraisers.slice(0, 2) : results.fundraisers;
+            this.renderFundraisers(fundraisersToShow);
+        }
+
         // Render posts last
         if ((this.currentFilter === 'all' || this.currentFilter === 'posts') && results.posts && results.posts.length > 0) {
             const postsToShow = isAllFilter ? results.posts.slice(0, 2) : results.posts;
@@ -155,9 +161,10 @@ class Explorer {
     checkHasResults(results) {
         if (results.posts && results.posts.length > 0) return true;
         if (results.events && results.events.length > 0) return true;
+        if (results.fundraisers && results.fundraisers.length > 0) return true;
         if (results.users) {
             const users = this.getUsersFromResults(results.users);
-            if (users && users.length > 0) return true;
+            if (users.length > 0) return true;
         }
         return false;
     }
@@ -414,6 +421,89 @@ class Explorer {
         `;
         
         return card;
+    }
+
+    renderFundraisers(fundraisers) {
+        const section = document.createElement('div');
+        section.className = 'results-section';
+        
+        const header = `
+            <div class="results-header">
+                <h2>Fundraisers</h2>
+                ${this.currentFilter === 'all' ? `<a href="${this.urlRoot}/explore?q=${encodeURIComponent(this.searchInput.value)}&filter=fundraisers" class="view-all">View all</a>` : ''}
+            </div>
+        `;
+        
+        section.innerHTML = header;
+        
+        const fundraiserCards = document.createElement('div');
+        fundraiserCards.className = 'fundraiser-cards';
+        fundraiserCards.id = 'fundraisers-list';
+        
+        fundraisers.forEach(fundraiser => {
+            const fundraiserCard = this.createFundraiserCard(fundraiser);
+            fundraiserCards.appendChild(fundraiserCard);
+        });
+        
+        section.appendChild(fundraiserCards);
+        this.searchResults.appendChild(section);
+    }
+
+    createFundraiserCard(fundraiser) {
+        const card = document.createElement('div');
+        card.className = 'fundraiser-card';
+        card.setAttribute('data-fundraiser-id', fundraiser.id);
+        
+        const percentage = (fundraiser.raised_amount / fundraiser.target_amount) * 100;
+        const daysLeft = fundraiser.days_left || 0;
+        
+        card.innerHTML = `
+            <div class="fundraiser-content">
+                <h3 class="fundraiser-title">
+                    <a href="${this.urlRoot}/fundraiser/show/${fundraiser.id}">
+                        ${this.escapeHtml(fundraiser.title)}
+                    </a>
+                </h3>
+                ${fundraiser.club_name ? `
+                    <p class="fundraiser-club">
+                        <i class="fas fa-users"></i>
+                        ${this.escapeHtml(fundraiser.club_name)}
+                    </p>
+                ` : ''}
+                ${fundraiser.description ? `
+                    <p class="fundraiser-description">
+                        ${this.escapeHtml(fundraiser.description.substring(0, 120))}${fundraiser.description.length > 120 ? '...' : ''}
+                    </p>
+                ` : ''}
+                <div class="fundraiser-progress">
+                    <div class="progress-info">
+                        <span class="amount-raised">Rs.${this.formatAmount(fundraiser.raised_amount)}</span>
+                        <span class="amount-target">of Rs.${this.formatAmount(fundraiser.target_amount)}</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: ${Math.min(percentage, 100)}%"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span class="progress-percent">${percentage.toFixed(1)}% funded</span>
+                        <span class="days-left">${daysLeft} days left</span>
+                    </div>
+                </div>
+            </div>
+            <div class="fundraiser-footer">
+                <a href="${this.urlRoot}/fundraiser/show/${fundraiser.id}" class="donate-btn">
+                    <i class="fas fa-hand-holding-heart"></i> Donate Now
+                </a>
+            </div>
+        `;
+        
+        return card;
+    }
+
+    formatAmount(amount) {
+        return new Intl.NumberFormat('en-US', { 
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0 
+        }).format(amount);
     }
 
     showLoading() {
