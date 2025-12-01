@@ -3,6 +3,10 @@ class M_message extends Database {
     
     /**
      * Get all available users (excluding current user) with optional search
+     * Shows users that:
+     * 1. Current user follows them, OR
+     * 2. They follow current user AND have sent at least one message, OR
+     * 3. Admin role AND there's a message history
      */
     public function getAvailableUsers($currentUserId, $searchTerm = null) {
         $sql = "SELECT 
@@ -17,11 +21,17 @@ class M_message extends Database {
                         COALESCE(t.updated_at, '1970-01-01')
                     ) as last_activity
                 FROM users u
-                LEFT JOIN followers f ON f.followed_id = u.id AND f.follower_id = :current_user_id
+                LEFT JOIN followers f_following ON f_following.followed_id = u.id AND f_following.follower_id = :current_user_id
+                LEFT JOIN followers f_follower ON f_follower.follower_id = u.id AND f_follower.followed_id = :current_user_id
                 LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
+                LEFT JOIN messages m_from_them ON m_from_them.sender_id = u.id AND m_from_them.receiver_id = :current_user_id
                 LEFT JOIN message_unread_tracker t ON t.sender_id = u.id AND t.receiver_id = :current_user_id
                 WHERE u.id != :current_user_id
-                    AND (f.follower_id IS NOT NULL OR (u.role = 'admin' AND m.message_id IS NOT NULL))";
+                    AND (
+                        f_following.follower_id IS NOT NULL 
+                        OR (f_follower.follower_id IS NOT NULL AND m_from_them.message_id IS NOT NULL)
+                        OR (u.role = 'admin' AND m.message_id IS NOT NULL)
+                    )";
         
         // Add search filter if provided
         if ($searchTerm) {
@@ -31,7 +41,10 @@ class M_message extends Database {
         }
         
         $sql .= " GROUP BY u.id, u.name, u.display_name, u.email, u.profile_image, t.unread_count, t.updated_at
-                  ORDER BY last_activity DESC, u.name ASC";
+                  ORDER BY 
+                    CASE WHEN COALESCE(t.unread_count, 0) > 0 THEN 0 ELSE 1 END,
+                    last_activity DESC, 
+                    u.name ASC";
         
         $this->query($sql);
         $this->bind(':current_user_id', $currentUserId);
