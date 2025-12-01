@@ -5,15 +5,17 @@ class M_message extends Database {
      * Get all available users (excluding current user) with optional search
      */
     public function getAvailableUsers($currentUserId, $searchTerm = null) {
-        $sql = "SELECT 
+        $sql = "SELECT DISTINCT
                     u.id as user_id,
                     u.name,
                     u.display_name,
                     u.email,
                     u.profile_image as profile_picture
                 FROM users u
+                LEFT JOIN followers f ON f.followed_id = u.id AND f.follower_id = :current_user_id
+                LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
                 WHERE u.id != :current_user_id
-                    AND u.role <> 'admin'";
+                    AND (f.follower_id IS NOT NULL OR (u.role = 'admin' AND m.message_id IS NOT NULL))";
         
         // Add search filter if provided
         if ($searchTerm) {

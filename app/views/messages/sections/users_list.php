@@ -1,4 +1,7 @@
 <script>
+    // Track currently active user ID
+    let currentActiveUserId = null;
+
     // Load available users asynchronously
     async function loadAvailableUsers() {
         const usersList = document.getElementById('usersList');
@@ -14,6 +17,11 @@
                 data.users.forEach(user => {
                     const userItem = createUserItem(user);
                     usersList.appendChild(userItem);
+                    
+                    // Re-apply active class if this is the currently active user
+                    if (currentActiveUserId && user.user_id == currentActiveUserId) {
+                        userItem.classList.add('active');
+                    }
                 });
             } else {
                 usersList.innerHTML = '<div class="no-users">No available users found.</div>';
@@ -34,7 +42,18 @@
     function createUserItem(user) {
         const div = document.createElement('div');
         div.className = 'conversation-item';
-        div.onclick = () => startConversation(user.user_id);
+        div.dataset.userId = user.user_id;
+        div.onclick = () => {
+            // Remove active class from all items
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            // Add active class to clicked item
+            div.classList.add('active');
+            // Store the active user ID
+            currentActiveUserId = user.user_id;
+            startConversation(user.user_id);
+        };
 
         const displayName = user.display_name || user.name || user.username || 'User';
         const avatarSrc = user.profile_picture ?
@@ -59,7 +78,20 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadAvailableUsers();
         setInterval(loadAvailableUsers, 15000);
-        startConversation(<?php echo json_encode($data['openChatUserId'] ?? null); ?>);
+        const openUserId = <?php echo json_encode($data['openChatUserId'] ?? null); ?>;
+        if (openUserId) {
+            // Store the active user ID
+            currentActiveUserId = openUserId;
+            // Wait a bit for users list to load, then mark active
+            setTimeout(() => {
+                const targetItem = document.querySelector(`.conversation-item[data-user-id="${openUserId}"]`);
+                if (targetItem) {
+                    document.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
+                    targetItem.classList.add('active');
+                }
+            }, 500);
+            startConversation(openUserId);
+        }
     });
 </script>
 
