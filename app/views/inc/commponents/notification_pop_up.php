@@ -5,7 +5,7 @@
             <h3>Notifications</h3>
             <div class="notification-header-actions">
                 <button class="mark-all-read-btn" id="markAllReadBtn" title="Mark all as read">
-                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-check-double" style="margin-right: 0px;"></i>
                 </button>
                 <button class="modal-close-btn" id="closeNotificationModal">
                     <i class="fas fa-times" style="margin-right: 0px;"></i>

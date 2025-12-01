@@ -205,7 +205,7 @@
             </div>
             <div class="settings-modal-body">
                 <div class="danger-message">
-                    <i class="danger-icon">⚠️</i>
+                    <div class="danger-icon">⚠️</div>
                     <p>This action <strong>cannot be undone</strong>. Your account and all associated data will be permanently deleted.</p>
                 </div>
                 <form id="deleteAccountForm">
