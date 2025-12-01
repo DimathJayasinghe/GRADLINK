@@ -25,15 +25,6 @@ class Notification extends Controller
             header('Location: ' . URLROOT . '/login');
             return;
         }
-        
-        if (!$this->notificationModel) {
-            $notifications = [];
-        } else {
-            $notifications = $this->notificationModel->getUserNotifications($userId);
-        }
-        
-        // Render the notifications page view
-        $this->view('notifications/v_notifications', ['notifications' => $notifications]);
     }
 
     public function fetchNewNotifications()

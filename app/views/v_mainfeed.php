@@ -2,24 +2,6 @@
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardStyles.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css">
 <?php $styles = ob_get_clean(); ?>
-<?php
-$notifications = [
-    (object)[
-        'type' => 'like',
-        'user' => 'Alice',
-        'content' => ' liked your post.',
-        'time' => '2h ago',
-        'userImg' => URLROOT . '/media/profile/alice.jpg'
-    ],
-    (object)[
-        'type' => 'follow',
-        'user' => 'Bob',
-        'content' => ' started following you.',
-        'time' => '3h ago',
-        'userImg' => URLROOT . '/media/profile/bob.jpg'
-    ]
-];
-?>
 
 <?php ob_start() ?>
 <?php
@@ -87,12 +69,6 @@ window.URLROOT = "<?php echo URLROOT; ?>";
 <?php $currentRole = isset($_SESSION['role']) ? $_SESSION['role'] : (isset($_SESSION['user_role']) ? $_SESSION['user_role'] : ''); ?>
 window.CURRENT_USER_ID = <?php echo json_encode((string)($_SESSION['user_id'] ?? '')); ?>;
 window.CURRENT_USER_ROLE = <?php echo json_encode(strtolower($currentRole)); ?>;
-// Optional: you can add a simple loading state toggle if your JS expects it
-// document.getElementById('loadMoreBtn')?.addEventListener('click', function(){
-// this.disabled = true;
-// this.textContent = 'Loading...';
-// });
-
 <?php $scripts = ob_get_clean(); ?>
 <script>
     const appBase = "<?php echo URLROOT; ?>";

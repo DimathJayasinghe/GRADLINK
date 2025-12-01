@@ -65,7 +65,8 @@ class Post extends Controller
                     'commenter_name' => $_SESSION['user_name'] ?? '',
                     'commenter_id' => $_SESSION['user_id'] ?? null,
                     'comment_text' => $c,
-                    'text' => ($_SESSION['user_name'] ?? 'Someone') . ' commented on your post'
+                    'text' => ($_SESSION['user_name'] ?? 'Someone') . ' commented on your post',
+                    'link' => '/profile?userid=' . ($_SESSION['user_id'] ?? '')
                 ];
                 error_log('[Post::comment] About to call notify()');
                 $notifyResult = $this->notify($receiverId, $notification_type, $reference_id, $content);
@@ -125,7 +126,8 @@ class Post extends Controller
                     $content = [
                         'liker_name' => $_SESSION['user_name'] ?? '',
                         'liker_id' => $_SESSION['user_id'] ?? null,
-                        'text' => ($_SESSION['user_name'] ?? 'Someone') . ' liked your post'
+                        'text' => ($_SESSION['user_name'] ?? 'Someone') . ' liked your post',
+                        'link' => '/profile?userid=' . ($_SESSION['user_id'] ?? '')
                     ];
                     error_log('[Post::like] About to call notify() with content: ' . json_encode($content));
                     $notifyResult = $this->notify($receiverId, $notification_type, $reference_id, $content);
