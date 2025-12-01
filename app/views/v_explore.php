@@ -279,15 +279,21 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php';
                                         <div class="post-card-footer">
                                             <div class="post-stats">
                                                 <button class="post-action-btn like-btn <?php echo !empty($p->is_liked) ? 'liked' : ''; ?>" 
-                                                        data-post-id="<?php echo $p->id; ?>"
-                                                        onclick="explorer.toggleLike(<?php echo $p->id; ?>)">
+                                                        data-post-id="<?php echo $p->id; ?>">
                                                     <i class="<?php echo !empty($p->is_liked) ? 'fas' : 'far'; ?> fa-heart"></i>
-                                                    <span class="count"><?php echo $p->likes; ?></span>
+                                                    <span class="count like-count"><?php echo $p->likes; ?></span>
                                                 </button>
                                                 <button class="post-action-btn comment-btn" data-post-id="<?php echo $p->id; ?>">
                                                     <i class="far fa-comment"></i>
-                                                    <span class="count"><?php echo $p->comments; ?></span>
+                                                    <span class="count comment-count"><?php echo $p->comments; ?></span>
                                                 </button>
+                                            </div>
+                                        </div>
+                                        <div class="pc-comments" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
+                                            <div class="pc-comments-list" style="max-height:200px;overflow:auto;color:var(--text-secondary)"></div>
+                                            <div style="display:flex;gap:6px;margin-top:6px">
+                                                <input type="text" class="pc-comment-input" placeholder="Add a comment" style="flex:1;padding:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:4px" />
+                                                <button class="pc-comment-send" style="padding:6px 10px;background:var(--link);color:var(--text);border:none;border-radius:4px;cursor:pointer">Send</button>
                                             </div>
                                         </div>
                                     </div>

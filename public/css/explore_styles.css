@@ -362,15 +362,15 @@
     margin-top: 8px;
     border-radius: 6px;
     overflow: hidden;
-    max-height: 180px;
+    background-color: rgba(0, 0, 0, 0.05);
 }
 
 .post-image {
     width: 100%;
     height: auto;
-    max-height: 180px;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
+    max-height: 400px;
 }
 
 .post-card-footer {

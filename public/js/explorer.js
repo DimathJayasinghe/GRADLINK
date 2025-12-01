@@ -23,6 +23,7 @@ class Explorer {
         // Attach event listeners
         this.attachSearchListener();
         this.attachFilterListeners();
+        this.attachPostCardListeners();
     }
 
     attachSearchListener() {
@@ -236,19 +237,26 @@ class Explorer {
             <div class="post-card-footer">
                 <div class="post-stats">
                     <button class="post-action-btn like-btn ${likedClass}" 
-                            data-post-id="${post.id}"
-                            onclick="window.explorer.toggleLike(${post.id})">
+                            data-post-id="${post.id}">
                         <i class="${likeIcon} fa-heart"></i>
-                        <span class="count">${post.likes || 0}</span>
+                        <span class="count like-count">${post.likes || 0}</span>
                     </button>
                     <button class="post-action-btn comment-btn" data-post-id="${post.id}">
                         <i class="far fa-comment"></i>
-                        <span class="count">${post.comments || 0}</span>
+                        <span class="count comment-count">${post.comments || 0}</span>
                     </button>
+                </div>
+            </div>
+            <div class="pc-comments" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
+                <div class="pc-comments-list" style="max-height:200px;overflow:auto;color:var(--text-secondary)"></div>
+                <div style="display:flex;gap:6px;margin-top:6px">
+                    <input type="text" class="pc-comment-input" placeholder="Add a comment" style="flex:1;padding:6px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:4px" />
+                    <button class="pc-comment-send" style="padding:6px 10px;background:var(--link);color:var(--text);border:none;border-radius:4px;cursor:pointer">Send</button>
                 </div>
             </div>
         `;
         
+        // Event listeners are handled via delegation in attachPostCardListeners()
         return card;
     }
 
@@ -451,72 +459,214 @@ class Explorer {
         `;
     }
 
-    // Action methods
-    toggleLike(postId) {
-        const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
-        if (!likeBtn) return;
-
-        const isLiked = likeBtn.classList.contains('liked');
-        const icon = likeBtn.querySelector('i');
-        const countSpan = likeBtn.querySelector('.count');
-        let currentCount = parseInt(countSpan.textContent) || 0;
-
-        // Optimistic update
-        if (isLiked) {
-            likeBtn.classList.remove('liked');
-            icon.classList.remove('fas');
-            icon.classList.add('far');
-            currentCount = Math.max(0, currentCount - 1);
-        } else {
-            likeBtn.classList.add('liked');
-            icon.classList.remove('far');
-            icon.classList.add('fas');
-            currentCount += 1;
-        }
-        countSpan.textContent = currentCount;
-
-        // Make AJAX call to toggle like
-        fetch(`${this.urlRoot}/post/toggleLike`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ post_id: postId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!data.success) {
-                // Revert on error
-                if (isLiked) {
-                    likeBtn.classList.add('liked');
-                    icon.classList.remove('far');
-                    icon.classList.add('fas');
-                    countSpan.textContent = parseInt(countSpan.textContent) + 1;
-                } else {
-                    likeBtn.classList.remove('liked');
-                    icon.classList.remove('fas');
-                    icon.classList.add('far');
-                    countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+    // Attach event listeners to post cards using event delegation
+    attachPostCardListeners() {
+        // Use event delegation on the search results container
+        this.searchResults.addEventListener('click', async (e) => {
+            const target = e.target;
+            
+            // Handle like button clicks
+            const likeBtn = target.closest('.like-btn');
+            if (likeBtn) {
+                const postId = likeBtn.getAttribute('data-post-id');
+                const card = likeBtn.closest('.post-card');
+                if (postId && card) {
+                    await this.toggleLike(postId, card);
                 }
-                console.error('Failed to toggle like');
+                return;
             }
-        })
-        .catch(error => {
-            console.error('Error toggling like:', error);
-            // Revert on error
-            if (isLiked) {
-                likeBtn.classList.add('liked');
-                icon.classList.remove('far');
-                icon.classList.add('fas');
-                countSpan.textContent = parseInt(countSpan.textContent) + 1;
-            } else {
-                likeBtn.classList.remove('liked');
-                icon.classList.remove('fas');
-                icon.classList.add('far');
-                countSpan.textContent = Math.max(0, parseInt(countSpan.textContent) - 1);
+            
+            // Handle comment button clicks
+            const commentBtn = target.closest('.comment-btn');
+            if (commentBtn) {
+                const postId = commentBtn.getAttribute('data-post-id');
+                const card = commentBtn.closest('.post-card');
+                if (postId && card) {
+                    await this.toggleCommentPanel(postId, card);
+                }
+                return;
+            }
+            
+            // Handle comment send button clicks
+            const sendBtn = target.closest('.pc-comment-send');
+            if (sendBtn) {
+                const card = sendBtn.closest('.post-card');
+                const input = card.querySelector('.pc-comment-input');
+                const list = card.querySelector('.pc-comments-list');
+                const postId = card.getAttribute('data-post-id');
+                if (postId && input && list) {
+                    await this.sendComment(postId, input, list, card);
+                }
+                return;
+            }
+            
+            // Handle comment author clicks
+            const commentAuthor = target.closest('.comment-author');
+            if (commentAuthor) {
+                const userId = commentAuthor.getAttribute('data-user-id');
+                if (userId) {
+                    window.location.href = `${this.urlRoot}/profile?userid=${userId}`;
+                }
+                return;
             }
         });
+        
+        // Handle Enter key in comment inputs
+        this.searchResults.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                const input = e.target.closest('.pc-comment-input');
+                if (input) {
+                    e.preventDefault();
+                    const card = input.closest('.post-card');
+                    const list = card.querySelector('.pc-comments-list');
+                    const postId = card.getAttribute('data-post-id');
+                    if (postId && list) {
+                        this.sendComment(postId, input, list, card);
+                    }
+                }
+            }
+        });
+    }
+
+    async toggleCommentPanel(postId, card) {
+        const commentPanel = card.querySelector('.pc-comments');
+        const commentsList = card.querySelector('.pc-comments-list');
+        
+        if (!commentPanel || !commentsList) return;
+        
+        const isVisible = commentPanel.style.display !== 'none';
+        commentPanel.style.display = isVisible ? 'none' : 'block';
+        
+        if (!isVisible && !commentPanel.dataset.loaded) {
+            commentsList.innerHTML = 'Loading...';
+            await this.loadComments(postId, commentsList, card);
+            commentPanel.dataset.loaded = '1';
+        }
+    }
+
+    // Action methods
+    async toggleLike(postId, card) {
+        // Find card if not provided
+        if (!card) {
+            card = document.querySelector(`.post-card[data-post-id="${postId}"]`);
+        }
+        
+        const likeBtn = card.querySelector('.like-btn');
+        if (!likeBtn) return;
+
+        try {
+            // Disable button to prevent double-clicks
+            likeBtn.style.pointerEvents = 'none';
+
+            const icon = likeBtn.querySelector('i');
+            const countSpan = likeBtn.querySelector('.like-count');
+
+            const response = await fetch(`${this.urlRoot}/post/like/${postId}`);
+            const data = await response.json();
+
+            if (data.status === 'error') {
+                console.error('Like error:', data.message);
+                return;
+            }
+
+            const liked = data.status === 'liked';
+            likeBtn.classList.toggle('liked', liked);
+            icon.classList.toggle('fas', liked);
+            icon.classList.toggle('far', !liked);
+
+            let count = parseInt(countSpan.textContent || '0', 10);
+            count = liked ? count + 1 : Math.max(0, count - 1);
+            countSpan.textContent = count;
+        } catch (error) {
+            console.error('Like action error:', error);
+        } finally {
+            // Re-enable button
+            if (likeBtn) likeBtn.style.pointerEvents = '';
+        }
+    }
+
+    async loadComments(postId, listElement, card) {
+        try {
+            const response = await fetch(`${this.urlRoot}/post/comments/${postId}`);
+            const comments = await response.json();
+            this.renderComments(comments, listElement, card);
+        } catch (error) {
+            console.error('Error loading comments:', error);
+            listElement.innerHTML = '<em style="color:var(--muted)">Error loading comments</em>';
+        }
+    }
+
+    renderComments(comments, listElement, card) {
+        if (!Array.isArray(comments) || comments.length === 0) {
+            listElement.innerHTML = '<em style="color:var(--muted)">No comments yet</em>';
+            return;
+        }
+
+        listElement.innerHTML = comments.map(comment => {
+            const relTime = this.getRelativeTime(comment.created_at);
+            const star = comment.role === 'alumni' ? ' ★' : comment.role === 'admin' ? ' ★★' : '';
+            const commentText = this.escapeHtml(comment.content || '');
+            
+            return `
+                <div class="comment-item" style="margin-bottom:10px;padding:8px;background:var(--card);border-radius:4px">
+                    <div class="bubble">
+                        <strong class="comment-author" data-user-id="${comment.user_id}" style="cursor:pointer;color:var(--text)">
+                            ${this.escapeHtml(comment.name || 'User')}${star}
+                        </strong>
+                        <br>
+                        <span class="comment-text" style="color:var(--text-secondary);font-size:13px">${commentText}</span>
+                        <span class="meta" style="color:var(--muted);font-size:11px;margin-left:8px">${relTime}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async sendComment(postId, inputElement, listElement, card) {
+        const text = inputElement.value.trim();
+        if (!text) return;
+
+        try {
+            inputElement.disabled = true;
+            
+            const formData = new FormData();
+            formData.append('content', text);
+
+            const response = await fetch(`${this.urlRoot}/post/comment/${postId}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            
+            if (data.comments) {
+                inputElement.value = '';
+                this.renderComments(data.comments, listElement, card);
+                
+                // Update comment count
+                const countSpan = card.querySelector('.comment-count');
+                if (countSpan) {
+                    countSpan.textContent = data.comments.length;
+                }
+            }
+        } catch (error) {
+            console.error('Error sending comment:', error);
+        } finally {
+            inputElement.disabled = false;
+        }
+    }
+
+    getRelativeTime(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp.replace(' ', 'T'));
+        const diff = (Date.now() - date.getTime()) / 1000;
+        
+        if (diff < 60) return Math.max(1, Math.floor(diff)) + 's';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+        if (diff < 604800) return Math.floor(diff / 86400) + 'd';
+        if (diff < 2629800) return Math.floor(diff / 604800) + 'w';
+        return Math.floor(diff / 2629800) + 'mo';
     }
 
     toggleFollow(userId) {
