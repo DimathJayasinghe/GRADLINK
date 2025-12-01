@@ -81,5 +81,39 @@ class M_notification {
         $this->db->bind(':type', $type);
         return $this->db->execute();
     }
+
+    /**
+     * Delete all new_message notifications from a specific user
+     */
+    public function markMessagesAsRead($currentUserId, $senderId) {
+        $this->db->query('DELETE FROM notifications WHERE receiver_id = :receiver_id AND reference_id = :sender_id AND type = :type');
+        $this->db->bind(':receiver_id', $currentUserId);
+        $this->db->bind(':sender_id', $senderId);
+        $this->db->bind(':type', 'new_message');
+        return $this->db->execute();
+    }
+
+    /**
+     * Check if there's an unread new_message notification from a specific sender
+     */
+    public function hasUnreadMessageNotification($receiverId, $senderId) {
+        $this->db->query('SELECT id FROM notifications WHERE receiver_id = :receiver_id AND reference_id = :sender_id AND type = :type AND is_read = 0 LIMIT 1');
+        $this->db->bind(':receiver_id', $receiverId);
+        $this->db->bind(':sender_id', $senderId);
+        $this->db->bind(':type', 'new_message');
+        $row = $this->db->single();
+        return $row ? true : false;
+    }
+
+    /**
+     * Update existing unread message notification timestamp
+     */
+    public function updateMessageNotificationTime($receiverId, $senderId) {
+        $this->db->query('UPDATE notifications SET created_at = CURRENT_TIMESTAMP WHERE receiver_id = :receiver_id AND reference_id = :sender_id AND type = :type AND is_read = 0');
+        $this->db->bind(':receiver_id', $receiverId);
+        $this->db->bind(':sender_id', $senderId);
+        $this->db->bind(':type', 'new_message');
+        return $this->db->execute();
+    }
 }
 ?>

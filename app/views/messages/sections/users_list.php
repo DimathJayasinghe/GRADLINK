@@ -60,6 +60,9 @@
             `<?php echo URLROOT; ?>/media/profile/${user.profile_picture}` :
             `<?php echo URLROOT; ?>/media/profile/default.jpg`;
 
+        const unreadCount = user.unread_count || 0;
+        const unreadBadge = unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : '';
+
         div.innerHTML = `
             <div class="user-avatar">
                 <img src="${avatarSrc}" 
@@ -69,6 +72,7 @@
             <div class="user-info">
                 <h4 class="user-name">${displayName}</h4>
             </div>
+            ${unreadBadge}
         `;
 
         return div;
@@ -77,7 +81,7 @@
     // Auto-load available users and refresh periodically
     document.addEventListener('DOMContentLoaded', () => {
         loadAvailableUsers();
-        setInterval(loadAvailableUsers, 15000);
+        setInterval(loadAvailableUsers, 5000);
         const openUserId = <?php echo json_encode($data['openChatUserId'] ?? null); ?>;
         if (openUserId) {
             // Store the active user ID

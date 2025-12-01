@@ -130,6 +130,7 @@ class NotificationManager {
             'comment': 'comment',
             'follow_request': 'user-plus',
             'started_following': 'user-check',
+            'new_message': 'envelope',
             'event_update': 'calendar-day',
             'post_approval': 'check-circle',
             'fundraiser_update': 'hand-holding-heart',
@@ -192,6 +193,28 @@ class NotificationManager {
                                 Reject
                             </button>
                         </div>
+                    </div>
+                    ${isUnread ? '<div class="unread-indicator"></div>' : ''}
+                </div>
+            `;
+        }
+        
+        // Special handling for new_message notifications - click to redirect to messages
+        if (notification.type === 'new_message') {
+            const senderId = notification.reference_id;
+            return `
+                <div class="notification-item ${isUnread ? 'unread' : 'read'}" 
+                     data-notification-id="${notification.id}"
+                     data-type="${notification.type}"
+                     data-reference-id="${notification.reference_id}"
+                     onclick="window.location='${this.urlRoot}/messages?user=${senderId}'"
+                     style="cursor: pointer;">
+                    <div class="notification-icon ${notification.type}">
+                        <i class="fas fa-${icon}"></i>
+                    </div>
+                    <div class="notification-content">
+                        <div class="notification-text">${this.escapeHTML(text)}</div>
+                        <div class="notification-time">${timeAgo}</div>
                     </div>
                     ${isUnread ? '<div class="unread-indicator"></div>' : ''}
                 </div>

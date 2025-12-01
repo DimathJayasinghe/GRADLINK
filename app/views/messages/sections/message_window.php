@@ -13,7 +13,14 @@ async function startConversation(userId) {
     chatRoom.innerHTML = `<div class="loading">Conversation Loading...</div>`;
 
     try {
-    const response = await fetch(`<?php echo URLROOT; ?>/messages/getConversation?userId=${userId}`);
+        // Mark conversation as read
+        await fetch(`<?php echo URLROOT; ?>/messages/markAsRead`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId })
+        });
+
+        const response = await fetch(`<?php echo URLROOT; ?>/messages/getConversation?userId=${userId}`);
         const data = await response.json();
 
         chatRoom.innerHTML = `
