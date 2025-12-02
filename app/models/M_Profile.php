@@ -149,6 +149,12 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
+    public function getWorkExperiencesById($work_id){
+        $this->db->query('SELECT * FROM work_experiences WHERE id = :id LIMIT 1');
+        $this->db->bind(':id', $work_id);
+        return $this->db->single();
+    }
+
     public function createWorkExperience($user_id, $position, $company, $period){
             $this->db->query('INSERT INTO work_experiences (user_id, position, company, period) VALUES (:uid, :position, :company, :period)');
             $this->db->bind(':uid', $user_id);
@@ -158,6 +164,27 @@ class M_Profile{
             return $this->db->execute();
        
         }
+
+    public function updateWorkExperience($user_id, $work_id, $position, $company, $period){
+        $this->db->query('SELECT * FROM work_experiences WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $work_id);
+        $this->db->bind(':uid', $user_id);
+        $existing = $this->db->single();
+
+        if(!$existing){
+            return false; // Work experience not found or does not belong to user
+        }
+
+        $this->db->query('UPDATE work_experiences SET position = :position, company = :company, period = :period WHERE id = :id AND user_id = :uid');
+
+        $this->db->bind(':position', $position);
+        $this->db->bind(':company', $company);
+        $this->db->bind(':period', $period);
+        $this->db->bind(':id', $work_id);
+        $this->db->bind(':uid', $user_id);
+        $this->db->execute();
+
+    }
 
 
 
