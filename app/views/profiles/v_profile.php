@@ -393,8 +393,8 @@ require_once APPROOT . '/helpers/Csrf.php';
             <div class="form-title">Add Work Experience</div>
             <form id="addWorkForm" class="certificate-form">
                 <div class="form-group">
-                    <label for="workTitleAdd">Title</label>
-                    <input type="text" id="workTitleAdd" required>
+                    <label for="workPositionAdd">Position</label>
+                    <input type="text" id="workPositionAdd" required>
                 </div>
                 <div class="form-group">
                     <label for="workCompanyAdd">Company</label>

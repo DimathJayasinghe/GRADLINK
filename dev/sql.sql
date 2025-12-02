@@ -67,6 +67,17 @@ CREATE TABLE certificates (
     INDEX (user_id, issued_date)
 );
 
+CREATE TABLE work_experiences (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    position VARCHAR(255) NOT NULL,
+    company VARCHAR(255) NOT NULL,
+    period VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_work_experiences_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX (user_id)
+);
+
 
 
 -- Sample user (password is 'password' hashed using bcrypt 60-char standard example)

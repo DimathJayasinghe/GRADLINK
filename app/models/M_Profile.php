@@ -139,9 +139,27 @@ class M_Profile{
         return (bool)$ok;
     }
 
-// ...existing code...
+    public function getWorkExperiences($user_id){
+        $this->db->query('SELECT w.*, u.name AS user_name, u.profile_image 
+                          FROM work_experiences w 
+                          JOIN users u ON u.id = w.user_id 
+                          WHERE w.user_id = :uid 
+                          ORDER BY w.created_at DESC');
+        $this->db->bind(':uid', $user_id);
+        return $this->db->resultSet();
+    }
 
-// ...existing code...
+    public function createWorkExperience($user_id, $position, $company, $period){
+            $this->db->query('INSERT INTO work_experiences (user_id, position, company, period) VALUES (:uid, :position, :company, :period)');
+            $this->db->bind(':uid', $user_id);
+            $this->db->bind(':position', $position);
+            $this->db->bind(':company', $company);
+            $this->db->bind(':period', $period);
+            return $this->db->execute();
+       
+        }
+
+
 
     public function getProjects($user_id){
         return [
