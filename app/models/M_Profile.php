@@ -156,14 +156,19 @@ class M_Profile{
     }
 
     public function createWorkExperience($user_id, $position, $company, $period){
+        
+        try {
             $this->db->query('INSERT INTO work_experiences (user_id, position, company, period) VALUES (:uid, :position, :company, :period)');
             $this->db->bind(':uid', $user_id);
             $this->db->bind(':position', $position);
             $this->db->bind(':company', $company);
             $this->db->bind(':period', $period);
             return $this->db->execute();
-       
+        } catch (Exception $e) {
+            error_log("WorkExperience Creation Error: " . $e->getMessage());
+            return false;
         }
+    }
 
     public function updateWorkExperience($user_id, $work_id, $position, $company, $period){
         $this->db->query('SELECT * FROM work_experiences WHERE id = :id AND user_id = :uid LIMIT 1');
@@ -183,6 +188,22 @@ class M_Profile{
         $this->db->bind(':id', $work_id);
         $this->db->bind(':uid', $user_id);
         $this->db->execute();
+
+    }
+
+    public function deleteWorkExperience($user_id, $work_id){
+        //fetch existing record
+        $this->db->query('SELECT * FROM work_experiences WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $work_id);
+        $this->db->bind(':uid', $user_id);
+        $this->db->single();
+
+        //delete record
+        $this->db->query('DELETE FROM work_experiences WHERE id = :id AND user_id = :uid');
+        $this->db->bind(':id', $work_id);
+        $this->db->bind(':uid', $user_id);
+        $this->db->execute();
+
 
     }
 

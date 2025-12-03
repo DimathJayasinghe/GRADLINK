@@ -386,5 +386,66 @@ class Profile extends Controller{
         }
     }
 
+    public function addWorkExperience()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false , 'error' => 'Method not allowed']);
+            return;
+        }
+
+        header('Content-Type: application/json');
+
+        $position = trim($_POST['position'] ?? '');
+        $company = trim($_POST['company'] ?? '');
+        $period = trim($_POST['period'] ?? '');
+
+        // Basic form validation
+        if ($position === '' || $company === '' || $period === '') {
+            echo json_encode(['success' => false, 'error' => 'Please provide position, company and period']);
+            return;
+        }
+
+        // Persist DB record via model
+        if ($this->Model->createWorkExperience($_SESSION['user_id'], $position, $company, $period)){
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to save work experience record.']);
+            return;
+        }
+    }
+
+    public function updateWorkExperience()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        } 
+
+        header('Content-Type: application/json');
+
+        $work_id = intval($_POST['work_id'] ?? 0);
+        $position = trim($_POST['position'] ?? '');
+        $company = trim($_POST['company'] ?? '');
+        $period = trim($_POST['period'] ?? '');
+
+        // Basic form validation
+        if ($work_id <= 0 || $position === '' || $company === '' || $period === '') {
+            echo json_encode(['success' => false, 'error' => 'Please provide valid work experience details']);
+            return;
+        }
+
+        // Update DB record via model
+        if($this->Model->updateWorkExperience($_SESSION['user_id'], $position, $company, $period)){
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to update work experience record.']);
+            return;
+        }
+    }
+
 }
 
