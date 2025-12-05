@@ -447,5 +447,75 @@ class Profile extends Controller{
         }
     }
 
+    public function deleteWorkExperience()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE'){
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        header('Content-Type: application/json');
+
+        //Ensure user logged in
+        if (!isset($_SESSION['user_id'])){
+            echo json_encode(['success' => false, 'error' => 'Not authenticated']);
+            return;
+        }
+
+        $work_id = $this->getQueryParam('id', null);
+        if ($work_id <= 0){
+            echo json_encode(['success' => false, 'error' => 'Invalid work experinece id']);
+            return;
+        }
+
+        // Fetch certificate record
+        $work = null;
+        if (method_exists($this->Model, 'getWorkExperienceById')) {
+            $work = $this->Model->getWorkExperienceById($work_id);
+        } else {
+            // fallback: search user's work experiences
+            $works = $this->Model->getWorkExperiences($_SESSION['user_id']);
+            if (is_array($works)) {
+                foreach ($works as $w) {
+                    if (isset($w->id) && intval($w->id) === $work_id) { $work = $w; break; }
+                }
+            }
+        }
+
+        if (!$work){
+            echo json_encode(['success' => false, 'error' => 'Work experince not found']);
+            return;
+        }
+
+        //Only owner can delete
+        $ownerId = $work->user_id ?? ($work->userId ?? null);
+        if ($ownerId == null || intval($ownerId) !== intval($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Permission denied']);
+            return;
+        }
+
+        // Delete DB row via model. Expect model->deleteWorkExperience(user_id, work_id) or deleteWorkExperienceById(work_id)
+        $deleted = false;
+        if (method_exists($this->Model, 'deleteWorkExperience')) {
+            $deleted = $this->Model->deleteWorkExperience($_SESSION['user_id'], $work_id);
+        } elseif (method_exists($this->Model, 'deleteWorkExperienceById')){
+            $deleted = $this->Model->deleteCertificateById($work_id);
+        } else {
+            // No model method found
+            error_log("Profile::deleteWorkExperience - model method deleteWorkExperience not found");
+            echo json_encode(['success' => false, 'error' => 'Server not configured to delete work experience']);
+            return;
+        }
+
+        if ($deleted){
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to delete work experience']);
+        }
+        
+
+    }
+
 }
 
