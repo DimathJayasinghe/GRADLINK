@@ -8,7 +8,7 @@ class M_message extends Database {
      * 2. They follow current user AND have sent at least one message, OR
      * 3. Admin role AND there's a message history
      */
-    public function getAvailableUsers($currentUserId, $searchTerm = null) {
+    public function getAvailableUsers($currentUserId, $searchTerm = null, $lastPoll = null) {
         $sql = "SELECT 
                     u.id as user_id,
                     u.name,
@@ -26,12 +26,23 @@ class M_message extends Database {
                 LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
                 LEFT JOIN messages m_from_them ON m_from_them.sender_id = u.id AND m_from_them.receiver_id = :current_user_id
                 LEFT JOIN message_unread_tracker t ON t.sender_id = u.id AND t.receiver_id = :current_user_id
-                WHERE u.id != :current_user_id
+                WHERE 
+                    u.id != :current_user_id
                     AND (
                         f_following.follower_id IS NOT NULL 
                         OR (f_follower.follower_id IS NOT NULL AND m_from_them.message_id IS NOT NULL)
                         OR (u.role = 'admin' AND m.message_id IS NOT NULL)
                     )";
+
+        // If lastPoll provided, return only users with messages after that time
+        if ($lastPoll) {
+            $sql .= " AND EXISTS (
+                        SELECT 1 FROM messages m_poll
+                        WHERE ((m_poll.sender_id = u.id AND m_poll.receiver_id = :current_user_id)
+                               OR (m_poll.receiver_id = u.id AND m_poll.sender_id = :current_user_id))
+                          AND m_poll.message_time > :last_poll
+                      )";
+        }
         
         // Add search filter if provided
         if ($searchTerm) {
@@ -48,6 +59,9 @@ class M_message extends Database {
         
         $this->query($sql);
         $this->bind(':current_user_id', $currentUserId);
+        if ($lastPoll) {
+            $this->bind(':last_poll', $lastPoll);
+        }
         
         if ($searchTerm) {
             $this->bind(':search', '%' . $searchTerm . '%');
@@ -171,19 +185,18 @@ class M_message extends Database {
     /**
      * Increment unread count for a conversation
      */
-    public function incrementUnreadCount($senderId, $receiverId, $messageId) {
-        $sql = "INSERT INTO message_unread_tracker (sender_id, receiver_id, unread_count, last_message_id)
-                VALUES (:sender_id, :receiver_id, 1, :message_id)
+    public function incrementUnreadCount($senderId, $receiverId) {
+        // Upsert unread count by sender/receiver; no last_message_id stored
+        $sql = "INSERT INTO message_unread_tracker (sender_id, receiver_id, unread_count)
+                VALUES (:sender_id, :receiver_id, 1)
                 ON DUPLICATE KEY UPDATE 
                     unread_count = unread_count + 1,
-                    last_message_id = :message_id,
                     updated_at = CURRENT_TIMESTAMP";
-        
+
         $this->query($sql);
         $this->bind(':sender_id', $senderId);
         $this->bind(':receiver_id', $receiverId);
-        $this->bind(':message_id', $messageId);
-        
+
         return $this->execute();
     }
 
@@ -191,15 +204,15 @@ class M_message extends Database {
      * Mark messages as read (clear unread count)
      */
     public function markConversationAsRead($currentUserId, $otherUserId) {
-        $sql = "UPDATE message_unread_tracker 
-                SET unread_count = 0
+        // Delete row to indicate no unread messages for this sender->receiver pair
+        $sql = "DELETE FROM message_unread_tracker 
                 WHERE sender_id = :other_user_id 
                 AND receiver_id = :current_user_id";
-        
+
         $this->query($sql);
         $this->bind(':current_user_id', $currentUserId);
         $this->bind(':other_user_id', $otherUserId);
-        
+
         return $this->execute();
     }
 

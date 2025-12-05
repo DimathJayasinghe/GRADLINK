@@ -1,42 +1,106 @@
 <script>
     // Track currently active user ID
     let currentActiveUserId = null;
+    let initialLoad = true;
+    let lastPollTime = null;
+    let loadedUsers = [];
+
+    let availableUsersPollingTime = 1000;  // 1second
 
     // Load available users asynchronously
     async function loadAvailableUsers() {
         const usersList = document.getElementById('usersList');
-        usersList.innerHTML = '<div class="loading_users">Loading users...</div>';
+        if (initialLoad) {
+            usersList.innerHTML = '<div class="loading_users">Loading users...</div>';
+        }
 
         try {
-            const response = await fetch('<?php echo URLROOT; ?>/messages/getAvailableUsers');
+            const response = await fetch('<?php echo URLROOT; ?>/messages/getAvailableUsers', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    lastPoll: lastPollTime
+                })
+            });
             const data = await response.json();
-
-            usersList.innerHTML = '';
+            lastPollTime = data.lastPollTime;
 
             if (data.success && data.users && data.users.length > 0) {
-                data.users.forEach(user => {
-                    const userItem = createUserItem(user);
-                    usersList.appendChild(userItem);
-                    
-                    // Re-apply active class if this is the currently active user
-                    if (currentActiveUserId && user.user_id == currentActiveUserId) {
-                        userItem.classList.add('active');
-                    }
-                });
+                if (initialLoad) {
+                    usersList.innerHTML = '';
+                    data.users.forEach(user => {
+                        loadedUsers.push(user.user_id);
+                        const userItem = createUserItem(user);
+                        if (user.unread_count > 0) {
+                            injectUnreadCount(userItem, user.unread_count);
+                        }
+                        usersList.appendChild(userItem);
+
+                        // Re-apply active class if this is the currently active user
+                        if (currentActiveUserId && user.user_id == currentActiveUserId) {
+                            userItem.classList.add('active');
+                        }
+                    });
+                    initialLoad = false;
+                } else {
+                    data.users.forEach(async (user) => {
+                        if (!loadedUsers.includes(user.user_id)) {
+                            const userItem = createUserItem(user);
+                            usersList.appendChild(userItem);
+                            if (user.unread_count > 0) {
+                                // If this is the active chat, mark as read and do not show badge
+                                if (user.user_id === currentActiveUserId) {
+                                    await fetch(`<?php echo URLROOT; ?>/messages/markAsRead`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ userId: currentActiveUserId })
+                                    });
+                                } else {
+                                    injectUnreadCount(userItem, user.unread_count);
+                                }
+                            }
+                            loadedUsers.push(user.user_id);
+                        } else {
+                            const userDiv = usersList.querySelector(`.conversation-item[data-user-id="${user.user_id}"]`);
+                            if (!userDiv) return;
+                            if (user.user_id === currentActiveUserId) {
+                                // Active chat: ensure server row cleared and remove badge
+                                await fetch(`<?php echo URLROOT; ?>/messages/markAsRead`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId: currentActiveUserId })
+                                });
+                                removeUnreadCount(userDiv);
+                            } else if (user.unread_count > 0) {
+                                injectUnreadCount(userDiv, user.unread_count);
+                                // Move to top on new unread activity
+                                const wasActive = userDiv.classList.contains('active');
+                                usersList.insertBefore(userDiv, usersList.firstChild);
+                                if (wasActive) userDiv.classList.add('active');
+                            } else {
+                                removeUnreadCount(userDiv);
+                            }
+                        }
+                    });
+                }
+
             } else {
+                usersList.innerHTML = '';
                 usersList.innerHTML = '<div class="no-users">No available users found.</div>';
             }
         } catch (error) {
             console.error('Error loading users:', error);
             usersList.innerHTML = `
                 <div class="error">
-                    Failed to load users from database.<br>
-                    Error: ${error.message}<br>
-                    Check console for details.
+                    Failed to load users.<br>
                 </div>
             `;
         }
     }
+
+
 
     // Create user item element
     function createUserItem(user) {
@@ -59,10 +123,6 @@
         const avatarSrc = user.profile_picture ?
             `<?php echo URLROOT; ?>/media/profile/${user.profile_picture}` :
             `<?php echo URLROOT; ?>/media/profile/default.jpg`;
-
-        const unreadCount = user.unread_count || 0;
-        const unreadBadge = unreadCount > 0 ? `<span class="unread-badge">${unreadCount}</span>` : '';
-
         div.innerHTML = `
             <div class="user-avatar">
                 <img src="${avatarSrc}" 
@@ -72,30 +132,40 @@
             <div class="user-info">
                 <h4 class="user-name">${displayName}</h4>
             </div>
-            ${unreadBadge}
         `;
-
         return div;
+    }
+
+
+    function injectUnreadCount(div, count) {
+        const unreadCount = count || 0;
+        let badge = div.querySelector('.unread-badge');
+
+        if (unreadCount > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'unread-badge';
+                div.appendChild(badge);
+            }
+            badge.textContent = unreadCount;
+        } else if (badge) {
+            badge.remove();
+        }
+        return div;
+    }
+
+    function removeUnreadCount(div) {
+        if (!div) return;
+        const badges = div.querySelectorAll('.unread-badge');
+        badges.forEach(b => b.remove());
     }
 
     // Auto-load available users and refresh periodically
     document.addEventListener('DOMContentLoaded', () => {
         loadAvailableUsers();
-        setInterval(loadAvailableUsers, 5000);
-        const openUserId = <?php echo json_encode($data['openChatUserId'] ?? null); ?>;
-        if (openUserId) {
-            // Store the active user ID
-            currentActiveUserId = openUserId;
-            // Wait a bit for users list to load, then mark active
-            setTimeout(() => {
-                const targetItem = document.querySelector(`.conversation-item[data-user-id="${openUserId}"]`);
-                if (targetItem) {
-                    document.querySelectorAll('.conversation-item').forEach(item => item.classList.remove('active'));
-                    targetItem.classList.add('active');
-                }
-            }, 500);
-            startConversation(openUserId);
-        }
+        setInterval(loadAvailableUsers, availableUsersPollingTime);
+        currentActiveUserId = <?php echo json_encode($data['openChatUserId'] ?? null); ?>;
+        currentActiveUserId && startConversation(currentActiveUserId);
     });
 </script>
 

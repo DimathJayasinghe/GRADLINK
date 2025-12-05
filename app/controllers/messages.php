@@ -35,12 +35,15 @@ class messages extends Controller{
         try {
             $currentUserId = $_SESSION['user_id'];
             $searchTerm = $this->getQueryParam('search', null);
+            // Accept JSON body or form data for lastPoll
+            $input = json_decode(file_get_contents('php://input'), true);
+            $lastPoll = $input['lastPoll'] ?? ($_POST['lastPoll'] ?? null);
             
-            $users = $this->message_model->getAvailableUsers($currentUserId, $searchTerm);
-            
+            $users = $this->message_model->getAvailableUsers($currentUserId, $searchTerm,($lastPoll)??null);
             echo json_encode([
                 'success' => true,
-                'users' => $users
+                'users' => $users,
+                'lastPollTime' => date("Y-m-d H:i:s")
             ]);
         } catch (Exception $e) {
             echo json_encode([
@@ -139,6 +142,7 @@ class messages extends Controller{
             $recipientId = $input['recipientId'] ?? null;
             $content = $input['content'] ?? null;
             
+            
             if (!$recipientId || !$content) {
                 echo json_encode([
                     'success' => false,
@@ -160,7 +164,7 @@ class messages extends Controller{
             if ($messageId) {
                 // Increment unread count for recipient
                 try {
-                    $this->message_model->incrementUnreadCount($currentUserId, $recipientId, $messageId);
+                    $this->message_model->incrementUnreadCount($currentUserId, $recipientId);
                 } catch (Exception $e) {
                     error_log('Failed to increment unread count: ' . $e->getMessage());
                 }

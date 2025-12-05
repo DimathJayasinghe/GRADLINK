@@ -5,22 +5,7 @@
 
 <!-- Leftside bar section -->
 <?php
-    $notifications = [
-        (object)[
-            'type' => 'like',
-            'user' => 'Alice',
-            'content' => ' liked your post.',
-            'time' => '2h ago',
-            'userImg' => URLROOT . '/media/profile/alice.jpg'
-        ],
-        (object)[
-            'type' => 'follow',
-            'user' => 'Bob',
-            'content' => ' started following you.',
-            'time' => '3h ago',
-            'userImg' => URLROOT . '/media/profile/bob.jpg'
-        ]
-    ];
+    $notifications = [];
 ?>
 
 <?php ob_start();
