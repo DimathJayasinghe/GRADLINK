@@ -96,16 +96,16 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
                             <span><?= $isFollowing ? 'Following' : 'Follow' ?></span>
                         </button>
                         <?php if ($isFollowing): ?>
-                        <button
-                            class="action-btn message-btn"
-                            id="messageBtn"
-                            data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
-                            title="Message <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
-                            <i class="fas fa-envelope" aria-hidden="true"></i>
-                            <span>Message</span>
-                        </button>
+                            <button
+                                class="action-btn message-btn"
+                                id="messageBtn"
+                                data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
+                                title="Message <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
+                                <i class="fas fa-envelope" aria-hidden="true"></i>
+                                <span>Message</span>
+                            </button>
                         <?php endif; ?>
-                       
+
                     </div>
                 <?php endif; ?>
             </div>
@@ -187,24 +187,17 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
         <!-- Work Experience Cards -->
         <div id="workContainer">
             <?php
-            // Sample work experience data
-            $sampleWork = [
-                ['id' => 1, 'title' => 'Software Engineer', 'company' => 'Google', 'period' => '2021 - Present'],
-                ['id' => 2, 'title' => 'Associate Developer', 'company' => 'Microsoft', 'period' => '2019 - 2021'],
-                ['id' => 3, 'title' => 'Intern', 'company' => 'Facebook', 'period' => '2018 - 2019']
-            ];
-
-            if (!empty($sampleWork)):
-                foreach ($sampleWork as $work):
+            if (!empty($data['work_experiences'])):
+                foreach ($data['work_experiences'] as $work):
             ?>
-                    <div class="certificate-card work-card" data-id="<?= $work['id'] ?>" data-title="<?= htmlspecialchars($work['title']) ?>" data-company="<?= htmlspecialchars($work['company']) ?>" data-period="<?= htmlspecialchars($work['period']) ?>">
+                    <div class="certificate-card work-card" data-id="<?= $work->id ?>" data-position="<?= htmlspecialchars($work->position) ?>" data-company="<?= htmlspecialchars($work->company) ?>" data-period="<?= htmlspecialchars($work->period) ?>">
                         <div class="certificate-card-image">
                             <i class="fas fa-briefcase"></i>
                         </div>
                         <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($work['title']) ?></div>
-                            <div class="certificate-issuer"><?= htmlspecialchars($work['company']) ?></div>
-                            <div class="certificate-date"><?= htmlspecialchars($work['period']) ?></div>
+                            <div class="certificate-card-position"><?= htmlspecialchars($work->position) ?></div>
+                            <div class="certificate-issuer"><?= htmlspecialchars($work->company) ?></div>
+                            <div class="certificate-date"><?= htmlspecialchars($work->period) ?></div>
                         </div>
                         <?php if ($isOwner) {
                             echo '<div class="certificate-actions">
@@ -222,7 +215,7 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
                 endforeach;
             else:
                 ?>
-                <div>No work experience added yet.</div>
+                <div id="noWorkExpMessage">No work experience added yet.</div>
             <?php endif; ?>
         </div>
 
@@ -260,7 +253,7 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
                         data-file="<?= htmlspecialchars($cert->certificate_file ?? '') ?>">
                         <div class="certificate-card-image"><i class="fas fa-certificate"></i></div>
                         <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($cert->name) ?></div>
+                            <div class="certificate-card-position"><?= htmlspecialchars($cert->name) ?></div>
                             <div class="certificate-issuer"><?= htmlspecialchars($cert->issuer) ?></div>
                             <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
                         </div>
@@ -391,18 +384,18 @@ require_once APPROOT . '/helpers/Csrf.php';
         <div class="certificate-add">
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Add Work Experience</div>
-            <form id="addWorkForm" class="certificate-form">
+            <form id="addWorkForm" class="work-form" action="<?= URLROOT; ?>/profile/addWorkExperience">
                 <div class="form-group">
                     <label for="workPositionAdd">Position</label>
-                    <input type="text" id="workPositionAdd" required>
+                    <input type="text" name="position" id="workPositionAdd" required>
                 </div>
                 <div class="form-group">
                     <label for="workCompanyAdd">Company</label>
-                    <input type="text" id="workCompanyAdd" required>
+                    <input type="text" name="company" id="workCompanyAdd" required>
                 </div>
                 <div class="form-group">
                     <label for="workPeriodAdd">Period</label>
-                    <input type="text" id="workPeriodAdd" placeholder="e.g., 2021 - Present" required>
+                    <input type="text" name="period" id="workPeriodAdd" placeholder="e.g., 2021 - Present" required>
                 </div>
                 <div style="margin-top:12px;">
                     <button type="submit" class="save-btn">Add Work</button>
@@ -418,19 +411,19 @@ require_once APPROOT . '/helpers/Csrf.php';
         <div class="certificate-add">
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Edit Work Experience</div>
-            <form id="editWorkForm" class="certificate-form">
+            <form id="editWorkForm" class="certificate-form" action="<?= URLROOT; ?>/profile/updateWorkExperience">
                 <input type="hidden" id="workIdEdit">
                 <div class="form-group">
                     <label for="workTitleEdit">Title</label>
-                    <input type="text" id="workTitleEdit" required>
+                    <input type="text" name="position" id="workTitleEdit" required>
                 </div>
                 <div class="form-group">
                     <label for="workCompanyEdit">Company</label>
-                    <input type="text" id="workCompanyEdit" required>
+                    <input type="text" name="company" id="workCompanyEdit" required>
                 </div>
                 <div class="form-group">
                     <label for="workPeriodEdit">Period</label>
-                    <input type="text" id="workPeriodEdit" placeholder="e.g., 2021 - Present" required>
+                    <input type="text" name="period" id="workPeriodEdit" placeholder="e.g., 2021 - Present" required>
                 </div>
                 <div style="margin-top:12px;">
                     <button type="submit" class="save-btn">Save Changes</button>
@@ -744,7 +737,9 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ profile_user_id: targetId })
+                        body: JSON.stringify({
+                            profile_user_id: targetId
+                        })
                     });
                     const json = await res.json();
                     if (json && json.success) {
@@ -1249,34 +1244,61 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         if (addWorkForm && workContainer) {
             addWorkForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                const title = document.getElementById('workTitleAdd').value.trim();
+                const position = document.getElementById('workPositionAdd').value.trim();
                 const company = document.getElementById('workCompanyAdd').value.trim();
                 const period = document.getElementById('workPeriodAdd').value.trim();
-                if (!title || !company || !period) return;
-                const id = Date.now();
-                const card = document.createElement('div');
-                card.className = 'certificate-card work-card';
-                card.setAttribute('data-id', String(id));
-                card.setAttribute('data-title', title);
-                card.setAttribute('data-company', company);
-                card.setAttribute('data-period', period);
-                card.innerHTML = `
-                <div class="certificate-card-image"><i class="fas fa-briefcase"></i></div>
-                <div class="certificate-details">
-                    <div class="certificate-card-title"></div>
-                    <div class="certificate-issuer"></div>
-                    <div class="certificate-date"></div>
-                </div>
-                <div class="certificate-actions">
-                    <div class="certificate-action-btn edit-btn" title="Edit Work Experience"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="certificate-action-btn delete-btn" title="Delete Work Experience"><i class="fas fa-trash-alt"></i></div>
-                </div>`;
-                card.querySelector('.certificate-card-title').textContent = title;
-                card.querySelector('.certificate-issuer').textContent = company;
-                card.querySelector('.certificate-date').textContent = period;
-                workContainer.appendChild(card);
-                bindWorkCardActions(card);
-                addWorkPopup.style.display = 'none';
+                const noWorkExpMessage = document.getElementById('noWorkExpMessage');
+
+                if (!position || !company || !period) return;
+
+                //# Sending data to the backend
+                const fd = new FormData(this);
+
+                fetch(this.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json()).then(json => {
+                        if (json.success) {
+                            if (noWorkExpMessage) noWorkExpMessage.remove();
+                            alert('Work experience added successfully');
+
+                            //# Creating the new work experience card in the UI
+                            const id = Date.now();
+                            const card = document.createElement('div');
+                            card.className = 'certificate-card work-card';
+                            card.setAttribute('data-id', String(id));
+                            card.setAttribute('data-position', position);
+                            card.setAttribute('data-company', company);
+                            card.setAttribute('data-period', period);
+                            card.innerHTML = `
+                            <div class="certificate-card-image"><i class="fas fa-briefcase"></i></div>
+                            <div class="certificate-details">
+                                <div class="certificate-card-position"></div>
+                                <div class="certificate-issuer"></div>
+                                <div class="certificate-date"></div>
+                            </div>
+                            <div class="certificate-actions">
+                                <div class="certificate-action-btn edit-btn" title="Edit Work Experience"><i class="fas fa-pencil-alt"></i></div>
+                                <div class="certificate-action-btn delete-btn" title="Delete Work Experience"><i class="fas fa-trash-alt"></i></div>
+                            </div>`;
+                            card.querySelector('.certificate-card-position').textContent = position;
+                            card.querySelector('.certificate-issuer').textContent = company;
+                            card.querySelector('.certificate-date').textContent = period;
+                            workContainer.appendChild(card);
+                            bindWorkCardActions(card);
+                            addWorkPopup.style.display = 'none';
+
+                        } else {
+                            alert(json.error || 'Failed to add work experience');
+                        }
+                    }).catch(() => {
+                        alert('Error while adding work experience');
+                    })
+
             });
         }
 
@@ -1313,7 +1335,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                     card.dataset.title = title;
                     card.dataset.company = company;
                     card.dataset.period = period;
-                    card.querySelector('.certificate-card-title').textContent = title;
+                    card.querySelector('.certificate-card-position').textContent = title;
                     card.querySelector('.certificate-issuer').textContent = company;
                     card.querySelector('.certificate-date').textContent = period;
                 }

@@ -37,6 +37,7 @@ class Profile extends Controller{
         $user = $this->Model->getUser($user_id);
         if ($user == 1) {
             $data['userDetails'] = $this->Model->getUserDetails($user_id);
+            $data['work_experiences'] = $this->Model->getWorkExperiences($user_id); 
             $data['certificates'] = $this->Model->getCertificates($user_id);
             $data['projects'] = $this->Model->getProjects($user_id);
             $isPublic = $this->Model->isProfilePublic($user_id);
