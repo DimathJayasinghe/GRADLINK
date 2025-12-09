@@ -26,6 +26,16 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
+    public function updateProfileBioImage($user_id, $profile_image, $bio){
+        $this->db->query('UPDATE users SET profile_image = :profile_image, bio = :bio WHERE id = :user_id');
+        $this->db->bind(':profile_image', $profile_image);
+        $this->db->bind(':bio', $bio);
+        $this->db->bind(':user_id', $user_id);
+
+        $ok = $this->db->execute();
+        return $ok;
+    }
+
     /**
      * Fetch a single certificate by id. use to view the certificate.
      */
@@ -35,14 +45,10 @@ class M_Profile{
         return $this->db->single();
     }
 
+    
 
 
-
-    /**
-     * Create a certificate for a user.
-     * If the certificate_file column does not exist yet, it will gracefully
-     * fall back to inserting without the file instead of crashing.
-     */
+    
     public function createCertificate($user_id, $name, $issuer, $issued_date, $certificate_file = null) {
         if ($certificate_file === null) {
             // Insert without file
