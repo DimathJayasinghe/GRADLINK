@@ -412,10 +412,10 @@ require_once APPROOT . '/helpers/Csrf.php';
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Edit Work Experience</div>
             <form id="editWorkForm" class="certificate-form" action="<?= URLROOT; ?>/profile/updateWorkExperience">
-                <input type="hidden" id="workIdEdit">
+                <input type="hidden" id="workIdEdit" name="work_id">
                 <div class="form-group">
-                    <label for="workTitleEdit">Title</label>
-                    <input type="text" name="position" id="workTitleEdit" required>
+                    <label for="workPositionEdit">Position</label>
+                    <input type="text" name="position" id="workPositionEdit" required>
                 </div>
                 <div class="form-group">
                     <label for="workCompanyEdit">Company</label>
@@ -1312,30 +1312,96 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             if (editBtn) editBtn.addEventListener('click', function() {
                 const id = card.dataset.id || '';
                 document.getElementById('workIdEdit').value = id;
-                document.getElementById('workTitleEdit').value = card.dataset.title || '';
+                document.getElementById('workPositionEdit').value = card.dataset.position || '';
                 document.getElementById('workCompanyEdit').value = card.dataset.company || '';
                 document.getElementById('workPeriodEdit').value = card.dataset.period || '';
                 editWorkPopup.style.display = 'flex';
             });
-            if (deleteBtn) deleteBtn.addEventListener('click', function() {
+            
+            if (cancelDeleteBtn){
+                cancelDeleteBtn.addEventListener('click', function() {
+                    pendingDeleteWorkId = null;
+                    if (deletePopup) deletePopup.style.display = 'none';
+                });
+            }
+
+                if(confirmDeleteBtn){
+                    confirmDeleteBtn.addEventListener('click', async function() {
+                        if (!pendingDeleteWorkId) return;
+                    try {
+                    const url = '<?php echo URLROOT; ?>/profile/deleteWorkExperience?id=' + encodeURIComponent(id);
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const ct = res.headers.get('content-type') || '';
+                    if (!ct.includes('application/json')) {
+                        const text = await res.text();
+                        console.error('Non-JSON response:', text);
+                        alert('Failed to delete work experience: unexpected server response');
+                        return;
+                    }
+                    const json = await res.json();
+                    if (json && json.success) {
+                        //Refresh to ensure server state is reflected in UI
+                        window.location.reload();
+                    } else {
+                        alert((json && json.error) || 'Failed to delete work experience');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error while deleting work experience: ' + (err && err.message ? err.message : 'unknown error'));
+                }    
+                 
                 // if (confirm('Are you sure you want to delete this work experience?')) card.remove();
             });
+
+                }
+
+                
         }
         // bind existing
         document.querySelectorAll('#workContainer .work-card').forEach(bindWorkCardActions);
+        
         if (editWorkForm) {
             editWorkForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+                
                 const id = document.getElementById('workIdEdit').value;
-                const title = document.getElementById('workTitleEdit').value.trim();
+                const position = document.getElementById('workPositionEdit').value.trim();
                 const company = document.getElementById('workCompanyEdit').value.trim();
                 const period = document.getElementById('workPeriodEdit').value.trim();
+
+                
                 const card = document.querySelector(`#workContainer .work-card[data-id="${CSS.escape(id)}"]`);
+
+                const fd = new FormData(this);
+                fetch(this.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(json => {
+                        if (json.success) {
+                            window.location.reload();
+                        } else {
+                            alert(json.error || 'Failed to update work experience');
+                        }
+                    }).catch(() => {
+                        alert('Error while updating work experience');
+                    });
+
                 if (card) {
-                    card.dataset.title = title;
+                    card.dataset.position = position;
                     card.dataset.company = company;
                     card.dataset.period = period;
-                    card.querySelector('.certificate-card-position').textContent = title;
+                    card.querySelector('.certificate-card-position').textContent = position;
                     card.querySelector('.certificate-issuer').textContent = company;
                     card.querySelector('.certificate-date').textContent = period;
                 }

@@ -187,7 +187,9 @@ class M_Profile{
         $this->db->bind(':period', $period);
         $this->db->bind(':id', $work_id);
         $this->db->bind(':uid', $user_id);
-        $this->db->execute();
+        
+        $ok =$this->db->execute();
+        return $ok;
 
     }
 
@@ -202,7 +204,9 @@ class M_Profile{
         $this->db->query('DELETE FROM work_experiences WHERE id = :id AND user_id = :uid');
         $this->db->bind(':id', $work_id);
         $this->db->bind(':uid', $user_id);
-        $this->db->execute();
+        $ok = $this->db->execute();
+
+        return $ok;
 
 
     }

@@ -440,7 +440,7 @@ class Profile extends Controller{
         }
 
         // Update DB record via model
-        if($this->Model->updateWorkExperience($_SESSION['user_id'], $position, $company, $period)){
+        if($this->Model->updateWorkExperience($_SESSION['user_id'], $work_id, $position, $company, $period)){
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to update work experience record.']);
@@ -464,13 +464,13 @@ class Profile extends Controller{
             return;
         }
 
-        $work_id = $this->getQueryParam('id', null);
+        $work_id = intval($this->getQueryParam('id', 0));
         if ($work_id <= 0){
             echo json_encode(['success' => false, 'error' => 'Invalid work experinece id']);
             return;
         }
 
-        // Fetch certificate record
+        // Fetch work experience record
         $work = null;
         if (method_exists($this->Model, 'getWorkExperienceById')) {
             $work = $this->Model->getWorkExperienceById($work_id);
@@ -479,7 +479,8 @@ class Profile extends Controller{
             $works = $this->Model->getWorkExperiences($_SESSION['user_id']);
             if (is_array($works)) {
                 foreach ($works as $w) {
-                    if (isset($w->id) && intval($w->id) === $work_id) { $work = $w; break; }
+                    $wid = isset($w->id) ? intval($w->id) : (isset($w->work_id) ? intval($w->work_id) : 0);
+                    if ($wid === $work_id) { $work = $w; break; }
                 }
             }
         }
@@ -501,7 +502,8 @@ class Profile extends Controller{
         if (method_exists($this->Model, 'deleteWorkExperience')) {
             $deleted = $this->Model->deleteWorkExperience($_SESSION['user_id'], $work_id);
         } elseif (method_exists($this->Model, 'deleteWorkExperienceById')){
-            $deleted = $this->Model->deleteCertificateById($work_id);
+            $deleted = $this->Model->deleteWorkExperienceById($work_id);
+            
         } else {
             // No model method found
             error_log("Profile::deleteWorkExperience - model method deleteWorkExperience not found");
