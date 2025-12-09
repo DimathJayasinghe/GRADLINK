@@ -1264,7 +1264,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                     .then(r => r.json()).then(json => {
                         if (json.success) {
                             if (noWorkExpMessage) noWorkExpMessage.remove();
-                            alert('Work experience added successfully');
+                            window.location.reload();
 
                             //# Creating the new work experience card in the UI
                             const id = Date.now();
@@ -1318,48 +1318,46 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 editWorkPopup.style.display = 'flex';
             });
             
-            if (cancelDeleteBtn){
-                cancelDeleteBtn.addEventListener('click', function() {
-                    pendingDeleteWorkId = null;
-                    if (deletePopup) deletePopup.style.display = 'none';
-                });
-            }
+            // if(deleteBtn){
+            //     deleteBtn.addEventListener('click', async function() {
+            //         if (!confirm('Are you sure you want to delete this work experience?')) {
+            //             return;
+            //     }
 
-                if(confirmDeleteBtn){
-                    confirmDeleteBtn.addEventListener('click', async function() {
-                        if (!pendingDeleteWorkId) return;
-                    try {
-                    const url = '<?php echo URLROOT; ?>/profile/deleteWorkExperience?id=' + encodeURIComponent(id);
-                    const res = await fetch(url, {
-                        method: 'DELETE',
-                        credentials: 'same-origin',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    const ct = res.headers.get('content-type') || '';
-                    if (!ct.includes('application/json')) {
-                        const text = await res.text();
-                        console.error('Non-JSON response:', text);
-                        alert('Failed to delete work experience: unexpected server response');
-                        return;
-                    }
-                    const json = await res.json();
-                    if (json && json.success) {
-                        //Refresh to ensure server state is reflected in UI
-                        window.location.reload();
-                    } else {
-                        alert((json && json.error) || 'Failed to delete work experience');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert('Error while deleting work experience: ' + (err && err.message ? err.message : 'unknown error'));
-                }    
+            //     const id = card.dataset.id || '';
+                
+            //     try {
+            //         const url = '<?php echo URLROOT; ?>/profile/deleteWorkExperience?id=' + encodeURIComponent(id);
+            //         const res = await fetch(url, {
+            //             method: 'DELETE',
+            //             credentials: 'same-origin',
+            //             headers: {
+            //                 'Accept': 'application/json'
+            //             }
+            //         });
+            //         const ct = res.headers.get('content-type') || '';
+            //         if (!ct.includes('application/json')) {
+            //             const text = await res.text();
+            //             console.error('Non-JSON response:', text);
+            //             alert('Failed to delete work experience: unexpected server response');
+            //             return;
+            //         }
+            //         const json = await res.json();
+            //         if (json && json.success) {
+            //             //Refresh to ensure server state is reflected in UI
+            //             window.location.reload();
+            //         } else {
+            //             alert((json && json.error) || 'Failed to delete work experience');
+            //         }
+            //     } catch (err) {
+            //         console.error(err);
+            //         alert('Error while deleting work experience: ' + (err && err.message ? err.message : 'unknown error'));
+            //     }    
                  
-                // if (confirm('Are you sure you want to delete this work experience?')) card.remove();
-            });
+            //     // if (confirm('Are you sure you want to delete this work experience?')) card.remove();
+            // });
 
-                }
+            
 
                 
         }
@@ -1507,6 +1505,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         const confirmWorkBtn = document.getElementById('confirmDeleteWorkBtn');
         const cancelWorkBtn = document.getElementById('cancelDeleteWorkBtn');
         let pendingWorkCard = null;
+        
         if (workContainer && deleteWorkPopup) {
             workContainer.addEventListener('click', function(e) {
                 const btn = e.target.closest('.work-card .delete-btn');
@@ -1523,10 +1522,46 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             });
         }
         if (confirmWorkBtn) {
-            confirmWorkBtn.addEventListener('click', function() {
-                if (pendingWorkCard) pendingWorkCard.remove();
-                pendingWorkCard = null;
-                if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+            confirmWorkBtn.addEventListener('click', async function() {
+                // if (pendingWorkCard) pendingWorkCard.remove();
+                // pendingWorkCard = null;
+                // if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+                if (!pendingWorkCard) return;
+
+                const id = pendingWorkCard.dataset.id || '';
+
+                try {
+                     
+                    const url = '<?php echo URLROOT; ?>/profile/deleteWorkExperience?id=' + encodeURIComponent(id);
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const ct = res.headers.get('content-type') || '';
+                    if (!ct.includes('application/json')) {
+                        const text = await res.text();
+                        console.error('Non-JSON response:', text);
+                        alert('Failed to delete work experience: unexpected server response');
+                        return;
+                    }
+                    const json = await res.json();
+                    if (json && json.success) {
+                        //Refresh to ensure server state is reflected in UI
+                        window.location.reload();
+                    } else {
+                        alert((json && json.error) || 'Failed to delete work experience');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error while deleting work experience: ' + (err && err.message ? err.message : 'unknown error'));
+                } finally {
+                    pendingWorkCard = null;
+                    if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+                }
+                
             });
         }
 
