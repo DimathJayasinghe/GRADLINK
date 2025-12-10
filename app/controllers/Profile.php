@@ -128,13 +128,58 @@ class Profile extends Controller{
         }
         header('Content-Type: application/json');
 
-        $bio = trim($_POST['bio'] ?? '');
-        $profile_image = trim($_POST['profile_image'] ?? '');
+        $bio = trim($_POST['profileBioInput'] ?? '');
+        
 
         // Validation
         if ($bio === '') {
             echo json_encode(['success' => false, 'error' => 'Bio cannot be empty']);
             return;
+        }
+
+        // Preserve current image if no new upload
+       $current = $this->Model->getUserDetails($_SESSION['user_id']);
+       $currentImage = $current->profile_image ?? null;
+       $profile_image = $currentImage;
+
+        //Handle profile image upload
+        if (!empty($_FILES['profileImageInput']['name']) && is_uploaded_file($_FILES['profileImageInput']['tmp_name'])) {
+            $original_name = basename($_FILES['profileImageInput']['name']);
+            $fileTmp = $_FILES['profileImageInput']['tmp_name'];
+            $fileSize = $_FILES['profileImageInput']['size'];
+            $mime = mime_content_type($fileTmp);
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+            if (!in_array($mime, $allowedMimes, true)) {
+                echo json_encode(['success' => false, 'error' => 'Invalid file format. Only JPG, PNG, GIF, WEBP allowed.']);
+                return;
+            }
+            if ($fileSize > 5 * 1024 * 1024) {
+                echo json_encode(['success' => false, 'error' => 'File too large. Max 5MB allowed.']);
+                return;
+            }
+
+            $safeBase = preg_replace('/[^A-Za-z0-9._-]/', '_', pathinfo($original_name, PATHINFO_FILENAME));
+            if ($safeBase === '') $safeBase = 'profile';
+            $ext = pathinfo($original_name, PATHINFO_EXTENSION);
+            if (!$ext) $ext = 'jpg';
+            
+            $profile_image = time() . '_' . substr(sha1($safeBase . random_bytes(4)), 0, 8) . '.' . $ext;
+
+            $targetDir = APPROOT . '/storage/profile';
+            if (!is_dir($targetDir)) {
+                if (!@mkdir($targetDir, 0755, true)) {
+                    echo json_encode(['success' => false, 'error' => 'Server error: cannot create storage directory.']);
+                    return;
+                }
+            }
+
+            $dest = $targetDir . '/' . $profile_image;
+            if (!@move_uploaded_file($fileTmp, $dest)) {
+                echo json_encode(['success' => false, 'error' => 'Failed to save uploaded file on server.']);
+                return;
+            }
+            @chmod($dest, 0644);
         }
 
         // Update DB record via model

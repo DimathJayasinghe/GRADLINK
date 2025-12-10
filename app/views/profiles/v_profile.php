@@ -346,11 +346,11 @@ require_once APPROOT . '/helpers/Csrf.php';
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Edit Profile</div>
 
-            <form id="editProfileForm" class="certificate-form">
+            <form id="editProfileForm" class="certificate-form" action="<?= URLROOT; ?>/profile/updateProfileBioImage" method="post" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Profile Picture</label>
                     <div class="file-upload-container">
-                        <input type="file" id="profileImageInput" accept="image/*" style="display:none;">
+                        <input type="file" id="profileImageInput" name="profileImageInput" accept="image/*" style="display:none;">
                         <button type="button" class="file-upload-btn" id="chooseProfileImgBtn">Choose Image</button>
                         <span class="file-name" id="profileImgFileName" style="color:var(--text)">No file chosen</span>
                     </div>
@@ -361,7 +361,7 @@ require_once APPROOT . '/helpers/Csrf.php';
                 </div>
                 <div class="form-group">
                     <label for="profileBioInput">Bio</label>
-                    <textarea id="profileBioInput" style="
+                    <textarea id="profileBioInput" name="profileBioInput" style="
                                 max-width: 100%;
                                 background: rgba(255, 255, 255, 0.05);
                                 border: 1px solid var(--border);
@@ -1217,9 +1217,31 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         if (form) {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                // visually update page image and bio
-                if (pageImg && preview) pageImg.src = preview.src;
-                if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
+
+                const fd = new FormData(this);
+                fetch(this.action, {
+                    method: 'POST',
+                    body: fd,
+                    headers: {
+                        'Accept' : 'application/json'
+                    }
+                })
+                .then(r => r.json())
+                .then(json => {
+                    if (json.success) {
+                        if (pageImg && preview) pageImg.src = preview.src;
+                        if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
+                        window.location.reload();
+                    } else {
+                        alert(json.error || 'Failed to update profile');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Error while updating profile');
+                });
+                
+                
                 // close popup
                 const closeBtn = popup.querySelector('.close-popup');
                 if (closeBtn) closeBtn.click();
