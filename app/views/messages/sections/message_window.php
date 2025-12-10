@@ -4,6 +4,34 @@ let lastMessagePollTime = null;
 const messagePollingInterval = 1000;
 let initialMessageFetch = true;
 let pendingDeleteMessageId = null;
+const currentUserId = Number(<?php echo (int)($_SESSION['user_id'] ?? 0); ?>);
+const baseUrl = <?php echo json_encode(URLROOT); ?>;
+
+function parseServerDate(dateString) {
+    if (!dateString) {
+        return null;
+    }
+    const normalized = dateString.replace(' ', 'T');
+    const parsed = new Date(normalized);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function updateLastPollTime(candidateTime) {
+    if (!candidateTime) {
+        return;
+    }
+    if (!lastMessagePollTime) {
+        lastMessagePollTime = candidateTime;
+        return;
+    }
+
+    const currentDate = parseServerDate(lastMessagePollTime);
+    const candidateDate = parseServerDate(candidateTime);
+
+    if (!currentDate || (candidateDate && candidateDate > currentDate)) {
+        lastMessagePollTime = candidateTime;
+    }
+}
 
 async function startConversation(userId) {
     if (userId === null || userId === undefined) {
@@ -100,6 +128,165 @@ async function startConversation(userId) {
     }
 }
 
+function ensureMessageHelperStyles() {
+    if (document.getElementById('messageHelperStyles')) {
+        return;
+    }
+
+    const style = document.createElement('style');
+    style.id = 'messageHelperStyles';
+    style.textContent = `
+        .message.message-deleted {
+            opacity: 0.8;
+        }
+        .message.message-deleted .message-text,
+        .message-text.deleted-text {
+            font-style: italic;
+            color: #9aa3b7;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function applyMessageContent(messageDiv, message) {
+    ensureMessageHelperStyles();
+
+    const status = (message?.status || '').toLowerCase();
+    const safeText = escapeHtml(String(message?.content ?? ''));
+    const timestamp = message?.timestamp || '';
+    const modifiedDisplay = message?.modified_timestamp || '';
+    const isEdited = status === 'edited-read' || status === 'edited-unread';
+
+    messageDiv.classList.toggle('message-deleted', status === 'deleted');
+
+    if (status === 'deleted') {
+        messageDiv.innerHTML = `
+            <p class="message-text deleted-text">This message was deleted</p>
+            <span class="message-time">${timestamp}</span>
+        `;
+        return;
+    }
+
+    const effectiveTime = isEdited && modifiedDisplay ? `${modifiedDisplay}` : timestamp;
+    const timeLabel = isEdited && effectiveTime ? `${effectiveTime} (edited)` : effectiveTime;
+
+    messageDiv.innerHTML = `
+        <p class="message-text">${safeText}</p>
+        <span class="message-time">${timeLabel}</span>
+    `;
+}
+
+function buildSentMessageActions(actionsContainer, message) {
+    actionsContainer.innerHTML = '';
+
+    const actionsBtn = document.createElement('button');
+    actionsBtn.className = 'msg-actions-btn';
+    actionsBtn.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
+    actionsBtn.addEventListener('click', toggleMsgDropdown);
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'msg-dropdown';
+    dropdown.style.display = 'none';
+
+    const originalText = String(message?.content || '');
+
+    const editItem = document.createElement('div');
+    editItem.className = 'msg-dropdown-item';
+    editItem.innerHTML = '<i class="fas fa-edit"></i> Edit';
+    editItem.addEventListener('click', (event) => {
+        event.stopPropagation();
+        editMessagePrompt(editItem, message.message_id || '', originalText);
+    });
+
+    const deleteItem = document.createElement('div');
+    deleteItem.className = 'msg-dropdown-item danger';
+    deleteItem.innerHTML = '<i class="fas fa-trash"></i> Delete';
+    deleteItem.addEventListener('click', (event) => {
+        event.stopPropagation();
+        deleteMessageConfirm(message.message_id || '');
+    });
+
+    dropdown.appendChild(editItem);
+    dropdown.appendChild(deleteItem);
+
+    actionsContainer.appendChild(actionsBtn);
+    actionsContainer.appendChild(dropdown);
+}
+
+function applyMessageUpdate(message) {
+    const chatMessages = document.getElementById('chatMessages');
+    if (!chatMessages) {
+        return false;
+    }
+
+    const messageId = String(message?.message_id ?? '');
+    if (!messageId) {
+        return false;
+    }
+
+    const status = (message?.status || '').toLowerCase();
+    const isSent = Number(message?.sender_id) === currentUserId;
+
+    const existing = chatMessages.querySelector(`.single-message-container[data-message-id="${messageId}"]`);
+
+    if (existing) {
+        existing.dataset.status = status;
+        if (message?.modified_time) {
+            existing.dataset.modifiedTime = message.modified_time;
+        } else {
+            delete existing.dataset.modifiedTime;
+        }
+        if (message?.message_time) {
+            existing.dataset.messageTime = message.message_time;
+        } else if (message?.modified_time) {
+            existing.dataset.messageTime = message.modified_time;
+        }
+
+        const messageDiv = existing.querySelector('.message');
+        if (messageDiv) {
+            delete messageDiv.dataset.original;
+            delete messageDiv.dataset.originalTime;
+            applyMessageContent(messageDiv, message);
+        }
+
+        const actions = existing.querySelector('.msg-actions');
+        if (actions) {
+            if (isSent && status !== 'deleted') {
+                buildSentMessageActions(actions, message);
+            } else {
+                actions.innerHTML = '';
+            }
+        }
+
+        return false;
+    }
+
+    const newBubble = createMessageBubble(message);
+
+    const targetDateString = message?.message_time || message?.modified_time || null;
+    const targetTime = targetDateString ? new Date(targetDateString.replace(' ', 'T')) : null;
+    let inserted = false;
+
+    if (targetTime) {
+        const children = Array.from(chatMessages.children);
+        for (const child of children) {
+            const childTimeStr = child.dataset.messageTime || child.dataset.modifiedTime || '';
+            const childTime = childTimeStr ? new Date(childTimeStr.replace(' ', 'T')) : null;
+            if (childTime && childTime > targetTime) {
+                chatMessages.insertBefore(newBubble, child);
+                inserted = true;
+                break;
+            }
+        }
+    }
+
+    if (!inserted) {
+        chatMessages.appendChild(newBubble);
+    }
+
+    return true;
+}
+
 async function loadMessages(userId) {
     const chatMessages = document.getElementById('chatMessages');
     if (!chatMessages) {
@@ -129,33 +316,26 @@ async function loadMessages(userId) {
         }
 
         if (data.lastPollTime) {
-            lastMessagePollTime = data.lastPollTime;
+            updateLastPollTime(data.lastPollTime);
         }
 
         const messages = Array.isArray(data.messages) ? data.messages : [];
-        if (messages.length > 0) {
-            const fragment = document.createDocumentFragment();
+        let appendedNew = false;
 
-            messages.forEach((message) => {
-                const messageId = String(message.message_id ?? '');
-                if (messageId && chatMessages.querySelector(`.single-message-container[data-message-id="${messageId}"]`)) {
-                    return;
-                }
-
-                const bubble = createMessageBubble(message);
-                fragment.appendChild(bubble);
-            });
-
-            if (fragment.childNodes.length > 0) {
-                chatMessages.appendChild(fragment);
-                if (wasAtBottom) {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
+        messages.forEach((message) => {
+            const created = applyMessageUpdate(message);
+            appendedNew = appendedNew || created;
+            const candidate = message?.modified_time || message?.message_time || null;
+            if (candidate) {
+                updateLastPollTime(candidate);
             }
-        }
+        });
 
         if (initialMessageFetch) {
             initialMessageFetch = false;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        } else if (appendedNew && wasAtBottom) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
     } catch (error) {
         console.error('Error loading messages:', error);
@@ -166,67 +346,48 @@ async function loadMessages(userId) {
 }
 
 function createMessageBubble(message) {
-    const isSent = Number(message.sender_id) === Number(<?php echo (int)($_SESSION['user_id'] ?? 0); ?>);
+    const status = (message?.status || '').toLowerCase();
+    const isSent = Number(message?.sender_id) === currentUserId;
     const container = document.createElement('div');
     container.className = `single-message-container ${isSent ? 'sent' : 'received'}`;
 
-    if (message.message_id !== undefined && message.message_id !== null) {
+    if (message?.message_id !== undefined && message?.message_id !== null) {
         container.dataset.messageId = String(message.message_id);
     }
+    container.dataset.status = status;
 
-    const avatar = document.createElement('div');
-    avatar.className = 'message-avatar';
-    avatar.innerHTML = `<img src="<?php echo URLROOT; ?>/media/profile/${message.sender_picture || 'default.jpg'}" alt="User" class="avatar-small">`;
+    if (message?.message_time) {
+        container.dataset.messageTime = message.message_time;
+    } else if (message?.modified_time) {
+        container.dataset.messageTime = message.modified_time;
+    }
 
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
-    const safeText = escapeHtml(String(message.content || ''));
-    messageDiv.innerHTML = `
-        <p class="message-text">${safeText}</p>
-        <span class="message-time">${message.timestamp || ''}</span>
-    `;
+    if (message?.modified_time) {
+        container.dataset.modifiedTime = message.modified_time;
+    }
 
     const actions = document.createElement('div');
     actions.className = 'msg-actions';
 
-    if (isSent) {
-        const actionsBtn = document.createElement('button');
-        actionsBtn.className = 'msg-actions-btn';
-        actionsBtn.innerHTML = '<i class="fas fa-ellipsis-v"></i>';
-        actionsBtn.addEventListener('click', toggleMsgDropdown);
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+    applyMessageContent(messageDiv, message);
 
-        const dropdown = document.createElement('div');
-        dropdown.className = 'msg-dropdown';
-        dropdown.style.display = 'none';
-
-        const originalText = String(message.content || '');
-
-        const editItem = document.createElement('div');
-        editItem.className = 'msg-dropdown-item';
-        editItem.innerHTML = '<i class="fas fa-edit"></i> Edit';
-        editItem.addEventListener('click', (event) => {
-            event.stopPropagation();
-            editMessagePrompt(editItem, message.message_id || '', originalText);
-        });
-
-        const deleteItem = document.createElement('div');
-        deleteItem.className = 'msg-dropdown-item danger';
-        deleteItem.innerHTML = '<i class="fas fa-trash"></i> Delete';
-        deleteItem.addEventListener('click', (event) => {
-            event.stopPropagation();
-            deleteMessageConfirm(message.message_id || '');
-        });
-
-        dropdown.appendChild(editItem);
-        dropdown.appendChild(deleteItem);
-        actions.appendChild(actionsBtn);
-        actions.appendChild(dropdown);
+    if (isSent && status !== 'deleted') {
+        buildSentMessageActions(actions, message);
     }
 
     if (isSent) {
         container.appendChild(actions);
         container.appendChild(messageDiv);
     } else {
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        const profileSrc = message?.sender_picture
+            ? `${baseUrl}/media/profile/${message.sender_picture}`
+            : `${baseUrl}/media/profile/default.jpg`;
+        avatar.innerHTML = `<img src="${profileSrc}" alt="User" class="avatar-small" onerror="this.src='${baseUrl}/media/profile/default.jpg'">`;
+
         container.appendChild(avatar);
         container.appendChild(messageDiv);
         container.appendChild(actions);
@@ -246,6 +407,9 @@ async function sendMessage(userId) {
         return;
     }
 
+    const chatMessages = document.getElementById('chatMessages');
+    const stickToBottom = isAtBottom(chatMessages);
+
     try {
         const response = await fetch(`<?php echo URLROOT; ?>/messages/sendMessage`, {
             method: 'POST',
@@ -256,7 +420,17 @@ async function sendMessage(userId) {
 
         if (data.success) {
             messageInput.value = '';
-            await loadMessages(userId);
+            if (data.messageRecord) {
+                const record = data.messageRecord;
+                const candidateTime = record.modified_time || record.message_time || null;
+                updateLastPollTime(candidateTime);
+                applyMessageUpdate(record);
+                if (stickToBottom && chatMessages) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            } else {
+                await loadMessages(userId);
+            }
         } else {
             alert('Failed to send message: ' + data.error);
         }
@@ -396,9 +570,25 @@ function performDeleteMessage(messageId) {
         .then((r) => r.json())
         .then((data) => {
             if (data.success) {
-                const msgEl = document.querySelector(`.single-message-container[data-message-id="${messageId}"]`);
-                if (msgEl) {
-                    msgEl.remove();
+                if (data.updatedMessage) {
+                    applyMessageUpdate(data.updatedMessage);
+                } else {
+                    const msgEl = document.querySelector(`.single-message-container[data-message-id="${messageId}"]`);
+                    if (msgEl) {
+                        msgEl.dataset.status = 'deleted';
+                        const messageDiv = msgEl.querySelector('.message');
+                        if (messageDiv) {
+                            messageDiv.classList.add('message-deleted');
+                            messageDiv.innerHTML = `
+                                <p class="message-text deleted-text">This message was deleted</p>
+                                <span class="message-time"></span>
+                            `;
+                        }
+                        const actions = msgEl.querySelector('.msg-actions');
+                        if (actions) {
+                            actions.innerHTML = '';
+                        }
+                    }
                 }
                 closeDeleteModal();
             } else {
@@ -667,18 +857,8 @@ async function submitEditMessage(messageId, inputId) {
             alert('Failed to update message: ' + (data.error || 'Unknown error'));
             return;
         }
-
-        const msgContainer = document.querySelector(`.single-message-container[data-message-id="${messageId}"]`);
-        const msgDiv = msgContainer?.querySelector('.message');
-        if (msgDiv) {
-            const timestamp = msgDiv.dataset.originalTime || '';
-            const safeText = escapeHtml(newContent);
-            msgDiv.innerHTML = `
-                <p class="message-text">${safeText}</p>
-                <span class="message-time">${timestamp}</span>
-            `;
-            delete msgDiv.dataset.original;
-            delete msgDiv.dataset.originalTime;
+        if (data.updatedMessage) {
+            applyMessageUpdate(data.updatedMessage);
         }
     } catch (error) {
         console.error('Error updating message', error);

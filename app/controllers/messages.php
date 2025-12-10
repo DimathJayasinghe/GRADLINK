@@ -174,11 +174,11 @@ class messages extends Controller{
             $messageId = $this->message_model->sendMessage($currentUserId, $recipientId, $content);
             
             if ($messageId) {
-                // Increment unread count for recipient
+                $messageRecord = null;
                 try {
-                    $this->message_model->incrementUnreadCount($currentUserId, $recipientId);
+                    $messageRecord = $this->message_model->getMessageById($messageId);
                 } catch (Exception $e) {
-                    error_log('Failed to increment unread count: ' . $e->getMessage());
+                    error_log('Failed to fetch sent message: ' . $e->getMessage());
                 }
                 
                 // Get sender name from session or use generic text
@@ -208,7 +208,8 @@ class messages extends Controller{
                 
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Message sent successfully'
+                    'message' => 'Message sent successfully',
+                    'messageRecord' => $messageRecord
                 ]);
                 exit;
             } else {
@@ -320,12 +321,13 @@ class messages extends Controller{
                 return;
             }
             
-            $result = $this->message_model->deleteMessage($messageId, $currentUserId);
+            $deletedMessage = $this->message_model->deleteMessage($messageId, $currentUserId);
             
-            if ($result) {
+            if ($deletedMessage) {
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Message deleted successfully'
+                    'message' => 'Message deleted successfully',
+                    'updatedMessage' => $deletedMessage
                 ]);
             } else {
                 echo json_encode([
@@ -373,12 +375,13 @@ class messages extends Controller{
                 return;
             }
 
-            $updated = $this->message_model->updateMessage($messageId, $currentUserId, $content);
+            $updatedMessage = $this->message_model->updateMessage($messageId, $currentUserId, $content);
 
-            if ($updated) {
+            if ($updatedMessage) {
                 echo json_encode([
                     'success' => true,
-                    'message' => 'Message updated successfully'
+                    'message' => 'Message updated successfully',
+                    'updatedMessage' => $updatedMessage
                 ]);
             } else {
                 echo json_encode([

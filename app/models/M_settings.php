@@ -147,11 +147,6 @@ class M_settings extends Database {
             $this->bind(':user_id', $userId);
             $this->execute();
             
-            // Delete message unread tracker (both sent and received)
-            $this->query("DELETE FROM message_unread_tracker WHERE sender_id = :user_id OR receiver_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
             // Delete messages
             $this->query("DELETE FROM messages WHERE sender_id = :user_id OR receiver_id = :user_id");
             $this->bind(':user_id', $userId);

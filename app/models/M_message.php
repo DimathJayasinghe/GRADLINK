@@ -10,64 +10,79 @@ class M_message extends Database {
      */
     public function getAvailableUsers($currentUserId, $searchTerm = null, $lastPoll = null) {
         $sql = "SELECT 
-                    u.id as user_id,
+                    u.id AS user_id,
                     u.name,
                     u.display_name,
                     u.email,
-                    u.profile_image as profile_picture,
-                    COALESCE(t.unread_count, 0) as unread_count,
-                    GREATEST(
-                        COALESCE(MAX(m.message_time), '1970-01-01'),
-                        COALESCE(t.updated_at, '1970-01-01')
-                    ) as last_activity
+                    u.profile_image AS profile_picture,
+                    COUNT(DISTINCT CASE 
+                        WHEN m.receiver_id = :current_user_id 
+                             AND m.status IN ('unread', 'edited-unread') 
+                        THEN m.message_id 
+                    END) AS unread_count,
+                    COALESCE(
+                        MAX(COALESCE(m.modified_time, m.message_time)),
+                        '1970-01-01 00:00:00'
+                    ) AS last_activity
                 FROM users u
                 LEFT JOIN followers f_following ON f_following.followed_id = u.id AND f_following.follower_id = :current_user_id
                 LEFT JOIN followers f_follower ON f_follower.follower_id = u.id AND f_follower.followed_id = :current_user_id
-                LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
+                LEFT JOIN messages m ON ((m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id))
                 LEFT JOIN messages m_from_them ON m_from_them.sender_id = u.id AND m_from_them.receiver_id = :current_user_id
-                LEFT JOIN message_unread_tracker t ON t.sender_id = u.id AND t.receiver_id = :current_user_id
                 WHERE 
                     u.id != :current_user_id
                     AND (
                         f_following.follower_id IS NOT NULL 
                         OR (f_follower.follower_id IS NOT NULL AND m_from_them.message_id IS NOT NULL)
-                        OR (u.role = 'admin' AND m.message_id IS NOT NULL)
+                        OR (
+                            u.role = 'admin' 
+                            AND EXISTS (
+                                SELECT 1 FROM messages m_admin
+                                WHERE ((m_admin.sender_id = u.id AND m_admin.receiver_id = :current_user_id)
+                                       OR (m_admin.receiver_id = u.id AND m_admin.sender_id = :current_user_id))
+                                LIMIT 1
+                            )
+                        )
                     )";
 
-        // If lastPoll provided, return only users with messages after that time
         if ($lastPoll) {
             $sql .= " AND EXISTS (
                         SELECT 1 FROM messages m_poll
                         WHERE ((m_poll.sender_id = u.id AND m_poll.receiver_id = :current_user_id)
                                OR (m_poll.receiver_id = u.id AND m_poll.sender_id = :current_user_id))
-                          AND m_poll.message_time > :last_poll
-                      )";
+                          AND COALESCE(m_poll.modified_time, m_poll.message_time) > :last_poll
+                    )";
         }
-        
-        // Add search filter if provided
+
         if ($searchTerm) {
             $sql .= " AND (u.name LIKE :search 
                       OR u.display_name LIKE :search
                       OR u.email LIKE :search)";
         }
-        
-        $sql .= " GROUP BY u.id, u.name, u.display_name, u.email, u.profile_image, t.unread_count, t.updated_at
+
+        $sql .= " GROUP BY u.id, u.name, u.display_name, u.email, u.profile_image
                   ORDER BY 
-                    CASE WHEN COALESCE(t.unread_count, 0) > 0 THEN 0 ELSE 1 END,
+                    CASE WHEN unread_count > 0 THEN 0 ELSE 1 END,
                     last_activity DESC, 
                     u.name ASC";
-        
+
         $this->query($sql);
         $this->bind(':current_user_id', $currentUserId);
         if ($lastPoll) {
             $this->bind(':last_poll', $lastPoll);
         }
-        
+
         if ($searchTerm) {
             $this->bind(':search', '%' . $searchTerm . '%');
         }
-        
-        return $this->resultSet();
+
+        $users = $this->resultSet();
+
+        foreach ($users as $user) {
+            $user->unread_count = (int)($user->unread_count ?? 0);
+        }
+
+        return $users;
     }
     
     /**
@@ -98,11 +113,15 @@ class M_message extends Database {
                     m.message_id,
                     m.sender_id,
                     m.receiver_id,
-                    m.message_text as content,
-                    DATE_FORMAT(m.message_time, '%Y-%m-%d %H:%i') as timestamp,
-                    u.name as sender_name,
-                    u.display_name as sender_display_name,
-                    u.profile_image as sender_picture
+                    m.message_text AS content,
+                    DATE_FORMAT(m.message_time, '%Y-%m-%d %H:%i') AS timestamp,
+                    DATE_FORMAT(m.modified_time, '%Y-%m-%d %H:%i') AS modified_timestamp,
+                    m.status,
+                    m.message_time,
+                    m.modified_time,
+                    u.name AS sender_name,
+                    u.display_name AS sender_display_name,
+                    u.profile_image AS sender_picture
                 FROM messages m
                 JOIN users u ON m.sender_id = u.id
                 WHERE (
@@ -111,18 +130,18 @@ class M_message extends Database {
                 )";
 
         if ($since) {
-            $sql .= " AND m.message_time > :since";
+            $sql .= " AND COALESCE(m.modified_time, m.message_time) > :since";
         }
 
-        $sql .= " ORDER BY m.message_time ASC";
-        
+        $sql .= " ORDER BY m.message_time ASC, m.message_id ASC";
+
         $this->query($sql);
         $this->bind(':user1', $userId1);
         $this->bind(':user2', $userId2);
         if ($since) {
             $this->bind(':since', $since);
         }
-        
+
         return $this->resultSet();
     }
     
@@ -130,8 +149,8 @@ class M_message extends Database {
      * Send a message
      */
     public function sendMessage($senderId, $receiverId, $messageText) {
-        $sql = "INSERT INTO messages (sender_id, receiver_id, message_text) 
-                VALUES (:sender_id, :receiver_id, :message_text)";
+        $sql = "INSERT INTO messages (sender_id, receiver_id, message_text, status) 
+            VALUES (:sender_id, :receiver_id, :message_text, 'unread')";
         
         $this->query($sql);
         $this->bind(':sender_id', $senderId);
@@ -145,18 +164,37 @@ class M_message extends Database {
     }
     
     /**
-     * Delete a message (only if sender matches)
+     * Soft-delete a message (only if sender matches)
      */
     public function deleteMessage($messageId, $userId) {
-        $sql = "DELETE FROM messages 
-                WHERE message_id = :message_id 
-                AND sender_id = :user_id";
-        
+        // Ensure message belongs to user
+        $this->query("SELECT status FROM messages WHERE message_id = :message_id AND sender_id = :user_id LIMIT 1");
+        $this->bind(':message_id', $messageId);
+        $this->bind(':user_id', $userId);
+        $existing = $this->single();
+
+        if (!$existing) {
+            return false;
+        }
+
+        if (strtolower((string)$existing->status) === 'deleted') {
+            return $this->getMessageById($messageId);
+        }
+
+        $sql = "UPDATE messages 
+            SET status = 'deleted',
+                message_text = NULL
+            WHERE message_id = :message_id AND sender_id = :user_id";
+
         $this->query($sql);
         $this->bind(':message_id', $messageId);
         $this->bind(':user_id', $userId);
-        
-        return $this->execute();
+
+        if ($this->execute()) {
+            return $this->getMessageById($messageId);
+        }
+
+        return false;
     }
     
     /**
@@ -180,110 +218,169 @@ class M_message extends Database {
      * Update message content (only by the sender)
      */
     public function updateMessage($messageId, $userId, $newText) {
+        $this->query("SELECT status FROM messages WHERE message_id = :message_id AND sender_id = :user_id LIMIT 1");
+        $this->bind(':message_id', $messageId);
+        $this->bind(':user_id', $userId);
+        $existing = $this->single();
+
+        if (!$existing) {
+            return false;
+        }
+
+        if (strtolower((string)$existing->status) === 'deleted') {
+            return false;
+        }
+
+        $newStatus = $this->resolveEditedStatus((string)$existing->status);
+
         $sql = "UPDATE messages 
-                SET message_text = :text
+                SET message_text = :text,
+                    status = :status
                 WHERE message_id = :message_id AND sender_id = :user_id";
 
         $this->query($sql);
         $this->bind(':text', $newText);
+        $this->bind(':status', $newStatus);
         $this->bind(':message_id', $messageId);
         $this->bind(':user_id', $userId);
 
-        return $this->execute();
-    }
+        if ($this->execute()) {
+            return $this->getMessageById($messageId);
+        }
 
-    /**
-     * Increment unread count for a conversation
-     */
-    public function incrementUnreadCount($senderId, $receiverId) {
-        // Upsert unread count by sender/receiver; no last_message_id stored
-        $sql = "INSERT INTO message_unread_tracker (sender_id, receiver_id, unread_count)
-                VALUES (:sender_id, :receiver_id, 1)
-                ON DUPLICATE KEY UPDATE 
-                    unread_count = unread_count + 1,
-                    updated_at = CURRENT_TIMESTAMP";
-
-        $this->query($sql);
-        $this->bind(':sender_id', $senderId);
-        $this->bind(':receiver_id', $receiverId);
-
-        return $this->execute();
+        return false;
     }
 
     /**
      * Mark messages as read (clear unread count)
      */
     public function markConversationAsRead($currentUserId, $otherUserId) {
-        // Delete row to indicate no unread messages for this sender->receiver pair
-        $sql = "DELETE FROM message_unread_tracker 
+        $sql = "UPDATE messages
+                SET status = CASE 
+                    WHEN status = 'edited-unread' THEN 'edited-read'
+                    WHEN status = 'unread' THEN 'read'
+                    ELSE status
+                END
                 WHERE sender_id = :other_user_id 
-                AND receiver_id = :current_user_id";
+                  AND receiver_id = :current_user_id
+                  AND status IN ('unread', 'edited-unread')";
 
         $this->query($sql);
         $this->bind(':current_user_id', $currentUserId);
         $this->bind(':other_user_id', $otherUserId);
 
-        return $this->execute();
+        $this->execute();
+        return true;
     }
 
     /**
      * Get unread count for a specific conversation
      */
     public function getUnreadCount($currentUserId, $otherUserId) {
-        $sql = "SELECT unread_count 
-                FROM message_unread_tracker 
-                WHERE sender_id = :other_user_id 
-                AND receiver_id = :current_user_id
-                LIMIT 1";
-        
+        $sql = "SELECT COUNT(*) AS unread_count
+                FROM messages
+                WHERE sender_id = :other_user_id
+                  AND receiver_id = :current_user_id
+                  AND status IN ('unread', 'edited-unread')";
+
         $this->query($sql);
         $this->bind(':current_user_id', $currentUserId);
         $this->bind(':other_user_id', $otherUserId);
-        
+
         $result = $this->single();
-        return $result ? intval($result->unread_count) : 0;
+        return $result ? (int)$result->unread_count : 0;
     }
 
     /**
      * Get total unread messages count for current user
      */
     public function getTotalUnreadCount($userId) {
-        $sql = "SELECT COALESCE(SUM(unread_count), 0) as total
-                FROM message_unread_tracker 
-                WHERE receiver_id = :user_id 
-                AND unread_count > 0";
-        
+        $sql = "SELECT COUNT(*) AS total
+                FROM messages
+                WHERE receiver_id = :user_id
+                  AND status IN ('unread', 'edited-unread')";
+
         $this->query($sql);
         $this->bind(':user_id', $userId);
-        
+
         $result = $this->single();
-        return $result ? intval($result->total) : 0;
+        return $result ? (int)$result->total : 0;
     }
 
     /**
      * Get all conversations with unread counts
      */
     public function getConversationsWithUnread($userId) {
-        $sql = "SELECT DISTINCT
-                    u.id as user_id,
+        $sql = "SELECT
+                    u.id AS user_id,
                     u.name,
                     u.display_name,
                     u.email,
-                    u.profile_image as profile_picture,
-                    COALESCE(t.unread_count, 0) as unread_count
-                FROM users u
-                LEFT JOIN followers f ON f.followed_id = u.id AND f.follower_id = :current_user_id
-                LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) 
-                    OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
-                LEFT JOIN message_unread_tracker t ON t.sender_id = u.id AND t.receiver_id = :current_user_id
-                WHERE u.id != :current_user_id
-                    AND (f.follower_id IS NOT NULL OR (u.role = 'admin' AND m.message_id IS NOT NULL))
-                ORDER BY t.updated_at DESC, u.name ASC";
-        
+                    u.profile_image AS profile_picture,
+                    COUNT(DISTINCT m.message_id) AS unread_count,
+                    MAX(COALESCE(m.modified_time, m.message_time)) AS last_unread_at
+                FROM messages m
+                JOIN users u ON u.id = m.sender_id
+                WHERE m.receiver_id = :current_user_id
+                  AND m.status IN ('unread', 'edited-unread')
+                GROUP BY u.id, u.name, u.display_name, u.email, u.profile_image
+                ORDER BY last_unread_at DESC, u.name ASC";
+
         $this->query($sql);
         $this->bind(':current_user_id', $userId);
-        
-        return $this->resultSet();
+
+        $result = $this->resultSet();
+        foreach ($result as $row) {
+            $row->unread_count = (int)$row->unread_count;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Fetch a single message payload by ID with presentation fields
+     */
+    public function getMessageById($messageId) {
+        $sql = "SELECT 
+                    m.message_id,
+                    m.sender_id,
+                    m.receiver_id,
+                    m.message_text AS content,
+                    DATE_FORMAT(m.message_time, '%Y-%m-%d %H:%i') AS timestamp,
+                    DATE_FORMAT(m.modified_time, '%Y-%m-%d %H:%i') AS modified_timestamp,
+                    m.status,
+                    m.message_time,
+                    m.modified_time,
+                    u.name AS sender_name,
+                    u.display_name AS sender_display_name,
+                    u.profile_image AS sender_picture
+                FROM messages m
+                JOIN users u ON m.sender_id = u.id
+                WHERE m.message_id = :message_id
+                LIMIT 1";
+
+        $this->query($sql);
+        $this->bind(':message_id', $messageId);
+
+        return $this->single();
+    }
+
+    /**
+     * Decide next status for a message that is being edited
+     */
+    private function resolveEditedStatus($currentStatus) {
+        $status = strtolower($currentStatus ?? '');
+
+        if ($status === 'read' || $status === 'edited-read') {
+            return 'edited-read';
+        }
+
+        if ($status === 'edited-unread') {
+            return 'edited-unread';
+        }
+
+        // Default for unread / unknown states
+        return 'edited-unread';
     }
 }
 ?>
