@@ -113,7 +113,7 @@ class M_message extends Database {
                     m.message_id,
                     m.sender_id,
                     m.receiver_id,
-                    m.message_text AS content,
+                    CASE WHEN m.status = 'deleted' THEN NULL ELSE m.message_text END AS content,
                     DATE_FORMAT(m.message_time, '%Y-%m-%d %H:%i') AS timestamp,
                     DATE_FORMAT(m.modified_time, '%Y-%m-%d %H:%i') AS modified_timestamp,
                     m.status,
@@ -183,7 +183,8 @@ class M_message extends Database {
 
         $sql = "UPDATE messages 
             SET status = 'deleted',
-                message_text = NULL
+                message_text = '',
+                modified_time = CURRENT_TIMESTAMP
             WHERE message_id = :message_id AND sender_id = :user_id";
 
         $this->query($sql);
@@ -235,7 +236,8 @@ class M_message extends Database {
 
         $sql = "UPDATE messages 
                 SET message_text = :text,
-                    status = :status
+                    status = :status,
+                    modified_time = CURRENT_TIMESTAMP
                 WHERE message_id = :message_id AND sender_id = :user_id";
 
         $this->query($sql);
@@ -345,7 +347,7 @@ class M_message extends Database {
                     m.message_id,
                     m.sender_id,
                     m.receiver_id,
-                    m.message_text AS content,
+                    CASE WHEN m.status = 'deleted' THEN NULL ELSE m.message_text END AS content,
                     DATE_FORMAT(m.message_time, '%Y-%m-%d %H:%i') AS timestamp,
                     DATE_FORMAT(m.modified_time, '%Y-%m-%d %H:%i') AS modified_timestamp,
                     m.status,
