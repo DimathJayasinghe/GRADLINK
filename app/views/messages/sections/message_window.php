@@ -1,6 +1,11 @@
 <script>
 let messageInterval = null; // store the chat refresh interval
 let pausedByScroll = false; // track if polling paused due to user scrolling up
+let lastMessagePollTime = null;
+let messageBuffer = [];
+let messagePollingInterval = 1000;
+let initialMessageFetch = true;
+
 
 
 // Start new conversation
@@ -8,9 +13,10 @@ async function startConversation(userId) {
     if(userId === null || userId === undefined) return;
     // Stop any old message refresh interval
     if (messageInterval) clearInterval(messageInterval);
+    initialMessageFetch = true;
 
     const chatRoom = document.getElementById('chatRoom');
-    chatRoom.innerHTML = `<div class="loading">Conversation Loading...</div>`;
+    chatRoom.innerHTML = loadingMessageView();
 
     try {
         // Mark conversation as read
@@ -60,7 +66,7 @@ async function startConversation(userId) {
 
         // Load messages immediately and then every second
         await loadMessages(userId);
-        messageInterval = setInterval(() => loadMessages(userId), 1000);
+        messageInterval = setInterval(() => loadMessages(userId), messagePollingInterval);
 
         // allow Enter to send
         const inputEl = document.getElementById('messageInput');
@@ -336,6 +342,42 @@ function editMessagePrompt(triggerEl, messageId, currentText) {
     // Store a way to restore if cancel (on the specific element)
     msgDiv.dataset.original = originalHtml;
 }
+
+function loadingMessageView(){
+    return `
+        <div class="message-section" id="conversationSection">
+            <div class="message-section-header">
+                <div class="conversation-partner-info">
+                    <div class="partner-details">
+                        <h3 class="partner-name">Loading...</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="conversation-content">
+                <div class="chat-messages" id="chatMessages" style="display: flex; align-items: center; justify-content: center; height: 400px; background: #f5f5f5; border-radius: 8px;">
+                    <div style="text-align: center;">
+                        <div style="width: 40px; height: 40px; border: 4px solid #e0e0e0; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px;"></div>
+                        <p style="color: #666; font-size: 14px; margin: 0;">Loading messages...</p>
+                    </div>
+                </div>
+                <div class="message-input-container">
+                    <div class="input-wrapper">
+                        <input type="text" placeholder="Type a message..." class="message-input" id="messageInput" disabled style="opacity: 0.5;">
+                    </div>
+                    <button class="send-btn" disabled style="opacity: 0.5;">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <style>
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+}
+
 
 async function submitEditMessage(messageId, inputId){
     const input = document.getElementById(inputId);

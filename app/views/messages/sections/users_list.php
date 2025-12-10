@@ -87,8 +87,11 @@
                 }
 
             } else {
-                usersList.innerHTML = '';
-                usersList.innerHTML = '<div class="no-users">No available users found.</div>';
+                if (initialLoad || usersList.children.length === 0) {
+                    usersList.innerHTML = '<div class="no-users">No available users found.</div>';
+                    initialLoad = false;
+                }
+                // Nothing new to render; keep currently displayed conversations
             }
         } catch (error) {
             console.error('Error loading users:', error);
@@ -99,8 +102,6 @@
             `;
         }
     }
-
-
 
     // Create user item element
     function createUserItem(user) {
