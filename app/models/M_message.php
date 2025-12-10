@@ -93,7 +93,7 @@ class M_message extends Database {
     /**
      * Get messages between two users
      */
-    public function getMessages($userId1, $userId2) {
+    public function getMessages($userId1, $userId2, $since = null) {
         $sql = "SELECT 
                     m.message_id,
                     m.sender_id,
@@ -105,13 +105,23 @@ class M_message extends Database {
                     u.profile_image as sender_picture
                 FROM messages m
                 JOIN users u ON m.sender_id = u.id
-                WHERE (m.sender_id = :user1 AND m.receiver_id = :user2)
-                   OR (m.sender_id = :user2 AND m.receiver_id = :user1)
-                ORDER BY m.message_time ASC";
+                WHERE (
+                    (m.sender_id = :user1 AND m.receiver_id = :user2)
+                    OR (m.sender_id = :user2 AND m.receiver_id = :user1)
+                )";
+
+        if ($since) {
+            $sql .= " AND m.message_time > :since";
+        }
+
+        $sql .= " ORDER BY m.message_time ASC";
         
         $this->query($sql);
         $this->bind(':user1', $userId1);
         $this->bind(':user2', $userId2);
+        if ($since) {
+            $this->bind(':since', $since);
+        }
         
         return $this->resultSet();
     }

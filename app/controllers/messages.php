@@ -101,8 +101,19 @@ class messages extends Controller{
         header('Content-Type: application/json');
         
         try {
-            $currentUserId = $_SESSION['user_id'];
-            $otherUserId = $this->getQueryParam('userId', null);
+            $currentUserId = $_SESSION['user_id'] ?? null;
+
+            if (!$currentUserId) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'User is not authenticated'
+                ]);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $otherUserId = $input['userId'] ?? ($_POST['userId'] ?? $this->getQueryParam('userId', null));
+            $lastPollTime = $input['since'] ?? ($_POST['since'] ?? $this->getQueryParam('since', null));
             
             if (!$otherUserId) {
                 echo json_encode([
@@ -112,11 +123,12 @@ class messages extends Controller{
                 return;
             }
             
-            $messages = $this->message_model->getMessages($currentUserId, $otherUserId);
+            $messages = $this->message_model->getMessages($currentUserId, $otherUserId, $lastPollTime);
             
             echo json_encode([
                 'success' => true,
-                'messages' => $messages
+                'messages' => $messages,
+                'lastPollTime' => date("Y-m-d H:i:s")
             ]);
         } catch (Exception $e) {
             echo json_encode([
