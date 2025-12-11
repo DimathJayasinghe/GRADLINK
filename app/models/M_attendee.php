@@ -30,7 +30,8 @@ class M_attendee {
     }
 
     public function getAttendees(int $event_id){
-        $this->db->query('SELECT ea.*, u.name, u.email FROM event_attendees ea JOIN users u ON u.id = ea.user_id WHERE ea.event_id = :event_id');
+        // include batch_no for display on event details
+        $this->db->query('SELECT ea.*, u.name, u.email, u.batch_no FROM event_attendees ea JOIN users u ON u.id = ea.user_id WHERE ea.event_id = :event_id');
         $this->db->bind(':event_id',$event_id);
         return $this->db->resultSet();
     }
