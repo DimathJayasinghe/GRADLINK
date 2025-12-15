@@ -57,6 +57,7 @@
         </div>
     </div>
     <div class="admin-table-wrapper">
+        <?php if (empty($data['requests'])): ?>
         <table class="admin-table" id="alumniTable">
             <thead>
                 <tr>
@@ -71,12 +72,13 @@
             </thead>
             <tbody>
                 <!-- Alumni will be loaded here by JS or backend -->
+                <?php foreach ($data['requests'] as $alumni): ?>
                 <tr>
                     <td><input type="checkbox" class="selectAlumni"></td>
-                    <td>Alumni 01</td>
-                    <td>alu1@email.com</td>
-                    <td>2018</td>
-                    <td>991234567V</td>
+                    <td><?= htmlspecialchars($alumni->name) ?></td>
+                    <td><?= htmlspecialchars($alumni->email) ?></td>
+                    <td><?= htmlspecialchars($alumni->batch) ?></td>
+                    <td><?= htmlspecialchars($alumni->nic) ?></td>
                     <td><span class="status-badge status-pending">Pending</span></td>
                     <td>
                         <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
@@ -84,30 +86,12 @@
                         <button class="admin-btn admin-btn-danger reject-alumni">Reject</button>
                     </td>
                 </tr>
-                <tr>
-                    <td><input type="checkbox" class="selectAlumni"></td>
-                    <td>Alumni 02</td>
-                    <td>alu2@email.com</td>
-                    <td>2017</td>
-                    <td>9823456782221</td>
-                    <td><span class="status-badge status-verified">Verified</span></td>
-                    <td>
-                        <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><input type="checkbox" class="selectAlumni"></td>
-                    <td>Kaveen alumni</td>
-                    <td>kaveen.alumni@email.com</td>
-                    <td>2019</td>
-                    <td>993456789V</td>
-                    <td><span class="status-badge status-rejected">Rejected</span></td>
-                    <td>
-                        <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
-                    </td>
-                </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
+        <?php else: ?>
+            <div class="empty-state">No pending requests.</div>
+        <?php endif; ?>
     </div>
 </div>
 
