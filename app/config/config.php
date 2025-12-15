@@ -1,40 +1,17 @@
 <?php 
     // Database configuration
     // Raw host only (no protocol, no port punctuation); port defined separately
-    
-    // For local hosted databse config
 
-    // define('DB_HOST', 'localhost');
-    // define('DB_PORT', 3306);
-    // define('DB_CHARSET', 'utf8mb4');
-    // define('DB_USER', 'root');
-    // define('DB_PASSWORD', '1234');
-    // define('DB_NAME', 'gl_db');
-    
-    // Main database
+    require_once dirname(__DIR__) . '/helpers/env.php';
+    gl_bootstrap_env();
 
-    // define('DB_HOST', 'mysql-gradlink.alwaysdata.net');
-    // define('DB_PORT', 3306);
-    // define('DB_CHARSET', 'utf8mb4');
-    // define('DB_USER', 'gradlink');
-    // define('DB_PASSWORD', '!G1rA2dL3iN4k');
-    // define('DB_NAME', 'gradlink_main');
-    
-    define('DB_HOST', 'localhost');
-    define('DB_PORT', 3306);
-    define('DB_CHARSET', 'utf8mb4');
-    define('DB_USER', 'root');
-    define('DB_PASSWORD', '!G1rA2dL3iN4k');
-    define('DB_NAME', 'gl_db');
-    
-    // development database
-    // define('DB_HOST', 'mysql-gradlink.alwaysdata.net');
-    // define('DB_PORT', 3306);
-    // define('DB_CHARSET', 'utf8mb4');
-    // define('DB_USER', 'gradlink');
-    // define('DB_PASSWORD', '!G1rA2dL3iN4k');
-    // define('DB_NAME', 'gradlink_dev');
-    
+    //DB_Main_Config_Variables (all sourced from env)
+    define('DB_HOST', gl_env('DB_HOST'));
+    define('DB_PORT', (int) gl_env('DB_PORT'));
+    define('DB_CHARSET', gl_env('DB_CHARSET'));
+    define('DB_USER', gl_env('DB_USER'));
+    define('DB_PASSWORD', gl_env('DB_PASSWORD'));
+    define('DB_NAME', gl_env('DB_NAME'));
 
     
     define('APPROOT', dirname(dirname(__FILE__)));

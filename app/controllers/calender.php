@@ -340,7 +340,12 @@ class calender extends Controller{
         $attModel = $this->model('M_attendee');
         $attId = $attModel->rsvp($eventId, $userId, $status, $guests);
         if($attId){
-            echo json_encode(['ok'=>true,'attendee_id'=>$attId]);
+            // return updated attendees snapshot and computed total (attendees + guests)
+            $rows = $attModel->getAttendees($eventId);
+            $total = 0;
+            foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok'=>true,'attendee_id'=>$attId,'attendees'=>$rows,'attendees_count'=>$total]);
         } else {
             echo json_encode(['ok'=>false,'error'=>'Could not RSVP']);
         }
@@ -369,7 +374,11 @@ class calender extends Controller{
         }
         $attModel = $this->model('M_attendee');
         $count = $attModel->cancel($eventId, $userId);
-        echo json_encode(['ok'=>true,'removed' => (bool)$count]);
+        // return updated attendees list and count
+        $rows = $attModel->getAttendees($eventId);
+        $total = 0;
+        foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
+        echo json_encode(['ok'=>true,'removed' => (bool)$count,'attendees'=>$rows,'attendees_count'=>$total]);
         return;
     }
 
@@ -387,7 +396,10 @@ class calender extends Controller{
 
         $attModel = $this->model('M_attendee');
         $rows = $attModel->getAttendees($eventId);
-        echo json_encode(['ok'=>true,'attendees'=>$rows]);
+        // compute total attending (status == attending) including guests
+        $total = 0;
+        foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
+        echo json_encode(['ok'=>true,'attendees'=>$rows,'attendees_count'=>$total]);
         return;
     }
 }
