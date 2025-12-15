@@ -8,12 +8,14 @@ class alumni extends Controller{
     public function index() {
         if (SessionManager::isSpecialAlumni()){
             $this->redirect("/alumni/approve");
+        } else if (SessionManager::isAdmin()){
+            $this->redirect("/admin/verifications");
         }else{
             $this->redirect("/mainfeed");
         }
     }
     public function approve(){
-        if (SessionManager::isSpecialAlumni()){
+        if (SessionManager::isSpecialAlumni() || SessionManager::isAdmin()){
             // emulate Profile controller's pattern for GET params
             $selected_req_id_raw = $this->getQueryParam('req_id', null);
             $selected_req_id = null;
@@ -34,8 +36,12 @@ class alumni extends Controller{
                 'requestsById' => $requestsById,
                 'selected_req_id' => $selected_req_id,
             ];
-
-            $this->view("/alumni_approval/approval_dashboard", $data);
+            if (SessionManager::isAdmin()){
+                $this->view('admin/verifications', $data);
+            }
+            else if (SessionManager::isSpecialAlumni()){
+                $this->view("/alumni_approval/approval_dashboard", $data);
+            }
         }else{
             $this->redirect("/mainfeed");
         }
