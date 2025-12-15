@@ -31,7 +31,7 @@ $isOwner = isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_S
 $leftside_buttons = [
     ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'"],
     ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
-    ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'notifications' => $notifications],
+    ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'badge' => true],
     ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
     ['icon' => 'user', 'label' => 'Profile', 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=" . $_SESSION['user_id'] . "'", 'active' => true],
     // icon for fundraiser
@@ -85,15 +85,20 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
                 <div class="profile-footer-spacer"></div>
                 <?php if (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id): ?>
                     <div class="profile-actions">
-                        <?php $isFollowing = $data['isfollowed'] ?>
+                        <?php 
+                        $isFollowing = $data['isfollowed'];
+                        $hasPending = $data['has_pending_request'] ?? false;
+                        $buttonState = $isFollowing ? 'following' : ($hasPending ? 'pending' : 'follow');
+                        ?>
                         <button
-                            class="action-btn connect-btn <?= $isFollowing ? 'active' : '' ?>"
+                            class="action-btn connect-btn <?= $isFollowing ? 'active' : '' ?> <?= $hasPending ? 'pending' : '' ?>"
                             id="connectBtn"
                             data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
                             data-connected="<?= $isFollowing ?  '1' : '0'; ?>"
-                            title="<?= htmlspecialchars(($isFollowing ? 'Following ' : 'Follow ') . ($data['userDetails']->name ?? 'user')) ?>">
-                            <i class="<?= $isFollowing ? 'fas fa-user-check' : 'fas fa-user-plus' ?>" aria-hidden="true"></i>
-                            <span><?= $isFollowing ? 'Following' : 'Follow' ?></span>
+                            data-pending="<?= $hasPending ? '1' : '0'; ?>"
+                            title="<?= htmlspecialchars(($isFollowing ? 'Following ' : ($hasPending ? 'Request pending for ' : 'Follow ')) . ($data['userDetails']->name ?? 'user')) ?>">
+                            <i class="<?= $isFollowing ? 'fas fa-user-check' : ($hasPending ? 'fas fa-clock' : 'fas fa-user-plus') ?>" aria-hidden="true"></i>
+                            <span><?= $isFollowing ? 'Following' : ($hasPending ? 'Pending' : 'Follow') ?></span>
                         </button>
                         <?php if ($isFollowing): ?>
                         <button
@@ -748,11 +753,41 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                     });
                     const json = await res.json();
                     if (json && json.success) {
-                        const connected = !!json.connected;
-                        this.setAttribute('data-connected', connected ? '1' : '0');
-                        this.classList.toggle('active', connected);
-                        this.querySelector('span').textContent = connected ? 'Following' : 'Follow';
-                        this.querySelector('i').className = connected ? 'fas fa-user-check' : 'fas fa-user-plus';
+                        const action = json.action || '';
+                        const connected = json.connected;
+                        
+                        if (action === 'requested') {
+                            // Pending state
+                            this.setAttribute('data-pending', '1');
+                            this.setAttribute('data-connected', '0');
+                            this.classList.remove('active');
+                            this.classList.add('pending');
+                            this.querySelector('span').textContent = 'Pending';
+                            this.querySelector('i').className = 'fas fa-clock';
+                        } else if (action === 'cancelled') {
+                            // Back to follow state
+                            this.setAttribute('data-pending', '0');
+                            this.setAttribute('data-connected', '0');
+                            this.classList.remove('active', 'pending');
+                            this.querySelector('span').textContent = 'Follow';
+                            this.querySelector('i').className = 'fas fa-user-plus';
+                        } else if (action === 'unfollowed') {
+                            // Unfollowed state
+                            this.setAttribute('data-connected', '0');
+                            this.setAttribute('data-pending', '0');
+                            this.classList.remove('active', 'pending');
+                            this.querySelector('span').textContent = 'Follow';
+                            this.querySelector('i').className = 'fas fa-user-plus';
+                        } else {
+                            // Following state (fallback)
+                            const isConnected = !!connected && connected !== 'pending';
+                            this.setAttribute('data-connected', isConnected ? '1' : '0');
+                            this.setAttribute('data-pending', '0');
+                            this.classList.toggle('active', isConnected);
+                            this.classList.remove('pending');
+                            this.querySelector('span').textContent = isConnected ? 'Following' : 'Follow';
+                            this.querySelector('i').className = isConnected ? 'fas fa-user-check' : 'fas fa-user-plus';
+                        }
                     } else {
                         alert((json && json.error) || 'Failed to update follow status');
                         this.querySelector('span').textContent = originalText;
@@ -860,7 +895,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 const nm = card.dataset.name || 'Certificate Preview';
                 titleEl.textContent = nm;
             }
-            iframe.src = `${window.URLROOT}/media/certificate/${encodeURIComponent(file)}`;
+            iframe.src = <?php echo URLROOT?> + `/media/certificate/${encodeURIComponent(file)}`;
             modal.style.display = 'flex';
         }
 

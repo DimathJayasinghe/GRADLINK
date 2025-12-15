@@ -11,9 +11,9 @@ class PostCard extends HTMLElement {
     if (!window.URLROOT || typeof window.URLROOT !== 'string') {
       window.URLROOT = `${location.origin}/GRADLINK`;
     }
-    const root = `${location.origin}/GRADLINK/public/img`;
+    // const root = `${location.origin}/GRADLINK/public/img`;
     // Use Media controller endpoints: /media/profile and /media/post
-    const appBase = `${location.origin}/GRADLINK`;
+    // const appBase = `${location.origin}/GRADLINK`;
     const mediaProfile = (name) =>`${appBase}/media/profile/${encodeURIComponent(name)}`;
     const mediaPost = (name) =>`${appBase}/media/post/${encodeURIComponent(name)}`;
     const rawProfile = this.getAttribute("profile-img");

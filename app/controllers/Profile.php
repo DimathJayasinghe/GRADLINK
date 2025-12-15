@@ -3,6 +3,9 @@ class Profile extends Controller{
     protected $Model;
    
     public function __construct() {
+        // Initialize parent constructor to set up notificationModel
+        parent::__construct();
+        
         // If it's an API/AJAX call to certificate endpoints, return JSON on unauthenticated
         $isApi = (
             (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
@@ -39,9 +42,11 @@ class Profile extends Controller{
             $data['projects'] = $this->Model->getProjects($user_id);
             $isPublic = $this->Model->isProfilePublic($user_id);
             $isFollwed = $this->Model->isFollowed($_SESSION['user_id'], $user_id);
+            $hasPending = $this->Model->hasPendingFollowRequest($_SESSION['user_id'], $user_id);
             // Ensure boolean for view logic
             $data['public_profile'] = (bool)$isPublic;
             $data['isfollowed'] = $isFollwed;
+            $data['has_pending_request'] = $hasPending;
             
             if ($data['public_profile'] || $_SESSION['user_id'] == $user_id || $isFollwed) {
                 $data['posts'] = $this->Model->getPosts($user_id);
@@ -93,17 +98,58 @@ class Profile extends Controller{
 
             // Check current follow status
             $isFollowed = $this->Model->isFollowed($current_user_id, $profile_user_id);
+            $hasPending = $this->Model->hasPendingFollowRequest($current_user_id, $profile_user_id);
             $result = false;
+            $action = '';
+            
             if ($isFollowed) {
                 // Unfollow
                 $result = $this->Model->unfollowUser($current_user_id, $profile_user_id);
+                $action = 'unfollowed';
+            } elseif ($hasPending) {
+                // Cancel pending request
+                $result = $this->Model->cancelFollowRequest($current_user_id, $profile_user_id);
+                $action = 'cancelled';
             } else {
-                // Follow
-                $result = $this->Model->followUser($current_user_id, $profile_user_id);
+                // Create follow request
+                $requestId = $this->Model->createFollowRequest($current_user_id, $profile_user_id);
+                $result = $requestId ? true : false;
+                $action = 'requested';
+                
+                // Send notification to target user
+                if ($result) {
+                    try {
+                        error_log('[Profile::follow] Sending follow request notification to user: ' . $profile_user_id);
+                        
+                        if ($profile_user_id && (int)$profile_user_id > 0 && (int)$profile_user_id !== (int)$current_user_id) {
+                            $requester = $this->Model->getUserDetails($current_user_id);
+                            $notification_type = 'follow_request';
+                            // Use requester's user_id as reference_id for easy lookup
+                            $reference_id = $current_user_id;
+                            $content = [
+                                'requester_name' => $requester->display_name ?? $_SESSION['user_name'] ?? 'Someone',
+                                'requester_id' => $current_user_id,
+                                'requester_image' => $requester->profile_image ?? '',
+                                'text' => ($requester->display_name ?? $_SESSION['user_name'] ?? 'Someone') . ' wants to follow you',
+                                'link' => '/profile?userid=' . $current_user_id,
+                                'request_id' => $requestId
+                            ];
+                            error_log('[Profile::follow] Notification content: ' . json_encode($content));
+                            $notifyResult = $this->notify($profile_user_id, $notification_type, $reference_id, $content);
+                            error_log('[Profile::follow] notify() returned: ' . var_export($notifyResult, true));
+                        }
+                    } catch (Throwable $e) {
+                        error_log("[Profile::follow] EXCEPTION in notification: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+                    }
+                }
             }
-
+            
             if ($result) {
-                echo json_encode(['success' => true, 'connected' => !$isFollowed]);
+                echo json_encode([
+                    'success' => true, 
+                    'action' => $action,
+                    'connected' => $isFollowed ? false : ($action === 'requested' ? 'pending' : true)
+                ]);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to update follow status']);
             }
@@ -381,6 +427,114 @@ class Profile extends Controller{
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to delete certificate']);
+        }
+    }
+
+    public function approveFollowRequest(){
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST'){
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+
+        header('Content-Type: application/json');
+
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+
+        $payload = null;
+        $ct = isset($_SERVER['CONTENT_TYPE']) ? strtolower($_SERVER['CONTENT_TYPE']) : '';
+        if (strpos($ct, 'application/json') !== false) {
+            $raw = file_get_contents('php://input');
+            if ($raw) {
+                $json = json_decode($raw, true);
+                if (is_array($json)) $payload = $json;
+            }
+        }
+        
+        $requester_id = 0;
+        if (is_array($payload)) {
+            $requester_id = intval($payload['requester_id'] ?? 0);
+        } else {
+            $requester_id = intval($_POST['requester_id'] ?? 0);
+        }
+
+        if ($requester_id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid requester id']);
+            return;
+        }
+
+        $result = $this->Model->approveFollowRequest($requester_id, $_SESSION['user_id']);
+
+        if ($result) {
+            // Send "started_following" notification to the requester
+            try {
+                $approver = $this->Model->getUserDetails($_SESSION['user_id']);
+                $notification_type = 'started_following';
+                $reference_id = $_SESSION['user_id'];
+                $content = [
+                    'follower_name' => $approver->display_name ?? $_SESSION['user_name'] ?? 'Someone',
+                    'follower_id' => $_SESSION['user_id'],
+                    'text' => ($approver->display_name ?? $_SESSION['user_name'] ?? 'Someone') . ' accepted your follow request',
+                    'link' => '/profile?userid=' . $_SESSION['user_id']
+                ];
+                $this->notify($requester_id, $notification_type, $reference_id, $content);
+            } catch (Throwable $e) {
+                error_log("[Profile::approveFollowRequest] EXCEPTION in notification: " . $e->getMessage());
+            }
+            
+            echo json_encode(['success' => true, 'message' => 'Follow request approved']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to approve request']);
+        }
+    }
+
+    public function rejectFollowRequest(){
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST'){
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+
+        header('Content-Type: application/json');
+
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+
+        $payload = null;
+        $ct = isset($_SERVER['CONTENT_TYPE']) ? strtolower($_SERVER['CONTENT_TYPE']) : '';
+        if (strpos($ct, 'application/json') !== false) {
+            $raw = file_get_contents('php://input');
+            if ($raw) {
+                $json = json_decode($raw, true);
+                if (is_array($json)) $payload = $json;
+            }
+        }
+        
+        $requester_id = 0;
+        if (is_array($payload)) {
+            $requester_id = intval($payload['requester_id'] ?? 0);
+        } else {
+            $requester_id = intval($_POST['requester_id'] ?? 0);
+        }
+
+        if ($requester_id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid requester id']);
+            return;
+        }
+
+        $result = $this->Model->rejectFollowRequest($requester_id, $_SESSION['user_id']);
+
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => 'Follow request rejected']);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to reject request']);
         }
     }
 
