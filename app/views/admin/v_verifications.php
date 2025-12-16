@@ -243,14 +243,45 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Search/filter (placeholders)
+    // Search/filter functionality
     const searchInput = document.getElementById('alumniSearch');
-    if (searchInput) {
-        searchInput.oninput = function() { /* AJAX search/filter */ };
-    }
     const statusFilter = document.getElementById('alumniStatusFilter');
+    const alumniTable = document.getElementById('alumniTable');
+
+    const filterTable = () => {
+        if (!alumniTable) return;
+
+        const searchTerm = (searchInput?.value || '').toLowerCase();
+        const selectedStatus = (statusFilter?.value || 'pending').toLowerCase();
+        const rows = alumniTable.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            const name = row.children[1].textContent.toLowerCase();
+            const email = row.children[2].textContent.toLowerCase();
+            const batch = row.children[3].textContent.toLowerCase();
+            const nic = row.children[4].textContent.toLowerCase();
+            const statusCell = row.children[5].textContent.toLowerCase();
+
+            // Check if row matches search term
+            const matchesSearch = !searchTerm || 
+                name.includes(searchTerm) || 
+                email.includes(searchTerm) || 
+                batch.includes(searchTerm) || 
+                nic.includes(searchTerm);
+
+            // Check if row matches status filter
+            const matchesStatus = statusCell.includes(selectedStatus);
+
+            // Show row if it matches both criteria
+            row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+        });
+    };
+
+    if (searchInput) {
+        searchInput.oninput = filterTable;
+    }
     if (statusFilter) {
-        statusFilter.onchange = function() { /* AJAX filter */ };
+        statusFilter.onchange = filterTable;
     }
 });
 </script>
