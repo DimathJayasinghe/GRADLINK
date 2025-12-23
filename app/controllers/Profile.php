@@ -166,7 +166,7 @@ class Profile extends Controller{
             
             $profile_image = time() . '_' . substr(sha1($safeBase . random_bytes(4)), 0, 8) . '.' . $ext;
 
-            $targetDir = APPROOT . '/storage/profile';
+            $targetDir = APPROOT . '/storage/profile_pic';
             if (!is_dir($targetDir)) {
                 if (!@mkdir($targetDir, 0755, true)) {
                     echo json_encode(['success' => false, 'error' => 'Server error: cannot create storage directory.']);
