@@ -78,6 +78,19 @@ CREATE TABLE work_experiences (
     INDEX (user_id)
 );
 
+CREATE TABLE projects (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    skills_used TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_projects_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX (user_id)
+);
+
 
 
 -- Sample user (password is 'password' hashed using bcrypt 60-char standard example)

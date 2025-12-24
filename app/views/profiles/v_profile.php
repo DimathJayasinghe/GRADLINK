@@ -296,28 +296,33 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 
         <div id="projectsContainer">
             <?php
-            // Sample project data
-            $sampleProjects = [
-                ['id' => 1, 'title' => 'AI-Powered Healthcare App'],
-                ['id' => 2, 'title' => 'Smart Home Automation System']
-            ];
 
             if (!empty($sampleProjects)): foreach ($sampleProjects as $project): ?>
-                    <div class="project-card" data-id="<?= $project['id'] ?>" data-title="<?= htmlspecialchars($project['title']) ?>">
+                    <div class="certificate-card project-card" 
+                    data-id="<?= $project['id'] ?>" 
+                    data-title="<?= htmlspecialchars($project['title']) ?>"
+                    data-desc="<?= htmlspecialchars($project['description'] ?? '') ?>"
+                    data-skills="<?= htmlspecialchars($project['skills'] ?? '') ?>"
+                    data-start_date="<?= htmlspecialchars($project['start_date'] ?? '') ?>"
+                    data-end_date="<?= htmlspecialchars($project['end_date'] ?? '') ?>">
+
                         <div class="project-card-image">
                             <i class="fas fa-project-diagram"></i>
                         </div>
-                        <div class="project-card-title"><?= htmlspecialchars($project['title']) ?></div>
-                        <?php if ($isOwner) {
-                            echo '<div class="certificate-actions">
+                        <!--Always-visible View button -->
+                        <div class="certificate-view-btn-wrapper" style="display:flex; gap:8px; align-items:center;">
+                            <div class="certificate-action-btn view-btn" title="View Project"><i class="fas fa-eye"></i></div>
+                        </div>
+                        <?php if ($isOwner): ?>
+                            <div class="certificate-actions">
                                 <div class="certificate-action-btn edit-btn" title="Edit Project">
                                     <i class="fas fa-pencil-alt"></i>
                                 </div>
                                 <div class="certificate-action-btn delete-btn" title="Delete Project">
                                     <i class="fas fa-trash-alt"></i>
                                 </div>
-                            </div>';
-                        } ?>
+                            </div>
+                        <?php endif; ?>
 
                     </div>
                 <?php endforeach;
@@ -455,6 +460,18 @@ require_once APPROOT . '/helpers/Csrf.php';
                                 padding:5px;
                         " rows="3" placeholder="Brief description..."></textarea>
                 </div>
+                <div class="form-group">
+                    <label for="projectSkillsAdd">Skills</label>
+                    <input type="text" id="projectSkillsAdd" required>
+                </div>
+                <div class="form-group">
+                    <label for="startDateAdd">Start Date</label>
+                    <input type="date" id="startDateAdd" required>
+                </div>
+                <div class="form-group">
+                    <label for="endDateAdd">End Date</label>
+                    <input type="date" id="endDateAdd">
+                </div>
                 <div style="margin-top:12px;">
                     <button type="submit" class="save-btn">Add Project</button>
                 </div>
@@ -479,6 +496,18 @@ require_once APPROOT . '/helpers/Csrf.php';
                     <label for="projectDescEdit">Description (optional)</label>
                     <textarea id="projectDescEdit" rows="3"></textarea>
                 </div>
+                <div class="form-group">
+                    <label for="projectSkillsEdit">Skills</label>
+                    <input type="text" id="projectSkillsEdit" required>
+                </div>
+                <div class="form-group">
+                    <label for="startDateEdit">Start Date</label>
+                    <input type="date" id="startDateEdit" required>
+                </div>
+                <div class="form-group">
+                    <label for="endDateEdit">End Date</label>
+                    <input type="date" id="endDateEdit">
+                </div>
                 <div style="margin-top:12px;">
                     <button type="submit" class="save-btn">Save Changes</button>
                 </div>
@@ -486,6 +515,19 @@ require_once APPROOT . '/helpers/Csrf.php';
         </div>
     </div>
 <?php endif; ?>
+
+<!--Projects: View Popup -->
+<div id="viewProjectPopup" class="certificate-add-popup" style="display:none;">
+    <div class="certificate-add">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Project Details</div>
+        <div class="form-group" id="viewProjectTitle">Project Title</div>
+        <div class="form-group" id="viewProjectDesc">Project Description</div>
+        <div class="form-group" id="viewProjectSkills">Skills: </div>
+        <div class="form-group" id="viewProjectStartDate">Start Date: </div>
+        <div class="form-group" id="viewProjectEndDate">End Date: </div>
+    </div>
+</div>
 
 <!-- Add Certificate Popup (separate form) -->
 <style>
@@ -892,7 +934,48 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 iframe.src = 'about:blank';
             }
         });
-    })();
+    })
+    // // Project View Popup logic
+    // (function() {
+    //     const container = document.getElementById('projectsContainer');
+    //     const popup = document.getElementById('viewProjectPopup');
+    //     if (!container || !popup) return;
+
+    //     function openProjectView(card) {
+    //         if (!card) return;
+    //         document.getElementById('viewProjectTitle').textContent = card.dataset.title || 'Project Title';
+    //         document.getElementById('viewProjectDesc').textContent = card.dataset.description || 'No description provided.';
+    //         document.getElementById('viewProjectSkills').textContent = 'Skills: ' + (card.dataset.skills || 'N/A');
+    //         document.getElementById('viewProjectStartDate').textContent = 'Start Date: ' + (card.dataset.start_date || 'N/A');
+    //         document.getElementById('viewProjectEndDate').textContent = 'End Date: ' + (card.dataset.end_date || 'N/A');
+            
+    //         // Show the popup
+    //         popup.style.display = 'flex';
+    //     }
+
+    //     // View button click
+    //     container.addEventListener('click', function(e) {
+    //         const viewBtn = e.target.closest('.project-card .view-btn');
+    //         if (!viewBtn) return;
+    //         e.preventDefault();
+    //         e.stopPropagation();
+    //         const card = viewBtn.closest('.project-card');
+    //         openProjectView(card);
+    //     });
+
+    //     // close button
+    //     popup.querySelector('.close-popup')?.addEventListener('click', function() {
+    //         popup.style.display = 'none';
+    //     });
+
+    //     // optional: close on backdrop click
+    //     popup.addEventListener('click', function(e) {
+    //         if (e.target === popup) {
+    //             popup.style.display = 'none';
+    //         }
+    //     });
+    // })
+    ();
     // --- New: per-form element references ---
     const addCertificateBtn = document.getElementById('addCertificateBtn'); // existing in page
     const addCertificatePopup = document.getElementById('addCertificatePopup');
