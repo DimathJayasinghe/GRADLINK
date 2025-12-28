@@ -8,10 +8,13 @@
     require_once __DIR__ . '/libraries/Sanitizer.php';
     require_once __DIR__ . '/helpers/SessionManager.php';
     require_once __DIR__ . '/libraries/cookie.php';
+    require_once __DIR__ . '/libraries/MediaFilesHandler.php';
 
     // Controller depends on Notifiable trait
     require_once __DIR__ . '/libraries/Controller.php';
 
     // Core comes last (it instantiates controllers)
     require_once __DIR__ . '/libraries/Core.php';
+
+
 ?>
