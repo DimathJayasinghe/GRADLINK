@@ -217,14 +217,78 @@ class M_Profile{
 
     }
 
-
-
     public function getProjects($user_id){
-        return [
-            (object)['title' => 'Project A', 'description' => 'Description for Project A'],
-            (object)['title' => 'Project B', 'description' => 'Description for Project B'],
-            (object)['title' => 'Project C', 'description' => 'Description for Project C']
-        ];
+        $this->db->query('SELECT pr.*, u.name AS user_name, u.profile_image
+                          FROM projects pr 
+                          JOIN users u ON u.id = pr.user_id 
+                          WHERE pr.user_id = :uid 
+                          ORDER BY pr.created_at DESC');
+        $this->db->bind(':uid', $user_id);
+        return $this->db->resultSet();
+    }
+
+    public function getProjectById($project_id){
+        $this->db->query('SELECT * FROM projects WHERE id = :id LIMIT 1');
+        $this->db->bind(':id', $project_id);
+        return $this->db->single();
+    }
+
+    public function createProject($user_id, $title, $description, $skills, $start_date, $end_date){
+
+        try{
+            $this->db->query('INSERT INTO projects (user_id, title, description, skills, start_date, end_date) VALUES (:uid, :title, :description, :skills, :start_date, :end_date)');
+            $this->db->bind(':uid', $user_id);
+            $this->db->bind(':title', $title);
+            $this->db->bind(':description', $description);
+            $this->db->bind(':skills', $skills);
+            $this->db->bind(':start_date', $start_date);
+            $this->db->bind(':end_date', $end_date);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            error_log("Project Creation Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateProject($user_id, $project_id, $title, $description, $skills, $start_date, $end_date){
+        $this->db->query('SELECT * FROM projects WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $project_id);
+        $this->db->bind(':uid', $user_id);
+        $existing = $this->db->single();
+
+        if(!$existing){
+            return false; // Project not found or does not belong to user
+        }
+
+        $this->db->query('UPDATE projects SET title = :title, descrption = :descrption, skills = :skills, start_date = :start_date, end_date = :end_date WHERE id = :id AND user_id = :uid');
+
+        $this->db->bind(':title', $title);
+        $this->db->bind(':description', $description);
+        $this->db->bind(':skills', $skills);
+        $this->db->bind(':start_date', $start_date);
+        $this->db->bind(':end_date', $end_date);
+        $this->db->bind(':id', $project_id);
+        $this->db->bind(':uid', $user_id);
+
+        $ok = $this->db->execute();
+        return $ok;
+    }
+
+    public function deleteProject($user_id, $project_id){
+        //fetch existing record
+        $this->db->query('SELECT * FROM projects WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $project_id);
+        $this->db->bind(':uid', $user_id);
+        $this->db->single();
+
+        //delete record
+        $this->db->query('DELETE FROM projects WHERE id = :id AND user_id = :uid');
+        $this->db->bind(':id', $project_id);
+        $this->db->bind(':uid', $user_id);
+        $ok = $this->db->execute();
+
+        return $ok;
+        
     }
     
     public function getPosts($user_id){
