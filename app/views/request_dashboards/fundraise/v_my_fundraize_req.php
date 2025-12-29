@@ -77,6 +77,14 @@
                 <p>Deadline: <?php echo htmlspecialchars($req->deadline); ?></p>
                 <?php if (!$expired){echo '<p>Time Left: '.$timeleft->days.' days</p>';}?>
                 <p class="status">Status: <?php echo htmlspecialchars($req->status); ?></p>
+                
+                <?php if ($req->status === 'Rejected' && !empty($req->rejection_reason)): ?>
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(220, 53, 69, 0.1); border-left: 3px solid var(--danger); border-radius: var(--radius-sm);">
+                        <p style="margin: 0; color: var(--danger); font-weight: 600; font-size: 0.9rem;">Rejection Reason:</p>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text); font-size: 0.9rem;"><?php echo htmlspecialchars($req->rejection_reason); ?></p>
+                    </div>
+                <?php endif; ?>
+                
                 <a href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>">View Details</a>
             </div>
         <?php endforeach; ?>

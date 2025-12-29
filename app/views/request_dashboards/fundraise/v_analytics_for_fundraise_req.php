@@ -237,9 +237,32 @@
                 <?php echo htmlspecialchars($target_post->status); ?>
             </span>
         </p>
-        <button style="background-color:#4caf50" onclick="GL_openDonationModal()">
-            <span class="btn" style="color:#ffffff">Make a Donation</span>
-        </button>
+        
+        <?php 
+        // Only show donation button for Approved or Active campaigns
+        if (in_array($target_post->status, ['Approved', 'Active']) && !$expired): 
+        ?>
+            <button style="background-color:#4caf50" onclick="GL_openDonationModal()">
+                <span class="btn" style="color:#ffffff">Make a Donation</span>
+            </button>
+        <?php else: ?>
+            <?php if ($target_post->status === 'Pending'): ?>
+                <p style="color: var(--warning); margin-top: 1rem; padding: 0.75rem; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-md);">
+                    ⏳ This campaign is pending approval. Donations will be enabled once approved.
+                </p>
+            <?php elseif ($target_post->status === 'Rejected'): ?>
+                <p style="color: var(--danger); margin-top: 1rem; padding: 0.75rem; background: rgba(220, 53, 69, 0.1); border-radius: var(--radius-md);">
+                    ❌ This campaign has been rejected and cannot accept donations.
+                    <?php if (!empty($target_post->rejection_reason)): ?>
+                        <br><strong>Reason:</strong> <?php echo htmlspecialchars($target_post->rejection_reason); ?>
+                    <?php endif; ?>
+                </p>
+            <?php elseif ($expired): ?>
+                <p style="color: var(--muted); margin-top: 1rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: var(--radius-md);">
+                    ⏰ This campaign has expired and is no longer accepting donations.
+                </p>
+            <?php endif; ?>
+        <?php endif; ?>
 
         <!-- Analytics charts with placeholders -->
         <div id="analytics-charts">
