@@ -1,19 +1,11 @@
 <?php 
-    define('DB_HOST', 'localhost');
-    define('DB_PORT', 3306);
-    define('DB_CHARSET', 'utf8mb4');
-    define('DB_USER', 'root');
-    define('DB_PASSWORD', '1234');
-    define('DB_NAME', 'gl_db');
-
-    // Main database
-
-    // define('DB_HOST', 'localhost');
-    // define('DB_PORT', 3306);
-    // define('DB_CHARSET', 'utf8mb4');
-    // define('DB_USER', 'root');
-    // define('DB_PASSWORD', '!G1rA2dL3iN4k');
-    // define('DB_NAME', 'gl_db');
+    // Database Configuration - using environment variables
+    define('DB_HOST', gl_env('DB_HOST', 'localhost'));
+    define('DB_PORT', gl_env('DB_PORT', 3306));
+    define('DB_CHARSET', gl_env('DB_CHARSET', 'utf8mb4'));
+    define('DB_USER', gl_env('DB_USER', 'root'));
+    define('DB_PASSWORD', gl_env('DB_PASS', '1234'));
+    define('DB_NAME', gl_env('DB_NAME', 'gl_db'));
 
     
     define('APPROOT', dirname(dirname(__FILE__)));

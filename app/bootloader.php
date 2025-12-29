@@ -1,4 +1,8 @@
 <?php
+    // Load environment variables first
+    require_once __DIR__ . '/helpers/env.php';
+    gl_bootstrap_env(); // Load .env files
+    
     // Load configuration (absolute path safe)
     require_once __DIR__ . '/config/config.php';
 
