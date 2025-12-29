@@ -16,122 +16,47 @@ class fundraiser extends Controller
 
     public function index()
     {
-        $data = [
-            'fundraise_reqs' => [
-                (object)[
-                    'req_id' => 1,
-                    'status' => 'Approved',
-                    'created_at' => '2024-10-01 10:00:00',
-
-                    'user_id' => 101,
-                    'user_name' => 'john_doe',
-                    'title' => 'Fundraiser for New Laptops',
-                    'description' => 'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
-                    'attachment_image' => null,
-                    'club_name' => 'IEEE CS Chapter',
-
-                    'target_amount' => 5000,
-                    'raised_amount' => 1500,
-                    'deadline' => '2025-12-31',
-                ],
-
-            ]
-        ];
-        $this->view("/request_dashboards/fundraise/v_view_all_fundraise_req", $data);
+        // Redirect to all fundraisers
+        header('Location: ' . URLROOT . '/fundraiser/all');
+        exit;
     }
+    
     public function all()
     {
-        SessionManager::redirectIfLoggedIn("/fundraiser");
+        // Get all approved fundraisers
+        $fundraisers = $this->model->getAllFundraisers();
+        
+        $data = [
+            'fundraise_reqs' => $fundraisers
+        ];
+        
+        $this->view("/request_dashboards/fundraise/v_view_all_fundraise_req", $data);
     }
     public function show($req_id)
     {
-        // show the analytics for the perticuler fundraiser request
-        // $this->model->getFundraiseRequestById($req_id);
+        // Get specific fundraiser by ID
+        $fundraiser = $this->model->getFundraiserById($req_id);
+        
+        if (!$fundraiser) {
+            // Fundraiser not found, redirect to all
+            header('Location: ' . URLROOT . '/fundraiser/all');
+            exit;
+        }
+        
+        // Get additional data
+        $bankDetails = $this->model->getBankDetails($req_id);
+        $teamMembers = $this->model->getTeamMembers($req_id);
+        $donations = $this->model->getDonations($req_id);
+        
         $data = [
             'req_id' => $req_id,
-            'fundraise_reqs' => [
-                (object)[
-                    'req_id' => 1,
-                    'status' => 'Pending',
-                    'created_at' => '2024-10-01 10:00:00',
-
-                    'user_id' => 101,
-                    'user_name' => 'john_doe',
-                    'title' => 'Fundraiser for New Laptops',
-                    'description' => 'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
-                    'attachment_image' => null,
-                    'club_name' => 'IEEE CS Chapter',
-
-                    'target_amount' => 5000,
-                    'raised_amount' => 0,
-                    'deadline' => '2025-12-31',
-                ],
-                (object)[
-                    'req_id' => 2,
-                    'status' => 'Approved',
-                    'created_at' => '2024-09-20 14:30:00',
-
-                    'user_id' => 102,
-                    'user_name' => 'jane_smith',
-                    'title' => 'Fundraiser for Art Supplies',
-                    'description' => 'We need art supplies for our upcoming art exhibition.',
-                    'attachment_image' => null,
-                    'club_name' => 'Art Society',
-
-                    'target_amount' => 2000,
-                    'raised_amount' => 2000,
-                    'deadline' => '2024-11-30',
-                ],
-                (object)[
-                    'req_id' => 3,
-                    'status' => 'Rejected',
-                    'created_at' => '2024-08-15 09:15:00',
-
-                    'user_id' => 103,
-                    'user_name' => 'alice_wonder',
-                    'title' => 'Fundraiser for Sports Equipment',
-                    'description' => 'We need new sports equipment for our college teams.',
-                    'attachment_image' => null,
-                    'club_name' => 'Sports Club',
-
-                    'target_amount' => 3000,
-                    'raised_amount' => 0,
-                    'deadline' => '2025-12-15',
-                ],
-                (object)[
-                    'req_id' => 4,
-                    'status' => 'Pending',
-                    'created_at' => '2024-10-05 11:45:00',
-
-                    'user_id' => 104,
-                    'user_name' => 'bob_builder',
-                    'title' => 'Fundraiser for Community Garden',
-                    'description' => 'We need funds to start a community garden on campus.',
-                    'attachment_image' => null,
-                    'club_name' => 'Environmental Club',
-
-                    'target_amount' => 4000,
-                    'raised_amount' => 0,
-                    'deadline' => '2025-01-31',
-                ],
-                (object)[
-                    'req_id' => 5,
-                    'status' => 'Approved',
-                    'created_at' => '2024-09-10 13:20:00',
-
-                    'user_id' => 105,
-                    'user_name' => 'charlie_chaplin',
-                    'title' => 'Fundraiser for Music Instruments',
-                    'description' => 'We need new music instruments for our college band.',
-                    'attachment_image' => null,
-                    'club_name' => 'Music Club',
-
-                    'target_amount' => 6000,
-                    'raised_amount' => 4500,
-                    'deadline' => '2025-12-20',
-                ],
-            ]
+            'fundraise_reqs' => [$fundraiser], // Analytics view expects an array
+            'fundraiser' => $fundraiser,
+            'bank_details' => $bankDetails,
+            'team_members' => $teamMembers,
+            'donations' => $donations
         ];
+        
         $this->view("/request_dashboards/fundraise/v_analytics_for_fundraise_req", $data);
     }
     public function request()
@@ -140,42 +65,14 @@ class fundraiser extends Controller
     }
     public function myrequests()
     {
+        // Get current user's fundraisers
+        $user_id = $_SESSION['user_id'];
+        $fundraisers = $this->model->getMyFundraisers($user_id);
+        
         $data = [
-            'fundraise_reqs' => [
-                (object)[
-                    'req_id' => 1,
-                    'status' => 'Pending',
-                    'created_at' => '2024-10-01 10:00:00',
-
-                    'user_id' => 101,
-                    'user_name' => 'john_doe',
-                    'title' => 'Fundraiser for New Laptops',
-                    'description' => 'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
-                    'attachment_image' => null,
-                    'club_name' => 'IEEE CS Chapter',
-
-                    'target_amount' => 5000,
-                    'raised_amount' => 0,
-                    'deadline' => '2025-12-31',
-                ],
-                (object)[
-                    'req_id' => 2,
-                    'status' => 'Approved',
-                    'created_at' => '2024-09-20 14:30:00',
-
-                    'user_id' => 102,
-                    'user_name' => 'jane_smith',
-                    'title' => 'Fundraiser for Art Supplies',
-                    'description' => 'We need art supplies for our upcoming art exhibition.',
-                    'attachment_image' => null,
-                    'club_name' => 'Art Society',
-
-                    'target_amount' => 2000,
-                    'raised_amount' => 2000,
-                    'deadline' => '2024-11-30',
-                ],
-            ]
+            'fundraise_reqs' => $fundraisers
         ];
+        
         $this->view("/request_dashboards/fundraise/v_my_fundraize_req", $data);
     }
 
@@ -308,22 +205,143 @@ class fundraiser extends Controller
         // Handle form submission for creating a fundraiser request
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Process form data here
-            // For now, just redirect to my requests page
-            $data = $_POST;
+            $queryValues = $_POST;
+            $errors = [];
+            
+            // Page 1: Contact & Project Information
+            if(empty($_POST['club_name'])){
+                $errors[] = 'Club name is required';
+            }
+            
+            if(empty($_POST['position'])){
+                $errors[] = 'Position is required';
+            }
+            
+            if(empty($_POST['phone'])){
+                $errors[] = 'Phone number is required';
+            } elseif(!preg_match('/^[0-9]{10}$/', $_POST['phone'])){
+                $errors[] = 'Phone number must be 10 digits';
+            }
+            
+            // Page 2: Campaign Details
+            if(empty($_POST['project_title'])){
+                $errors[] = 'Project title is required';
+            }
+            
+            if(empty($_POST['headline'])){
+                $errors[] = 'Headline is required';
+            }
+            
+            if(empty($_POST['description'])){
+                $errors[] = 'Project description is required';
+            }
+            
+            // Page 3: Financial Details
+            if(empty($_POST['amount_needed'])){
+                $errors[] = 'Amount needed is required';
+            } elseif(!is_numeric($_POST['amount_needed']) || $_POST['amount_needed'] <= 0){
+                $errors[] = 'Amount needed must be a positive number';
+            }
+            
+            if(empty($_POST['objective'])){
+                $errors[] = 'Objective is required';
+            }
+            
+            if(empty($_POST['start_date'])){
+                $errors[] = 'Start date is required';
+            }
+            
+            if(empty($_POST['end_date'])){
+                $errors[] = 'End date is required';
+            }
+            
+            // Validate dates
+            if(!empty($_POST['start_date']) && !empty($_POST['end_date'])){
+                $startDate = strtotime($_POST['start_date']);
+                $endDate = strtotime($_POST['end_date']);
+                
+                if($endDate < $startDate){
+                    $errors[] = 'End date cannot be before start date';
+                }
+                
+                if($startDate < strtotime('today')){
+                    $errors[] = 'Start date cannot be in the past';
+                }
+            }
+            
+            // Fund Manager
+            if(empty($_POST['fund_manager'])){
+                $errors[] = 'Fund manager name is required';
+            }
+            
+            if(empty($_POST['fund_manager_contact'])){
+                $errors[] = 'Fund manager contact is required';
+            } elseif(!preg_match('/^[0-9]{10}$/', $_POST['fund_manager_contact'])){
+                $errors[] = 'Fund manager contact must be 10 digits';
+            }
+            
+            // Bank Details
+            if(empty($_POST['bank_name'])){
+                $errors[] = 'Bank name is required';
+            }
+            
+            if(empty($_POST['account_number'])){
+                $errors[] = 'Account number is required';
+            } elseif(!preg_match('/^[0-9]+$/', $_POST['account_number'])){
+                $errors[] = 'Account number must contain only digits';
+            }
+            
+            if(empty($_POST['branch'])){
+                $errors[] = 'Branch is required';
+            }
+            
+            if(empty($_POST['account_holder'])){
+                $errors[] = 'Account holder name is required';
+            }
+            
+            // File upload validation
+            if(!empty($_FILES['project_poster']['tmp_name'])){
+                $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                $maxSize = 5 * 1024 * 1024; // 5MB
+                
+                if(!in_array($_FILES['project_poster']['type'], $allowedTypes)){
+                    $errors[] = 'Project poster must be JPG or PNG format';
+                }
+                
+                if($_FILES['project_poster']['size'] > $maxSize){
+                    $errors[] = 'Project poster must be less than 5MB';
+                }
+            }
+            
+            // Check if there are any errors
+            if(count($errors) > 0){
+                $data = [
+                    'success' => false,
+                    'errors' => $errors
+                ];                
+                $this->view('fundraiser/request', $data);
+                exit;
+            }
+            
+            // If validation passes, proceed with file upload
             if (!empty($_FILES['project_poster']['tmp_name'])) {
+                $ext = pathinfo($_FILES['project_poster']['name'], PATHINFO_EXTENSION);
+
+                $desiredName ='file_' . microtime(true) . '_' . bin2hex(random_bytes(4)) .($ext ? '.' . $ext : '');
                 $upload = $this->mediaHandler->save(
                     $_FILES['project_poster']['tmp_name'],
                     'fundraisers',
-                    $_FILES['project_poster']['name'] ?? null
+                    $desiredName
                 );
-                $data['upload'] = $upload;
+                $queryValues['project_poster'] = $upload;
             }
-            // header('Location: /fundraiser/myrequests');
-            $this->view("/test", $data);
+
+            $result = $this->model->createNewFundraiserRequest($queryValues);
+            $this->redirect('/fundraiser/myrequests');
             exit;
         } else {
             // If not a POST request, redirect to the create request form
-            header('Location: /fundraiser/request');
+            $this->redirect('/fundraiser/request');
             exit;
         }
     }

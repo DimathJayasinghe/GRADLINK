@@ -176,11 +176,8 @@
                     <div class="form-group">
                         <label class="form-label" for="fund_manager">Who will manage the funds? (Name of Treasurer/Committee):</label>
                         <input type="text" class="form-control" id="fund_manager" name="fund_manager" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="fund_recording">How will funds be recorded and reported?</label>
-                        <textarea class="form-control" id="fund_recording" name="fund_recording" required></textarea>
+                        <label class="form-label" for="fund_manager_contact">Contact Number:</label>
+                        <input type="tel" class="form-control" id="fund_manager_contact" name="fund_manager_contact" required>
                     </div>
                 </div>
                 
@@ -195,6 +192,10 @@
                     <div class="form-group">
                         <label class="form-label" for="account_number">Account Number:</label>
                         <input type="text" class="form-control" id="account_number" name="account_number" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="branch">Branch:</label>
+                        <input type="text" class="form-control" id="branch" name="branch" required>
                     </div>
                     
                     <div class="form-group">
@@ -217,28 +218,6 @@
                 
                 <div class="inchange-section">
                     <h2 class="section-title">Approval Authority</h2>
-                    
-                    <div class="inchange-row">
-                        <div class="inchange-field">
-                            <div class="form-group">
-                                
-                                <label class="form-label" for="president_name">President/Head/Lead of Club/Society/Team:</label>
-                                <input type="text" class="form-control" id="president_name" name="president_name" onchange="getTags(this)" value="@" required>
-
-                                <label for="president-name-checkbox">Same as the requestor</label>
-                                <input type="checkbox" name="president-name-checkbox" id="sameAsRequestor" onchange="copyRequesterName(this, 'president_name')">
-
-                            </div>
-                        </div>
-                        
-                        <div class="inchange-field">
-                            <div class="form-group">
-                                <label class="form-label" for="inchange_date">Date:</label>
-                                <input type="date" class="form-control" id="inchange_date" name="inchange_date" required>
-                            </div>
-                        </div>
-                    </div>
-                    
                     <div class="inchange-row">
                         <div class="inchange-field">
                             <div class="form-group">
