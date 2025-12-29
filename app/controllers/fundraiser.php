@@ -83,98 +83,52 @@ class fundraiser extends Controller
      */
     public function search()
     {
-        // Skip session check for API endpoint
         // Get search query from URL parameter
         $query = isset($_GET['q']) ? trim($_GET['q']) : '';
         $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
 
-        // Dummy fundraiser data
-        $allFundraisers = [
-            (object)[
-                'id' => 1,
-                'title' => 'IEEE Student Branch Technology Fund',
-                'description' => 'We\'re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn.',
-                'club_name' => 'IEEE Student Branch',
-                'club_id' => 1,
-                'target_amount' => 150000,
-                'raised_amount' => 89000,
-                'deadline' => '2025-12-31',
-                'status' => 'Approved',
-                'created_at' => '2024-10-01 10:00:00',
-                'days_left' => 30
-            ],
-            (object)[
-                'id' => 2,
-                'title' => 'Robotics Club Equipment Drive',
-                'description' => 'Help us purchase essential robotics equipment and components for our annual robotics competition and weekly workshops.',
-                'club_name' => 'Robotics Club',
-                'club_id' => 2,
-                'target_amount' => 200000,
-                'raised_amount' => 145000,
-                'deadline' => '2025-11-30',
-                'status' => 'Approved',
-                'created_at' => '2024-09-15 14:30:00',
-                'days_left' => 60
-            ],
-            (object)[
-                'id' => 3,
-                'title' => 'Music Society Instrument Fund',
-                'description' => 'We need new music instruments for our college band and orchestra. Support us in bringing more music to campus events.',
-                'club_name' => 'Music Society',
-                'club_id' => 3,
-                'target_amount' => 180000,
-                'raised_amount' => 72000,
-                'deadline' => '2025-12-20',
-                'status' => 'Approved',
-                'created_at' => '2024-09-10 13:20:00',
-                'days_left' => 49
-            ],
-            (object)[
-                'id' => 4,
-                'title' => 'Environmental Club Green Campus Initiative',
-                'description' => 'Join us in creating a sustainable campus environment with solar panels, recycling stations, and a community garden.',
-                'club_name' => 'Environmental Club',
-                'club_id' => 4,
-                'target_amount' => 250000,
-                'raised_amount' => 98000,
-                'deadline' => '2026-01-31',
-                'status' => 'Approved',
-                'created_at' => '2024-10-05 11:45:00',
-                'days_left' => 91
-            ],
-            (object)[
-                'id' => 5,
-                'title' => 'Drama Society Stage Equipment',
-                'description' => 'Help us upgrade our stage lighting and sound equipment for better theatrical productions and performances.',
-                'club_name' => 'Drama Society',
-                'club_id' => 5,
-                'target_amount' => 120000,
-                'raised_amount' => 55000,
-                'deadline' => '2025-12-15',
-                'status' => 'Approved',
-                'created_at' => '2024-08-20 09:00:00',
-                'days_left' => 44
-            ],
-            (object)[
-                'id' => 6,
-                'title' => 'Sports Club Athletic Equipment',
-                'description' => 'Support our athletes by helping us purchase new sports equipment for cricket, basketball, and badminton teams.',
-                'club_name' => 'Sports Club',
-                'club_id' => 6,
-                'target_amount' => 175000,
-                'raised_amount' => 131000,
-                'deadline' => '2025-11-25',
-                'status' => 'Approved',
-                'created_at' => '2024-08-15 09:15:00',
-                'days_left' => 55
-            ]
-        ];
+        // Get all approved/active fundraisers from database
+        $allFundraisers = $this->model->getAllFundraisers();
+        
+        // Process each fundraiser to add calculated fields
+        $processedFundraisers = [];
+        foreach ($allFundraisers as $fundraiser) {
+            // Calculate days left
+            $daysLeft = null;
+            $now = new DateTime();
+            $deadline = new DateTime($fundraiser->deadline);
+            if ($deadline > $now) {
+                $interval = $now->diff($deadline);
+                $daysLeft = $interval->days;
+            }
+            
+            // Calculate percentage
+            $percentage = ($fundraiser->raised_amount / $fundraiser->target_amount) * 100;
+            
+            // Create processed object
+            $processed = (object)[
+                'id' => $fundraiser->req_id,
+                'title' => $fundraiser->title,
+                'description' => $fundraiser->description,
+                'club_name' => $fundraiser->club_name,
+                'club_id' => $fundraiser->user_id, // Using user_id as club_id
+                'target_amount' => $fundraiser->target_amount,
+                'raised_amount' => $fundraiser->raised_amount,
+                'deadline' => $fundraiser->deadline,
+                'status' => $fundraiser->status,
+                'created_at' => $fundraiser->created_at,
+                'days_left' => $daysLeft,
+                'percentage' => round($percentage, 1)
+            ];
+            
+            $processedFundraisers[] = $processed;
+        }
 
         // Filter by search query if provided
         $filtered = [];
         if (!empty($query)) {
             $queryLower = strtolower($query);
-            foreach ($allFundraisers as $fundraiser) {
+            foreach ($processedFundraisers as $fundraiser) {
                 if (
                     stripos($fundraiser->title, $query) !== false ||
                     stripos($fundraiser->description, $query) !== false ||
@@ -184,7 +138,7 @@ class fundraiser extends Controller
                 }
             }
         } else {
-            $filtered = $allFundraisers;
+            $filtered = $processedFundraisers;
         }
 
         // Apply limit
@@ -354,6 +308,57 @@ class fundraiser extends Controller
         $data['users'] = $this->model->searchUsers($query);
         header('Content-Type: application/json');
         echo json_encode($data);
+        exit;
+    }
+    
+    /**
+     * API endpoint to get active fundraiser campaigns
+     * Used for sidebar widget and other displays
+     */
+    public function getActiveCampaigns()
+    {
+        // Get limit from query parameter
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
+        
+        // Get active campaigns from model
+        $campaigns = $this->model->getAllFundraisers();
+        
+        // Limit results
+        $campaigns = array_slice($campaigns, 0, $limit);
+        
+        // Calculate additional data for each campaign
+        $processedCampaigns = [];
+        foreach ($campaigns as $campaign) {
+            $percentage = ($campaign->raised_amount / $campaign->target_amount) * 100;
+            $daysLeft = null;
+            
+            // Calculate days left
+            $now = new DateTime();
+            $deadline = new DateTime($campaign->deadline);
+            if ($deadline > $now) {
+                $interval = $now->diff($deadline);
+                $daysLeft = $interval->days;
+            }
+            
+            $processedCampaigns[] = [
+                'id' => $campaign->req_id,
+                'title' => $campaign->title,
+                'club_name' => $campaign->club_name,
+                'target_amount' => $campaign->target_amount,
+                'raised_amount' => $campaign->raised_amount,
+                'percentage' => round($percentage, 1),
+                'deadline' => $campaign->deadline,
+                'days_left' => $daysLeft,
+                'status' => $campaign->status
+            ];
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'campaigns' => $processedCampaigns,
+            'count' => count($processedCampaigns)
+        ]);
         exit;
     }
 }
