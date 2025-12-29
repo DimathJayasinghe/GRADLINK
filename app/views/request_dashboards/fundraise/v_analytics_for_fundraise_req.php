@@ -264,12 +264,98 @@
             <?php endif; ?>
         <?php endif; ?>
 
-        <!-- Analytics charts with placeholders -->
-        <div id="analytics-charts">
-            <h3>Fundraising Analytics</h3>
-            <div class="chart-placeholder">
-                <p>charts will be displayed here</p>
-            </div>
+        
+        <!-- Donation Timeline & Impact Visualization -->
+        <div id="donation-analytics" style="margin-top: 2rem;">
+            <h3 style="margin-bottom: 1.5rem; font-weight: 600; font-size: 1.3rem; color: var(--text);">Donation Impact Timeline</h3>
+            
+            <?php if (!empty($data['donations']) && count($data['donations']) > 0): ?>
+                <!-- Donation Stats Summary -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div style="background: rgba(76, 175, 80, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #4caf50;">
+                        <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Total Donors</p>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #4caf50;"><?php echo count($data['donations']); ?></p>
+                    </div>
+                    <div style="background: rgba(33, 150, 243, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #2196f3;">
+                        <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Average Donation</p>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #2196f3;">
+                            Rs.<?php echo number_format($target_post->raised_amount / count($data['donations']), 2); ?>
+                        </p>
+                    </div>
+                    <div style="background: rgba(255, 152, 0, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #ff9800;">
+                        <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Remaining</p>
+                        <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #ff9800;">
+                            Rs.<?php echo number_format($target_post->target_amount - $target_post->raised_amount, 2); ?>
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Donation Timeline -->
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
+                    <h4 style="margin: 0 0 1.5rem 0; font-weight: 600; font-size: 1.1rem; color: var(--text);">Recent Contributions</h4>
+                    
+                    <?php 
+                    $runningTotal = 0;
+                    foreach ($data['donations'] as $index => $donation): 
+                        $runningTotal += $donation->amount;
+                        $progressAtThisPoint = ($runningTotal / $target_post->target_amount) * 100;
+                        $donorName = $donation->is_anonymous ? 'Anonymous Donor' : ($donation->display_name ?? $donation->donor_name ?? 'Anonymous');
+                    ?>
+                        <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                        <?php if (!$donation->is_anonymous && !empty($donation->profile_image)): ?>
+                                            <img src="<?php echo URLROOT . '/public/img/profiles/' . $donation->profile_image; ?>" 
+                                                 alt="<?php echo htmlspecialchars($donorName); ?>" 
+                                                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                                        <?php else: ?>
+                                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">
+                                                <?php echo substr($donorName, 0, 1); ?>
+                                            </div>
+                                        <?php endif; ?>
+                                        <div>
+                                            <p style="margin: 0; font-weight: 600; color: var(--text); font-size: 1rem;">
+                                                <?php echo htmlspecialchars($donorName); ?>
+                                            </p>
+                                            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--muted);">
+                                                <?php echo date('M j, Y g:i A', strtotime($donation->created_at)); ?>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <?php if (!empty($donation->message)): ?>
+                                        <p style="margin: 0.5rem 0 0 2.75rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03); border-left: 2px solid var(--link); border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--muted); font-style: italic;">
+                                            "<?php echo htmlspecialchars($donation->message); ?>"
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                                <div style="text-align: right; margin-left: 1rem;">
+                                    <p style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #4caf50;">
+                                        +Rs.<?php echo number_format($donation->amount, 2); ?>
+                                    </p>
+                                    <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--muted);">
+                                        Progress: <?php echo number_format($progressAtThisPoint, 1); ?>%
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- Mini progress bar showing impact -->
+                            <div style="margin-top: 0.75rem; margin-left: 2.75rem;">
+                                <div style="background: rgba(255,255,255,0.05); border-radius: 4px; height: 6px; overflow: hidden;">
+                                    <div style="background: linear-gradient(90deg, #4caf50, #2e7d32); height: 100%; width: <?php echo min($progressAtThisPoint, 100); ?>%; transition: width 0.4s ease;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                
+            <?php else: ?>
+                <div style="background: rgba(255,255,255,0.03); border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 3rem; text-align: center;">
+                    <p style="margin: 0; font-size: 1.1rem; color: var(--muted);">
+                        💰 No donations yet. Be the first to support this campaign!
+                    </p>
+                </div>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <p>Fundraise request not found.</p>
