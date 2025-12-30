@@ -17,6 +17,7 @@
     .rejected {color: var(--danger);}
     .pending {color: var(--warning);}
     .approved {color: var(--success);}
+    .completed {color: #2196f3;}
     .expired {color: var(--muted); font-weight: 600;}
 </style>
 <?php $styles = ob_get_clean(); ?>
@@ -61,6 +62,9 @@
                             case 'Rejected':
                                 echo '<span class="rejected">[REJECTED]</span>';
                                 break;
+                            case 'Completed':
+                                echo '<span class="completed">[COMPLETED]</span>';
+                                break;
                             default:
                                 echo '';
                         }
@@ -85,7 +89,12 @@
                     </div>
                 <?php endif; ?>
                 
-                <a href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>">View Details</a>
+                <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+                    <?php if ($req->status === 'Pending'): ?>
+                        <a href="<?php echo URLROOT; ?>/fundraiser/edit/<?php echo $req->req_id; ?>" style="flex: 1; padding: 0.5rem 1rem; background: var(--warning); color: #fff; border-radius: var(--radius-sm); text-align: center; text-decoration: none; font-weight: 600; transition: background 0.2s ease;">Edit</a>
+                    <?php endif; ?>
+                    <a href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>" style="flex: 1; padding: 0.5rem 1rem; background: var(--link); color: #fff; border-radius: var(--radius-sm); text-align: center; text-decoration: none; font-weight: 600; transition: background 0.2s ease;">View Details</a>
+                </div>
             </div>
         <?php endforeach; ?>
     </div>

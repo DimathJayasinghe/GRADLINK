@@ -433,5 +433,154 @@ class M_fundraiser{
         
         return $this->db->execute();
     }
+    
+    /**
+     * Get complete fundraiser request data including bank details and team members
+     */
+    public function getFullRequestData($req_id) {
+        // Get main fundraiser data
+        $fundraiser = $this->getFundraiserById($req_id);
+        
+        if (!$fundraiser) {
+            return null;
+        }
+        
+        // Get bank details
+        $fundraiser->bank_details = $this->getBankDetails($req_id);
+        
+        // Get team members
+        $fundraiser->team_members = $this->getTeamMembers($req_id);
+        
+        return $fundraiser;
+    }
+    
+    /**
+     * Update an existing fundraiser request with bank details and team members
+     */
+    public function updateFundraiserRequest($req_id, $data) {
+        try {
+            // Start transaction
+            $this->db->beginTransaction();
+            
+            // Update main fundraising request
+            $this->db->query("
+                UPDATE fundraising_requests 
+                SET club_name = :club_name,
+                    requester_position = :position,
+                    requester_phone = :phone,
+                    title = :title,
+                    headline = :headline,
+                    description = :description,
+                    project_poster = :poster,
+                    goal_amount = :amount,
+                    objective = :objective,
+                    start_date = :start_date,
+                    end_date = :end_date,
+                    fund_manager_name = :fund_manager,
+                    fund_manager_contact = :fund_manager_contact,
+                    advisor_id = :advisor_id,
+                    status = 'Pending',
+                    updated_at = NOW()
+                WHERE id = :req_id
+            ");
+            
+            // Bind parameters
+            $this->db->bind(':req_id', $req_id);
+            $this->db->bind(':club_name', $data['club_name']);
+            $this->db->bind(':position', $data['position']);
+            $this->db->bind(':phone', $data['phone']);
+            $this->db->bind(':title', $data['project_title']);
+            $this->db->bind(':headline', $data['headline']);
+            $this->db->bind(':description', $data['description']);
+            $this->db->bind(':poster', $data['project_poster'] ?? null);
+            $this->db->bind(':amount', $data['amount_needed']);
+            $this->db->bind(':objective', $data['objective']);
+            $this->db->bind(':start_date', $data['start_date']);
+            $this->db->bind(':end_date', $data['end_date']);
+            $this->db->bind(':fund_manager', $data['fund_manager']);
+            $this->db->bind(':fund_manager_contact', $data['fund_manager_contact']);
+            $this->db->bind(':advisor_id', !empty($data['advisor_id']) ? $data['advisor_id'] : null);
+            
+            $this->db->execute();
+            
+            // Update bank details
+            $this->db->query("
+                UPDATE fundraising_bank_details 
+                SET bank_name = :bank_name,
+                    account_number = :account_number,
+                    branch = :branch,
+                    account_holder = :account_holder
+                WHERE request_id = :request_id
+            ");
+            
+            $this->db->bind(':request_id', $req_id);
+            $this->db->bind(':bank_name', $data['bank_name']);
+            $this->db->bind(':account_number', $data['account_number']);
+            $this->db->bind(':branch', $data['branch']);
+            $this->db->bind(':account_holder', $data['account_holder']);
+            
+            $this->db->execute();
+            
+            // Delete existing team members
+            $this->db->query("DELETE FROM fundraising_team_members WHERE request_id = :request_id");
+            $this->db->bind(':request_id', $req_id);
+            $this->db->execute();
+            
+            // Insert new team members if provided
+            if (!empty($data['team_members']) && is_array($data['team_members'])) {
+                foreach ($data['team_members'] as $member_id) {
+                    $this->db->query("
+                        INSERT INTO fundraising_team_members (request_id, user_id)
+                        VALUES (:request_id, :user_id)
+                    ");
+                    $this->db->bind(':request_id', $req_id);
+                    $this->db->bind(':user_id', $member_id);
+                    $this->db->execute();
+                }
+            }
+            
+            // Commit transaction
+            $this->db->commit();
+            
+            return true;
+        } catch (Exception $e) {
+            // Rollback on error
+            $this->db->rollback();
+            error_log("Error updating fundraiser request: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if campaign has reached target and mark as Completed
+     */
+    public function checkAndCompleteCampaign($requestId) {
+        // Get fundraiser data
+        $fundraiser = $this->getFundraiserById($requestId);
+        
+        if (!$fundraiser) {
+            return false;
+        }
+        
+        // Only check Approved campaigns
+        if ($fundraiser->status !== 'Approved') {
+            return false;
+        }
+        
+        // Check if raised amount meets or exceeds target
+        if ($fundraiser->raised_amount >= $fundraiser->target_amount) {
+            $this->db->query("
+                UPDATE fundraising_requests
+                SET status = 'Completed',
+                    updated_at = NOW()
+                WHERE id = :request_id
+            ");
+            
+            $this->db->bind(':request_id', $requestId);
+            return $this->db->execute();
+        }
+        
+        return false;
+    }
 }
 ?>

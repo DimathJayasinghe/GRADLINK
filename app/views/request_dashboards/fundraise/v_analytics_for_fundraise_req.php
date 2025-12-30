@@ -119,6 +119,11 @@
     color: #dc3545;
 }
 
+.status-completed {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196f3;
+}
+
 #analytics-charts {
     margin-top: 2rem;
     padding: 1.5rem;
@@ -270,25 +275,32 @@
             <h3 style="margin-bottom: 1.5rem; font-weight: 600; font-size: 1.3rem; color: var(--text);">Donation Analytics</h3>
             
             <?php if (!empty($data['donations']) && count($data['donations']) > 0): ?>
-                <!-- Donation Stats Summary -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                    <div style="background: rgba(76, 175, 80, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #4caf50;">
-                        <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Total Donors</p>
-                        <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #4caf50;"><?php echo count($data['donations']); ?></p>
+                <?php 
+                // Check if current user is the campaign owner
+                $isOwner = isset($_SESSION['user_id']) && $_SESSION['user_id'] == $target_post->user_id;
+                ?>
+                
+                <!-- Donation Stats Summary (Owner Only) -->
+                <?php if ($isOwner): ?>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div style="background: rgba(76, 175, 80, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #4caf50;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Total Donors</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #4caf50;"><?php echo count($data['donations']); ?></p>
+                        </div>
+                        <div style="background: rgba(33, 150, 243, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #2196f3;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Average Donation</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #2196f3;">
+                                Rs.<?php echo number_format($target_post->raised_amount / count($data['donations']), 2); ?>
+                            </p>
+                        </div>
+                        <div style="background: rgba(255, 152, 0, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #ff9800;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Remaining</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #ff9800;">
+                                Rs.<?php echo number_format($target_post->target_amount - $target_post->raised_amount, 2); ?>
+                            </p>
+                        </div>
                     </div>
-                    <div style="background: rgba(33, 150, 243, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #2196f3;">
-                        <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Average Donation</p>
-                        <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #2196f3;">
-                            Rs.<?php echo number_format($target_post->raised_amount / count($data['donations']), 2); ?>
-                        </p>
-                    </div>
-                    <div style="background: rgba(255, 152, 0, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #ff9800;">
-                        <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Remaining</p>
-                        <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #ff9800;">
-                            Rs.<?php echo number_format($target_post->target_amount - $target_post->raised_amount, 2); ?>
-                        </p>
-                    </div>
-                </div>
+                <?php endif; ?>
                 
                 <!-- Donations Over Time Chart (For Everyone) -->
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
@@ -296,13 +308,8 @@
                     <canvas id="donationsChart" style="max-height: 300px;"></canvas>
                 </div>
                 
-                <?php 
-                // Check if current user is the campaign owner
-                $isOwner = isset($_SESSION['user_id']) && $_SESSION['user_id'] == $target_post->user_id;
-                
-                // Only show detailed contributors list to campaign owner
-                if ($isOwner): 
-                ?>
+                <!-- Only show detailed contributors list to campaign owner -->
+                <?php if ($isOwner): ?>
                     <!-- Recent Contributions (Owner Only) -->
                     <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
                         <h4 style="margin: 0 0 1.5rem 0; font-weight: 600; font-size: 1.1rem; color: var(--text);">Recent Contributions</h4>

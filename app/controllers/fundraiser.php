@@ -311,6 +311,211 @@ class fundraiser extends Controller
             exit;
         }
     }
+    
+    /**
+     * Display edit form for a pending fundraiser request
+     */
+    public function edit($req_id)
+    {
+        // Verify request exists and belongs to user
+        $fundraiser = $this->model->getFullRequestData($req_id);
+        
+        if (!$fundraiser) {
+            // Fundraiser not found
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Verify user owns this fundraiser
+        if ($fundraiser->user_id != $_SESSION['user_id']) {
+            // Not authorized
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Only allow editing if status is Pending
+        if ($fundraiser->status !== 'Pending') {
+            // Cannot edit approved/rejected requests
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        $data = [
+            'fundraiser' => $fundraiser,
+            'is_edit' => true
+        ];
+        
+        $this->view("/request_dashboards/fundraise/v_edit_fundraise_req", $data);
+    }
+    
+    /**
+     * Process update of a pending fundraiser request
+     */
+    public function update($req_id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Verify request exists and belongs to user
+        $fundraiser = $this->model->getFundraiserById($req_id);
+        
+        if (!$fundraiser) {
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Verify user owns this fundraiser
+        if ($fundraiser->user_id != $_SESSION['user_id']) {
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Only allow updating of pending requests
+        if ($fundraiser->status !== 'Pending') {
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Process form data (same validation as create)
+        $queryValues = $_POST;
+        $errors = [];
+        
+        // Page 1: Contact & Project Information
+        if(empty($_POST['club_name'])){
+            $errors[] = 'Club name is required';
+        }
+        
+        if(empty($_POST['position'])){
+            $errors[] = 'Position is required';
+        }
+        
+        if(empty($_POST['phone'])){
+            $errors[] = 'Phone number is required';
+        } elseif(!preg_match('/^[0-9]{10}$/', $_POST['phone'])){
+            $errors[] = 'Phone number must be 10 digits';
+        }
+        
+        // Page 2: Campaign Details
+        if(empty($_POST['project_title'])){
+            $errors[] = 'Project title is required';
+        }
+        
+        if(empty($_POST['headline'])){
+            $errors[] = 'Headline is required';
+        }
+        
+        if(empty($_POST['description'])){
+            $errors[] = 'Project description is required';
+        }
+        
+        // Page 3: Financial Details
+        if(empty($_POST['amount_needed'])){
+            $errors[] = 'Amount needed is required';
+        } elseif(!is_numeric($_POST['amount_needed']) || $_POST['amount_needed'] <= 0){
+            $errors[] = 'Amount needed must be a positive number';
+        }
+        
+        if(empty($_POST['objective'])){
+            $errors[] = 'Objective is required';
+        }
+        
+        if(empty($_POST['start_date'])){
+            $errors[] = 'Start date is required';
+        }
+        
+        if(empty($_POST['end_date'])){
+            $errors[] = 'End date is required';
+        }
+        
+        // Validate dates
+        if(!empty($_POST['start_date']) && !empty($_POST['end_date'])){
+            $startDate = strtotime($_POST['start_date']);
+            $endDate = strtotime($_POST['end_date']);
+            
+            if($endDate < $startDate){
+                $errors[] = 'End date cannot be before start date';
+            }
+        }
+        
+        // Fund Manager
+        if(empty($_POST['fund_manager'])){
+            $errors[] = 'Fund manager name is required';
+        }
+        
+        if(empty($_POST['fund_manager_contact'])){
+            $errors[] = 'Fund manager contact is required';
+        } elseif(!preg_match('/^[0-9]{10}$/', $_POST['fund_manager_contact'])){
+            $errors[] = 'Fund manager contact must be 10 digits';
+        }
+        
+        // Bank Details
+        if(empty($_POST['bank_name'])){
+            $errors[] = 'Bank name is required';
+        }
+        
+        if(empty($_POST['account_number'])){
+            $errors[] = 'Account number is required';
+        } elseif(!preg_match('/^[0-9]+$/', $_POST['account_number'])){
+            $errors[] = 'Account number must contain only digits';
+        }
+        
+        if(empty($_POST['branch'])){
+            $errors[] = 'Branch is required';
+        }
+        
+        if(empty($_POST['account_holder'])){
+            $errors[] = 'Account holder name is required';
+        }
+        
+        // File upload validation (optional on update)
+        if(!empty($_FILES['project_poster']['tmp_name'])){
+            $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            $maxSize = 5 * 1024 * 1024; // 5MB
+            
+            if(!in_array($_FILES['project_poster']['type'], $allowedTypes)){
+                $errors[] = 'Project poster must be JPG or PNG format';
+            }
+            
+            if($_FILES['project_poster']['size'] > $maxSize){
+                $errors[] = 'Project poster must be less than 5MB';
+            }
+        }
+        
+        // Check if there are any errors
+        if(count($errors) > 0){
+            $fullData = $this->model->getFullRequestData($req_id);
+            $data = [
+                'fundraiser' => $fullData,
+                'is_edit' => true,
+                'success' => false,
+                'errors' => $errors
+            ];
+            $this->view('/request_dashboards/fundraise/v_edit_fundraise_req', $data);
+            exit;
+        }
+        
+        // Handle file upload if new file provided
+        if (!empty($_FILES['project_poster']['tmp_name'])) {
+            $ext = pathinfo($_FILES['project_poster']['name'], PATHINFO_EXTENSION);
+            $desiredName = 'file_' . microtime(true) . '_' . bin2hex(random_bytes(4)) . ($ext ? '.' . $ext : '');
+            $upload = $this->mediaHandler->save(
+                $_FILES['project_poster']['tmp_name'],
+                'fundraisers',
+                $desiredName
+            );
+            $queryValues['project_poster'] = $upload;
+        } else {
+            // Keep existing poster
+            $queryValues['project_poster'] = $fundraiser->project_poster;
+        }
+
+        $result = $this->model->updateFundraiserRequest($req_id, $queryValues);
+        $this->redirect('/fundraiser/myrequests');
+        exit;
+    }
+    
     public function getAvailableUsers()
     {
         $query = $this->getQueryParam('search', '');
@@ -497,6 +702,9 @@ class fundraiser extends Controller
                 $donation = $this->model->getDonationByTransaction($paymentIntentId);
                 if ($donation) {
                     $this->model->updateCollectedAmount($donation->request_id);
+                    
+                    // Check if campaign reached target and mark as completed
+                    $this->model->checkAndCompleteCampaign($donation->request_id);
                 }
                 
                 echo json_encode(['success' => true, 'message' => 'Donation processed successfully']);
@@ -531,6 +739,9 @@ class fundraiser extends Controller
                     
                     if (isset($result['metadata']['fundraiser_id'])) {
                         $this->model->updateCollectedAmount($result['metadata']['fundraiser_id']);
+                        
+                        // Check if campaign reached target and mark as completed
+                        $this->model->checkAndCompleteCampaign($result['metadata']['fundraiser_id']);
                     }
                     
                 } elseif ($result['event_type'] === 'payment_failed') {

@@ -433,11 +433,9 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
                 const email = formData.get('email');
                 const message = formData.get('message');
                 const isAnonymous = formData.get('visibility') === 'anonymous';
-                
+                let fundraiserId = null;
                 <?php if (isset($campaign) && $campaign): ?>
-                const fundraiserId = <?php echo (int)$campaign->req_id; ?>;
-                <?php else: ?>
-                const fundraiserId = null;
+                fundraiserId = <?php echo (int)$campaign->req_id; ?>;
                 <?php endif; ?>
                 
                 if (!fundraiserId) {
@@ -446,6 +444,31 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
                     GL_submitBtn.textContent = 'Donate now';
                     return false;
                 }
+                
+                // Check if donation exceeds remaining amount
+                <?php if (isset($campaign) && $campaign): ?>
+                const targetAmount = <?php echo $campaign->target_amount; ?>;
+                const raisedAmount = <?php echo $campaign->raised_amount; ?>;
+                const remainingAmount = targetAmount - raisedAmount;
+                
+                if (remainingAmount <= 0) {
+                    alert('🎉 This campaign has already reached its target! No more donations needed.');
+                    GL_submitBtn.disabled = false;
+                    GL_submitBtn.textContent = 'Donate now';
+                    return false;
+                }
+                
+                if (amount > remainingAmount) {
+                    const formattedRemaining = 'Rs. ' + remainingAmount.toLocaleString('en-LK', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    alert(`⚠️ Your donation amount (${GL_formatLKR(amount)}) exceeds the remaining needed amount (${formattedRemaining}).\n\nPlease donate ${formattedRemaining} or less.`);
+                    GL_submitBtn.disabled = false;
+                    GL_submitBtn.textContent = 'Donate now';
+                    return false;
+                }
+                <?php endif; ?>
                 
                 // Create payment intent
                 const intentResponse = await fetch('<?php echo URLROOT; ?>/fundraiser/createPaymentIntent', {
