@@ -297,5 +297,78 @@ class M_fundraiser{
         
         return $this->db->execute();
     }
+    
+    /**
+     * Create a new donation record
+     */
+    public function createDonation($data) {
+        $this->db->query("
+            INSERT INTO fundraising_donations
+            (request_id, donor_user_id, amount, transaction_reference, donor_name, donor_email, message, is_anonymous, status)
+            VALUES
+            (:request_id, :donor_user_id, :amount, :transaction_reference, :donor_name, :donor_email, :message, :is_anonymous, :status)
+        ");
+        
+        $this->db->bind(':request_id', $data['request_id']);
+        $this->db->bind(':donor_user_id', $data['donor_user_id']);
+        $this->db->bind(':amount', $data['amount']);
+        $this->db->bind(':transaction_reference', $data['transaction_reference']);
+        $this->db->bind(':donor_name', $data['donor_name']);
+        $this->db->bind(':donor_email', $data['donor_email']);
+        $this->db->bind(':message', $data['message'] ?? '');
+        $this->db->bind(':is_anonymous', $data['is_anonymous'] ? 1 : 0);
+        $this->db->bind(':status', $data['status']);
+        
+        return $this->db->execute();
+    }
+    
+    /**
+     * Update donation status by transaction reference
+     */
+    public function updateDonationStatus($transactionRef, $status) {
+        $this->db->query("
+            UPDATE fundraising_donations
+            SET status = :status
+            WHERE transaction_reference = :transaction_ref
+        ");
+        
+        $this->db->bind(':status', $status);
+        $this->db->bind(':transaction_ref', $transactionRef);
+        
+        return $this->db->execute();
+    }
+    
+    /**
+     * Get donation by transaction reference
+     */
+    public function getDonationByTransaction($transactionRef) {
+        $this->db->query("
+            SELECT * FROM fundraising_donations
+            WHERE transaction_reference = :transaction_ref
+        ");
+        
+        $this->db->bind(':transaction_ref', $transactionRef);
+        return $this->db->single();
+    }
+    
+    /**
+     * Update collected amount for a fundraiser (recalculate from successful donations)
+     */
+    public function updateCollectedAmount($requestId) {
+        $this->db->query("
+            UPDATE fundraising_requests
+            SET collected_amount = (
+                SELECT COALESCE(SUM(amount), 0)
+                FROM fundraising_donations
+                WHERE request_id = :request_id AND status = 'Successful'
+            ),
+            updated_at = NOW()
+            WHERE id = :request_id
+        ");
+        
+        $this->db->bind(':request_id', $requestId);
+        
+        return $this->db->execute();
+    }
 }
 ?>
