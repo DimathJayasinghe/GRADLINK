@@ -267,7 +267,7 @@
         
         <!-- Donation Timeline & Impact Visualization -->
         <div id="donation-analytics" style="margin-top: 2rem;">
-            <h3 style="margin-bottom: 1.5rem; font-weight: 600; font-size: 1.3rem; color: var(--text);">Donation Impact Timeline</h3>
+            <h3 style="margin-bottom: 1.5rem; font-weight: 600; font-size: 1.3rem; color: var(--text);">Donation Analytics</h3>
             
             <?php if (!empty($data['donations']) && count($data['donations']) > 0): ?>
                 <!-- Donation Stats Summary -->
@@ -290,69 +290,163 @@
                     </div>
                 </div>
                 
-                <!-- Donation Timeline -->
-                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
-                    <h4 style="margin: 0 0 1.5rem 0; font-weight: 600; font-size: 1.1rem; color: var(--text);">Recent Contributions</h4>
-                    
-                    <?php 
-                    $runningTotal = 0;
-                    foreach ($data['donations'] as $index => $donation): 
-                        $runningTotal += $donation->amount;
-                        $progressAtThisPoint = ($runningTotal / $target_post->target_amount) * 100;
-                        $donorName = $donation->is_anonymous ? 'Anonymous Donor' : ($donation->display_name ?? $donation->donor_name ?? 'Anonymous');
-                    ?>
-                        <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                                <div style="flex: 1;">
-                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                                        <?php if (!$donation->is_anonymous && !empty($donation->profile_image)): ?>
-                                            <img src="<?php echo URLROOT . '/public/img/profiles/' . $donation->profile_image; ?>" 
-                                                 alt="<?php echo htmlspecialchars($donorName); ?>" 
-                                                 style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
-                                        <?php else: ?>
-                                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">
-                                                <?php echo substr($donorName, 0, 1); ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        <div>
-                                            <p style="margin: 0; font-weight: 600; color: var(--text); font-size: 1rem;">
-                                                <?php echo htmlspecialchars($donorName); ?>
-                                            </p>
-                                            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--muted);">
-                                                <?php echo date('M j, Y g:i A', strtotime($donation->created_at)); ?>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <?php if (!empty($donation->message)): ?>
-                                        <p style="margin: 0.5rem 0 0 2.75rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03); border-left: 2px solid var(--link); border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--muted); font-style: italic;">
-                                            "<?php echo htmlspecialchars($donation->message); ?>"
-                                        </p>
-                                    <?php endif; ?>
-                                </div>
-                                <div style="text-align: right; margin-left: 1rem;">
-                                    <p style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #4caf50;">
-                                        +Rs.<?php echo number_format($donation->amount, 2); ?>
-                                    </p>
-                                    <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--muted);">
-                                        Progress: <?php echo number_format($progressAtThisPoint, 1); ?>%
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <!-- Mini progress bar showing impact -->
-                            <div style="margin-top: 0.75rem; margin-left: 2.75rem;">
-                                <div style="background: rgba(255,255,255,0.05); border-radius: 4px; height: 6px; overflow: hidden;">
-                                    <div style="background: linear-gradient(90deg, #4caf50, #2e7d32); height: 100%; width: <?php echo min($progressAtThisPoint, 100); ?>%; transition: width 0.4s ease;"></div>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                <!-- Donations Over Time Chart (For Everyone) -->
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
+                    <h4 style="margin: 0 0 1.5rem 0; font-weight: 600; font-size: 1.1rem; color: var(--text);">Donations Over Time</h4>
+                    <canvas id="donationsChart" style="max-height: 300px;"></canvas>
                 </div>
                 
+                <?php 
+                // Check if current user is the campaign owner
+                $isOwner = isset($_SESSION['user_id']) && $_SESSION['user_id'] == $target_post->user_id;
+                
+                // Only show detailed contributors list to campaign owner
+                if ($isOwner): 
+                ?>
+                    <!-- Recent Contributions (Owner Only) -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
+                        <h4 style="margin: 0 0 1.5rem 0; font-weight: 600; font-size: 1.1rem; color: var(--text);">Recent Contributions</h4>
+                        
+                        <?php 
+                        foreach ($data['donations'] as $index => $donation): 
+                            $donorName = $donation->is_anonymous ? 'Anonymous Donor' : ($donation->display_name ?? $donation->donor_name ?? 'Anonymous');
+                        ?>
+                            <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                            <?php if (!$donation->is_anonymous && !empty($donation->profile_image)): ?>
+                                                <img src="<?php echo URLROOT . '/public/img/profiles/' . $donation->profile_image; ?>" 
+                                                     alt="<?php echo htmlspecialchars($donorName); ?>" 
+                                                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                                            <?php else: ?>
+                                                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">
+                                                    <?php echo substr($donorName, 0, 1); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div>
+                                                <p style="margin: 0; font-weight: 600; color: var(--text); font-size: 1rem;">
+                                                    <?php echo htmlspecialchars($donorName); ?>
+                                                </p>
+                                                <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--muted);">
+                                                    <?php echo date('M j, Y g:i A', strtotime($donation->created_at)); ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <?php if (!empty($donation->message)): ?>
+                                            <p style="margin: 0.5rem 0 0 2.75rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03); border-left: 2px solid var(--link); border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--muted); font-style: italic;">
+                                                "<?php echo htmlspecialchars($donation->message); ?>"
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div style="text-align: right; margin-left: 1rem;">
+                                        <p style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #4caf50;">
+                                            +Rs.<?php echo number_format($donation->amount, 2); ?>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Chart.js Script -->
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    // Prepare data for chart
+                    const donations = <?php echo json_encode(array_reverse($data['donations'])); ?>;
+                    
+                    // Calculate cumulative amounts over time
+                    let cumulativeAmount = 0;
+                    const chartData = donations.map(donation => {
+                        cumulativeAmount += parseFloat(donation.amount);
+                        return {
+                            date: new Date(donation.created_at),
+                            amount: cumulativeAmount
+                        };
+                    });
+                    
+                    const ctx = document.getElementById('donationsChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: chartData.map(d => d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                            datasets: [{
+                                label: 'Total Raised (Rs.)',
+                                data: chartData.map(d => d.amount),
+                                borderColor: '#4caf50',
+                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#4caf50',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    labels: {
+                                        color: '#fff',
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#fff',
+                                    bodyColor: '#fff',
+                                    borderColor: '#4caf50',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Total: Rs.' + context.parsed.y.toLocaleString('en-LK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.05)'
+                                    },
+                                    ticks: {
+                                        color: '#aaa',
+                                        font: {
+                                            size: 11
+                                        }
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.05)'
+                                    },
+                                    ticks: {
+                                        color: '#aaa',
+                                        font: {
+                                            size: 11
+                                        },
+                                        callback: function(value) {
+                                            return 'Rs.' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                </script>
             <?php else: ?>
-                <div style="background: rgba(255,255,255,0.03); border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 3rem; text-align: center;">
-                    <p style="margin: 0; font-size: 1.1rem; color: var(--muted);">
-                        💰 No donations yet. Be the first to support this campaign!
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2rem; text-align: center;">
+                    <p style="margin: 0; color: var(--muted); font-size: 1rem;">
+                        📊 No donations yet. Be the first to support this campaign!
                     </p>
                 </div>
             <?php endif; ?>

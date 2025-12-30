@@ -238,7 +238,7 @@ class M_fundraiser{
     }
     
     /**
-     * Get donations for a fundraiser
+     * Get donations for a fundraiser with anonymous donations grouped
      */
     public function getDonations($request_id){
         $this->db->query("
@@ -261,7 +261,70 @@ class M_fundraiser{
         ");
         
         $this->db->bind(':request_id', $request_id);
-        return $this->db->resultSet();
+        $donations = $this->db->resultSet();
+        
+        // Group anonymous donations
+        $publicDonations = [];
+        $anonymousTotal = 0;
+        $anonymousCount = 0;
+        $latestAnonymousDate = null;
+        
+        foreach ($donations as $donation) {
+            if ($donation->is_anonymous) {
+                $anonymousTotal += $donation->amount;
+                $anonymousCount++;
+                if (!$latestAnonymousDate || strtotime($donation->created_at) > strtotime($latestAnonymousDate)) {
+                    $latestAnonymousDate = $donation->created_at;
+                }
+            } else {
+                $publicDonations[] = $donation;
+            }
+        }
+        
+        // Add grouped anonymous donation if any exist
+        if ($anonymousCount > 0) {
+            $anonymousDonation = (object)[
+                'id' => 0,
+                'amount' => $anonymousTotal,
+                'transaction_reference' => 'anonymous_grouped',
+                'donor_name' => 'Anonymous',
+                'message' => $anonymousCount > 1 ? "$anonymousCount anonymous donors" : null,
+                'is_anonymous' => true,
+                'status' => 'Successful',
+                'created_at' => $latestAnonymousDate,
+                'user_name' => null,
+                'display_name' => null,
+                'profile_image' => null
+            ];
+            $publicDonations[] = $anonymousDonation;
+        }
+        
+        // Sort by date again
+        usort($publicDonations, function($a, $b) {
+            return strtotime($b->created_at) - strtotime($a->created_at);
+        });
+        
+        return $publicDonations;
+    }
+    
+    /**
+     * Get user's public (non-anonymous) contribution to a fundraiser
+     */
+    public function getUserPublicContribution($request_id, $user_id) {
+        $this->db->query("
+            SELECT COALESCE(SUM(amount), 0) as total_contribution
+            FROM fundraising_donations
+            WHERE request_id = :request_id 
+              AND donor_user_id = :user_id 
+              AND status = 'Successful'
+              AND is_anonymous = 0
+        ");
+        
+        $this->db->bind(':request_id', $request_id);
+        $this->db->bind(':user_id', $user_id);
+        
+        $result = $this->db->single();
+        return $result ? $result->total_contribution : 0;
     }
     
     /**

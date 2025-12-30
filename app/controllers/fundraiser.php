@@ -48,13 +48,25 @@ class fundraiser extends Controller
         $teamMembers = $this->model->getTeamMembers($req_id);
         $donations = $this->model->getDonations($req_id);
         
+        // Get current user's public contribution (excluding anonymous donations)
+        $userPublicContribution = 0;
+        $userPublicPercentage = 0;
+        if (isset($_SESSION['user_id'])) {
+            $userPublicContribution = $this->model->getUserPublicContribution($req_id, $_SESSION['user_id']);
+            if ($fundraiser->target_amount > 0) {
+                $userPublicPercentage = ($userPublicContribution / $fundraiser->target_amount) * 100;
+            }
+        }
+        
         $data = [
             'req_id' => $req_id,
             'fundraise_reqs' => [$fundraiser], // Analytics view expects an array
             'fundraiser' => $fundraiser,
             'bank_details' => $bankDetails,
             'team_members' => $teamMembers,
-            'donations' => $donations
+            'donations' => $donations,
+            'user_public_contribution' => $userPublicContribution,
+            'user_public_percentage' => $userPublicPercentage
         ];
         
         $this->view("/request_dashboards/fundraise/v_analytics_for_fundraise_req", $data);
