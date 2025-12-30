@@ -60,7 +60,7 @@ class Signup extends Controller{
 
             $ok = $this->signupModel->rejectPendingAlumni($pendingId);
             if ($ok) {
-                SessionManager::setFlash('success', 'Pending alumni request rejected.');
+                SessionManager::setFlash('warning', 'Pending alumni request rejected.');
             } else {
                 SessionManager::setFlash('error', 'Rejection failed. Please try again.');
             }

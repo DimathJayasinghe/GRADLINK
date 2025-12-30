@@ -68,7 +68,11 @@
             $this->view('admin/v_fundraiser', $data);
         }
         public function verifications() {
-            $data = [];
+            $pendingModel = $this->model('M_alumniapprove');
+            $requests = $pendingModel->getPendingRequests();
+            $data = [
+                'requests' => $requests,
+            ];
             $this->view('admin/v_verifications', $data);
         }
 
@@ -104,7 +108,78 @@
             $data = [];
             $this->view('admin/v_eventrequests', $data);
         }
-    }
+
+        public function bulkVerifyAlumni() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                http_response_code(405);
+                exit('Method not allowed');
+            }
+
+            $ids = $_POST['ids'] ?? [];
+            if (!is_array($ids) || empty($ids)) {
+                SessionManager::setFlash('error', 'No alumni selected.');
+                $this->redirect('/admin/verifications');
+                return;
+            }
+
+            $signupModel = $this->model('M_signup');
+            $successCount = 0;
+            $failCount = 0;
+
+            foreach ($ids as $id) {
+                $id = is_numeric($id) ? (int)$id : null;
+                if (!$id) continue;
+                $result = $signupModel->approveAlumni($id);
+                if ($result) {
+                    $successCount++;
+                } else {
+                    $failCount++;
+                }
+            }
+
+            if ($successCount > 0) {
+                SessionManager::setFlash('success', "Verified $successCount alumni successfully.");
+            }
+            if ($failCount > 0) {
+                SessionManager::setFlash('warning', "$failCount alumni could not be verified.");
+            }
+            $this->redirect('/admin/verifications');
+        }
+
+        public function bulkRejectAlumni() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                http_response_code(405);
+                exit('Method not allowed');
+            }
+
+            $ids = $_POST['ids'] ?? [];
+            if (!is_array($ids) || empty($ids)) {
+                SessionManager::setFlash('error', 'No alumni selected.');
+                $this->redirect('/admin/verifications');
+                return;
+            }
+
+            $signupModel = $this->model('M_signup');
+            $successCount = 0;
+            $failCount = 0;
+
+            foreach ($ids as $id) {
+                $id = is_numeric($id) ? (int)$id : null;
+                if (!$id) continue;
+                $result = $signupModel->rejectPendingAlumni($id);
+                if ($result) {
+                    $successCount++;
+                } else {
+                    $failCount++;
+                }
+            }
+
+            if ($successCount > 0) {
+                SessionManager::setFlash('warning', "Rejected $successCount alumni.");
+            }
+            if ($failCount > 0) {
+                SessionManager::setFlash('error', "$failCount alumni could not be rejected.");
+            }
+            $this->redirect('/admin/verifications');
+        }    }
 ?>
-
-
