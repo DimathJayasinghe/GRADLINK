@@ -23,12 +23,23 @@
             $activity = $this->adminModel->getRecentActivity();
             $users = $this->adminModel->getAllUsers();
             $engagement = $this->adminModel->getEngagementMetrics();
+            
+            // Online users and activity monitoring
+            $onlineUsers = $this->adminModel->getOnlineUsers();
+            $onlineCount = count($onlineUsers);
+            $accessStats = $this->adminModel->getAccessLogStats();
+            $recentLogs = $this->adminModel->getRecentAccessLogs(20);
+            
             $data = [
                 'metrics' => $metrics,
                 'detailed' => $detailed,
                 'activity' => $activity,
                 'users' => $users,
                 'engagement' => $engagement,
+                'online_users' => $onlineUsers,
+                'online_count' => $onlineCount,
+                'access_stats' => $accessStats,
+                'recent_logs' => $recentLogs,
             ];
             $this->view('admin/v_overview', $data);
         }
