@@ -40,22 +40,19 @@ class Profile extends Controller{
             $data['userDetails'] = $this->Model->getUserDetails($user_id);
             $data['certificates'] = $this->Model->getCertificates($user_id);
             $data['projects'] = $this->Model->getProjects($user_id);
-            $isPublic = $this->Model->isProfilePublic($user_id);
             $isFollwed = $this->Model->isFollowed($_SESSION['user_id'], $user_id);
             $hasPending = $this->Model->hasPendingFollowRequest($_SESSION['user_id'], $user_id);
-            // Ensure boolean for view logic
-            $data['public_profile'] = (bool)$isPublic;
+            // Set for view logic
             $data['isfollowed'] = $isFollwed;
             $data['has_pending_request'] = $hasPending;
             
-            if ($data['public_profile'] || $_SESSION['user_id'] == $user_id || $isFollwed) {
-                $data['posts'] = $this->Model->getPosts($user_id);
-                // Add liked status to posts - same as in mainfeed
-                $postModel = $this->model('M_post');
-                $current_user_id = $_SESSION['user_id'];
-                foreach ($data['posts'] as $p) {
-                    $p->liked = $postModel->isLiked($p->id, $current_user_id);
-                }
+            // Always load posts for any profile
+            $data['posts'] = $this->Model->getPosts($user_id);
+            // Add liked status to posts - same as in mainfeed
+            $postModel = $this->model('M_post');
+            $current_user_id = $_SESSION['user_id'];
+            foreach ($data['posts'] as $p) {
+                $p->liked = $postModel->isLiked($p->id, $current_user_id);
             }
             
 

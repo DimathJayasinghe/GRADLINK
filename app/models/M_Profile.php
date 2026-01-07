@@ -163,16 +163,7 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
-    public function isProfilePublic($user_id){
-        $this->db->query('SELECT is_public FROM user_profiles_visibility WHERE user_id = :uid LIMIT 1');
-        $this->db->bind(':uid',$user_id);
-        $row = $this->db->single();
-        if ($row !== null && isset($row->is_public)) {
-            return (bool)$row->is_public;
-        }
-        // If no row exists, default to public (matches DB default TRUE in schema)
-        return true;
-    }
+
     public function isFollowed($current_user_id, $profile_user_id){
         $this->db->query('SELECT 1 FROM followers WHERE follower_id = :follower_id AND followed_id = :followed_id LIMIT 1');
         $this->db->bind(':follower_id',$current_user_id);

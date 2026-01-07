@@ -1,24 +1,10 @@
 <div class="account_content">
-	<h2>Privacy & Safety</h2>
-	<p class="settings-description">Control your privacy and security preferences.</p>
+	<h2>Blocked Users list</h2>
+	<p class="settings-description">List of users you have blocked</p>
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Privacy Controls</h3>
-		<div class="section-divider"></div>
-
-		<div class="settings-option">
-			<div class="settings-option-details">
-				<h4>Profile Visibility</h4>
-				<p>Choose who can see your profile and activity</p>
-			</div>
-			<div>
-				<select id="profileVisibility" class="select-inline">
-					<option value="public">Public</option>
-					<option value="connections">Connections only</option>
-					<option value="private">Only me</option>
-				</select>
-			</div>
-		</div>
+		<div class="section-divider"></div>-->
 
 		<!-- <div class="settings-option">
 			<div class="settings-option-details">
@@ -41,7 +27,7 @@
 				<span class="slider"></span>
 			</label>
 		</div> -->
-	</div>
+	<!-- </div> -->
 
 	<!-- <div class="settings-section">
 		<h3>Security</h3>
@@ -68,8 +54,8 @@
 	</div> -->
 
 	<div class="settings-section">
-		<h3>Blocked Users</h3>
-		<div class="section-divider"></div>
+		<!-- <h3>Blocked Users</h3> -->
+		<!-- <div class="section-divider"></div> -->
 		<ul class="simple-list" id="blockedUsersList">
 			<li>
 				<span>No blocked users</span>

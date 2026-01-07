@@ -32,7 +32,7 @@ class M_mainfeed{
             $this->db->bind(':offset', (int)$offset, PDO::PARAM_INT);
             return $this->db->resultSet();
         }else{
-            // For you: show public profiles, followed private profiles, and always own posts
+            // For you: show all posts from all users
             $this->db->query("SELECT 
                                 p.*, 
                                 u.name, 
@@ -42,16 +42,8 @@ class M_mainfeed{
                                 (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes
                               FROM posts p
                               INNER JOIN users u ON u.id = p.user_id
-                              LEFT JOIN user_profiles_visibility upv ON upv.user_id = p.user_id
-                              LEFT JOIN followers f ON f.followed_id = p.user_id AND f.follower_id = :current_user_id
-                              WHERE (
-                                  p.user_id = :current_user_id
-                                  OR COALESCE(upv.is_public, 1) = 1
-                                  OR f.follower_id IS NOT NULL
-                              )
                               ORDER BY p.created_at DESC
                               LIMIT :limit OFFSET :offset");
-            $this->db->bind(':current_user_id', $_SESSION['user_id']);
             $this->db->bind(':limit', (int)$limit, PDO::PARAM_INT);
             $this->db->bind(':offset', (int)$offset, PDO::PARAM_INT);
             return $this->db->resultSet();
