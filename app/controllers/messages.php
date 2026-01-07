@@ -158,13 +158,6 @@ class messages extends Controller{
             $messageId = $this->message_model->sendMessage($currentUserId, $recipientId, $content);
             
             if ($messageId) {
-                // Increment unread count for recipient
-                try {
-                    $this->message_model->incrementUnreadCount($currentUserId, $recipientId, $messageId);
-                } catch (Exception $e) {
-                    error_log('Failed to increment unread count: ' . $e->getMessage());
-                }
-                
                 // Get sender name from session or use generic text
                 $senderName = $_SESSION['user_name'] ?? 'Someone';
                 
