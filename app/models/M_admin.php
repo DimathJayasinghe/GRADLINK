@@ -211,7 +211,369 @@ class M_admin {
         $this->db->bind(':id', $id);
         return $this->db->single();
     }
+
+    // ==================== FUNDRAISER ADMIN METHODS ====================
+
+    /**
+     * Get all fundraisers for admin panel (all statuses)
+     */
+    public function getAllFundraisersForAdmin() {
+        $this->db->query("
+            SELECT 
+                fr.id as req_id,
+                fr.user_id,
+                fr.club_name,
+                fr.requester_position,
+                fr.requester_phone,
+                fr.title,
+                fr.headline,
+                fr.description,
+                fr.project_poster,
+                fr.goal_amount as target_amount,
+                fr.collected_amount as raised_amount,
+                fr.objective,
+                fr.start_date,
+                fr.end_date as deadline,
+                fr.fund_manager_name,
+                fr.fund_manager_contact,
+                fr.advisor_id,
+                fr.status,
+                fr.rejection_reason,
+                fr.created_at,
+                fr.updated_at,
+                u.name as user_name,
+                u.display_name,
+                u.email as user_email,
+                u.profile_image
+            FROM fundraising_requests fr
+            JOIN users u ON fr.user_id = u.id
+            ORDER BY fr.created_at DESC
+        ");
+        
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Get fundraiser statistics for KPI dashboard
+     */
+    public function getFundraiserStats() {
+        $stats = [
+            'open_campaigns' => 0,
+            'total_raised' => 0,
+            'active_clubs' => 0,
+            'expiring_soon' => 0,
+            'pending_count' => 0,
+            'approved_count' => 0,
+            'rejected_count' => 0
+        ];
+
+        try {
+            // Open campaigns (Approved/Active)
+            $this->db->query("SELECT COUNT(*) as c FROM fundraising_requests WHERE status IN ('Approved', 'Active')");
+            $stats['open_campaigns'] = (int)($this->db->single()->c ?? 0);
+
+            // Total raised from successful donations
+            $this->db->query("SELECT COALESCE(SUM(amount), 0) as total FROM fundraising_donations WHERE status = 'Successful'");
+            $stats['total_raised'] = (float)($this->db->single()->total ?? 0);
+
+            // Active clubs (unique clubs with approved campaigns)
+            $this->db->query("SELECT COUNT(DISTINCT club_name) as c FROM fundraising_requests WHERE status IN ('Approved', 'Active')");
+            $stats['active_clubs'] = (int)($this->db->single()->c ?? 0);
+
+            // Expiring soon (within 7 days)
+            $this->db->query("SELECT COUNT(*) as c FROM fundraising_requests WHERE status IN ('Approved', 'Active') AND end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)");
+            $stats['expiring_soon'] = (int)($this->db->single()->c ?? 0);
+
+            // Pending count
+            $this->db->query("SELECT COUNT(*) as c FROM fundraising_requests WHERE status = 'Pending'");
+            $stats['pending_count'] = (int)($this->db->single()->c ?? 0);
+
+            // Approved count
+            $this->db->query("SELECT COUNT(*) as c FROM fundraising_requests WHERE status IN ('Approved', 'Active')");
+            $stats['approved_count'] = (int)($this->db->single()->c ?? 0);
+
+            // Rejected count
+            $this->db->query("SELECT COUNT(*) as c FROM fundraising_requests WHERE status = 'Rejected'");
+            $stats['rejected_count'] = (int)($this->db->single()->c ?? 0);
+
+        } catch (Exception $e) {
+            error_log("Error getting fundraiser stats: " . $e->getMessage());
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get unique clubs for filter dropdown
+     */
+    public function getUniqueClubs() {
+        $this->db->query("SELECT DISTINCT club_name FROM fundraising_requests ORDER BY club_name ASC");
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Get full fundraiser details including bank and team
+     */
+    public function getFundraiserFullDetails($id) {
+        // Get main fundraiser data
+        $this->db->query("
+            SELECT 
+                fr.*,
+                fr.goal_amount as target_amount,
+                fr.collected_amount as raised_amount,
+                fr.end_date as deadline,
+                u.name as user_name,
+                u.display_name,
+                u.email as user_email,
+                u.profile_image,
+                advisor.name as advisor_name,
+                advisor.email as advisor_email
+            FROM fundraising_requests fr
+            JOIN users u ON fr.user_id = u.id
+            LEFT JOIN users advisor ON fr.advisor_id = advisor.id
+            WHERE fr.id = :id
+        ");
+        $this->db->bind(':id', $id);
+        $fundraiser = $this->db->single();
+
+        if (!$fundraiser) {
+            return null;
+        }
+
+        // Get bank details
+        $this->db->query("SELECT * FROM fundraising_bank_details WHERE request_id = :id");
+        $this->db->bind(':id', $id);
+        $fundraiser->bank_details = $this->db->single();
+
+        // Get team members
+        $this->db->query("
+            SELECT u.id as user_id, u.name, u.display_name, u.email, u.profile_image
+            FROM fundraising_team_members ftm
+            JOIN users u ON ftm.user_id = u.id
+            WHERE ftm.request_id = :id
+        ");
+        $this->db->bind(':id', $id);
+        $fundraiser->team_members = $this->db->resultSet();
+
+        // Get donations
+        $this->db->query("
+            SELECT fd.*, u.name as donor_user_name, u.display_name as donor_display_name
+            FROM fundraising_donations fd
+            LEFT JOIN users u ON fd.donor_user_id = u.id
+            WHERE fd.request_id = :id
+            ORDER BY fd.created_at DESC
+        ");
+        $this->db->bind(':id', $id);
+        $fundraiser->donations = $this->db->resultSet();
+
+        // Calculate stats
+        $this->db->query("SELECT COUNT(*) as c FROM fundraising_donations WHERE request_id = :id AND status = 'Successful'");
+        $this->db->bind(':id', $id);
+        $fundraiser->donor_count = (int)($this->db->single()->c ?? 0);
+
+        if ($fundraiser->donor_count > 0 && $fundraiser->raised_amount > 0) {
+            $fundraiser->avg_donation = $fundraiser->raised_amount / $fundraiser->donor_count;
+        } else {
+            $fundraiser->avg_donation = 0;
+        }
+
+        return $fundraiser;
+    }
+
+    /**
+     * Approve a fundraiser request
+     */
+    public function approveFundraiser($id) {
+        $this->db->query("
+            UPDATE fundraising_requests 
+            SET status = 'Approved', 
+                rejection_reason = NULL,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    /**
+     * Reject a fundraiser request with reason
+     */
+    public function rejectFundraiser($id, $reason) {
+        $this->db->query("
+            UPDATE fundraising_requests 
+            SET status = 'Rejected', 
+                rejection_reason = :reason,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+        $this->db->bind(':id', $id);
+        $this->db->bind(':reason', $reason);
+        return $this->db->execute();
+    }
+
+    /**
+     * Hold/Pause a fundraiser campaign
+     */
+    public function holdFundraiser($id) {
+        $this->db->query("
+            UPDATE fundraising_requests 
+            SET status = 'Cancelled',
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    /**
+     * Mark a fundraiser as completed
+     */
+    public function completeFundraiser($id) {
+        $this->db->query("
+            UPDATE fundraising_requests 
+            SET status = 'Completed',
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    /**
+     * Remove/Delete a fundraiser
+     */
+    public function removeFundraiser($id) {
+        // First delete related records
+        $this->db->query("DELETE FROM fundraising_team_members WHERE request_id = :id");
+        $this->db->bind(':id', $id);
+        $this->db->execute();
+
+        $this->db->query("DELETE FROM fundraising_bank_details WHERE request_id = :id");
+        $this->db->bind(':id', $id);
+        $this->db->execute();
+
+        $this->db->query("DELETE FROM fundraising_donations WHERE request_id = :id");
+        $this->db->bind(':id', $id);
+        $this->db->execute();
+
+        // Then delete main record
+        $this->db->query("DELETE FROM fundraising_requests WHERE id = :id");
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    /**
+     * Create a new fundraiser as admin
+     */
+    public function createAdminFundraiser($data) {
+        try {
+            $this->db->beginTransaction();
+
+            // Insert main request (auto-approved since admin creates it)
+            $this->db->query("
+                INSERT INTO fundraising_requests 
+                (user_id, club_name, requester_position, requester_phone, title, headline, 
+                description, project_poster, goal_amount, objective, start_date, end_date, 
+                fund_manager_name, fund_manager_contact, status)
+                VALUES 
+                (:user_id, :club_name, :position, :phone, :title, :headline, 
+                :description, :poster, :amount, :objective, :start_date, :end_date, 
+                :fund_manager, :fund_manager_contact, 'Approved')
+            ");
+
+            $this->db->bind(':user_id', $data['user_id']);
+            $this->db->bind(':club_name', $data['club_name']);
+            $this->db->bind(':position', $data['position'] ?? 'Admin');
+            $this->db->bind(':phone', $data['phone'] ?? '');
+            $this->db->bind(':title', $data['title']);
+            $this->db->bind(':headline', $data['headline'] ?? $data['title']);
+            $this->db->bind(':description', $data['description']);
+            $this->db->bind(':poster', $data['project_poster'] ?? null);
+            $this->db->bind(':amount', $data['target_amount']);
+            $this->db->bind(':objective', $data['objective'] ?? $data['description']);
+            $this->db->bind(':start_date', $data['start_date']);
+            $this->db->bind(':end_date', $data['end_date']);
+            $this->db->bind(':fund_manager', $data['fund_manager'] ?? 'Admin');
+            $this->db->bind(':fund_manager_contact', $data['fund_manager_contact'] ?? '');
+
+            $this->db->execute();
+            $requestId = $this->db->lastInsertId();
+
+            // Insert bank details
+            $this->db->query("
+                INSERT INTO fundraising_bank_details 
+                (request_id, bank_name, account_number, branch, account_holder)
+                VALUES (:request_id, :bank_name, :account_number, :branch, :account_holder)
+            ");
+
+            $this->db->bind(':request_id', $requestId);
+            $this->db->bind(':bank_name', $data['bank_name']);
+            $this->db->bind(':account_number', $data['account_number']);
+            $this->db->bind(':branch', $data['branch']);
+            $this->db->bind(':account_holder', $data['account_holder']);
+
+            $this->db->execute();
+            $this->db->commit();
+
+            return $requestId;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            error_log("Error creating admin fundraiser: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Search fundraisers with filters
+     */
+    public function searchFundraisers($query = '', $status = '', $club = '') {
+        $sql = "
+            SELECT 
+                fr.id as req_id,
+                fr.user_id,
+                fr.club_name,
+                fr.title,
+                fr.headline,
+                fr.goal_amount as target_amount,
+                fr.collected_amount as raised_amount,
+                fr.end_date as deadline,
+                fr.status,
+                fr.created_at,
+                u.name as user_name,
+                u.display_name
+            FROM fundraising_requests fr
+            JOIN users u ON fr.user_id = u.id
+            WHERE 1=1
+        ";
+
+        if (!empty($query)) {
+            $sql .= " AND (fr.title LIKE :query OR fr.club_name LIKE :query OR u.name LIKE :query OR u.display_name LIKE :query)";
+        }
+        if (!empty($status)) {
+            $sql .= " AND fr.status = :status";
+        }
+        if (!empty($club)) {
+            $sql .= " AND fr.club_name = :club";
+        }
+
+        $sql .= " ORDER BY fr.created_at DESC";
+
+        $this->db->query($sql);
+
+        if (!empty($query)) {
+            $this->db->bind(':query', '%' . $query . '%');
+        }
+        if (!empty($status)) {
+            $this->db->bind(':status', $status);
+        }
+        if (!empty($club)) {
+            $this->db->bind(':club', $club);
+        }
+
+        return $this->db->resultSet();
+    }
 }
 ?>
+
 
 
