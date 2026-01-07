@@ -1,0 +1,7 @@
+{
+  "name": "gradlink/app",
+  "description": "GRADLINK project",
+  "require": {
+    "stripe/stripe-php": "^19.1"
+  }
+}

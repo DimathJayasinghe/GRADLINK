@@ -11,6 +11,7 @@
     .tagged-member { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #1a1a1a; border: 1px solid #2f2f2f; border-radius: 999px; color: #e5e7eb; font-size: 0.95rem; }
     .tag-remove { background: none; border: 0; color: #f87171; cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 2px 6px; border-radius: 4px; }
     .tag-remove:hover { color: #ef4444; background: #262626; }
+    .current-poster-preview { max-width: 300px; margin: 10px 0; border-radius: 8px; border: 1px solid var(--border); }
 </style>
 
 <?php $styles = ob_get_clean(); ?>
@@ -19,7 +20,7 @@
     $sidebar_left = [
         ['label'=>'View All Fundraise Requests', 'url'=>'/fundraiser/all','active'=>false ,'icon'=>'list'],
         ['label'=>'View my Fundraise Requests', 'url'=>'/fundraiser/myrequests','active'=>false, 'icon'=>'user'],
-        ['label'=>'Create Fundraise Request', 'url'=>'/fundraiser/request','active'=>true ,'icon'=>'plus-circle'],
+        ['label'=>'Create Fundraise Request', 'url'=>'/fundraiser/request','active'=>false ,'icon'=>'plus-circle'],
     ]
 ?>
 
@@ -28,7 +29,7 @@
     <div class="signup-container">
         <div class="signup-header">
             <div class="title-section">
-                <h2>Create New Request</h2>
+                <h2>Edit Fundraise Request</h2>
             </div>
         </div>
         
@@ -49,7 +50,7 @@
         </div>
 
         <!-- Form Container -->
-        <form id="fundraisingForm" method="post" action="<?php echo URLROOT . "/fundraiser/create" ?>" enctype="multipart/form-data">
+        <form id="fundraisingForm" method="post" action="<?php echo URLROOT . "/fundraiser/update/" . $data['fundraiser']->req_id ?>" enctype="multipart/form-data">
             
             <!-- Page 1: Basic Information -->
             <div class="form-page active" id="page-1">
@@ -58,7 +59,7 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="club_name">Club/Society/Team Name:</label>
-                        <input type="text" class="form-control" id="club_name" name="club_name" required>
+                        <input type="text" class="form-control" id="club_name" name="club_name" value="<?php echo htmlspecialchars($data['fundraiser']->club_name); ?>" required>
                     </div>
                     
                     <div class="form-group">
@@ -68,16 +69,16 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="position">Position in Club/Society/Team:</label>
-                        <input type="text" class="form-control" id="position" name="position" required>
-                    </div>
+                        <input type="text" class="form-control" id="position" name="position" value="<?php echo htmlspecialchars($data['fundraiser']->requester_position); ?>" required>
+					</div>
                     
                     <div class="form-group">
                         <label class="form-label" for="email">Email:</label>
-                        <input type="email" class="form-control" id="email" name="email" value="dimathjaya@gmail.com" disabled>
+                        <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($data['fundraiser']->email); ?>" disabled>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="phone">Applicant Phone Number:</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="<?php echo htmlspecialchars($data['fundraiser']->requester_phone); ?>" required>
                     </div>
                 </div>
                 <div class="form-section">
@@ -105,22 +106,27 @@
                 <div class="form-section">
                     <div class="form-group">
                         <label class="form-label" for="project_title">Project Title:</label>
-                        <input type="text" class="form-control" id="project_title" name="project_title" required>
+                        <input type="text" class="form-control" id="project_title" name="project_title" value="<?php echo htmlspecialchars($data['fundraiser']->title); ?>" required>
                     </div>
                     <div class="form-section">
                     <div class="form-group">
                         <label class="form-label" for="headline">Short Title/Headline:</label>
-                        <input type="text" class="form-control" id="headline" name="headline" required>
+                        <input type="text" class="form-control" id="headline" name="headline" value="<?php echo htmlspecialchars($data['fundraiser']->headline); ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="description">Detailed Project Description (for Alumni Website):</label>
-                        <textarea class="form-control" id="description" name="description" style="height: 200px;" required></textarea>
+                        <textarea class="form-control" id="description" name="description" style="height: 200px;" required><?php echo htmlspecialchars($data['fundraiser']->description); ?></textarea>
                         <p class="form-text">Please provide a comprehensive description of your project, including its purpose, impact, and how funds will be used.</p>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="project_poster">Project Poster:</label>
+                        <?php if (!empty($data['fundraiser']->project_poster)): ?>
+                            <p class="form-text">Current poster:</p>
+                            <img src="<?php echo URLROOT . '/' . $data['fundraiser']->project_poster; ?>" class="current-poster-preview" alt="Current poster">
+                            <p class="form-text" style="margin-top: 10px;">Upload a new poster to replace the current one (optional):</p>
+                        <?php endif; ?>
                         <div class="file-upload">
                             <label for="project_poster" class="upload-area" id="poster-upload-area">
                                 <i>📁</i>
@@ -148,23 +154,23 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="amount_needed">Total Amount Needed (LKR):</label>
-                        <input type="number" class="form-control" id="amount_needed" name="amount_needed" min="0" required>
+                        <input type="number" class="form-control" id="amount_needed" name="amount_needed" min="0" value="<?php echo htmlspecialchars($data['fundraiser']->target_amount); ?>" required>
                     </div>
                 </div>
                 <div class="form-section">
                     <div class="form-group">
                         <label class="form-label" for="objective">Purpose/Objective of Fundraising:</label>
-                        <textarea class="form-control" id="objective" name="objective" required></textarea>
+                        <textarea class="form-control" id="objective" name="objective" required><?php echo htmlspecialchars($data['fundraiser']->objective); ?></textarea>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="start_date">Proposed Start Date:</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="<?php echo $data['fundraiser']->start_date; ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="end_date">Proposed End Date:</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="<?php echo $data['fundraiser']->deadline; ?>" required>
                     </div>
                     
                 </div>
@@ -175,9 +181,9 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="fund_manager">Who will manage the funds? (Name of Treasurer/Committee):</label>
-                        <input type="text" class="form-control" id="fund_manager" name="fund_manager" required>
+                        <input type="text" class="form-control" id="fund_manager" name="fund_manager" value="<?php echo htmlspecialchars($data['fundraiser']->fund_manager_name); ?>" required>
                         <label class="form-label" for="fund_manager_contact">Contact Number:</label>
-                        <input type="tel" class="form-control" id="fund_manager_contact" name="fund_manager_contact" required>
+                        <input type="tel" class="form-control" id="fund_manager_contact" name="fund_manager_contact" value="<?php echo htmlspecialchars($data['fundraiser']->fund_manager_contact); ?>" required>
                     </div>
                 </div>
                 
@@ -186,21 +192,21 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="bank_name">Bank Name:</label>
-                        <input type="text" class="form-control" id="bank_name" name="bank_name" required>
+                        <input type="text" class="form-control" id="bank_name" name="bank_name" value="<?php echo htmlspecialchars($data['fundraiser']->bank_details->bank_name); ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="account_number">Account Number:</label>
-                        <input type="text" class="form-control" id="account_number" name="account_number" required>
+                        <input type="text" class="form-control" id="account_number" name="account_number" value="<?php echo htmlspecialchars($data['fundraiser']->bank_details->account_number); ?>" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="branch">Branch:</label>
-                        <input type="text" class="form-control" id="branch" name="branch" required>
+                        <input type="text" class="form-control" id="branch" name="branch" value="<?php echo htmlspecialchars($data['fundraiser']->bank_details->branch); ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="account_holder">Account Holder (University/Club/Society):</label>
-                        <input type="text" class="form-control" id="account_holder" name="account_holder" required>
+                        <input type="text" class="form-control" id="account_holder" name="account_holder" value="<?php echo htmlspecialchars($data['fundraiser']->bank_details->account_holder); ?>" required>
                     </div>
                 </div>
                 
@@ -223,10 +229,10 @@
                             <div class="form-group">
                                 <label class="form-label" for="advisor_name">Lecture in charge of Club/Society (If applicable)</label>
                                 <div class="tag-input-wrapper">
-                                    <input type="text" class="form-control" id="advisor_name" name="advisor_name" placeholder="Type @ to search" autocomplete="off" oninput="getTags(this)" onchange="getTags(this)">
+                                    <input type="text" class="form-control" id="advisor_name" name="advisor_name" placeholder="Type @ to search" autocomplete="off" oninput="getTags(this)" onchange="getTags(this)" value="<?php echo !empty($data['fundraiser']->advisor_name) ? htmlspecialchars($data['fundraiser']->advisor_name) : ''; ?>">
                                     <div id="advisor-suggestions" class="tag-suggestions"></div>
                                 </div>
-                                <input type="hidden" id="advisor_id" name="advisor_id">
+                                <input type="hidden" id="advisor_id" name="advisor_id" value="<?php echo $data['fundraiser']->advisor_id ?? ''; ?>">
                                 <p class="form-text">Pick a lecturer to lock their user id into the request.</p>
                             </div>
                         </div>
@@ -236,7 +242,7 @@
                 <div class="form-footer">
                     <div class="btn-group">
                         <button type="button" class="btn btn-previous" onclick="previousPage(4)">Previous</button>
-                        <button type="submit" class="btn">Submit Request</button>
+                        <button type="submit" class="btn">Update Request</button>
                     </div>
                 </div>
             </div>
@@ -251,7 +257,18 @@
     const TAG_ENDPOINT = '<?php echo URLROOT; ?>/fundraiser/getAvailableUsers';
 
     const teamMembers = new Map();
-    let advisorId = '';
+    let advisorId = '<?php echo $data['fundraiser']->advisor_id ?? ''; ?>';
+
+    // Pre-populate team members from existing data
+    <?php if (!empty($data['fundraiser']->team_members)): ?>
+        <?php foreach ($data['fundraiser']->team_members as $member): ?>
+            teamMembers.set(<?php echo $member->id; ?>, {
+                id: <?php echo $member->id; ?>,
+                name: '<?php echo addslashes($member->name); ?>',
+                email: '<?php echo addslashes($member->email); ?>'
+            });
+        <?php endforeach; ?>
+    <?php endif; ?>
 
     const tagState = {
         ensureBox(inputEl) {

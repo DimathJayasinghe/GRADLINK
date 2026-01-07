@@ -159,109 +159,61 @@ class M_explore {
     }
     
     /**
-     * Search for fundraisers - returns dummy data until database implementation is complete
+     * Search for fundraisers from database
      */
     public function searchFundraisers($query, $limit = 20, $offset = 0) {
-        // Dummy fundraiser data
-        $allFundraisers = [
-            (object)[
-                'id' => 1,
-                'title' => 'IEEE Student Branch Technology Fund',
-                'description' => 'We\'re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn.',
-                'club_name' => 'IEEE Student Branch',
-                'club_id' => 1,
-                'target_amount' => 150000,
-                'raised_amount' => 89000,
-                'deadline' => '2025-12-31',
-                'status' => 'Approved',
-                'created_at' => '2024-10-01 10:00:00',
-                'days_left' => 30
-            ],
-            (object)[
-                'id' => 2,
-                'title' => 'Robotics Club Equipment Drive',
-                'description' => 'Help us purchase essential robotics equipment and components for our annual robotics competition and weekly workshops.',
-                'club_name' => 'Robotics Club',
-                'club_id' => 2,
-                'target_amount' => 200000,
-                'raised_amount' => 145000,
-                'deadline' => '2025-11-30',
-                'status' => 'Approved',
-                'created_at' => '2024-09-15 14:30:00',
-                'days_left' => 60
-            ],
-            (object)[
-                'id' => 3,
-                'title' => 'Music Society Instrument Fund',
-                'description' => 'We need new music instruments for our college band and orchestra. Support us in bringing more music to campus events.',
-                'club_name' => 'Music Society',
-                'club_id' => 3,
-                'target_amount' => 180000,
-                'raised_amount' => 72000,
-                'deadline' => '2025-12-20',
-                'status' => 'Approved',
-                'created_at' => '2024-09-10 13:20:00',
-                'days_left' => 49
-            ],
-            (object)[
-                'id' => 4,
-                'title' => 'Environmental Club Green Campus Initiative',
-                'description' => 'Join us in creating a sustainable campus environment with solar panels, recycling stations, and a community garden.',
-                'club_name' => 'Environmental Club',
-                'club_id' => 4,
-                'target_amount' => 250000,
-                'raised_amount' => 98000,
-                'deadline' => '2026-01-31',
-                'status' => 'Approved',
-                'created_at' => '2024-10-05 11:45:00',
-                'days_left' => 91
-            ],
-            (object)[
-                'id' => 5,
-                'title' => 'Drama Society Stage Equipment',
-                'description' => 'Help us upgrade our stage lighting and sound equipment for better theatrical productions and performances.',
-                'club_name' => 'Drama Society',
-                'club_id' => 5,
-                'target_amount' => 120000,
-                'raised_amount' => 55000,
-                'deadline' => '2025-12-15',
-                'status' => 'Approved',
-                'created_at' => '2024-08-20 09:00:00',
-                'days_left' => 44
-            ],
-            (object)[
-                'id' => 6,
-                'title' => 'Sports Club Athletic Equipment',
-                'description' => 'Support our athletes by helping us purchase new sports equipment for cricket, basketball, and badminton teams.',
-                'club_name' => 'Sports Club',
-                'club_id' => 6,
-                'target_amount' => 175000,
-                'raised_amount' => 131000,
-                'deadline' => '2025-11-25',
-                'status' => 'Approved',
-                'created_at' => '2024-08-15 09:15:00',
-                'days_left' => 55
-            ]
-        ];
+        $searchTerm = '%' . $query . '%';
         
-        // Filter by search query if provided
-        $filtered = [];
-        if (!empty($query)) {
-            foreach ($allFundraisers as $fundraiser) {
-                if (stripos($fundraiser->title, $query) !== false ||
-                    stripos($fundraiser->description, $query) !== false ||
-                    stripos($fundraiser->club_name, $query) !== false) {
-                    $filtered[] = $fundraiser;
-                }
+        $sql = "SELECT 
+                    fr.id,
+                    fr.user_id,
+                    fr.club_name,
+                    fr.title,
+                    fr.description,
+                    fr.project_poster,
+                    fr.goal_amount as target_amount,
+                    fr.collected_amount as raised_amount,
+                    fr.end_date as deadline,
+                    fr.status,
+                    fr.created_at,
+                    u.name as organizer_name,
+                    u.profile_image
+                FROM fundraising_requests fr
+                JOIN users u ON u.id = fr.user_id
+                WHERE (fr.title LIKE :search
+                   OR fr.description LIKE :search
+                   OR fr.club_name LIKE :search)
+                  AND fr.status IN ('Approved', 'Active')
+                ORDER BY fr.created_at DESC
+                LIMIT :limit OFFSET :offset";
+        
+        $this->db->query($sql);
+        $this->db->bind(':search', $searchTerm);
+        $this->db->bind(':limit', (int)$limit, PDO::PARAM_INT);
+        $this->db->bind(':offset', (int)$offset, PDO::PARAM_INT);
+        
+        $results = $this->db->resultSet();
+        
+        // Calculate additional fields for each fundraiser
+        foreach ($results as &$fundraiser) {
+            // Calculate days left
+            $now = new DateTime();
+            $deadline = new DateTime($fundraiser->deadline);
+            $fundraiser->days_left = null;
+            
+            if ($deadline > $now) {
+                $interval = $now->diff($deadline);
+                $fundraiser->days_left = $interval->days;
             }
-        } else {
-            $filtered = $allFundraisers;
+            
+            // Calculate percentage
+            $fundraiser->percentage = ($fundraiser->raised_amount / $fundraiser->target_amount) * 100;
+            
+            // Add club_id (using user_id as club identifier)
+            $fundraiser->club_id = $fundraiser->user_id;
         }
         
-        // Apply limit and offset
-        $filtered = array_slice($filtered, $offset, $limit);
-        
-        return $filtered;
+        return $results;
     }
     
     /**
