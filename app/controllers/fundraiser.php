@@ -299,7 +299,10 @@ class fundraiser extends Controller
                     'fundraisers',
                     $desiredName
                 );
-                $queryValues['project_poster'] = $upload;
+                // Use the filename from the upload result, not the whole array
+                if ($upload['success']) {
+                    $queryValues['project_poster'] = $upload['filename'];
+                }
             }
 
             $result = $this->model->createNewFundraiserRequest($queryValues);
@@ -505,7 +508,12 @@ class fundraiser extends Controller
                 'fundraisers',
                 $desiredName
             );
-            $queryValues['project_poster'] = $upload;
+            // Use the filename from the upload result, not the whole array
+            if ($upload['success']) {
+                $queryValues['project_poster'] = $upload['filename'];
+            } else {
+                $queryValues['project_poster'] = $fundraiser->project_poster;
+            }
         } else {
             // Keep existing poster
             $queryValues['project_poster'] = $fundraiser->project_poster;

@@ -125,7 +125,8 @@
                             <label for="project_poster" class="upload-area" id="poster-upload-area">
                                 <i>📁</i>
                                 <span>Click to upload or drag and drop</span>
-                                <p class="form-text">Recommended size: 1200 x 800 pixels, PNG or JPG format</p>
+                                <p class="form-text">Recommended: <strong>1200 × 400 px</strong> (3:1 ratio, banner style)</p>
+                                <p class="form-text" style="font-size: 0.75rem; color: var(--text-muted);">PNG or JPG format, max 5MB</p>
                             </label>
                             <input type="file" id="project_poster" name="project_poster" accept="image/*" hidden>
                         </div>
