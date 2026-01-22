@@ -934,48 +934,8 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 iframe.src = 'about:blank';
             }
         });
-    })
-    // // Project View Popup logic
-    // (function() {
-    //     const container = document.getElementById('projectsContainer');
-    //     const popup = document.getElementById('viewProjectPopup');
-    //     if (!container || !popup) return;
-
-    //     function openProjectView(card) {
-    //         if (!card) return;
-    //         document.getElementById('viewProjectTitle').textContent = card.dataset.title || 'Project Title';
-    //         document.getElementById('viewProjectDesc').textContent = card.dataset.description || 'No description provided.';
-    //         document.getElementById('viewProjectSkills').textContent = 'Skills: ' + (card.dataset.skills || 'N/A');
-    //         document.getElementById('viewProjectStartDate').textContent = 'Start Date: ' + (card.dataset.start_date || 'N/A');
-    //         document.getElementById('viewProjectEndDate').textContent = 'End Date: ' + (card.dataset.end_date || 'N/A');
-            
-    //         // Show the popup
-    //         popup.style.display = 'flex';
-    //     }
-
-    //     // View button click
-    //     container.addEventListener('click', function(e) {
-    //         const viewBtn = e.target.closest('.project-card .view-btn');
-    //         if (!viewBtn) return;
-    //         e.preventDefault();
-    //         e.stopPropagation();
-    //         const card = viewBtn.closest('.project-card');
-    //         openProjectView(card);
-    //     });
-
-    //     // close button
-    //     popup.querySelector('.close-popup')?.addEventListener('click', function() {
-    //         popup.style.display = 'none';
-    //     });
-
-    //     // optional: close on backdrop click
-    //     popup.addEventListener('click', function(e) {
-    //         if (e.target === popup) {
-    //             popup.style.display = 'none';
-    //         }
-    //     });
-    // })
-    ();
+    })();
+    
     // --- New: per-form element references ---
     const addCertificateBtn = document.getElementById('addCertificateBtn'); // existing in page
     const addCertificatePopup = document.getElementById('addCertificatePopup');
@@ -1333,7 +1293,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         }
     })();
 
-    // Work Experience and Projects Popups (visual only)
+    
     (function() {
         // Work Add
         const addWorkBtn = document.getElementById('addWorkBtn');
@@ -1422,6 +1382,11 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 document.getElementById('workPeriodEdit').value = card.dataset.period || '';
                 editWorkPopup.style.display = 'flex';
             });
+
+            if (deleteBtn) deleteBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete this work experience?')) card.remove();
+            });
+        
             
 
             
@@ -1475,6 +1440,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         }
 
         // Project Add
+        (function() {
         const addProjectBtn = document.getElementById('addProjectBtn');
         const addProjectPopup = document.getElementById('addProjectPopup');
         const addProjectForm = document.getElementById('addProjectForm');
@@ -1489,23 +1455,60 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             addProjectForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const title = document.getElementById('projectTitleAdd').value.trim();
-                if (!title) return;
-                const id = Date.now();
-                const card = document.createElement('div');
-                card.className = 'project-card';
-                card.setAttribute('data-id', String(id));
-                card.setAttribute('data-title', title);
-                card.innerHTML = `
-                <div class="project-card-image"><i class="fas fa-project-diagram"></i></div>
-                <div class="project-card-title"></div>
-                <div class="certificate-actions">
-                    <div class="certificate-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="certificate-action-btn delete-btn" title="Delete Project"><i class="fas fa-trash-alt"></i></div>
-                </div>`;
-                card.querySelector('.project-card-title').textContent = title;
-                projectsContainer.appendChild(card);
-                bindProjectCardActions(card);
-                addProjectPopup.style.display = 'none';
+                const description = document.getElementById('projectDesAdd').value.trim();
+                const skills_used = document.getElementById('projectSkillsAdd').value.trim();
+                const start_date = document.getElementById('projectStartDateAdd').value;
+                const end_date = document.getElementById('projectEndDateAdd').value;
+                
+
+                if (!title || !description || !skills_used) 
+                    return;
+
+                //# Sending data to the backend
+                const fd = new FormData(this);
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: fd,
+                    headers: {
+                        'Accept' : 'application/json'
+                    }
+                })
+                .then(r => r.json()).then(json => {
+                        if (json.success) {
+                            window.location.reload();
+
+                            //# Creating the new project card in the UI
+                            const id = Date.now();
+                            const card = document.createElement('div');
+                            card.className = 'project-card';
+                            card.setAttribute('data-id', String(id));
+                            card.setAttribute('data-title', title);
+                            card.setAttribute('data-description', description);
+                            card.setAttribute('data-skills', skills_used);
+                            card.setAttribute('data-start-date', start_date);   
+                            card.setAttribute('data-end-date', end_date);
+                            card.innerHTML = `
+                            <div class="project-card-content">
+                                <div class="project-card-title"></div>
+                                <div class="project-card-description"></div>
+                            </div>
+                            <div class="project-card-actions">
+                                <div class="project-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
+                                <div class="project-action-btn delete-btn" title="Delete Project"><i class="fas fa-trash-alt"></i></div>
+                            </div>`;
+                            card.querySelector('.project-card-title').textContent = title;
+                            card.querySelector('.project-card-description').textContent = description;
+                            projectsContainer.appendChild(card);
+                            bindProjectCardActions(card);
+                            addProjectPopup.style.display = 'none';
+
+                        } else {
+                            alert(json.error || 'Failed to add project');
+                        }
+                    }).catch(() => {
+                        alert('Error while adding project');
+                    })
             });
         }
 
@@ -1519,7 +1522,11 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             if (editBtn) editBtn.addEventListener('click', function() {
                 const id = card.dataset.id || '';
                 document.getElementById('projectIdEdit').value = id;
-                document.getElementById('projectTitleEdit').value = card.dataset.title || card.querySelector('.project-card-title')?.textContent || '';
+                document.getElementById('projectTitleEdit').value = card.dataset.title  || '';
+                document.getElementById('projectDesEdit').value = card.dataset.description || '';
+                document.getElementById('projectSkillsEdit').value = card.dataset.skills || '';
+                document.getElementById('projectStartDateEdit').value = card.dataset.startDate || '';
+                document.getElementById('projectEndDateEdit').value = card.dataset.endDate || '';
                 editProjectPopup.style.display = 'flex';
             });
             if (deleteBtn) deleteBtn.addEventListener('click', function() {
@@ -1531,18 +1538,51 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         if (editProjectForm) {
             editProjectForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+
                 const id = document.getElementById('projectIdEdit').value;
                 const title = document.getElementById('projectTitleEdit').value.trim();
+                const description = document.getElementById('projectDesEdit').value.trim();
+                const skills = document.getElementById('projectSkillsEdit').value.trim();
+                const startDate = document.getElementById('projectStartDateEdit').value;
+                const endDate = document.getElementById('projectEndDateEdit').value;
+                
                 const card = document.querySelector(`#projectsContainer .project-card[data-id="${CSS.escape(id)}"]`);
+
+                const fd = new FormData(this);
+                fetch(this.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(json => {
+                        if (json.success) {
+                            window.location.reload();
+                        } else {
+                            alert(json.error || 'Failed to update project');
+                        }
+                    }).catch(() => {
+                        alert('Error while updating project');
+                    });
                 if (card) {
                     card.dataset.title = title;
-                    const titleEl = card.querySelector('.project-card-title');
-                    if (titleEl) titleEl.textContent = title;
+                    card.dataset.description = description;
+                    card.dataset.skills = skills;
+                    card.dataset.startDate = startDate;
+                    card.dataset.endDate = endDate;
+                    card.querySelector('.project-card-title').textContent = title;
+                    card.querySelector('.project-card-description').textContent = description;
+                    card.querySelector('.project-card-skills').textContent = skills;
+                    card.querySelector('.project-card-start-date').textContent = startDate;
+                    card.querySelector('.project-card-end-date').textContent = endDate;
                 }
-                editProjectPopup.style.display = 'none';
-            });
-        }
-    })();
+        editProjectPopup.style.display = 'none';
+    });
+}
+})();
+    
 
     // Delegated handler to ensure Project edit popup always opens
     (function() {
