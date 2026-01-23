@@ -594,5 +594,37 @@ class Profile extends Controller{
 
     }
 
+    public function addProjects()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false , 'error' => 'Method not allowed']);
+            return;
+        }
+
+        header('Content-Type: application/json');
+
+        $title = trim($_POST['project_title'] ?? '');
+        $description = trim($_POST['project_description'] ?? '');
+        $skills = trim($_POST['project_skills'] ?? ''); 
+        $start_date = trim($_POST['project_start_date'] ?? '');
+        $end_date = trim($_POST['project_end_date'] ?? '');
+
+        // Basic form validation
+        if ($title === '' || $description === '' || $skills === '') {
+            echo json_encode(['success' => false, 'error' => 'Please provide title, description, and skills']);
+            return;
+        }
+
+        // Persist DB record via model
+        if ($this->Model->createProject($_SESSION['user_id'], $title, $description, $skills, $start_date, $end_date)){
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to save project record.']);
+            return;
+        }
+    }
+
 }
 

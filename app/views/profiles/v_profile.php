@@ -444,14 +444,14 @@ require_once APPROOT . '/helpers/Csrf.php';
         <div class="certificate-add">
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Add Project</div>
-            <form id="addProjectForm" class="certificate-form">
+            <form id="addProjectForm" class="certificate-form" action="<?= URLROOT; ?>/profile/addProjects" method="POST">
                 <div class="form-group">
                     <label for="projectTitleAdd">Title</label>
-                    <input type="text" id="projectTitleAdd" required>
+                    <input type="text" id="projectTitleAdd" name="project_title" required>
                 </div>
                 <div class="form-group">
                     <label for="projectDescAdd">Description (optional)</label>
-                    <textarea id="projectDescAdd" style="
+                    <textarea id="projectDescAdd" name="project_description" style="
                                 max-width: 100%;
                                 background: rgba(255, 255, 255, 0.05);
                                 border: 1px solid var(--border);
@@ -462,15 +462,15 @@ require_once APPROOT . '/helpers/Csrf.php';
                 </div>
                 <div class="form-group">
                     <label for="projectSkillsAdd">Skills</label>
-                    <input type="text" id="projectSkillsAdd" required>
+                    <input type="text" id="projectSkillsAdd" name="project_skills" required>
                 </div>
                 <div class="form-group">
                     <label for="startDateAdd">Start Date</label>
-                    <input type="date" id="startDateAdd" required>
+                    <input type="date" id="startDateAdd" name="project_start_date" required>
                 </div>
                 <div class="form-group">
                     <label for="endDateAdd">End Date</label>
-                    <input type="date" id="endDateAdd">
+                    <input type="date" id="endDateAdd" name="project_end_date">
                 </div>
                 <div style="margin-top:12px;">
                     <button type="submit" class="save-btn">Add Project</button>
@@ -1438,6 +1438,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 editWorkPopup.style.display = 'none';
             });
         }
+    })();
 
         // Project Add
         (function() {
@@ -1455,13 +1456,13 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             addProjectForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const title = document.getElementById('projectTitleAdd').value.trim();
-                const description = document.getElementById('projectDesAdd').value.trim();
+                const description = document.getElementById('projectDescAdd').value.trim();
                 const skills_used = document.getElementById('projectSkillsAdd').value.trim();
-                const start_date = document.getElementById('projectStartDateAdd').value;
-                const end_date = document.getElementById('projectEndDateAdd').value;
+                const start_date = document.getElementById('startDateAdd').value;
+                const end_date = document.getElementById('endDateAdd').value;
                 
 
-                if (!title || !description || !skills_used) 
+                if (!title || !description || !skills_used ) 
                     return;
 
                 //# Sending data to the backend
@@ -1492,6 +1493,9 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                             <div class="project-card-content">
                                 <div class="project-card-title"></div>
                                 <div class="project-card-description"></div>
+                                <div class="project-card-skills"></div>
+                                <div class="project-card-start-date"></div>
+                                <div class="project-card-end-date"></div>
                             </div>
                             <div class="project-card-actions">
                                 <div class="project-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
@@ -1499,6 +1503,9 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                             </div>`;
                             card.querySelector('.project-card-title').textContent = title;
                             card.querySelector('.project-card-description').textContent = description;
+                            card.querySelector('.project-card-skills').textContent = skills_used;
+                            card.querySelector('.project-card-start-date').textContent = start_date;
+                            card.querySelector('.project-card-end-date').textContent = end_date;
                             projectsContainer.appendChild(card);
                             bindProjectCardActions(card);
                             addProjectPopup.style.display = 'none';
@@ -1523,10 +1530,10 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 const id = card.dataset.id || '';
                 document.getElementById('projectIdEdit').value = id;
                 document.getElementById('projectTitleEdit').value = card.dataset.title  || '';
-                document.getElementById('projectDesEdit').value = card.dataset.description || '';
+                document.getElementById('projectDescEdit').value = card.dataset.description || '';
                 document.getElementById('projectSkillsEdit').value = card.dataset.skills || '';
-                document.getElementById('projectStartDateEdit').value = card.dataset.startDate || '';
-                document.getElementById('projectEndDateEdit').value = card.dataset.endDate || '';
+                document.getElementById('startDateEdit').value = card.dataset.startDate || '';
+                document.getElementById('endDateEdit').value = card.dataset.endDate || '';
                 editProjectPopup.style.display = 'flex';
             });
             if (deleteBtn) deleteBtn.addEventListener('click', function() {
@@ -1541,10 +1548,10 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
 
                 const id = document.getElementById('projectIdEdit').value;
                 const title = document.getElementById('projectTitleEdit').value.trim();
-                const description = document.getElementById('projectDesEdit').value.trim();
+                const description = document.getElementById('projectDescEdit').value.trim();
                 const skills = document.getElementById('projectSkillsEdit').value.trim();
-                const startDate = document.getElementById('projectStartDateEdit').value;
-                const endDate = document.getElementById('projectEndDateEdit').value;
+                const startDate = document.getElementById('startDateEdit').value;
+                const endDate = document.getElementById('endDateEdit').value;
                 
                 const card = document.querySelector(`#projectsContainer .project-card[data-id="${CSS.escape(id)}"]`);
 
