@@ -455,7 +455,7 @@ require_once APPROOT . '/helpers/Csrf.php';
                     <input type="text" id="projectTitleAdd" name="project_title" required>
                 </div>
                 <div class="form-group">
-                    <label for="projectDescAdd">Description (optional)</label>
+                    <label for="projectDescAdd">Description</label>
                     <textarea id="projectDescAdd" name="project_description" style="
                                 max-width: 100%;
                                 background: rgba(255, 255, 255, 0.05);
@@ -491,27 +491,27 @@ require_once APPROOT . '/helpers/Csrf.php';
         <div class="certificate-add">
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Edit Project</div>
-            <form id="editProjectForm" class="certificate-form">
-                <input type="hidden" id="projectIdEdit">
+            <form id="editProjectForm" class="certificate-form" action="<?= URLROOT; ?>/profile/updateProjects" method="POST">
+                <input type="hidden" id="projectIdEdit" name="project_id">
                 <div class="form-group">
                     <label for="projectTitleEdit">Title</label>
-                    <input type="text" id="projectTitleEdit" required>
+                    <input type="text" id="projectTitleEdit" name="project_title" required>
                 </div>
                 <div class="form-group">
-                    <label for="projectDescEdit">Description (optional)</label>
-                    <textarea id="projectDescEdit" rows="3"></textarea>
+                    <label for="projectDescEdit">Description</label>
+                    <textarea id="projectDescEdit" name="project_description" rows="3" required></textarea>
                 </div>
                 <div class="form-group">
                     <label for="projectSkillsEdit">Skills</label>
-                    <input type="text" id="projectSkillsEdit" required>
+                    <input type="text" id="projectSkillsEdit" name="project_skills" required>
                 </div>
                 <div class="form-group">
                     <label for="startDateEdit">Start Date</label>
-                    <input type="date" id="startDateEdit" required>
+                    <input type="date" id="startDateEdit" name="project_start_date" required>
                 </div>
                 <div class="form-group">
                     <label for="endDateEdit">End Date</label>
-                    <input type="date" id="endDateEdit">
+                    <input type="date" id="endDateEdit" name="project_end_date">
                 </div>
                 <div style="margin-top:12px;">
                     <button type="submit" class="save-btn">Save Changes</button>
@@ -1604,15 +1604,13 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 const id = card.dataset.id || '';
                 document.getElementById('projectIdEdit').value = id;
                 document.getElementById('projectTitleEdit').value = card.dataset.title  || '';
-                document.getElementById('projectDescEdit').value = card.dataset.description || '';
+                document.getElementById('projectDescEdit').value = card.dataset.desc || '';
                 document.getElementById('projectSkillsEdit').value = card.dataset.skills || '';
-                document.getElementById('startDateEdit').value = card.dataset.startDate || '';
-                document.getElementById('endDateEdit').value = card.dataset.endDate || '';
+                document.getElementById('startDateEdit').value = card.dataset.start_date || '';
+                document.getElementById('endDateEdit').value = card.dataset.end_date || '';
                 editProjectPopup.style.display = 'flex';
             });
-            if (deleteBtn) deleteBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete this project?')) card.remove();
-            });
+            
         }
         // bind existing
         document.querySelectorAll('#projectsContainer .project-card').forEach(bindProjectCardActions);
@@ -1649,10 +1647,10 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                     });
                 if (card) {
                     card.dataset.title = title;
-                    card.dataset.description = description;
+                    card.dataset.desc = description;
                     card.dataset.skills = skills;
-                    card.dataset.startDate = startDate;
-                    card.dataset.endDate = endDate;
+                    card.dataset.start_date = startDate;
+                    card.dataset.end_date = endDate;
                     card.querySelector('.project-card-title').textContent = title;
                     card.querySelector('.project-card-description').textContent = description;
                     card.querySelector('.project-card-skills').textContent = skills;
@@ -1685,7 +1683,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         });
     })();
 
-    // Work/Project delete confirmation popups (visual only)
+    
     (function() {
         // Work delete
         const workContainer = document.getElementById('workContainer');
@@ -1759,6 +1757,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         const confirmProjectBtn = document.getElementById('confirmDeleteProjectBtn');
         const cancelProjectBtn = document.getElementById('cancelDeleteProjectBtn');
         let pendingProjectCard = null;
+        
         if (projectsContainer && deleteProjectPopup) {
             projectsContainer.addEventListener('click', function(e) {
                 const btn = e.target.closest('.project-card .delete-btn');
@@ -1775,10 +1774,41 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             });
         }
         if (confirmProjectBtn) {
-            confirmProjectBtn.addEventListener('click', function() {
-                if (pendingProjectCard) pendingProjectCard.remove();
-                pendingProjectCard = null;
-                if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
+            confirmProjectBtn.addEventListener('click', async function() {
+                if (!pendingProjectCard) return;
+
+                const id = pendingProjectCard.dataset.id || '';
+
+                try {
+                    const url = '<?php echo URLROOT; ?>/profile/deleteProject?id=' + encodeURIComponent(id);
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const ct = res.headers.get('content-type') || '';
+                    if (!ct.includes('application/json')) {
+                        const text = await res.text();
+                        console.error('Non-JSON response:', text);
+                        alert('Failed to delete project: unexpected server response');
+                        return;
+                    }
+                    const json = await res.json();
+                    if (json && json.success) {
+                        //Refresh to ensure server state is reflected in UI
+                        window.location.reload();
+                    } else {
+                        alert((json && json.error) || 'Failed to delete project');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error while deleting project: ' + (err && err.message ? err.message : 'unknown error'));
+                } finally {
+                    pendingProjectCard = null;
+                    if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
+                }
             });
         }
 

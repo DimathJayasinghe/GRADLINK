@@ -635,5 +635,116 @@ class Profile extends Controller{
         }
     }
 
+    public function updateProjects()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+
+        header('Content-Type: application/json');
+
+        $project_id = intval($_POST['project_id'] ?? 0);
+        $title = trim($_POST['project_title'] ?? '');
+        $description = trim($_POST['project_description'] ?? '');
+        $skills = trim($_POST['project_skills'] ?? '');
+        $start_date = trim($_POST['project_start_date'] ?? '');
+        $end_date = trim($_POST['project_end_date'] ?? '');
+        
+        // Convert empty dates to null
+        if ($start_date === '') {
+            $start_date = null;
+        }
+        if ($end_date === '') {
+            $end_date = null;
+        }
+
+        // Basic form validation
+        if ($project_id <= 0 || $title === '' || $description === '' || $skills === '') {
+            echo json_encode(['success' => false, 'error' => 'Please provide valid project details']);
+            return;
+        }
+
+        // Update DB record via model
+        if($this->Model->updateProject($_SESSION['user_id'], $project_id, $title, $description, $skills, $start_date, $end_date)) {
+            echo json_encode(['success' => true]);
+
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to update project record.']);
+            return;
+        }
+
+    
+    }
+
+    public function deleteProject()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE'){
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        header('Content-Type: application/json');
+
+        //Ensure user logged in
+        if (!isset($_SESSION['user_id'])){
+            echo json_encode(['success' => false, 'error' => 'Not authenticated']);
+            return;
+        }
+
+        $project_id = intval($this->getQueryParam('id', 0));
+        if ($project_id <= 0){
+            echo json_encode(['success' => false, 'error' => 'Invalid project id']);
+            return;
+        }
+
+        // Fetch project record
+        $project = null;
+        if (method_exists($this->Model, 'getProjectById')) {
+            $project = $this->Model->getProjectById($project_id);
+        } else {
+            // fallback: search user's projects
+            $projects = $this->Model->getProjects($_SESSION['user_id']);
+            if (is_array($projects)) {
+                foreach ($projects as $p) {
+                    $pid = isset($p->id) ? intval($p->id) : (isset($p->project_id) ? intval($p->project_id) : 0);
+                    if ($pid === $project_id) { $project = $p; break; }
+                }
+            }
+        }
+        if (!$project) {
+            echo json_encode(['success' => false, 'error' => 'Project not found']);
+            return;
+        }
+
+        // Only owner can delete
+        $owner_id = $project->user_id ?? ($project->userId ?? null);
+        if ($owner_id == null || intval($owner_id) !== intval($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Permission denied']);
+            return;
+        }
+
+        // Delete DB row via model. Expect model->deleteProject(user_id, project_id) or deleteProjectById(project_id)
+        $deleted = false;
+        if (method_exists($this->Model, 'deleteProject')) {
+            $deleted = $this->Model->deleteProject($_SESSION['user_id'], $project_id);
+        } elseif (method_exists($this->Model, 'deleteProjectById')){
+            $deleted = $this->Model->deleteProjectById($project_id);
+        } else {
+            // No model method found
+            error_log("Profile::deleteProject - model method deleteProject not found");
+            echo json_encode(['success' => false, 'error' => 'Server not configured to delete project']);
+            return;
+        }
+        if ($deleted) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to delete project record.']);
+        }
+    }
+
 }
 
