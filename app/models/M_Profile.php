@@ -236,7 +236,7 @@ class M_Profile{
     public function createProject($user_id, $title, $description, $skills, $start_date, $end_date){
 
         try{
-            $this->db->query('INSERT INTO projects (user_id, title, description, skills, start_date, end_date) VALUES (:uid, :title, :description, :skills, :start_date, :end_date)');
+            $this->db->query('INSERT INTO projects (user_id, title, description, skills_used, start_date, end_date) VALUES (:uid, :title, :description, :skills, :start_date, :end_date)');
             $this->db->bind(':uid', $user_id);
             $this->db->bind(':title', $title);
             $this->db->bind(':description', $description);
@@ -246,6 +246,7 @@ class M_Profile{
             return $this->db->execute();
         } catch (Exception $e) {
             error_log("Project Creation Error: " . $e->getMessage());
+            echo $e->getMessage();
             return false;
         }
     }
@@ -260,7 +261,7 @@ class M_Profile{
             return false; // Project not found or does not belong to user
         }
 
-        $this->db->query('UPDATE projects SET title = :title, descrption = :descrption, skills = :skills, start_date = :start_date, end_date = :end_date WHERE id = :id AND user_id = :uid');
+        $this->db->query('UPDATE projects SET title = :title, description = :description, skills_used = :skills, start_date = :start_date, end_date = :end_date WHERE id = :id AND user_id = :uid');
 
         $this->db->bind(':title', $title);
         $this->db->bind(':description', $description);

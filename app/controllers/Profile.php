@@ -611,6 +611,14 @@ class Profile extends Controller{
         $start_date = trim($_POST['project_start_date'] ?? '');
         $end_date = trim($_POST['project_end_date'] ?? '');
 
+        // Convert empty dates to null
+        if ($start_date === '') {
+            $start_date = null;
+        }
+        if ($end_date === '') {
+            $end_date = null;
+        }
+
         // Basic form validation
         if ($title === '' || $description === '' || $skills === '') {
             echo json_encode(['success' => false, 'error' => 'Please provide title, description, and skills']);
@@ -618,6 +626,7 @@ class Profile extends Controller{
         }
 
         // Persist DB record via model
+        
         if ($this->Model->createProject($_SESSION['user_id'], $title, $description, $skills, $start_date, $end_date)){
             echo json_encode(['success' => true]);
         } else {

@@ -296,21 +296,26 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 
         <div id="projectsContainer">
             <?php
-
-            if (!empty($sampleProjects)): foreach ($sampleProjects as $project): ?>
+            if (!empty($data['projects'])):
+                foreach ($data['projects'] as $project):
+            ?>
                     <div class="certificate-card project-card" 
-                    data-id="<?= $project['id'] ?>" 
-                    data-title="<?= htmlspecialchars($project['title']) ?>"
-                    data-desc="<?= htmlspecialchars($project['description'] ?? '') ?>"
-                    data-skills="<?= htmlspecialchars($project['skills'] ?? '') ?>"
-                    data-start_date="<?= htmlspecialchars($project['start_date'] ?? '') ?>"
-                    data-end_date="<?= htmlspecialchars($project['end_date'] ?? '') ?>">
+                    data-id="<?= htmlspecialchars($project->id) ?>" 
+                    data-title="<?= htmlspecialchars($project->title) ?>"
+                    data-desc="<?= htmlspecialchars($project->description ?? '') ?>"
+                    data-skills="<?= htmlspecialchars($project->skills_used ?? '') ?>"
+                    data-start_date="<?= htmlspecialchars($project->start_date ?? '') ?>"
+                    data-end_date="<?= htmlspecialchars($project->end_date ?? '') ?>">
 
                         <div class="project-card-image">
                             <i class="fas fa-project-diagram"></i>
                         </div>
+
+                        <div class="certificate-details">
+                            <div class="certificate-card-position"><?= htmlspecialchars($project->title) ?></div>
+                        </div>
                         <!--Always-visible View button -->
-                        <div class="certificate-view-btn-wrapper" style="display:flex; gap:8px; align-items:center;">
+                        <div class="certificate-view-btn-wrapper" style="display:flex; gap:8px; align-items:center; margin-left: auto;">
                             <div class="certificate-action-btn view-btn" title="View Project"><i class="fas fa-eye"></i></div>
                         </div>
                         <?php if ($isOwner): ?>
@@ -521,11 +526,33 @@ require_once APPROOT . '/helpers/Csrf.php';
     <div class="certificate-add">
         <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
         <div class="form-title">Project Details</div>
-        <div class="form-group" id="viewProjectTitle">Project Title</div>
-        <div class="form-group" id="viewProjectDesc">Project Description</div>
-        <div class="form-group" id="viewProjectSkills">Skills: </div>
-        <div class="form-group" id="viewProjectStartDate">Start Date: </div>
-        <div class="form-group" id="viewProjectEndDate">End Date: </div>
+
+        <div class="certificate-form">
+            <div class="form-group">
+                <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Project Title</label>
+                <div id="viewProjectTitle" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 40px; display: flex; align-items: center;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Description</label>
+                <div id="viewProjectDesc" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 80px; line-height: 1.5;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Skills</label>
+                <div id="viewProjectSkills" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 40px; display: flex; align-items: center;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Start Date</label>
+                <div id="viewProjectStartDate" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 40px; display: flex; align-items: center;"></div>
+            </div>
+            
+            <div class="form-group">
+                <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">End Date</label>
+                <div id="viewProjectEndDate" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 40px; display: flex; align-items: center;"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1460,6 +1487,8 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 const skills_used = document.getElementById('projectSkillsAdd').value.trim();
                 const start_date = document.getElementById('startDateAdd').value;
                 const end_date = document.getElementById('endDateAdd').value;
+
+                console.log('Form data:', { title, description, skills_used, start_date, end_date });
                 
 
                 if (!title || !description || !skills_used ) 
@@ -1482,7 +1511,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                             //# Creating the new project card in the UI
                             const id = Date.now();
                             const card = document.createElement('div');
-                            card.className = 'project-card';
+                            card.className = 'certificate-card project-card';
                             card.setAttribute('data-id', String(id));
                             card.setAttribute('data-title', title);
                             card.setAttribute('data-description', description);
@@ -1490,22 +1519,22 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                             card.setAttribute('data-start-date', start_date);   
                             card.setAttribute('data-end-date', end_date);
                             card.innerHTML = `
-                            <div class="project-card-content">
-                                <div class="project-card-title"></div>
-                                <div class="project-card-description"></div>
-                                <div class="project-card-skills"></div>
-                                <div class="project-card-start-date"></div>
-                                <div class="project-card-end-date"></div>
+                            <div class="certificate-details">
+                                <div class="certificate-card-title"></div>
+                                <div class="certificate-description"></div>
+                                <div class="certificate-skills"></div>
+                                <div class="certificate-start-date"></div>
+                                <div class="certificate-end-date"></div>
                             </div>
-                            <div class="project-card-actions">
-                                <div class="project-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
-                                <div class="project-action-btn delete-btn" title="Delete Project"><i class="fas fa-trash-alt"></i></div>
+                            <div class="certificate-actions">
+                                <div class="certificate-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
+                                <div class="certificate-action-btn delete-btn" title="Delete Project"><i class="fas fa-trash-alt"></i></div>
                             </div>`;
-                            card.querySelector('.project-card-title').textContent = title;
-                            card.querySelector('.project-card-description').textContent = description;
-                            card.querySelector('.project-card-skills').textContent = skills_used;
-                            card.querySelector('.project-card-start-date').textContent = start_date;
-                            card.querySelector('.project-card-end-date').textContent = end_date;
+                            card.querySelector('.certificate-card-title').textContent = title;
+                            card.querySelector('.certificate-description').textContent = description;
+                            card.querySelector('.certificate-skills').textContent = skills_used;
+                            card.querySelector('.certificate-start-date').textContent = start_date;
+                            card.querySelector('.certificate-end-date').textContent = end_date;
                             projectsContainer.appendChild(card);
                             bindProjectCardActions(card);
                             addProjectPopup.style.display = 'none';
@@ -1518,6 +1547,51 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                     })
             });
         }
+
+        // Project View
+        (function() {
+            const container = document.getElementById('projectsContainer');
+            const viewProjectPopup = document.getElementById('viewProjectPopup');
+            if (!container || !viewProjectPopup) return;
+
+            // Delegated handler for View buttons
+            container.addEventListener('click', function(e) {
+                const viewBtn = e.target.closest('.project-card .view-btn');
+                if (!viewBtn) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                const card = viewBtn.closest('.project-card');
+                if (!card) return;
+
+                // Populate the view popup with project data
+                const title = card.dataset.title || 'No title';
+                const descrption = card.dataset.desc || 'No description';
+                const skills = card.dataset.skills || 'No skills listed';
+                const startDate = card.dataset.start_date || '-';
+                const endDate = card.dataset.end_date || '';
+
+                document.getElementById('viewProjectTitle').textContent = title;
+                document.getElementById('viewProjectDesc').textContent = descrption;
+                document.getElementById('viewProjectSkills').textContent = skills;
+                document.getElementById('viewProjectStartDate').textContent = startDate;
+                
+                // Show 'Present' if end date is empty
+                const displayEndDate = (!endDate || endDate === '0000-00-00') ? 'Present' : endDate;
+                document.getElementById('viewProjectEndDate').textContent = displayEndDate;
+
+                viewProjectPopup.style.display = 'flex';
+            });
+
+            // Close button
+            const closeBtn = viewProjectPopup.querySelector('.close-popup');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    viewProjectPopup.style.display = 'none';
+                });
+            }
+        })();
+
 
         // Project Edit
         const editProjectPopup = document.getElementById('editProjectPopup');
