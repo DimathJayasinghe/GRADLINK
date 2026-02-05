@@ -43,14 +43,32 @@
         }
 
         public function engagement() {
-                $engagement = $this->adminModel->getEngagementMetrics();
+                // Get role filter from query string (null = all, 'admin', 'alumni', 'undergrad')
+                $roleFilter = $_GET['role'] ?? null;
+                if ($roleFilter && !in_array($roleFilter, ['admin', 'alumni', 'undergrad'])) {
+                    $roleFilter = null;
+                }
+
+                // Get metrics and charts based on role filter
+                $engagement = $this->adminModel->getEngagementMetricsByRole($roleFilter);
                 $metrics = $this->adminModel->getOverviewMetrics();
-                $charts = $this->adminModel->getChartData();
+                $charts = $this->adminModel->getChartDataByRole($roleFilter);
+                
+                // Get user counts by role for filter display
+                $usersByRole = [
+                    'all' => $this->adminModel->countUsersByRole(null),
+                    'admin' => $this->adminModel->countUsersByRole('admin'),
+                    'alumni' => $this->adminModel->countUsersByRole('alumni'),
+                    'undergrad' => $this->adminModel->countUsersByRole('undergrad'),
+                ];
+                
                 $data = [
                     'engagement' => $engagement,
                     'metrics' => $metrics,
                     'charts' => $charts,
                     'activeTab' => 'engagement',
+                    'roleFilter' => $roleFilter,
+                    'usersByRole' => $usersByRole,
                 ];
             $this->view('admin/v_engagement', $data);
         }

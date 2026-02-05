@@ -1,8 +1,72 @@
-/* Engagement admin styles */
+/* Engagement admin styles - Enhanced Analytics Dashboard */
 :root {
     --kpi-bg: var(--surface);
     --kpi-border: var(--border);
     --card-bg: var(--surface-2, #fff);
+}
+
+/* Role Filter Styles */
+.filters {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: var(--surface-2, #f9f9f9);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.role-filter {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.role-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.2rem;
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.role-filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: var(--text);
+}
+
+.role-filter-btn.active {
+    color: white;
+    border-color: transparent;
+}
+
+.filter-icon {
+    font-size: 1.1rem;
+}
+
+.filter-label {
+    font-weight: 600;
+}
+
+.filter-count {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.role-filter-btn.active .filter-count {
+    background: rgba(255, 255, 255, 0.5);
 }
 
 .kpis {
@@ -17,25 +81,29 @@
     border: 1px solid var(--kpi-border);
     padding: 0.8rem 1rem;
     border-radius: 8px;
-    min-width: 160px
+    min-width: 140px;
+    flex: 1;
+    min-flex-basis: 130px;
 }
 
 .kpi-label {
     display: block;
     color: var(--muted);
-    font-size: 0.9rem
+    font-size: 0.85rem;
+    margin-bottom: 0.3rem;
 }
 
 .kpi-value {
     display: block;
     font-weight: 700;
-    font-size: 1.25rem;
-    margin-top: 0.25rem
+    font-size: 1.2rem;
+    color: var(--text);
+    word-break: break-word;
 }
 
 .charts {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
     gap: 1rem;
     margin-bottom: 1rem
 }
@@ -44,12 +112,15 @@
     background: var(--card-bg);
     padding: 1rem;
     border-radius: 8px;
-    border: 1px solid var(--kpi-border)
+    border: 1px solid var(--kpi-border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .card h3 {
     margin-top: 0;
-    margin-bottom: 0.75rem
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text);
 }
 
 .chart-wrap {
@@ -58,6 +129,7 @@
     width: 220px;
     margin: 1rem auto;
 }
+
 .chart-wrap-batch {
     position: relative;
     height: 300px;
@@ -65,15 +137,36 @@
     margin: 1rem auto;
 }
 
-.chart-wrap canvas {
+.chart-wrap-wide {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    min-height: 200px;
+}
+
+.chart-wrap canvas,
+.chart-wrap-batch canvas,
+.chart-wrap-wide canvas {
     width: 100% !important;
-    height: 100% !important
+    height: 100% !important;
 }
 
 .grid-2 {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.map-placeholder {
+    min-height: 350px;
 }
 
 .map-box {
@@ -86,8 +179,21 @@
     color: var(--muted)
 }
 
-.filters{
+.filters {
     margin-bottom: 1rem;
+    background: var(--card-bg);
+    padding: 1rem;
+    border: 1px solid var(--kpi-border);
+    border-radius: 8px;
+}
+
+.filters h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .filters .filters-form {
@@ -97,9 +203,16 @@
 }
 
 .filters input[type="text"] {
-    padding: .5rem;
+    padding: .5rem .75rem;
     border: 1px solid var(--border);
-    border-radius: 4px
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.filters input[type="text"]::placeholder {
+    color: var(--muted);
 }
 
 .filters .btn {
@@ -107,7 +220,14 @@
     border-radius: 4px;
     background: var(--btn);
     color: var(--btn-text);
-    border: none
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.filters .btn:hover {
+    opacity: 0.9;
 }
 
 .tabs {
@@ -120,7 +240,9 @@
     padding: .4rem .65rem;
     border-radius: 4px;
     border: 1px solid transparent;
-    color: var(--muted)
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
 .tab.active {
@@ -129,10 +251,221 @@
     border-color: var(--btn)
 }
 
+.tab:hover {
+    background: rgba(75, 144, 226, 0.1);
+}
+
+.admin-header {
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.analytics-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.header-text {
+    flex: 1;
+    min-width: 300px;
+}
+
+.header-text h1 {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.header-text p {
+    color: var(--muted);
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.header-actions .btn {
+    padding: 0.6rem 1.2rem;
+    border-radius: 4px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.header-actions .btn:hover {
+    background: #1d4ed8;
+}
+
+.header-actions .btn-secondary {
+    background: #4b5563;
+}
+
+.header-actions .btn-secondary:hover {
+    background: #3a4450;
+}
+
+/* Responsive Design */
+@media (max-width:1400px) {
+    .charts {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .grid-3 {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+@media (max-width:1200px) {
+    .analytics-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .header-actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .charts {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+
+    .grid-2,
+    .grid-3 {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+}
+
 @media (max-width:900px) {
+    .kpis {
+        gap: 0.75rem;
+    }
+
+    .kpi {
+        min-width: 100px;
+        padding: 0.6rem 0.8rem;
+    }
+
+    .kpi-label {
+        font-size: 0.8rem;
+    }
+
+    .kpi-value {
+        font-size: 1rem;
+    }
+
+    .role-filter {
+        gap: 0.5rem;
+    }
+
+    .role-filter-btn {
+        padding: 0.5rem 0.9rem;
+        font-size: 0.85rem;
+    }
 
     .charts,
-    .grid-2 {
-        grid-template-columns: 1fr
+    .grid-2,
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-wrap {
+        height: 200px;
+        width: 100%;
+    }
+
+    .chart-wrap-batch {
+        height: 250px;
+        width: 100%;
+    }
+
+    .card h3 {
+        font-size: 0.9rem;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .header-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width:640px) {
+    .kpi {
+        min-width: 80px;
+        padding: 0.5rem 0.6rem;
+        font-size: 0.85rem;
+    }
+
+    .kpi-label {
+        font-size: 0.75rem;
+    }
+
+    .kpi-value {
+        font-size: 0.9rem;
+    }
+
+    .role-filter {
+        gap: 0.4rem;
+    }
+
+    .role-filter-btn {
+        padding: 0.4rem 0.7rem;
+        font-size: 0.75rem;
+        flex: 1;
+        min-width: auto;
+        justify-content: center;
+    }
+
+    .filter-icon {
+        font-size: 1rem;
+    }
+
+    .filter-label {
+        display: none;
+    }
+
+    .filter-count {
+        padding: 0.15rem 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    .card {
+        padding: 0.75rem;
+    }
+
+    .card h3 {
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .header-text {
+        min-width: unset;
+    }
+
+    .header-text h1 {
+        font-size: 1.3rem;
+    }
+
+    .header-text p {
+        margin-top: 0.5rem !important;
     }
 }
