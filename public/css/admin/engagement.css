@@ -469,3 +469,459 @@
         margin-top: 0.5rem !important;
     }
 }
+
+/* ====================================
+   MAP MODAL STYLES
+   ==================================== */
+
+/* Modal Overlay */
+.map-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.75);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.map-modal.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Modal Content Container */
+.map-modal-content {
+    width: 100%;
+    max-width: 95vw;
+    max-height: 95vh;
+    background: var(--surface-2, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Modal Header */
+.map-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    border-bottom: 2px solid var(--border);
+    background: var(--surface);
+}
+
+.map-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.close-modal-btn {
+    font-size: 2rem;
+    line-height: 1;
+    color: var(--text-muted, #666);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.close-modal-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--text);
+    transform: rotate(90deg);
+}
+
+/* Modal Filters Section */
+.map-modal-filters {
+    padding: 1.25rem;
+    background: var(--surface-2, #f9fafb);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 180px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted, #666);
+}
+
+.filter-select {
+    padding: 0.65rem 0.85rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 150px;
+}
+
+.filter-select:hover {
+    border-color: var(--primary, #007bff);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary, #007bff);
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Filter Buttons */
+.filter-buttons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.filter-buttons button {
+    padding: 0.65rem 1.2rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+#applyMapFilters {
+    background: var(--primary, #007bff);
+    color: white;
+}
+
+#applyMapFilters:hover {
+    background: var(--primary-dark, #0056b3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+#resetMapFilters {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+#resetMapFilters:hover {
+    background: var(--surface-2, #f0f0f0);
+    border-color: var(--text);
+}
+
+/* Expanded Map Container */
+#expandedMapContainer {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 500px;
+}
+
+#expandedMap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+}
+
+/* Modal Statistics Footer */
+.map-modal-stats {
+    display: flex;
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    gap: 1.5rem;
+}
+
+.stat-item {
+    flex: 1;
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted, #666);
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+/* Expand Map Button in Small Card */
+.expand-map-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 0.5rem 1rem;
+    background: var(--primary, #007bff);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.expand-map-btn:hover {
+    background: var(--primary-dark, #0056b3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+}
+
+/* Location Summary under Small Map */
+.location-summary {
+    padding: 0.75rem;
+    background: var(--surface-2, #f9fafb);
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted, #666);
+}
+
+.location-summary strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Location Table */
+.location-table {
+    margin-top: 2rem;
+    overflow-x: auto;
+}
+
+.location-table table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+}
+
+.location-table thead tr {
+    background: var(--surface-2, #f9fafb);
+    border-bottom: 2px solid var(--border);
+}
+
+.location-table th {
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.location-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s ease;
+}
+
+.location-table tbody tr:hover {
+    background: var(--surface-2, #f9fafb);
+}
+
+.location-table td {
+    padding: 0.75rem;
+    color: var(--text);
+}
+
+/* Marker Cluster Customization */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+    background-color: rgba(0, 123, 255, 0.6);
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+    background-color: rgba(0, 123, 255, 0.8);
+    color: white;
+    font-weight: bold;
+}
+
+/* Responsive Design for Modal */
+@media screen and (max-width: 900px) {
+    .map-modal-content {
+        max-width: 98vw;
+        max-height: 98vh;
+    }
+
+    .map-modal-header {
+        padding: 1rem;
+    }
+
+    .map-modal-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .map-modal-filters {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-group {
+        min-width: unset;
+        width: 100%;
+    }
+
+    .filter-buttons {
+        width: 100%;
+    }
+
+    .filter-buttons button {
+        flex: 1;
+    }
+
+    #expandedMapContainer {
+        min-height: 400px;
+    }
+
+    .map-modal-stats {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    .stat-item {
+        flex: 1 1 45%;
+        min-width: 120px;
+    }
+
+    .stat-value {
+        font-size: 1.1rem;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .map-modal {
+        padding: 0.5rem;
+    }
+
+    .map-modal-content {
+        border-radius: 8px;
+    }
+
+    .map-modal-header {
+        padding: 0.75rem;
+    }
+
+    .map-modal-header h2 {
+        font-size: 1rem;
+    }
+
+    .close-modal-btn {
+        font-size: 1.5rem;
+        width: 28px;
+        height: 28px;
+    }
+
+    .map-modal-filters {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .filter-group label {
+        font-size: 0.8rem;
+    }
+
+    .filter-select {
+        padding: 0.5rem 0.65rem;
+        font-size: 0.85rem;
+    }
+
+    .filter-buttons button {
+        padding: 0.5rem 0.85rem;
+        font-size: 0.85rem;
+    }
+
+    #expandedMapContainer {
+        min-height: 300px;
+    }
+
+    .map-modal-stats {
+        padding: 0.75rem;
+    }
+
+    .stat-item {
+        flex: 1 1 100%;
+        padding: 0.4rem;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+    }
+
+    .stat-value {
+        font-size: 1rem;
+    }
+
+    .expand-map-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    .location-summary {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+}

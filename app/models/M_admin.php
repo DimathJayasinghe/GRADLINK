@@ -805,6 +805,155 @@ class M_admin {
         $this->db->bind(':id', $id);
         return $this->db->single();
     }
+
+    /**
+     * Get user locations (countries) for map visualization
+     * @param string|null $role - Filter by role (admin, alumni, undergrad)
+     * @param string|null $batch - Filter by batch number
+     * @param string|null $country - Filter by country
+     * @return array - Array of location data with user counts
+     */
+    public function getUserLocations(?string $role = null, ?string $batch = null, ?string $country = null): array {
+        try {
+            // Build dynamic query
+            $sql = "SELECT 
+                        ul.country,
+                        COUNT(DISTINCT ul.user_id) AS user_count,
+                        GROUP_CONCAT(DISTINCT u.role ORDER BY u.role SEPARATOR ', ') AS roles,
+                        GROUP_CONCAT(DISTINCT u.batch_no ORDER BY u.batch_no SEPARATOR ', ') AS batches
+                    FROM user_locations ul
+                    INNER JOIN users u ON ul.user_id = u.id
+                    WHERE 1=1";
+            
+            // Add filters
+            $params = [];
+            if ($role !== null && $role !== '') {
+                $sql .= " AND u.role = :role";
+                $params[':role'] = $role;
+            }
+            if ($batch !== null && $batch !== '') {
+                $sql .= " AND u.batch_no = :batch";
+                $params[':batch'] = $batch;
+            }
+            if ($country !== null && $country !== '') {
+                $sql .= " AND ul.country = :country";
+                $params[':country'] = $country;
+            }
+            
+            $sql .= " GROUP BY ul.country
+                      ORDER BY user_count DESC";
+            
+            $this->db->query($sql);
+            foreach ($params as $param => $value) {
+                $this->db->bind($param, $value);
+            }
+            
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get location distribution summary
+     * @param string|null $role - Filter by role
+     * @return array - Summary stats
+     */
+    public function getLocationSummary(?string $role = null): array {
+        try {
+            $sql = "SELECT 
+                        COUNT(DISTINCT ul.country) AS total_countries,
+                        COUNT(DISTINCT ul.user_id) AS total_users_with_location
+                    FROM user_locations ul
+                    INNER JOIN users u ON ul.user_id = u.id
+                    WHERE 1=1";
+            
+            if ($role !== null && $role !== '') {
+                $sql .= " AND u.role = :role";
+            }
+            
+            $this->db->query($sql);
+            if ($role !== null && $role !== '') {
+                $this->db->bind(':role', $role);
+            }
+            
+            $result = $this->db->single();
+            
+            // Get most common country separately
+            $mostCommonSql = "SELECT ul.country
+                              FROM user_locations ul
+                              INNER JOIN users u ON ul.user_id = u.id
+                              WHERE 1=1";
+            if ($role !== null && $role !== '') {
+                $mostCommonSql .= " AND u.role = :role";
+            }
+            $mostCommonSql .= " GROUP BY ul.country
+                                ORDER BY COUNT(*) DESC
+                                LIMIT 1";
+            
+            $this->db->query($mostCommonSql);
+            if ($role !== null && $role !== '') {
+                $this->db->bind(':role', $role);
+            }
+            $mostCommon = $this->db->single();
+            
+            return [
+                'total_countries' => $result->total_countries ?? 0,
+                'total_users_with_location' => $result->total_users_with_location ?? 0,
+                'most_common_country' => $mostCommon->country ?? 'N/A'
+            ];
+        } catch (Exception $e) {
+            return [
+                'total_countries' => 0,
+                'total_users_with_location' => 0,
+                'most_common_country' => 'N/A'
+            ];
+        }
+    }
+
+    /**
+     * Get countries list for filter dropdown
+     * @return array - List of countries with user counts
+     */
+    public function getCountriesWithUsers(): array {
+        try {
+            $this->db->query("SELECT 
+                                country,
+                                COUNT(DISTINCT user_id) AS user_count
+                              FROM user_locations
+                              GROUP BY country
+                              ORDER BY user_count DESC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get batches list for filter dropdown
+     * @return array - List of batches
+     */
+    public function getBatches(): array {
+        try {
+            $this->db->query("SELECT DISTINCT batch_no 
+                              FROM users 
+                              WHERE batch_no IS NOT NULL 
+                              ORDER BY batch_no DESC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get country-level data (for chart visualization)
+     * @param string|null $role - Filter by role
+     * @return array - Country data with user counts
+     */
+    public function getLocationHeatmapData(?string $role = null): array {
+        // For simplified version, just return country counts
+        return $this->getUserLocations($role, null, null);
+    }
 }
 ?>
 

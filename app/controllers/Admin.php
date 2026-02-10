@@ -61,6 +61,13 @@
                     'alumni' => $this->adminModel->countUsersByRole('alumni'),
                     'undergrad' => $this->adminModel->countUsersByRole('undergrad'),
                 ];
+
+                // Get location data for map
+                $locations = $this->adminModel->getUserLocations($roleFilter);
+                $locationSummary = $this->adminModel->getLocationSummary($roleFilter);
+                $countries = $this->adminModel->getCountriesWithUsers();
+                $batches = $this->adminModel->getBatches();
+                $heatmapData = $this->adminModel->getLocationHeatmapData($roleFilter);
                 
                 $data = [
                     'engagement' => $engagement,
@@ -69,6 +76,11 @@
                     'activeTab' => 'engagement',
                     'roleFilter' => $roleFilter,
                     'usersByRole' => $usersByRole,
+                    'locations' => $locations,
+                    'locationSummary' => $locationSummary,
+                    'countries' => $countries,
+                    'batches' => $batches,
+                    'heatmapData' => $heatmapData,
                 ];
             $this->view('admin/v_engagement', $data);
         }

@@ -137,9 +137,21 @@
     </section>
 
     <section class="grid-2">
-        <div class="card map-placeholder">
-            <h3>Alumni Locations</h3>
-            <div id="workMap" style="width: 100%; height: 300px; background: #f0f0f0; border-radius: 8px;"></div>
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <h3 style="margin: 0;">User Locations</h3>
+                <button id="expandMapBtn" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                    🗺️ Expand Map
+                </button>
+            </div>
+            <div id="smallMap" style="width: 100%; height: 300px; border-radius: 8px;"></div>
+            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted);">
+                <?php 
+                    $summary = $data['locationSummary'] ?? ['total_users_with_location' => 0, 'total_countries' => 0];
+                ?>
+                📍 <strong><?php echo number_format($summary['total_users_with_location'] ?? 0); ?></strong> users across 
+                <strong><?php echo ($summary['total_countries'] ?? 0); ?></strong> countries
+            </div>
         </div>
         <div class="card">
             <h3>Active Users Over Time</h3>
@@ -180,39 +192,448 @@
     </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script>
-    // Initialize work location map
-    document.addEventListener('DOMContentLoaded', () => {
-        const map = L.map('workMap').setView([7.8731, 80.7718], 7); // Centered on Sri Lanka
+<!-- Expanded Map Modal -->
+<div id="mapModal" class="map-modal" style="display: none;">
+    <div class="map-modal-content">
+        <div class="map-modal-header">
+            <div>
+                <h2 style="margin: 0; font-size: 1.5rem;">🌍 Geographic Distribution</h2>
+                <p style="color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0 0 0;">Interactive world map with country markers</p>
+            </div>
+            <button id="closeMapModal" class="close-modal-btn" title="Close">&times;</button>
+        </div>
         
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 18
-        }).addTo(map);
+        <div class="map-modal-filters">
+            <div class="filter-group">
+                <label>Country:</label>
+                <select id="filterCountry" class="filter-select">
+                    <option value="">All Countries</option>
+                    <?php foreach ($data['countries'] ?? [] as $country): ?>
+                        <option value="<?php echo htmlspecialchars($country->country); ?>">
+                            <?php echo htmlspecialchars($country->country); ?> (<?php echo $country->user_count; ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Batch:</label>
+                <select id="filterBatch" class="filter-select">
+                    <option value="">All Batches</option>
+                    <?php foreach ($data['batches'] ?? [] as $batch): ?>
+                        <option value="<?php echo htmlspecialchars($batch->batch_no); ?>">
+                            Batch <?php echo htmlspecialchars($batch->batch_no); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Role:</label>
+                <select id="filterRole" class="filter-select">
+                    <option value="">All Roles</option>
+                    <option value="admin">🔐 Admins</option>
+                    <option value="alumni">🎓 Alumni</option>
+                    <option value="undergrad">📚 Students</option>
+                </select>
+            </div>
+            <button id="applyMapFilters" class="btn" style="padding: 0.5rem 1rem;">Apply Filters</button>
+            <button id="resetMapFilters" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Reset</button>
+        </div>
+        
+        <div style="position: relative;">
+            <div id="expandedMap" style="width: 100%; height: calc(100vh - 280px); min-height: 500px;"></div>
+            <button id="toggleView" class="btn" style="position: absolute; top: 10px; right: 10px; z-index: 1000; padding: 0.5rem 1rem;">📊 Show Chart</button>
+        </div>
+        
+        <div id="chartView" style="display: none; padding: 2rem; height: calc(100vh - 280px); overflow-y: auto;">
+            <canvas id="expandedCountriesChart" height="400"></canvas>
+            <div id="locationTable" class="location-table" style="margin-top: 2rem;"></div>
+        </div>
+        
+        <div class="map-modal-stats">
+            <div class="stat-item">
+                <span class="stat-label">Total Users:</span>
+                <span class="stat-value" id="modalStatUsers">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Countries:</span>
+                <span class="stat-value" id="modalStatCountries">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Top Country:</span>
+                <span class="stat-value" id="modalStatTopCountry">-</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Current View:</span>
+                <span class="stat-value" id="modalStatMode">Map</span>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // Sample alumni work locations (replace with actual data from server)
-        const workLocations = <?php echo json_encode($data['work_locations'] ?? [
-            ['name' => 'Colombo', 'lat' => 6.9271, 'lng' => 79.8612, 'count' => 45],
-            ['name' => 'Kandy', 'lat' => 7.2906, 'lng' => 80.6337, 'count' => 23],
-            ['name' => 'Galle', 'lat' => 6.0535, 'lng' => 80.2210, 'count' => 12]
-        ]); ?>;
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script>
+    // Country coordinates mapping (approximate center of each country)
+    const countryCoordinates = {
+        'Sri Lanka': [7.8731, 80.7718],
+        'United States': [37.0902, -95.7129],
+        'United Kingdom': [55.3781, -3.4360],
+        'Canada': [56.1304, -106.3468],
+        'Australia': [-25.2744, 133.7751],
+        'India': [20.5937, 78.9629],
+        'United Arab Emirates': [23.4241, 53.8478],
+        'Singapore': [1.3521, 103.8198],
+        'Malaysia': [4.2105, 101.9758],
+        'China': [35.8617, 104.1954],
+        'Japan': [36.2048, 138.2529],
+        'Germany': [51.1657, 10.4515],
+        'France': [46.2276, 2.2137],
+        'Italy': [41.8719, 12.5674],
+        'Spain': [40.4637, -3.7492],
+        'Netherlands': [52.1326, 5.2913],
+        'Sweden': [60.1282, 18.6435],
+        'Norway': [60.4720, 8.4689],
+        'Switzerland': [46.8182, 8.2275],
+        'New Zealand': [-40.9006, 174.8860],
+        'South Korea': [35.9078, 127.7669],
+        'Thailand': [15.8700, 100.9925],
+        'Indonesia': [-0.7893, 113.9213],
+        'Philippines': [12.8797, 121.7740],
+        'Pakistan': [30.3753, 69.3451],
+        'Bangladesh': [23.6850, 90.3563],
+        'Saudi Arabia': [23.8859, 45.0792],
+        'Qatar': [25.3548, 51.1839],
+        'Kuwait': [29.3117, 47.4818],
+        'Oman': [21.4735, 55.9754],
+        'Bahrain': [26.0667, 50.5577],
+        'South Africa': [-30.5595, 22.9375],
+        'Egypt': [26.8206, 30.8025],
+        'Kenya': [-0.0236, 37.9062],
+        'Nigeria': [9.0820, 8.6753],
+        'Brazil': [-14.2350, -51.9253],
+        'Argentina': [-38.4161, -63.6167],
+        'Mexico': [23.6345, -102.5528],
+        'Russia': [61.5240, 105.3188]
+    };
 
-        workLocations.forEach(location => {
-            const marker = L.circleMarker([location.lat, location.lng], {
-                radius: Math.sqrt(location.count) * 3,
-                fillColor: '#60a5fa',
-                color: '#2563eb',
-                weight: 2,
-                opacity: 1,
-                fillOpacity: 0.6
-            }).addTo(map);
+    // Global location data
+    const allLocations = <?php echo json_encode($data['locations'] ?? []); ?>;
+    let smallMapInstance, expandedMapInstance, markerClusterGroup;
+    let expandedChart = null;
+    let currentView = 'map'; // 'map' or 'chart'
+    
+    // Initialize small map
+    document.addEventListener('DOMContentLoaded', () => {
+        if (document.getElementById('smallMap')) {
+            smallMapInstance = L.map('smallMap').setView([20, 0], 2);
             
-            marker.bindPopup(`<b>${location.name}</b><br>${location.count} alumni working here`);
-        });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(smallMapInstance);
+            
+            // Add markers for all locations
+            if (allLocations && allLocations.length > 0) {
+                allLocations.forEach(location => {
+                    const coords = countryCoordinates[location.country];
+                    if (coords) {
+                        const color = getRoleColor(location.roles);
+                        const marker = L.circleMarker(coords, {
+                            radius: Math.min(Math.sqrt(location.user_count) * 2, 15),
+                            fillColor: color,
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.7
+                        }).addTo(smallMapInstance);
+                        
+                        marker.bindPopup(`
+                            <div style="min-width: 180px;">
+                                <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">📍 ${location.country}</h4>
+                                <p style="margin: 0.25rem 0;"><strong>Users:</strong> ${location.user_count}</p>
+                                ${location.roles ? `<p style="margin: 0.25rem 0;"><strong>Roles:</strong> ${location.roles}</p>` : ''}
+                                ${location.batches ? `<p style="margin: 0.25rem 0;"><strong>Batches:</strong> ${location.batches}</p>` : ''}
+                            </div>
+                        `);
+                    }
+                });
+            }
+        }
     });
+    
+    // Get color based on roles
+    function getRoleColor(roles) {
+        if (!roles) return '#60a5fa';
+        if (roles.includes('admin')) return '#ff6b6b';
+        if (roles.includes('alumni')) return '#4ecdc4';
+        if (roles.includes('undergrad')) return '#45b7d1';
+        return '#60a5fa';
+    }
+
+    // Expanded Map Modal
+    document.getElementById('expandMapBtn').addEventListener('click', function() {
+        const modal = document.getElementById('mapModal');
+        modal.style.display = 'flex';
+        
+        // Initialize expanded map if not already done
+        if (!expandedMapInstance) {
+            setTimeout(() => {
+                expandedMapInstance = L.map('expandedMap').setView([20, 0], 2);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 18
+                }).addTo(expandedMapInstance);
+                
+                // Initialize marker cluster
+                markerClusterGroup = L.markerClusterGroup({
+                    maxClusterRadius: 60,
+                    spiderfyOnMaxZoom: true,
+                    showCoverageOnHover: true
+                });
+                expandedMapInstance.addLayer(markerClusterGroup);
+                
+                loadMapMarkers(allLocations);
+                updateLocationStats(allLocations);
+                
+                // Also prepare chart for toggle
+                setTimeout(() => {
+                    renderExpandedChart(allLocations);
+                    renderLocationTable(allLocations);
+                }, 200);
+            }, 100);
+        } else {
+            expandedMapInstance.invalidateSize();
+        }
+    });
+    
+    // Toggle between map and chart view
+    document.getElementById('toggleView').addEventListener('click', function() {
+        const mapView = document.getElementById('expandedMap').parentElement;
+        const chartView = document.getElementById('chartView');
+        const toggleBtn = this;
+        const modeLabel = document.getElementById('modalStatMode');
+        
+        if (currentView === 'map') {
+            mapView.style.display = 'none';
+            chartView.style.display = 'block';
+            toggleBtn.textContent = '🗺️ Show Map';
+            modeLabel.textContent = 'Chart';
+            currentView = 'chart';
+        } else {
+            mapView.style.display = 'block';
+            chartView.style.display = 'none';
+            toggleBtn.textContent = '📊 Show Chart';
+            modeLabel.textContent = 'Map';
+            currentView = 'map';
+            if (expandedMapInstance) {
+                setTimeout(() => expandedMapInstance.invalidateSize(), 100);
+            }
+        }
+    });
+    
+    // Load markers onto map
+    function loadMapMarkers(locations) {
+        if (!expandedMapInstance || !markerClusterGroup) return;
+        
+        markerClusterGroup.clearLayers();
+        
+        if (!locations || locations.length === 0) {
+            alert('No location data available.');
+            return;
+        }
+        
+        locations.forEach(location => {
+            const coords = countryCoordinates[location.country];
+            if (coords) {
+                const color = getRoleColor(location.roles);
+                const marker = L.circleMarker(coords, {
+                    radius: Math.min(Math.sqrt(location.user_count) * 3, 20),
+                    fillColor: color,
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.7
+                }).bindPopup(`
+                    <div style=\"min-width: 200px;\">
+                        <h4 style=\"margin: 0 0 0.5rem 0; color: #2563eb;\">📍 ${location.country}</h4>
+                        <p style=\"margin: 0.25rem 0;\"><strong>Users:</strong> ${location.user_count}</p>
+                        ${location.roles ? `<p style=\"margin: 0.25rem 0;\"><strong>Roles:</strong> ${location.roles}</p>` : ''}
+                        ${location.batches ? `<p style=\"margin: 0.25rem 0;\"><strong>Batches:</strong> ${location.batches}</p>` : ''}
+                    </div>
+                `);
+                
+                markerClusterGroup.addLayer(marker);
+            }
+        });
+        
+        // Fit bounds if markers exist
+        if (markerClusterGroup.getLayers().length > 0) {
+            expandedMapInstance.fitBounds(markerClusterGroup.getBounds(), {padding: [50, 50]});
+        }
+    }
+    
+    // Close modal
+    document.getElementById('closeMapModal').addEventListener('click', function() {
+        document.getElementById('mapModal').style.display = 'none';
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('mapModal').addEventListener('click', function(e) {
+        if (e.target.id === 'mapModal') {
+            this.style.display = 'none';
+        }
+    });
+
+    // Render expanded chart
+    function renderExpandedChart(locations) {
+        const chartCtx = document.getElementById('expandedCountriesChart');
+        if (!chartCtx || locations.length === 0) return;
+        
+        if (expandedChart) {
+            expandedChart.destroy();
+        }
+        
+        expandedChart = new Chart(chartCtx.getContext('2d'), {
+            type: 'horizontalBar',
+            data: {
+                labels: locations.map(loc => loc.country),
+                datasets: [{
+                    label: 'Users',
+                    data: locations.map(loc => parseInt(loc.user_count || 0)),
+                    backgroundColor: locations.map((loc, i) => {
+                        const colors = ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa'];
+                        return colors[i % colors.length];
+                    }),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const location = locations[context.dataIndex];
+                                let info = [];
+                                if (location.roles) info.push(`Roles: ${location.roles}`);
+                                if (location.batches) info.push(`Batches: ${location.batches}`);
+                                return info.join('\\n');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    }
+
+    // Render location table
+    function renderLocationTable(locations) {
+        const table = document.getElementById('locationTable');
+        if (!table || locations.length === 0) {
+            table.innerHTML = '<p style="text-align: center; color: var(--muted);">No location data available</p>';
+            return;
+        }
+        
+        let html = `
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: var(--surface); border-bottom: 2px solid var(--border);">
+                        <th style="padding: 0.75rem; text-align: left;">Country</th>
+                        <th style="padding: 0.75rem; text-align: right;">Users</th>
+                        <th style="padding: 0.75rem; text-align: left;">Roles</th>
+                        <th style="padding: 0.75rem; text-align: left;">Batches</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        locations.forEach((loc, i) => {
+            html += `
+                <tr style="border-bottom: 1px solid var(--border); ${i % 2 === 0 ? 'background: var(--surface-2);' : ''}">
+                    <td style="padding: 0.75rem;">🌍 ${loc.country}</td>
+                    <td style="padding: 0.75rem; text-align: right; font-weight: 600;">${loc.user_count}</td>
+                    <td style="padding: 0.75rem; font-size: 0.85rem;">${loc.roles || '-'}</td>
+                    <td style="padding: 0.75rem; font-size: 0.85rem;">${loc.batches || '-'}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        table.innerHTML = html;
+    }
+
+    // Update location statistics
+    function updateLocationStats(locations) {
+        const totalUsers = locations.reduce((sum, loc) => sum + parseInt(loc.user_count || 0), 0);
+        const uniqueCountries = locations.length;
+        const topCountry = locations.length > 0 ? locations[0].country : 'N/A';
+        
+        document.getElementById('modalStatUsers').textContent = totalUsers.toLocaleString();
+        document.getElementById('modalStatCountries').textContent = uniqueCountries;
+        document.getElementById('modalStatTopCountry').textContent = topCountry;
+    }
+
+    // Apply filters
+    document.getElementById('applyMapFilters').addEventListener('click', function() {
+        const country = document.getElementById('filterCountry').value;
+        const batch = document.getElementById('filterBatch').value;
+        const role = document.getElementById('filterRole').value;
+        
+        // Build filter URL for role change
+        if (role && role !== '<?php echo $data['roleFilter'] ?? ''; ?>') {
+            window.location.href = `<?php echo URLROOT; ?>/admin/engagement?role=${role}`;
+        } else {
+            // Filter client-side
+            let filtered = allLocations;
+            
+            if (country) {
+                filtered = filtered.filter(loc => loc.country === country);
+            }
+            if (batch) {
+                filtered = filtered.filter(loc => loc.batches && loc.batches.includes(batch));
+            }
+            
+            // Update both map and chart views
+            loadMapMarkers(filtered);
+            renderExpandedChart(filtered);
+            renderLocationTable(filtered);
+            updateLocationStats(filtered);
+        }
+    });
+
+    // Reset filters
+    document.getElementById('resetMapFilters').addEventListener('click', function() {
+        document.getElementById('filterCountry').value = '';
+        document.getElementById('filterBatch').value = '';
+        document.getElementById('filterRole').value = '';
+        
+        // Reset both map and chart views
+        loadMapMarkers(allLocations);
+        renderExpandedChart(allLocations);
+        renderLocationTable(allLocations);
+        updateLocationStats(allLocations);
+    });
+
+    // Set initial role filter value if present
+    <?php if ($data['roleFilter'] ?? null): ?>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('filterRole').value = '<?php echo $data['roleFilter']; ?>';
+    });
+    <?php endif; ?>
 
     const roleData = <?php echo json_encode($data['charts']['roles'] ?? []); ?>;
     const batchData = <?php echo json_encode($data['charts']['batches'] ?? []); ?>;
