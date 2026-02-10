@@ -2,6 +2,7 @@
 .env
 .env.local
 
+vendor/
 # IDE and editor files
 .vscode/
 .idea/
