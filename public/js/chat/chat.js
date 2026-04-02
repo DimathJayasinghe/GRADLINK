@@ -264,7 +264,7 @@ function editMessage() {
     <input type="text" value="${messageText}" class="edit-input" autofocus>
     <div style="margin-top: 4px;">
       <button onclick="saveEdit(this)">Save</button>
-      <button onclick="cancelEdit(this, '${messageText.replace(/'/g, "\\'")}')">Cancel</button>
+      <button onclick="cancelEdit(this, '${messageText.replace(/'/g, "/'")}')">Cancel</button>
     </div>
   `;
   

@@ -1,5 +1,5 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/leftSideBar.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/leftSidebar.css">
 
 <!-- Left Sidebar Component -->
 <div class="sidebar">
@@ -10,8 +10,13 @@
     <ul class="sidebar-menu">
         <?php foreach ($leftside_buttons as $button):?>
             <li onclick="<?php echo $button['onclick']?>" class="<?php echo isset($button['active']) && $button['active'] ? 'active' : '' ?>">
-                <i class="fas fa-<?php echo $button['icon']?>"></i>
-                <span><?php echo $button['label']?></span>
+                <div class="sidebar-menu-item-wrapper">
+                    <i class="fas fa-<?php echo $button['icon']?>"></i>
+                    <span><?php echo $button['label']?></span>
+                    <?php if (isset($button['badge']) && $button['badge']): ?>
+                        <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    <?php endif; ?>
+                </div>
                 <?php 
                     if (isset($button['require']) && !empty($button['require'])) {
                         // Pass notifications if they exist in this button

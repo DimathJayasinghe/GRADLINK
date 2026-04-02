@@ -1,4 +1,4 @@
-<?php require APPROOT.'/views/inc/header.php'?>
+<?php require APPROOT . '/views/inc/header.php' ?>
 <style>
     .three-column-layout {
         display: flex;
@@ -8,14 +8,14 @@
         width: 100%;
         margin: 0 auto;
     }
-    
+
     .template-left {
         width: 275px;
         border-right: 1px solid var(--border);
         overflow: hidden;
 
     }
-    
+
     .template-center {
         flex: 1;
         border-right: 1px solid var(--border);
@@ -23,55 +23,58 @@
         overflow-y: auto;
 
     }
+
     .template-center::-webkit-scrollbar {
-        display: none; /* Chrome, Safari */
+        display: none;
+        /* Chrome, Safari */
     }
-    
+
     .template-right {
         width: 325px;
         overflow-y: auto;
         background-color: var(--bg);
-        padding: 0; /* Remove any default padding */
+        padding: 0;
+        /* Remove any default padding */
     }
-    
+
     /* Responsive adjustments */
     @media (max-width: 1200px) {
         .three-column-layout {
             max-width: 100%;
         }
     }
-    
+
     @media (max-width: 992px) {
         .template-right {
             display: none;
         }
     }
-    
+
     @media (max-width: 768px) {
         .template-left {
             width: 70px;
         }
     }
-    
+
     /* Scrollbar styling */
     .three-column-layout ::-webkit-scrollbar {
         width: 6px;
     }
-    
+
     .three-column-layout ::-webkit-scrollbar-track {
         background: var(--bg);
     }
-    
+
     .three-column-layout ::-webkit-scrollbar-thumb {
         background: rgba(158, 212, 220, 0.3);
         border-radius: 10px;
     }
-    
+
     .three-column-layout ::-webkit-scrollbar-thumb:hover {
         background: var(--link);
     }
 </style>
-<?php echo $styles;?>
+<?php echo $styles; ?>
 <div class="three-column-layout">
     <div class="template-left">
         <?php echo $leftsidebar; ?>
@@ -84,5 +87,15 @@
     </div>
 </div>
 <script>
+    function scrollToTop() {
+        // Scroll the template-center container to top (the actual scrollable parent)
+        const scrollContainer = document.querySelector('.template-center');
+        if (scrollContainer) {
+            scrollContainer.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        }
+    }
     <?php echo $scripts; ?>
 </script>

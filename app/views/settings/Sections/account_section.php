@@ -60,11 +60,11 @@
                 <div class="analytics-trend">0% <span class="trend-icon">→</span></div>
             </div>
             
-            <div class="analytics-card">
+            <!-- <div class="analytics-card">
                 <div class="analytics-value"><?= isset($userAnalytics) ? $userAnalytics['avg_response_time'] : '0' ?>h</div>
                 <div class="analytics-label">Avg. Response Time</div>
                 <div class="analytics-trend down">-8% <span class="trend-icon">↓</span></div>
-            </div>
+            </div> -->
         </div>
         
         <div class="view-more-analytics">
@@ -75,14 +75,6 @@
     <div class="settings-section">
         <h3>Account Management</h3>
         <div class="section-divider"></div>
-        <div class="settings-option">
-            <div class="settings-option-details">
-                <h4>Deactivate Account</h4>
-                <p>Temporarily disable your GRADLINK account</p>
-            </div>
-            <button class="settings-btn settings-btn-secondary deactivate-account-btn">Deactivate</button>
-        </div>
-        
         <div class="settings-option">
             <div class="settings-option-details">
                 <h4>Delete Account</h4>
@@ -102,12 +94,12 @@
             <div class="settings-modal-body">
                 <form id="editNameForm">
                     <div class="form-group">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" name="firstName" value="<?= isset($user) ? $user->first_name : '' ?>" required>
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" name="fullName" required>
                     </div>
                     <div class="form-group">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" name="lastName" value="<?= isset($user) ? $user->last_name : '' ?>" required>
+                        <label for="displayName">Display Name</label>
+                        <input type="text" id="displayName" name="displayName">
                     </div>
                     <div class="form-actions">
                         <button type="button" class="settings-btn-secondary cancel-modal">Cancel</button>
@@ -128,12 +120,8 @@
             <div class="settings-modal-body">
                 <form id="editBioForm">
                     <div class="form-group">
-                        <label for="headline">Headline/Title</label>
-                        <input type="text" id="headline" name="headline" value="<?= isset($user) ? $user->headline : '' ?>">
-                    </div>
-                    <div class="form-group">
                         <label for="bio">Bio</label>
-                        <textarea id="bio" name="bio" rows="5"><?= isset($user) ? $user->bio : '' ?></textarea>
+                        <textarea id="bio" name="bio" rows="5"></textarea>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="settings-btn-secondary cancel-modal">Cancel</button>
@@ -155,15 +143,15 @@
                 <form id="editEmailForm">
                     <div class="form-group">
                         <label for="currentEmail">Current Email</label>
-                        <input type="email" id="currentEmail" value="<?= isset($user) ? $user->email : '' ?>" disabled>
+                        <input type="email" id="currentEmail" disabled>
                     </div>
                     <div class="form-group">
                         <label for="newEmail">New Email</label>
                         <input type="email" id="newEmail" name="newEmail" required>
                     </div>
                     <div class="form-group">
-                        <label for="confirmPassword">Confirm with Password</label>
-                        <input type="password" id="confirmPassword" name="confirmPassword" required>
+                        <label for="emailPassword">Confirm with Password</label>
+                        <input type="password" id="emailPassword" name="emailPassword" required>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="settings-btn-secondary cancel-modal">Cancel</button>
@@ -208,47 +196,6 @@
         </div>
     </div>
     
-    <!-- Deactivate Account Modal -->
-    <div id="deactivateAccountModal" class="settings-modal">
-        <div class="settings-modal-content">
-            <div class="settings-modal-header">
-                <h3>Deactivate Account</h3>
-                <span class="settings-close-modal">&times;</span>
-            </div>
-            <div class="settings-modal-body">
-                <div class="warning-message">
-                    <i class="warning-icon">⚠️</i>
-                    <p>Your account will be temporarily disabled. All your content will be hidden until you log back in.</p>
-                </div>
-                <form id="deactivateAccountForm">
-                    <div class="form-group">
-                        <label for="deactivationReason">Why are you deactivating?</label>
-                        <select id="deactivationReason" name="deactivationReason" required>
-                            <option value="">Select a reason</option>
-                            <option value="taking_break">Taking a break</option>
-                            <option value="privacy_concerns">Privacy concerns</option>
-                            <option value="too_many_emails">Receiving too many emails</option>
-                            <option value="not_useful">Not finding GRADLINK useful</option>
-                            <option value="other">Other reason</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="otherReasonGroup" style="display: none;">
-                        <label for="otherReason">Please specify</label>
-                        <textarea id="otherReason" name="otherReason" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="deactivatePassword">Enter your password to continue</label>
-                        <input type="password" id="deactivatePassword" name="deactivatePassword" required>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" class="settings-btn-secondary cancel-modal">Cancel</button>
-                        <button type="submit" class="settings-btn-danger">Deactivate Account</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
     <!-- Delete Account Modal -->
     <div id="deleteAccountModal" class="settings-modal">
         <div class="settings-modal-content">
@@ -258,7 +205,7 @@
             </div>
             <div class="settings-modal-body">
                 <div class="danger-message">
-                    <i class="danger-icon">⚠️</i>
+                    <div class="danger-icon">⚠️</div>
                     <p>This action <strong>cannot be undone</strong>. Your account and all associated data will be permanently deleted.</p>
                 </div>
                 <form id="deleteAccountForm">
@@ -298,13 +245,18 @@
 <!-- Account Settings JavaScript -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const URLROOT = '<?= URLROOT ?>';
+    let currentUser = null;
+    
+    // Load user data on page load
+    loadUserData();
+    
     // Modal functionality
     const modals = {
         editName: document.getElementById('editNameModal'),
         editBio: document.getElementById('editBioModal'),
         editEmail: document.getElementById('editEmailModal'),
         changePassword: document.getElementById('changePasswordModal'),
-        deactivateAccount: document.getElementById('deactivateAccountModal'),
         deleteAccount: document.getElementById('deleteAccountModal')
     };
     
@@ -313,16 +265,30 @@ document.addEventListener('DOMContentLoaded', function() {
         editBio: document.querySelector('.edit-bio-btn'),
         editEmail: document.querySelector('.edit-email-btn'),
         changePassword: document.querySelector('.change-password-btn'),
-        deactivateAccount: document.querySelector('.deactivate-account-btn'),
         deleteAccount: document.querySelector('.delete-account-btn')
     };
     
     // Open modal functions
-    buttons.editName.addEventListener('click', () => openModal(modals.editName));
-    buttons.editBio.addEventListener('click', () => openModal(modals.editBio));
-    buttons.editEmail.addEventListener('click', () => openModal(modals.editEmail));
+    buttons.editName.addEventListener('click', () => {
+        if (currentUser) {
+            document.getElementById('fullName').value = currentUser.name || '';
+            document.getElementById('displayName').value = currentUser.display_name || '';
+        }
+        openModal(modals.editName);
+    });
+    buttons.editBio.addEventListener('click', () => {
+        if (currentUser) {
+            document.getElementById('bio').value = currentUser.bio || '';
+        }
+        openModal(modals.editBio);
+    });
+    buttons.editEmail.addEventListener('click', () => {
+        if (currentUser) {
+            document.getElementById('currentEmail').value = currentUser.email || '';
+        }
+        openModal(modals.editEmail);
+    });
     buttons.changePassword.addEventListener('click', () => openModal(modals.changePassword));
-    buttons.deactivateAccount.addEventListener('click', () => openModal(modals.deactivateAccount));
     buttons.deleteAccount.addEventListener('click', () => openModal(modals.deleteAccount));
     
     // Close modal when clicking the X or Cancel button
@@ -343,11 +309,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Show "other" reason field when selected
-    document.getElementById('deactivationReason').addEventListener('change', function() {
-        const otherReasonGroup = document.getElementById('otherReasonGroup');
-        otherReasonGroup.style.display = this.value === 'other' ? 'block' : 'none';
-    });
-    
     document.getElementById('deletionReason').addEventListener('change', function() {
         const otherDeletionReasonGroup = document.getElementById('otherDeletionReasonGroup');
         otherDeletionReasonGroup.style.display = this.value === 'other' ? 'block' : 'none';
@@ -379,22 +340,189 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Form submission handling (for demonstration only)
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
+    // Form submission handlers
+    document.getElementById('editNameForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+        
+        try {
+            const response = await fetch(`${URLROOT}/settings/updateName`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('fullName').value,
+                    display_name: document.getElementById('displayName').value
+                })
+            });
             
-            // In a real app, you would send these form data to the server
-            // For now, we'll just simulate success with an alert
-            alert('Form submitted successfully! In a real app, this would be sent to the server.');
+            const data = await response.json();
             
-            // Close the modal
-            const modal = this.closest('.settings-modal');
-            closeModal(modal);
-        });
+            if (data.success) {
+                showNotification('Name updated successfully!', 'success');
+                closeModal(modals.editName);
+                loadUserData();
+            } else {
+                showNotification(data.error || 'Failed to update name', 'error');
+            }
+        } catch (error) {
+            showNotification('An error occurred', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save Changes';
+        }
+    });
+    
+    document.getElementById('editBioForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type=\"submit\"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+        
+        try {
+            const response = await fetch(`${URLROOT}/settings/updateBio`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bio: document.getElementById('bio').value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('Bio updated successfully!', 'success');
+                closeModal(modals.editBio);
+                loadUserData();
+            } else {
+                showNotification(data.error || 'Failed to update bio', 'error');
+            }
+        } catch (error) {
+            showNotification('An error occurred', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save Changes';
+        }
+    });
+    
+    document.getElementById('editEmailForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type=\"submit\"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Updating...';
+        
+        try {
+            const response = await fetch(`${URLROOT}/settings/updateEmail`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    current_email: document.getElementById('currentEmail').value,
+                    new_email: document.getElementById('newEmail').value,
+                    password: document.getElementById('emailPassword').value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('Email updated successfully!', 'success');
+                closeModal(modals.editEmail);
+                loadUserData();
+            } else {
+                showNotification(data.error || 'Failed to update email', 'error');
+            }
+        } catch (error) {
+            showNotification('An error occurred', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Update Email';
+        }
+    });
+    
+    document.getElementById('changePasswordForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type=\"submit\"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Updating...';
+        
+        try {
+            const response = await fetch(`${URLROOT}/settings/changePassword`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    current_password: document.getElementById('currentPassword').value,
+                    new_password: document.getElementById('newPassword').value,
+                    confirm_password: document.getElementById('confirmNewPassword').value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('Password changed successfully!', 'success');
+                closeModal(modals.changePassword);
+                this.reset();
+            } else {
+                showNotification(data.error || 'Failed to change password', 'error');
+            }
+        } catch (error) {
+            showNotification('An error occurred', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Update Password';
+        }
+    });
+    
+    document.getElementById('deleteAccountForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const submitBtn = this.querySelector('button[type=\"submit\"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Deleting...';
+        
+        try {
+            const response = await fetch(`${URLROOT}/settings/deleteAccount`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    password: document.getElementById('deletePassword').value,
+                    confirmation: document.getElementById('deleteConfirmation').value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showNotification('Account deleted successfully. Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = `${URLROOT}/auth`;
+                }, 2000);
+            } else {
+                showNotification(data.error || 'Failed to delete account', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Permanently Delete Account';
+            }
+        } catch (error) {
+            showNotification('An error occurred', 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Permanently Delete Account';
+        }
     });
     
     // Helper functions
+    async function loadUserData() {
+        try {
+            const response = await fetch(`${URLROOT}/settings/getUserData`);
+            const data = await response.json();
+            
+            if (data.success) {
+                currentUser = data.user;
+            }
+        } catch (error) {
+            console.error('Failed to load user data:', error);
+        }
+    }
+    
     function openModal(modal) {
         if (modal) {
             modal.style.display = 'block';
@@ -405,6 +533,31 @@ document.addEventListener('DOMContentLoaded', function() {
         if (modal) {
             modal.style.display = 'none';
         }
+    }
+    
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#4caf50' : '#f44336'};
+            color: white;
+            border-radius: 5px;
+            z-index: 10000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.transition = 'opacity 0.3s';
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
 });
 </script>

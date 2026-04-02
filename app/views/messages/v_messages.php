@@ -56,7 +56,7 @@
 <!-- Center section Available users list -->
 <?php $center_topic = "Messages";?>
 <?php ob_start();?>
-    <?php require APPROOT . '/views/messages/sections/users_list_section.php'; ?>
+    <?php require APPROOT . '/views/messages/sections/users_list.php'; ?>
 <?php $center_content = ob_get_clean(); ?>
 
 
@@ -68,12 +68,14 @@
 <?php ob_start();?>
     <div class="main_content_section" id="chatRoom" style="padding:0; margin:0; height:100%; max-height:100%; display:flex; flex-direction:column; overflow:hidden; border-right: 1px solid #cccccc39;">
         <?php require APPROOT . '/views/messages/sections/' . $data['section']. '_section.php'; ?>
+        <?php require APPROOT . '/views/messages/sections/message_window.php'; ?>
     </div>
 <?php $rightsidebar = ob_get_clean(); ?>
 
 
 
 <!-- Script section -->
+ 
 <?php $script = null;?>
 
 

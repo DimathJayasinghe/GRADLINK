@@ -17,7 +17,7 @@
 			</label>
 		</div>
 
-		<div class="settings-option">
+		<!-- <div class="settings-option">
 			<div class="settings-option-details">
 				<h4>Push Notifications</h4>
 				<p>Notifications to your device</p>
@@ -26,7 +26,7 @@
 				<input type="checkbox" id="pushNotif" checked>
 				<span class="slider"></span>
 			</label>
-		</div>
+		</div> -->
 
 		<div class="settings-option">
 			<div class="settings-option-details">
@@ -40,7 +40,7 @@
 		</div>
 	</div>
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Frequency</h3>
 		<div class="section-divider"></div>
 		<div class="settings-option">
@@ -61,7 +61,7 @@
 			</div>
 			<button class="settings-btn" id="openDND">Set schedule</button>
 		</div>
-	</div>
+	</div> -->
 
 	<div class="settings-section">
 		<h3>Categories</h3>

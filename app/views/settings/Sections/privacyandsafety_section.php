@@ -1,26 +1,12 @@
 <div class="account_content">
-	<h2>Privacy & Safety</h2>
-	<p class="settings-description">Control your privacy and security preferences.</p>
+	<h2>Blocked Users list</h2>
+	<p class="settings-description">List of users you have blocked</p>
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Privacy Controls</h3>
-		<div class="section-divider"></div>
+		<div class="section-divider"></div>-->
 
-		<div class="settings-option">
-			<div class="settings-option-details">
-				<h4>Profile Visibility</h4>
-				<p>Choose who can see your profile and activity</p>
-			</div>
-			<div>
-				<select id="profileVisibility" class="select-inline">
-					<option value="public">Public</option>
-					<option value="connections">Connections only</option>
-					<option value="private">Only me</option>
-				</select>
-			</div>
-		</div>
-
-		<div class="settings-option">
+		<!-- <div class="settings-option">
 			<div class="settings-option-details">
 				<h4>Search Engine Indexing</h4>
 				<p>Allow search engines to link to your profile</p>
@@ -29,9 +15,9 @@
 				<input type="checkbox" id="searchIndexing" checked>
 				<span class="slider"></span>
 			</label>
-		</div>
+		</div> -->
 
-		<div class="settings-option">
+		<!-- <div class="settings-option">
 			<div class="settings-option-details">
 				<h4>Show Online Status</h4>
 				<p>Display when you're active on GRADLINK</p>
@@ -40,10 +26,10 @@
 				<input type="checkbox" id="onlineStatus" checked>
 				<span class="slider"></span>
 			</label>
-		</div>
-	</div>
+		</div> -->
+	<!-- </div> -->
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Security</h3>
 		<div class="section-divider"></div>
 
@@ -65,11 +51,11 @@
 				<span class="slider"></span>
 			</label>
 		</div>
-	</div>
+	</div> -->
 
 	<div class="settings-section">
-		<h3>Blocked Users</h3>
-		<div class="section-divider"></div>
+		<!-- <h3>Blocked Users</h3> -->
+		<!-- <div class="section-divider"></div> -->
 		<ul class="simple-list" id="blockedUsersList">
 			<li>
 				<span>No blocked users</span>
@@ -77,7 +63,7 @@
 		</ul>
 	</div>
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Active Sessions</h3>
 		<div class="section-divider"></div>
 		<ul class="simple-list">
@@ -99,7 +85,7 @@
 		<div class="form-actions" style="justify-content: flex-start;">
 			<button class="settings-btn-danger" id="logoutOthers">Log out of all other sessions</button>
 		</div>
-	</div>
+	</div> -->
 
 	<!-- Two Factor Modal -->
 	<div id="twoFAModal" class="settings-modal">

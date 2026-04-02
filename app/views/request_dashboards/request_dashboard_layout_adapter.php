@@ -48,7 +48,6 @@ ob_start();
     };
     $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
     require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
-    require APPROOT . '/views/inc/commponents/leftSideBar.php'; 
 ?>
 <?php
 // Save leftsidebar content

@@ -1,6 +1,8 @@
-<?php require APPROOT . '/views/inc/header.php'; ?>
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/auth/login_signup_styles.css">
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/admin.css">
+<?php
+// Ensure per-page styles are emitted into the <head> by header.php
+$styles = '<link rel="stylesheet" href="' . URLROOT . '/css/admin/common.css">' . PHP_EOL
+         . '<link rel="stylesheet" href="' . URLROOT . '/css/admin/login.css">' . PHP_EOL;
+require APPROOT . '/views/inc/header.php'; ?>
 
 <main class="page">
     <section class="brand">

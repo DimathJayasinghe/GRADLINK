@@ -168,6 +168,17 @@
             border-color: var(--primary);
         }
 
+        .profile-actions .connect-btn.pending {
+            background-color: #FFA726;
+            color: var(--surface-0);
+            border-color: #FFA726;
+        }
+
+        .profile-actions .connect-btn.pending:hover {
+            background-color: #FF9800;
+            border-color: #FF9800;
+        }
+
         /* Updated navigation button styles */
         .profile-navigation {
             margin-top: 4px; /* default spacing */
@@ -692,4 +703,24 @@
                 height: 36px;
                 font-size: 0.9em;
             }
+        }
+
+        .no-posts-message {
+            width: 100%;
+            height: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--muted);
+            font-size: 1em;
+            opacity: 0.6;
+        }
+        .no-posts-message div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .no-posts-message i {
+            font-size: 2em;
         }

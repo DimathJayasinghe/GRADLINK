@@ -56,5 +56,10 @@ class Media extends Controller {
     public function certificate($filename = '') {
         $this->serve('certificates', $filename);
     }
+
+    // /media/fundraiser/{filename}
+    public function fundraiser($filename = '') {
+        $this->serve('fundraisers', $filename);
+    }
 }
 ?>

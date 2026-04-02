@@ -137,6 +137,45 @@
         text-decoration: none;
         font-weight: 600;
     }
+
+    /* Action buttons inside the card */
+    .card-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 15px;
+    }
+
+    .card .btn {
+        padding: 0.6rem 1.1rem;
+        border-radius: 6px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 120px;
+    }
+
+    .card a.btn-view {
+        background: #bfeff2; /* light cyan */
+        color: #082032; /* dark text for contrast */
+    }
+
+    .card a.btn-edit {
+        background: #1ec38fff; /* green-ish for edit */
+        color: #fff;
+    }
+
+    .card a.btn-analytics {
+        background: #6c5ce7; /* purple for analytics */
+        color: #fff;
+    }
+
+    .card a.btn-remove {
+        background: #ef4444; /* red */
+        color: #fff;
+    }
 </style>
 <?php $styles = ob_get_clean(); ?>
 
@@ -174,12 +213,12 @@
                         <p class="event-venue">Venue: <?php echo htmlspecialchars($request->event_venue); ?></p>
                     </div>
                     
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <a href="<?php echo URLROOT; ?>/eventrequest/show/<?php echo $request->req_id; ?>" style="flex: 1;">View Details</a>
+                    <div class="card-actions">
+                        <a class="btn btn-view" href="<?php echo URLROOT; ?>/eventrequest/show/<?php echo $request->req_id; ?>">View Details</a>
                         <?php if($request->status === 'Approved'): ?>
-                            <a href="<?php echo URLROOT; ?>/eventrequest/analytics/<?php echo $request->req_id; ?>" style="flex: 1; background: #6c5ce7;">Analytics</a>
+                            <a class="btn btn-analytics" href="<?php echo URLROOT; ?>/eventrequest/analytics/<?php echo $request->req_id; ?>">Analytics</a>
                         <?php else: ?>
-                            <a href="<?php echo URLROOT; ?>/eventrequest/edit/<?php echo $request->req_id; ?>" style="flex: 1; background: #1ec38fff;">Edit</a>
+                            <a class="btn btn-edit" href="<?php echo URLROOT; ?>/eventrequest/edit/<?php echo $request->req_id; ?>">Edit</a>
                         <?php endif; ?>
                     </div>
                 </div>

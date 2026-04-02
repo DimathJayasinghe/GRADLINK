@@ -60,3 +60,28 @@
 .post-dropdown { position:absolute; top:100%; right:0; background: var(--bg-secondary,#1a1a1a); border:1px solid var(--border); border-radius:8px; min-width:180px; box-shadow:0 4px 12px rgba(0,0,0,.3); padding:4px 0; z-index:500; }
 .dropdown-item { padding:10px 14px; font-size:0.9em; cursor:pointer; transition: var(--transition); }
 .dropdown-item:hover { background: rgba(255,255,255,0.08); }
+
+/* Shared popup styles (mirroring profile popups) */
+.certificate-add-popup {
+	position: fixed;
+	top: 0; left: 0; width: 100%; height: 100%;
+	background-color: rgba(15, 21, 24, 0.8);
+	display: none; justify-content: center; align-items: center;
+	z-index: 1000;
+}
+.certificate-add {
+	width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+	padding: 20px; border-radius: var(--radius-lg);
+	background-color: var(--card); box-shadow: var(--shadow-1);
+	position: relative; margin: auto;
+}
+.close-popup { position:absolute; top:10px; right:10px; width:30px; height:30px; background-color: var(--surface-3); border:none; border-radius:50%; color: var(--muted); font-size:18px; cursor:pointer; display:flex; justify-content:center; align-items:center; transition: all .2s; }
+.close-popup:hover { background-color: var(--primary); color: var(--text); }
+.form-title { font-size: 1.3em; font-weight: 600; color: var(--text); text-align: center; margin-bottom: 10px; }
+.certificate-form { display:flex; flex-direction: column; gap:20px; margin-top: 10px; }
+.form-group { display:flex; flex-direction: column; gap:6px; }
+.form-group label { font-size:.9em; color: var(--muted); font-weight:500; }
+.form-group input, .form-group select, .certificate-form textarea { padding:10px 12px; border-radius: var(--radius-lg); border:1px solid var(--border); background-color: var(--input); color: var(--text); font-family: inherit; }
+.form-group input:focus, .form-group select:focus, .certificate-form textarea:focus { outline:none; border-color: var(--primary); }
+.save-btn { background-color: var(--primary); color: var(--surface-0); padding: 12px; border: none; border-radius: var(--radius-lg); font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 10px; }
+.save-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }

@@ -1,0 +1,138 @@
+/* Engagement admin styles */
+:root {
+    --kpi-bg: var(--surface);
+    --kpi-border: var(--border);
+    --card-bg: var(--surface-2, #fff);
+}
+
+.kpis {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap
+}
+
+.kpi {
+    background: var(--kpi-bg);
+    border: 1px solid var(--kpi-border);
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    min-width: 160px
+}
+
+.kpi-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.9rem
+}
+
+.kpi-value {
+    display: block;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-top: 0.25rem
+}
+
+.charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem
+}
+
+.card {
+    background: var(--card-bg);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--kpi-border)
+}
+
+.card h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem
+}
+
+.chart-wrap {
+    position: relative;
+    height: 220px;
+    width: 220px;
+    margin: 1rem auto;
+}
+.chart-wrap-batch {
+    position: relative;
+    height: 300px;
+    width: 300px;
+    margin: 1rem auto;
+}
+
+.chart-wrap canvas {
+    width: 100% !important;
+    height: 100% !important
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem
+}
+
+.map-box {
+    height: 220px;
+    background: linear-gradient(180deg, var(--surface), #f6f6f6);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted)
+}
+
+.filters{
+    margin-bottom: 1rem;
+}
+
+.filters .filters-form {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap
+}
+
+.filters input[type="text"] {
+    padding: .5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px
+}
+
+.filters .btn {
+    padding: .5rem .75rem;
+    border-radius: 4px;
+    background: var(--btn);
+    color: var(--btn-text);
+    border: none
+}
+
+.tabs {
+    display: flex;
+    gap: .5rem;
+    margin-top: .5rem
+}
+
+.tab {
+    padding: .4rem .65rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    color: var(--muted)
+}
+
+.tab.active {
+    background: var(--btn);
+    color: var(--btn-text);
+    border-color: var(--btn)
+}
+
+@media (max-width:900px) {
+
+    .charts,
+    .grid-2 {
+        grid-template-columns: 1fr
+    }
+}
