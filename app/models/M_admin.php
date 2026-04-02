@@ -183,6 +183,38 @@ class M_admin {
         ];
     }
 
+    public function getPostReports(): array {
+        try {
+            $this->db->query('
+                SELECT
+                    r.id,
+                    r.post_id,
+                    r.post_owner_id,
+                    r.reporter_id,
+                    r.category,
+                    r.details,
+                    r.reference_link,
+                    r.status,
+                    r.created_at,
+                    r.updated_at,
+                    p.content AS post_content,
+                    p.created_at AS post_created_at,
+                    reporter.name AS reporter_name,
+                    reporter.role AS reporter_role,
+                    owner.name AS owner_name,
+                    owner.role AS owner_role
+                FROM post_reports r
+                LEFT JOIN posts p ON p.id = r.post_id
+                LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                LEFT JOIN users owner ON owner.id = r.post_owner_id
+                ORDER BY r.created_at DESC
+            ');
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
     /**
      * Authenticate admin user
      */

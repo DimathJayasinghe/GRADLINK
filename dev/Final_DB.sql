@@ -97,6 +97,25 @@ CREATE TABLE post_likes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE post_reports (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  post_id BIGINT NOT NULL,
+  post_owner_id INT NOT NULL,
+  reporter_id INT NOT NULL,
+  category VARCHAR(120) NOT NULL,
+  details TEXT,
+  reference_link VARCHAR(255),
+  status ENUM('pending','resolved','rejected') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_owner_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_post_reports_post_id (post_id),
+  INDEX idx_post_reports_status (status),
+  INDEX idx_post_reports_reporter_id (reporter_id)
+);
+
 CREATE TABLE messages (
   message_id INT AUTO_INCREMENT PRIMARY KEY,
   sender_id INT,

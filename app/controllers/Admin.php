@@ -67,7 +67,9 @@
         }
 
         public function reports() {
-            $data = [];
+            $data = [
+                'reports' => $this->adminModel->getPostReports(),
+            ];
             $this->view('admin/v_reports', $data);
         }
         public function posts() {

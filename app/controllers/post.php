@@ -89,6 +89,52 @@ class Post extends Controller
         header('Content-Type: application/json');
         echo json_encode($this->m->getComments($pid));
     }
+
+    public function report($pid = null)
+    {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
+            return;
+        }
+
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['status' => 'error', 'message' => 'User not logged in']);
+            return;
+        }
+
+        $input = json_decode(file_get_contents('php://input'), true);
+        $postId = $pid ?? ($input['post_id'] ?? ($_POST['post_id'] ?? null));
+        $category = trim($input['category'] ?? ($_POST['category'] ?? ''));
+        $details = trim($input['details'] ?? ($_POST['details'] ?? ''));
+        $referenceLink = trim($input['link'] ?? ($input['reference_link'] ?? ($_POST['link'] ?? ($_POST['reference_link'] ?? ''))));
+
+        if (!is_numeric($postId) || (int)$postId <= 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid post ID']);
+            return;
+        }
+
+        if ($category === '') {
+            echo json_encode(['status' => 'error', 'message' => 'Report category is required']);
+            return;
+        }
+
+        $reportId = $this->m->reportPost((int)$postId, (int)$_SESSION['user_id'], $category, $details, $referenceLink);
+
+        if ($reportId === false) {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to submit report']);
+            return;
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'message' => 'Post reported successfully',
+            'report_id' => $reportId,
+        ]);
+    }
+
     public function like($pid)
     {
         if (!is_numeric($pid) || (int)$pid <= 0) {
