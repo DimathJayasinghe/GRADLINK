@@ -2,6 +2,7 @@
   "name": "gradlink/app",
   "description": "GRADLINK project",
   "require": {
-    "stripe/stripe-php": "^19.1"
+    "stripe/stripe-php": "^19.1",
+    "phpmailer/phpmailer": "^7.0"
   }
 }

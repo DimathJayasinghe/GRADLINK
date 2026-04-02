@@ -20,5 +20,5 @@
     // Core comes last (it instantiates controllers)
     require_once __DIR__ . '/libraries/Core.php';
 
-
+    require_once __DIR__ . '/../vendor/autoload.php'
 ?>
