@@ -126,6 +126,20 @@ CREATE TABLE messages (
   FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE message_unread_tracker (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  sender_id INT NOT NULL,
+  receiver_id INT NOT NULL,
+  unread_count INT DEFAULT 0,
+  last_message_id INT,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_conversation (sender_id, receiver_id),
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (last_message_id) REFERENCES messages(message_id) ON DELETE SET NULL,
+  INDEX idx_receiver_unread (receiver_id, unread_count)
+);
+
 CREATE TABLE notifications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   receiver_id INT,
@@ -135,6 +149,41 @@ CREATE TABLE notifications (
   is_read TINYINT(1) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE user_notification_settings (
+  user_id INT PRIMARY KEY,
+  email_enabled TINYINT(1) DEFAULT 1,
+  sound_enabled TINYINT(1) DEFAULT 0,
+  mentions_enabled TINYINT(1) DEFAULT 1,
+  followers_enabled TINYINT(1) DEFAULT 1,
+  engagement_enabled TINYINT(1) DEFAULT 1,
+  dnd_enabled TINYINT(1) DEFAULT 0,
+  dnd_start TIME NULL,
+  dnd_end TIME NULL,
+  dnd_days ENUM('weekdays','weekends','everyday') NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE user_blocks (
+  user_id INT NOT NULL,
+  blocked_user_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, blocked_user_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (blocked_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE user_security_settings (
+  user_id INT PRIMARY KEY,
+  is_public TINYINT(1) DEFAULT 1,
+  two_factor_enabled TINYINT(1) DEFAULT 0,
+  two_factor_method ENUM('app','sms') NULL,
+  two_factor_phone VARCHAR(30) NULL,
+  login_alerts_enabled TINYINT(1) DEFAULT 1,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- =========================
@@ -316,6 +365,38 @@ CREATE TABLE online_users (
   current_url VARCHAR(512)
 );
 
+CREATE TABLE support_tickets (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  topic ENUM('account','technical','billing','other') DEFAULT 'technical',
+  message TEXT NOT NULL,
+  status ENUM('open','in_progress','resolved','closed') DEFAULT 'open',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE support_problem_reports (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  report_type ENUM('bug','abuse','policy') DEFAULT 'bug',
+  details TEXT NOT NULL,
+  status ENUM('pending','triaged','resolved','rejected') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE support_feedback (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  feedback_type ENUM('feature','ux','other') DEFAULT 'other',
+  message TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- =========================
 -- FUNDRAISING
 -- =========================
@@ -339,7 +420,7 @@ CREATE TABLE fundraising_requests (
   advisor_id INT,
   status ENUM('Pending','Approved','Rejected','Active','Completed','Cancelled') DEFAULT 'Pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE fundraising_bank_details (
@@ -364,7 +445,8 @@ CREATE TABLE fundraising_donations (
   is_anonymous TINYINT(1) DEFAULT 0,
   status ENUM('Pending','Successful','Failed','Refunded') DEFAULT 'Pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (request_id) REFERENCES fundraising_requests(id)
+  FOREIGN KEY (request_id) REFERENCES fundraising_requests(id) ON DELETE CASCADE,
+  FOREIGN KEY (donor_user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE fundraising_team_members (
@@ -372,6 +454,6 @@ CREATE TABLE fundraising_team_members (
   user_id INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (request_id, user_id),
-  FOREIGN KEY (request_id) REFERENCES fundraising_requests(id),
-  FOREIGN KEY (user_id) REFERENCES users(id)
+  FOREIGN KEY (request_id) REFERENCES fundraising_requests(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
