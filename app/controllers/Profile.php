@@ -184,6 +184,9 @@ class Profile extends Controller{
 
         // Update DB record via model
         if($this->Model->updateProfileBioImage($_SESSION['user_id'], $profile_image, $bio)) {
+            $current = $this->Model->getUserDetails($_SESSION['user_id']);
+            $_SESSION['profile_image'] = $current->profile_image ?? null;
+            // $_SESSION['bio'] = $current->bio ?? null;
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to update profile image and bio']);

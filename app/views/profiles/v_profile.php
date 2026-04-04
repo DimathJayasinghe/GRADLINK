@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardStyles.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/profile_styles.css"> <!-- Import profile specific styles -->
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css"> <!-- Import main feed styles -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD5ONlE1sdAqkM9rlqdpR8BvSHFeIbJEhA&libraries=places"></script>
 
 <?php $styles = ob_get_clean(); ?>
 <?php
@@ -166,7 +167,7 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
     </div>
 
     <!-- Info Section: Certificates, Work Experience and Projects -->
-    <div class="info-section" id="infoSection">
+
         <!-- Work Experience Section -->
         <div class="section-header">
             <div class="section-title">Work Experience</div>
@@ -299,13 +300,13 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
             if (!empty($data['projects'])):
                 foreach ($data['projects'] as $project):
             ?>
-                    <div class="certificate-card project-card" 
-                    data-id="<?= htmlspecialchars($project->id) ?>" 
-                    data-title="<?= htmlspecialchars($project->title) ?>"
-                    data-desc="<?= htmlspecialchars($project->description ?? '') ?>"
-                    data-skills="<?= htmlspecialchars($project->skills_used ?? '') ?>"
-                    data-start_date="<?= htmlspecialchars($project->start_date ?? '') ?>"
-                    data-end_date="<?= htmlspecialchars($project->end_date ?? '') ?>">
+                    <div class="certificate-card project-card"
+                        data-id="<?= htmlspecialchars($project->id) ?>"
+                        data-title="<?= htmlspecialchars($project->title) ?>"
+                        data-desc="<?= htmlspecialchars($project->description ?? '') ?>"
+                        data-skills="<?= htmlspecialchars($project->skills_used ?? '') ?>"
+                        data-start_date="<?= htmlspecialchars($project->start_date ?? '') ?>"
+                        data-end_date="<?= htmlspecialchars($project->end_date ?? '') ?>">
 
                         <div class="project-card-image">
                             <i class="fas fa-project-diagram"></i>
@@ -349,7 +350,7 @@ require_once APPROOT . '/helpers/Csrf.php';
 
 
 
-<!-- Profile Edit Popup (visual only, no backend) -->
+<!-- Profile Edit Popup  -->
 <?php if ($isOwner): ?>
     <div id="editProfilePopup" class="certificate-add-popup" style="display:none;">
         <div class="certificate-add">
@@ -388,6 +389,8 @@ require_once APPROOT . '/helpers/Csrf.php';
     </div>
 <?php endif; ?>
 
+
+
 <!-- Work Experience: Add Popup -->
 <?php if ($isOwner): ?>
     <div id="addWorkPopup" class="certificate-add-popup" style="display:none;">
@@ -421,7 +424,7 @@ require_once APPROOT . '/helpers/Csrf.php';
         <div class="certificate-add">
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Edit Work Experience</div>
-            <form id="editWorkForm" class="certificate-form" action="<?= URLROOT; ?>/profile/updateWorkExperience">
+            <form id="editWorkForm" class="certificate-form" action="<?= URLROOT; ?>/profile/updateWorkExperience" method="POST">
                 <input type="hidden" id="workIdEdit" name="work_id">
                 <div class="form-group">
                     <label for="workPositionEdit">Position</label>
@@ -532,22 +535,22 @@ require_once APPROOT . '/helpers/Csrf.php';
                 <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Project Title</label>
                 <div id="viewProjectTitle" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 40px; display: flex; align-items: center;"></div>
             </div>
-            
+
             <div class="form-group">
                 <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Description</label>
                 <div id="viewProjectDesc" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 80px; line-height: 1.5;"></div>
             </div>
-            
+
             <div class="form-group">
                 <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Skills</label>
                 <div id="viewProjectSkills" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 40px; display: flex; align-items: center;"></div>
             </div>
-            
+
             <div class="form-group">
                 <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">Start Date</label>
                 <div id="viewProjectStartDate" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 40px; display: flex; align-items: center;"></div>
             </div>
-            
+
             <div class="form-group">
                 <label style="font-weight: 600; color: var(--text); margin-bottom: 4px;">End Date</label>
                 <div id="viewProjectEndDate" style="color: var(--text); padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); border-radius: 12px; min-height: 40px; display: flex; align-items: center;"></div>
@@ -962,7 +965,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             }
         });
     })();
-    
+
     // --- New: per-form element references ---
     const addCertificateBtn = document.getElementById('addCertificateBtn'); // existing in page
     const addCertificatePopup = document.getElementById('addCertificatePopup');
@@ -1290,28 +1293,28 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
 
                 const fd = new FormData(this);
                 fetch(this.action, {
-                    method: 'POST',
-                    body: fd,
-                    headers: {
-                        'Accept' : 'application/json'
-                    }
-                })
-                .then(r => r.json())
-                .then(json => {
-                    if (json.success) {
-                        if (pageImg && preview) pageImg.src = preview.src;
-                        if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
-                        window.location.reload();
-                    } else {
-                        alert(json.error || 'Failed to update profile');
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('Error while updating profile');
-                });
-                
-                
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(json => {
+                        if (json.success) {
+                            if (pageImg && preview) pageImg.src = preview.src;
+                            if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
+                            window.location.reload();
+                        } else {
+                            alert(json.error || 'Failed to update profile');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error while updating profile');
+                    });
+
+
                 // close popup
                 const closeBtn = popup.querySelector('.close-popup');
                 if (closeBtn) closeBtn.click();
@@ -1320,7 +1323,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         }
     })();
 
-    
+
     (function() {
         // Work Add
         const addWorkBtn = document.getElementById('addWorkBtn');
@@ -1413,26 +1416,26 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             if (deleteBtn) deleteBtn.addEventListener('click', function() {
                 if (confirm('Are you sure you want to delete this work experience?')) card.remove();
             });
-        
-            
 
-            
 
-                
+
+
+
+
         }
         // bind existing
         document.querySelectorAll('#workContainer .work-card').forEach(bindWorkCardActions);
-        
+
         if (editWorkForm) {
             editWorkForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                
+
                 const id = document.getElementById('workIdEdit').value;
                 const position = document.getElementById('workPositionEdit').value.trim();
                 const company = document.getElementById('workCompanyEdit').value.trim();
                 const period = document.getElementById('workPeriodEdit').value.trim();
 
-                
+
                 const card = document.querySelector(`#workContainer .work-card[data-id="${CSS.escape(id)}"]`);
 
                 const fd = new FormData(this);
@@ -1467,8 +1470,8 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         }
     })();
 
-        // Project Add
-        (function() {
+    // Project Add
+    (function() {
         const addProjectBtn = document.getElementById('addProjectBtn');
         const addProjectPopup = document.getElementById('addProjectPopup');
         const addProjectForm = document.getElementById('addProjectForm');
@@ -1488,23 +1491,29 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 const start_date = document.getElementById('startDateAdd').value;
                 const end_date = document.getElementById('endDateAdd').value;
 
-                console.log('Form data:', { title, description, skills_used, start_date, end_date });
-                
+                console.log('Form data:', {
+                    title,
+                    description,
+                    skills_used,
+                    start_date,
+                    end_date
+                });
 
-                if (!title || !description || !skills_used ) 
+
+                if (!title || !description || !skills_used)
                     return;
 
                 //# Sending data to the backend
                 const fd = new FormData(this);
 
                 fetch(this.action, {
-                    method: 'POST',
-                    body: fd,
-                    headers: {
-                        'Accept' : 'application/json'
-                    }
-                })
-                .then(r => r.json()).then(json => {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json()).then(json => {
                         if (json.success) {
                             window.location.reload();
 
@@ -1516,7 +1525,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                             card.setAttribute('data-title', title);
                             card.setAttribute('data-description', description);
                             card.setAttribute('data-skills', skills_used);
-                            card.setAttribute('data-start-date', start_date);   
+                            card.setAttribute('data-start-date', start_date);
                             card.setAttribute('data-end-date', end_date);
                             card.innerHTML = `
                             <div class="certificate-details">
@@ -1575,7 +1584,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 document.getElementById('viewProjectDesc').textContent = descrption;
                 document.getElementById('viewProjectSkills').textContent = skills;
                 document.getElementById('viewProjectStartDate').textContent = startDate;
-                
+
                 // Show 'Present' if end date is empty
                 const displayEndDate = (!endDate || endDate === '0000-00-00') ? 'Present' : endDate;
                 document.getElementById('viewProjectEndDate').textContent = displayEndDate;
@@ -1603,14 +1612,14 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             if (editBtn) editBtn.addEventListener('click', function() {
                 const id = card.dataset.id || '';
                 document.getElementById('projectIdEdit').value = id;
-                document.getElementById('projectTitleEdit').value = card.dataset.title  || '';
+                document.getElementById('projectTitleEdit').value = card.dataset.title || '';
                 document.getElementById('projectDescEdit').value = card.dataset.desc || '';
                 document.getElementById('projectSkillsEdit').value = card.dataset.skills || '';
                 document.getElementById('startDateEdit').value = card.dataset.start_date || '';
                 document.getElementById('endDateEdit').value = card.dataset.end_date || '';
                 editProjectPopup.style.display = 'flex';
             });
-            
+
         }
         // bind existing
         document.querySelectorAll('#projectsContainer .project-card').forEach(bindProjectCardActions);
@@ -1624,7 +1633,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 const skills = document.getElementById('projectSkillsEdit').value.trim();
                 const startDate = document.getElementById('startDateEdit').value;
                 const endDate = document.getElementById('endDateEdit').value;
-                
+
                 const card = document.querySelector(`#projectsContainer .project-card[data-id="${CSS.escape(id)}"]`);
 
                 const fd = new FormData(this);
@@ -1657,11 +1666,11 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                     card.querySelector('.project-card-start-date').textContent = startDate;
                     card.querySelector('.project-card-end-date').textContent = endDate;
                 }
-        editProjectPopup.style.display = 'none';
-    });
-}
-})();
-    
+                editProjectPopup.style.display = 'none';
+            });
+        }
+    })();
+
 
     // Delegated handler to ensure Project edit popup always opens
     (function() {
@@ -1683,7 +1692,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         });
     })();
 
-    
+
     (function() {
         // Work delete
         const workContainer = document.getElementById('workContainer');
@@ -1691,7 +1700,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         const confirmWorkBtn = document.getElementById('confirmDeleteWorkBtn');
         const cancelWorkBtn = document.getElementById('cancelDeleteWorkBtn');
         let pendingWorkCard = null;
-        
+
         if (workContainer && deleteWorkPopup) {
             workContainer.addEventListener('click', function(e) {
                 const btn = e.target.closest('.work-card .delete-btn');
@@ -1717,7 +1726,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 const id = pendingWorkCard.dataset.id || '';
 
                 try {
-                     
+
                     const url = '<?php echo URLROOT; ?>/profile/deleteWorkExperience?id=' + encodeURIComponent(id);
                     const res = await fetch(url, {
                         method: 'DELETE',
@@ -1747,7 +1756,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                     pendingWorkCard = null;
                     if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
                 }
-                
+
             });
         }
 
@@ -1757,7 +1766,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         const confirmProjectBtn = document.getElementById('confirmDeleteProjectBtn');
         const cancelProjectBtn = document.getElementById('cancelDeleteProjectBtn');
         let pendingProjectCard = null;
-        
+
         if (projectsContainer && deleteProjectPopup) {
             projectsContainer.addEventListener('click', function(e) {
                 const btn = e.target.closest('.project-card .delete-btn');
