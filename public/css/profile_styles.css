@@ -370,6 +370,11 @@
         .certificate-card.edit-mode .certificate-actions {
             display: flex;
         }
+        
+        /* Work card: show edit/delete in edit mode */
+        .work-card.edit-mode .certificate-actions {
+            display: flex;
+        }
 
         /* Project card: show edit/delete in edit mode and hide view button */
         .project-card.edit-mode .certificate-actions {
