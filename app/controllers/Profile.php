@@ -33,6 +33,13 @@ class Profile extends Controller{
         if (!$user_id){
             $user_id = $_SESSION['user_id'];
         }
+        $isBlocked = $this->Model->isBlocked($_SESSION['user_id'], $user_id);
+        if ($isBlocked){
+            header("Location: " . URLROOT . "/profile?userid=" . $_SESSION['user_id']);
+            exit;
+        }
+
+
         // handle other user profile view
         $user = $this->Model->getUser($user_id);
         if ($user == 1) {
@@ -45,6 +52,7 @@ class Profile extends Controller{
             // Ensure boolean for view logic
             $data['public_profile'] = (bool)$isPublic;
             $data['isfollowed'] = $isFollwed;
+            $data['isBlocked'] = $isBlocked;
             
             if ($data['public_profile'] || $_SESSION['user_id'] == $user_id || $isFollwed) {
                 $data['posts'] = $this->Model->getPosts($user_id);
@@ -116,6 +124,32 @@ class Profile extends Controller{
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
             return;
         }
+    }
+
+    public function blockProfile()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+
+            $target_id = intval($_POST['target_id']);
+            $current_user_id = $_SESSION['user_id'];
+
+            if($target_id == $current_user_id) {
+                echo json_encode(['success' => false, 'error' => 'Cannot block yourself']);
+                return;
+            }
+
+            $isBlocked = $this->Model->isBlocked($current_user_id, $target_id);
+
+            if($isBlocked) {
+                $this->Model->unblockUser($current_user_id, $target_id);
+                echo json_encode(['success' => true, 'blocked' => false]);
+            }else{
+                $this->Model->blockUser($current_user_id, $target_id);
+                echo json_encode(['success' => true, 'blocked' => true]);
+            }
+        }   
+
     }
 
     public function updateProfileBioImage()

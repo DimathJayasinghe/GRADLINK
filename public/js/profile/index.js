@@ -125,7 +125,76 @@
                 }
             });
         }
-    });
+
+        const blockBtn = document.getElementById('blockBtn');
+        
+
+
+        if (blockBtn) {
+            blockBtn.addEventListener("click", async function () {
+
+                const targetId = this.getAttribute("data-user-id");
+                if (!targetId) return;
+
+                if (this.disabled) return;
+                this.disabled = true;
+
+                const span = this.querySelector("span");
+                const icon = this.querySelector("i");
+                const originalText = span.textContent;
+
+                span.textContent = "...";
+
+                try {
+                    const res = await fetch(`${window.URLROOT}/profile/blockProfile`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: `target_id=${targetId}`
+                    });
+
+                    const data = await res.json();
+
+                    if (data.success) {
+
+                        if (data.blocked) {
+                            this.setAttribute("data-blocked", "1");
+                            this.classList.add("active");
+
+                            span.textContent = "Unblock";
+                            icon.className = "fas fa-user-slash";
+
+                            alert("User blocked");
+                            window.location.reload();
+
+
+                        } else {
+                            this.setAttribute("data-blocked", "0");
+                            this.classList.remove("active");
+
+                            span.textContent = "Block";
+                            icon.className = "fas fa-ban";
+
+                            alert("User unblocked");
+                        }
+
+                    } else {
+                        alert(data.error || "Failed to update block status");
+                        span.textContent = originalText;
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Network error");
+                    span.textContent = originalText;
+
+                } finally {
+                    this.disabled = false;
+                }
+            });
+        }
+});
 
     // Updated function to set up edit mode only for specific sections
     function setupEditModeForSection(btnId, containerId, cardClass) {

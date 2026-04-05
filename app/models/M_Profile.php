@@ -335,5 +335,28 @@ class M_Profile{
         return $this->db->execute();
     }
 
+    public function blockUser($blocker_id, $blocked_id){
+        $this->db->query('INSERT INTO User_blocks (blocker_id, blocked_id) VALUES (:blocker_id, :blocked_id)');
+        $this->db->bind(':blocker_id', $blocker_id);
+        $this->db->bind(':blocked_id', $blocked_id);
+        return $this->db->execute();
+    }
+
+    public function unblockUser($blocker_id, $blocked_id){
+        $this->db->query('DELETE FROM User_blocks WHERE blocker_id = :blocker_id AND blocked_id = :blocked_id');
+        $this->db->bind(':blocker_id', $blocker_id);    
+        $this->db->bind(':blocked_id', $blocked_id);
+        return $this->db->execute();
+    }
+
+    public function isBlocked($current_user_id, $profile_user_id){
+        $this->db->query('SELECT 1 FROM User_blocks WHERE 
+                        (blocker_id = :current_user_id AND blocked_id = :profile_user_id) 
+                        OR (blocker_id = :profile_user_id AND blocked_id = :current_user_id) 
+                        LIMIT 1');
+        $this->db->bind(':current_user_id', $current_user_id);
+        $this->db->bind(':profile_user_id', $profile_user_id);
+        $result = $this->db->single();
+        return $result ? true : false;
+    }
 }
-?>
