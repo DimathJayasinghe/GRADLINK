@@ -4,7 +4,6 @@
         protected $currentContoller ="Hero"; // Default controller
         protected $currentMethod = "index";
         protected $params = [];
-        private $db = null;
 
         public function __construct() {
             // print_r($this->getUrl());
