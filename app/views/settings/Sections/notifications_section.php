@@ -135,8 +135,15 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function(){
+	const URLROOT = '<?= URLROOT ?>';
 	const dndModal = document.getElementById('dndModal');
 	const openDND = document.getElementById('openDND');
+	const dndForm = document.getElementById('dndForm');
+
+	// Load initial settings from backend
+	loadNotificationSettings();
+
+	// Modal handlers
 	if (openDND) openDND.addEventListener('click', () => openModal(dndModal));
 
 	document.querySelectorAll('.settings-close-modal, .cancel-modal').forEach(el => {
@@ -147,14 +154,179 @@ document.addEventListener('DOMContentLoaded', function(){
 		if (event.target === dndModal) closeModal(dndModal);
 	});
 
-	const dndForm = document.getElementById('dndForm');
-	if (dndForm) dndForm.addEventListener('submit', function(e){
-		e.preventDefault();
-		alert('Quiet hours saved. Demo only.');
-		closeModal(dndModal);
+	// Auto-save handlers for all toggle checkboxes
+	const toggleCheckboxes = [
+		'emailNotif',
+		'soundNotif',
+		'catMentions',
+		'catFollowers',
+		'catEngagement'
+	];
+
+	toggleCheckboxes.forEach(checkboxId => {
+		const checkbox = document.getElementById(checkboxId);
+		if (checkbox) {
+			checkbox.addEventListener('change', handleToggleChange);
+		}
 	});
 
-	function openModal(modal){ if (modal) modal.style.display = 'block'; }
-	function closeModal(modal){ if (modal) modal.style.display = 'none'; }
+	// DND form submission
+	if (dndForm) {
+		dndForm.addEventListener('submit', handleDNDFormSubmit);
+	}
+
+	// Load settings from backend
+	async function loadNotificationSettings() {
+		try {
+			const response = await fetch(`${URLROOT}/settings/getNotificationSettings`);
+			const data = await response.json();
+
+			if (data.success && data.settings) {
+				const settings = data.settings;
+
+				// Set delivery channel toggles
+				safeSetCheckbox('emailNotif', settings.email_enabled);
+				safeSetCheckbox('soundNotif', settings.sound_enabled);
+
+				// Set category toggles
+				safeSetCheckbox('catMentions', settings.mentions_enabled);
+				safeSetCheckbox('catFollowers', settings.followers_enabled);
+				safeSetCheckbox('catEngagement', settings.engagement_enabled);
+
+				// Set DND fields
+				if (settings.dnd_start) document.getElementById('dndStart').value = settings.dnd_start;
+				if (settings.dnd_end) document.getElementById('dndEnd').value = settings.dnd_end;
+				if (settings.dnd_days) document.getElementById('dndDays').value = settings.dnd_days;
+			}
+		} catch (error) {
+			console.error('Failed to load notification settings:', error);
+		}
+	}
+
+	// Handle toggle checkbox changes
+	async function handleToggleChange(e) {
+		const checkbox = e.target;
+		const settings = {
+			email_enabled: document.getElementById('emailNotif')?.checked ? 1 : 0,
+			sound_enabled: document.getElementById('soundNotif')?.checked ? 1 : 0,
+			mentions_enabled: document.getElementById('catMentions')?.checked ? 1 : 0,
+			followers_enabled: document.getElementById('catFollowers')?.checked ? 1 : 0,
+			engagement_enabled: document.getElementById('catEngagement')?.checked ? 1 : 0,
+			dnd_enabled: 0,
+			dnd_start: null,
+			dnd_end: null,
+			dnd_days: null
+		};
+
+		try {
+			const response = await fetch(`${URLROOT}/settings/updateNotificationSettings`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(settings)
+			});
+
+			const data = await response.json();
+
+			if (data.success) {
+				showNotification('Settings saved', 'success');
+			} else {
+				showNotification(data.error || 'Failed to save settings', 'error');
+				checkbox.checked = !checkbox.checked;
+			}
+		} catch (error) {
+			showNotification('Error saving settings', 'error');
+			checkbox.checked = !checkbox.checked;
+		}
+	}
+
+	// Handle DND form submission
+	async function handleDNDFormSubmit(e) {
+		e.preventDefault();
+
+		const dndStart = document.getElementById('dndStart').value;
+		const dndEnd = document.getElementById('dndEnd').value;
+		const dndDays = document.getElementById('dndDays').value;
+
+		if (!dndStart || !dndEnd) {
+			showNotification('Please fill in all DND fields', 'error');
+			return;
+		}
+
+		const settings = {
+			email_enabled: document.getElementById('emailNotif')?.checked ? 1 : 0,
+			sound_enabled: document.getElementById('soundNotif')?.checked ? 1 : 0,
+			mentions_enabled: document.getElementById('catMentions')?.checked ? 1 : 0,
+			followers_enabled: document.getElementById('catFollowers')?.checked ? 1 : 0,
+			engagement_enabled: document.getElementById('catEngagement')?.checked ? 1 : 0,
+			dnd_enabled: 1,
+			dnd_start: dndStart,
+			dnd_end: dndEnd,
+			dnd_days: dndDays
+		};
+
+		try {
+			const response = await fetch(`${URLROOT}/settings/updateNotificationSettings`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(settings)
+			});
+
+			const data = await response.json();
+
+			if (data.success) {
+				showNotification('Quiet hours saved successfully', 'success');
+				closeModal(dndModal);
+			} else {
+				showNotification(data.error || 'Failed to save quiet hours', 'error');
+			}
+		} catch (error) {
+			showNotification('Error saving quiet hours', 'error');
+		}
+	}
+
+	// Helper: safely set checkbox state
+	function safeSetCheckbox(id, value) {
+		const checkbox = document.getElementById(id);
+		if (checkbox) {
+			// DB/API may return 0/1 as strings; treat only 1/true as enabled
+			checkbox.checked = (value === 1 || value === '1' || value === true);
+		}
+	}
+
+	// Helper: open modal
+	function openModal(modal) {
+		if (modal) modal.style.display = 'block';
+	}
+
+	// Helper: close modal
+	function closeModal(modal) {
+		if (modal) modal.style.display = 'none';
+	}
+
+	// Helper: show notification
+	function showNotification(message, type) {
+		const notification = document.createElement('div');
+		notification.className = `notification notification-${type}`;
+		notification.textContent = message;
+		notification.style.cssText = `
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			padding: 15px 20px;
+			background: ${type === 'success' ? '#4caf50' : '#f44336'};
+			color: white;
+			border-radius: 5px;
+			z-index: 10000;
+			box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+		`;
+
+		document.body.appendChild(notification);
+
+		setTimeout(() => {
+			notification.style.transition = 'opacity 0.3s';
+			notification.style.opacity = '0';
+			setTimeout(() => notification.remove(), 300);
+		}, 3000);
+	}
 });
 </script>

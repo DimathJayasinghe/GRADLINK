@@ -11,7 +11,7 @@
 
         public function __construct() {
             // Set DSN (include port and charset if defined)
-            $port = defined('DB_PORT') ? DB_PORT : 3306;
+            $port = defined('DB_PORT') ? DB_PORT : 3308;
             $charset = defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4';
             $dsn = 'mysql:host=' . $this->host . ';port=' . $port . ';dbname=' . $this->dbname . ';charset=' . $charset;
 

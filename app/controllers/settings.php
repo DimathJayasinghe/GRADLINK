@@ -267,9 +267,15 @@ class settings extends Controller{
     }
 
     /**
-     * API: Delete user account permanently
+     * API: Schedule account lifecycle action
      * POST /settings/deleteAccount
-     * Body: {"password": "password", "confirmation": "DELETE"}
+     * Body: {
+     *   "password": "password",
+     *   "confirmation": "CONFIRM",
+     *   "action_type": "deactivate_only|deactivate_and_delete",
+     *   "deletion_reason": "...",
+     *   "other_deletion_reason": "..."
+     * }
      */
     public function deleteAccount() {
         if (!$this->ensurePostMethod()) {
@@ -287,7 +293,10 @@ class settings extends Controller{
             
             $userId = $_SESSION['user_id'];
             $password = $input['password'] ?? '';
-            $confirmation = trim($input['confirmation'] ?? '');
+            $confirmation = strtoupper(trim($input['confirmation'] ?? ''));
+            $actionType = trim($input['action_type'] ?? '');
+            $deletionReason = trim($input['deletion_reason'] ?? '');
+            $otherDeletionReason = trim($input['other_deletion_reason'] ?? '');
             
             // Validate inputs
             if (empty($password)) {
@@ -295,8 +304,13 @@ class settings extends Controller{
                 return;
             }
             
-            if ($confirmation !== 'DELETE') {
-                $this->jsonResponse(['success' => false, 'error' => 'Please type DELETE to confirm'], 422);
+            if (!in_array($actionType, [M_settings::ACTION_DEACTIVATE_ONLY, M_settings::ACTION_DEACTIVATE_AND_DELETE], true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Please select an account action'], 422);
+                return;
+            }
+
+            if ($confirmation !== 'CONFIRM') {
+                $this->jsonResponse(['success' => false, 'error' => 'Please type CONFIRM to proceed'], 422);
                 return;
             }
             
@@ -323,16 +337,31 @@ class settings extends Controller{
                 return;
             }
             
-            // Delete account
-            $result = $this->model->deleteAccount($userId);
+            // Schedule lifecycle action and immediately log out.
+            $result = $this->model->scheduleAccountLifecycleAction(
+                $userId,
+                $actionType,
+                $deletionReason,
+                $otherDeletionReason
+            );
             
             if ($result) {
                 // Destroy session and logout
                 SessionManager::destroySession();
-                
-                $this->jsonResponse(['success' => true, 'message' => 'Account deleted successfully']);
+
+                $days = 30;
+                $actionMessage = $actionType === M_settings::ACTION_DEACTIVATE_ONLY
+                    ? 'Account deactivated for 30 days. Log in again to reactivate your account.'
+                    : 'Account deactivated for 30 days. If you do not log in within this period, your account will be permanently deleted.';
+
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => $actionMessage,
+                    'action_type' => $actionType,
+                    'deactivated_days' => $days
+                ]);
             } else {
-                $this->jsonResponse(['success' => false, 'error' => 'Failed to delete account'], 500);
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to schedule account action'], 500);
             }
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
@@ -382,6 +411,14 @@ class settings extends Controller{
                     'dnd_end' => null,
                     'dnd_days' => null
                 ];
+            } else {
+                // Ensure consistent scalar types for the frontend (PDO may return strings)
+                $settings->email_enabled = (int)($settings->email_enabled ?? 0);
+                $settings->sound_enabled = (int)($settings->sound_enabled ?? 0);
+                $settings->mentions_enabled = (int)($settings->mentions_enabled ?? 1);
+                $settings->followers_enabled = (int)($settings->followers_enabled ?? 1);
+                $settings->engagement_enabled = (int)($settings->engagement_enabled ?? 1);
+                $settings->dnd_enabled = (int)($settings->dnd_enabled ?? 0);
             }
 
             $this->jsonResponse(['success' => true, 'settings' => $settings]);

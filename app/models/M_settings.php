@@ -1,5 +1,8 @@
 <?php
 class M_settings extends Database {
+
+    const ACTION_DEACTIVATE_ONLY = 'deactivate_only';
+    const ACTION_DEACTIVATE_AND_DELETE = 'deactivate_and_delete';
     
     /**
      * Get user by ID
@@ -322,6 +325,130 @@ class M_settings extends Database {
         $this->bind(':table_name', $tableName);
 
         return $this->single() !== false;
+    }
+
+    /**
+     * Get pending lifecycle action for a user.
+     */
+    public function getPendingLifecycleAction($userId) {
+        $sql = "SELECT * FROM account_lifecycle_actions
+                WHERE user_id = :user_id AND status = 'pending'
+                ORDER BY id DESC
+                LIMIT 1";
+
+        $this->query($sql);
+        $this->bind(':user_id', $userId);
+
+        return $this->single();
+    }
+
+    /**
+     * Schedule account deactivation/deletion lifecycle action.
+     */
+    public function scheduleAccountLifecycleAction($userId, $actionType, $reason = null, $otherReason = null) {
+        if (!in_array($actionType, [self::ACTION_DEACTIVATE_ONLY, self::ACTION_DEACTIVATE_AND_DELETE], true)) {
+            return false;
+        }
+
+        $deactivatedAt = new DateTime('now');
+
+        if ($actionType === self::ACTION_DEACTIVATE_ONLY) {
+            $reactivateAt = (clone $deactivatedAt)->modify('+30 days');
+            $deleteAt = null;
+        } else {
+            $reactivateAt = (clone $deactivatedAt)->modify('+30 days');
+            $deleteAt = clone $reactivateAt;
+        }
+
+        $sql = "INSERT INTO account_lifecycle_actions (
+                    user_id,
+                    action_type,
+                    status,
+                    reason,
+                    other_reason,
+                    deactivated_at,
+                    reactivate_at,
+                    delete_at,
+                    processed_at,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    :user_id,
+                    :action_type,
+                    'pending',
+                    :reason,
+                    :other_reason,
+                    :deactivated_at,
+                    :reactivate_at,
+                    :delete_at,
+                    NULL,
+                    NOW(),
+                    NOW()
+                )
+                ON DUPLICATE KEY UPDATE
+                    action_type = VALUES(action_type),
+                    status = 'pending',
+                    reason = VALUES(reason),
+                    other_reason = VALUES(other_reason),
+                    deactivated_at = VALUES(deactivated_at),
+                    reactivate_at = VALUES(reactivate_at),
+                    delete_at = VALUES(delete_at),
+                    processed_at = NULL,
+                    updated_at = NOW()";
+
+        $this->query($sql);
+        $this->bind(':user_id', $userId);
+        $this->bind(':action_type', $actionType);
+        $this->bind(':reason', $reason);
+        $this->bind(':other_reason', $otherReason);
+        $this->bind(':deactivated_at', $deactivatedAt->format('Y-m-d H:i:s'));
+        $this->bind(':reactivate_at', $reactivateAt->format('Y-m-d H:i:s'));
+        $this->bind(':delete_at', $deleteAt ? $deleteAt->format('Y-m-d H:i:s') : null);
+
+        return $this->execute();
+    }
+
+    /**
+     * Resolve pending lifecycle action during login.
+     *
+     * - deactivate_only: user login reactivates account.
+     * - deactivate_and_delete: if delete window passed, delete account; otherwise login reactivates account.
+     */
+    public function handleLifecycleOnLogin($userId) {
+        $action = $this->getPendingLifecycleAction($userId);
+        if (!$action) {
+            return ['status' => 'none'];
+        }
+
+        $nowTs = time();
+        $deleteAtTs = !empty($action->delete_at) ? strtotime($action->delete_at) : null;
+
+        if (
+            $action->action_type === self::ACTION_DEACTIVATE_AND_DELETE &&
+            $deleteAtTs !== null &&
+            $nowTs >= $deleteAtTs
+        ) {
+            $deleted = $this->deleteAccount($userId);
+            if (!$deleted) {
+                return ['status' => 'error'];
+            }
+
+            $this->query("UPDATE account_lifecycle_actions
+                          SET status = 'deleted', processed_at = NOW(), updated_at = NOW()
+                          WHERE user_id = :user_id");
+            $this->bind(':user_id', $userId);
+            $this->execute();
+
+            return ['status' => 'deleted'];
+        }
+
+        $this->query("UPDATE account_lifecycle_actions
+                      SET status = 'reactivated', processed_at = NOW(), updated_at = NOW()
+                      WHERE user_id = :user_id AND status = 'pending'");
+        $this->bind(':user_id', $userId);
+        $this->execute();
+
+        return ['status' => 'reactivated', 'action_type' => $action->action_type];
     }
     
     /**
