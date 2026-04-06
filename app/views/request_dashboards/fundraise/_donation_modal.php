@@ -216,6 +216,9 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
         }
     </style>
 
+    <!-- Load Stripe.js -->
+    <script src="https://js.stripe.com/v3/"></script>
+
     <div id="glDonationOverlay" class="gl-donate-overlay" role="dialog" aria-modal="true" aria-labelledby="glDonationTitle">
         <div class="gl-donate-modal" onclick="event.stopPropagation()">
             <div class="gl-donate-header">
@@ -272,16 +275,14 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
 
                                 <div class="full">
                                     <label class="gl-label">Payment method</label>
-                                    <div class="gl-chips" id="glPayMethods">
-                                        <button type="button" class="gl-chip active" data-method="card">Card</button>
-                                        <button type="button" class="gl-chip" data-method="bank">Bank Transfer</button>
-                                    </div>
-                                    <div class="gl-helper">Payment is simulated for now — no real charges.</div>
+                                    <!-- Stripe card element will be inserted here -->
+                                    <div id="card-element" style="padding: 0.7rem 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 0.55rem;"></div>
+                                    <div id="card-errors" role="alert" style="color: var(--danger); margin-top: 0.5rem; font-size: 0.85rem;"></div>
                                 </div>
                             </div>
 
                             <div class="gl-actions">
-                                <button class="gl-btn-primary" type="submit">Donate now</button>
+                                <button class="gl-btn-primary" type="submit" id="glSubmitBtn">Donate now</button>
                                 <button class="gl-btn-ghost" type="button" onclick="GL_closeDonationModal()">Cancel</button>
                             </div>
                         </form>
@@ -311,16 +312,59 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
                     </aside>
                 </div>
             </div>
-        </div>
+       </div>
     </div>
 
     <script>
-        // Donation modal controller (scoped globals)
+        // Donation modal controller with Stripe integration
         const GL_overlay = document.getElementById('glDonationOverlay');
         const GL_amountEl = document.getElementById('glAmount');
         const GL_youPayEl = document.getElementById('glYouPay');
         const GL_tiers = document.querySelectorAll('#glTiers .gl-chip');
-        const GL_methods = document.querySelectorAll('#glPayMethods .gl-chip');
+        const GL_submitBtn = document.getElementById('glSubmitBtn');
+        const GL_form = document.getElementById('glDonationForm');
+
+        // Initialize Stripe
+        let GL_stripe, GL_elements, GL_cardElement;
+        
+        // Get Stripe publishable key from backend
+        fetch('<?php echo URLROOT; ?>/fundraiser/getStripeKey')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.publishable_key) {
+                    GL_stripe = Stripe(data.publishable_key);
+                    GL_elements = GL_stripe.elements();
+                    
+                    // Create card element
+                    GL_cardElement = GL_elements.create('card', {
+                        style: {
+                            base: {
+                                fontSize: '16px',
+                                color: '#fff',
+                                '::placeholder': {
+                                    color: '#aab7c4',
+                                },
+                            },
+                            invalid: {
+                                color: '#dc3545',
+                            },
+                        },
+                    });
+                    
+                    GL_cardElement.mount('#card-element');
+                    
+                    // Handle card validation errors
+                    GL_cardElement.on('change', function(event) {
+                        const displayError = document.getElementById('card-errors');
+                        if (event.error) {
+                            displayError.textContent = event.error.message;
+                        } else {
+                            displayError.textContent = '';
+                        }
+                    });
+                }
+            })
+            .catch(err => console.error('Failed to load Stripe:', err));
 
         function GL_formatLKR(v) {
             const n = Number(v || 0);
@@ -333,6 +377,7 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
         function GL_updateYouPay() {
             if (GL_youPayEl && GL_amountEl) GL_youPayEl.textContent = GL_formatLKR(GL_amountEl.value || 0);
         }
+        
         GL_tiers.forEach(btn => {
             btn.addEventListener('click', () => {
                 GL_tiers.forEach(b => b.classList.remove('active'));
@@ -341,12 +386,7 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
                 GL_updateYouPay();
             });
         });
-        GL_methods.forEach(btn => {
-            btn.addEventListener('click', () => {
-                GL_methods.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            });
-        });
+        
         if (GL_amountEl) {
             GL_amountEl.addEventListener('input', GL_updateYouPay);
             GL_updateYouPay();
@@ -367,19 +407,123 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
             document.body.style.overflow = '';
         }
 
-        function GL_handleDonate(e) {
+        async function GL_handleDonate(e) {
             e.preventDefault();
+            
+            if (!GL_stripe || !GL_cardElement) {
+                alert('Payment system is not ready. Please refresh and try again.');
+                return false;
+            }
+            
             const amount = Number(GL_amountEl && GL_amountEl.value);
             if (!amount || amount < 100) {
                 GL_amountEl && (GL_amountEl.style.borderColor = '#dc3545', GL_amountEl.focus());
                 return false;
             }
-            alert('Thank you for your donation of ' + GL_formatLKR(amount) + '! (Simulation)');
-            <?php if (isset($campaign) && $campaign): ?>
-                window.location.href = '<?php echo URLROOT; ?>/fundraiser/show/<?php echo (int)$campaign->req_id; ?>';
-            <?php else: ?>
-                window.location.href = '<?php echo URLROOT; ?>/fundraiser';
-            <?php endif; ?>
+            
+            // Disable submit button
+            GL_submitBtn.disabled = true;
+            GL_submitBtn.textContent = 'Processing...';
+            
+            try {
+                // Get form data
+                const formData = new FormData(GL_form);
+                const firstName = formData.get('first_name');
+                const lastName = formData.get('last_name');
+                const email = formData.get('email');
+                const message = formData.get('message');
+                const isAnonymous = formData.get('visibility') === 'anonymous';
+                let fundraiserId = null;
+                <?php if (isset($campaign) && $campaign): ?>
+                fundraiserId = <?php echo (int)$campaign->req_id; ?>;
+                <?php endif; ?>
+                
+                if (!fundraiserId) {
+                    alert('Campaign information is missing');
+                    GL_submitBtn.disabled = false;
+                    GL_submitBtn.textContent = 'Donate now';
+                    return false;
+                }
+                
+                // Check if donation exceeds remaining amount
+                <?php if (isset($campaign) && $campaign): ?>
+                const targetAmount = <?php echo $campaign->target_amount; ?>;
+                const raisedAmount = <?php echo $campaign->raised_amount; ?>;
+                const remainingAmount = targetAmount - raisedAmount;
+                
+                if (remainingAmount <= 0) {
+                    alert('🎉 This campaign has already reached its target! No more donations needed.');
+                    GL_submitBtn.disabled = false;
+                    GL_submitBtn.textContent = 'Donate now';
+                    return false;
+                }
+                
+                if (amount > remainingAmount) {
+                    const formattedRemaining = 'Rs. ' + remainingAmount.toLocaleString('en-LK', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    alert(`⚠️ Your donation amount (${GL_formatLKR(amount)}) exceeds the remaining needed amount (${formattedRemaining}).\n\nPlease donate ${formattedRemaining} or less.`);
+                    GL_submitBtn.disabled = false;
+                    GL_submitBtn.textContent = 'Donate now';
+                    return false;
+                }
+                <?php endif; ?>
+                
+                // Create payment intent
+                const intentResponse = await fetch('<?php echo URLROOT; ?>/fundraiser/createPaymentIntent', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        amount: amount,
+                        fundraiser_id: fundraiserId,
+                        donor_name: `${firstName} ${lastName}`,
+                        donor_email: email,
+                        message: message,
+                        is_anonymous: isAnonymous
+                    })
+                });
+                
+                const intentData = await intentResponse.json();
+                
+                if (!intentData.success) {
+                    throw new Error(intentData.error || 'Failed to create payment intent');
+                }
+                
+                // Confirm payment with card
+                const {error, paymentIntent} = await GL_stripe.confirmCardPayment(intentData.client_secret, {
+                    payment_method: {
+                        card: GL_cardElement,
+                        billing_details: {
+                            name: `${firstName} ${lastName}`,
+                            email: email
+                        }
+                    }
+                });
+                
+                if (error) {
+                    throw new Error(error.message);
+                }
+                
+                if (paymentIntent.status === 'succeeded') {
+                    // Process donation on backend
+                    await fetch('<?php echo URLROOT; ?>/fundraiser/processDonation', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ payment_intent_id: paymentIntent.id })
+                    });
+                    
+                    alert('Thank you for your donation of ' + GL_formatLKR(amount) + '!');
+                    window.location.reload();
+                }
+                
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Payment failed: ' + error.message);
+                GL_submitBtn.disabled = false;
+                GL_submitBtn.textContent = 'Donate now';
+            }
+            
             return false;
         }
 

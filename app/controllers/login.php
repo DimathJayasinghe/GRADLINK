@@ -1,9 +1,11 @@
 <?php
 class login extends Controller{
     protected $loginModel = null;
+    protected $settingsModel = null;
     public function __construct(){
         SessionManager::redirectIfLoggedIn("/mainfeed");
         $this->loginModel = $this->Model('M_login');
+        $this->settingsModel = $this->Model('M_settings');
         SessionManager::ensureStarted();
     }
 
@@ -56,8 +58,26 @@ class login extends Controller{
             $user = $this->loginModel->loginAlumni($data['email'],$data['password']);
 
             if($user){
+                $lifecycleResult = $this->settingsModel->handleLifecycleOnLogin($user->id);
+                if (($lifecycleResult['status'] ?? '') === 'deleted') {
+                    $data['errors'][] = 'Your account was deleted because the 30-day deactivation period expired.';
+                    $this->view('auth/login/v_login_alumni', $data);
+                    return;
+                }
+
+                if (($lifecycleResult['status'] ?? '') === 'error') {
+                    $data['errors'][] = 'Unable to process account status. Please try again.';
+                    $this->view('auth/login/v_login_alumni', $data);
+                    return;
+                }
+
                 // Create session and redirect to main feed
                 SessionManager::createUserSession($user);
+
+                if (($lifecycleResult['status'] ?? '') === 'reactivated') {
+                    SessionManager::setFlash('success', 'Your account has been reactivated successfully.');
+                }
+
                 SessionManager::setFlash('success', 'Welcome back, ' . ($user->name ?? 'Alumni') . '!');
                 SessionManager::redirectIfLoggedIn("/mainfeed");
             }else{
@@ -94,8 +114,26 @@ class login extends Controller{
             $user = $this->loginModel->loginUndergrad($data['email'], $data['password']);
 
             if($user){
+                $lifecycleResult = $this->settingsModel->handleLifecycleOnLogin($user->id);
+                if (($lifecycleResult['status'] ?? '') === 'deleted') {
+                    $data['errors'][] = 'Your account was deleted because the 30-day deactivation period expired.';
+                    $this->view('auth/login/v_login_undergrad', $data);
+                    return;
+                }
+
+                if (($lifecycleResult['status'] ?? '') === 'error') {
+                    $data['errors'][] = 'Unable to process account status. Please try again.';
+                    $this->view('auth/login/v_login_undergrad', $data);
+                    return;
+                }
+
                 // Create session and redirect to main feed
                 SessionManager::createUserSession($user);
+
+                if (($lifecycleResult['status'] ?? '') === 'reactivated') {
+                    SessionManager::setFlash('success', 'Your account has been reactivated successfully.');
+                }
+
                 SessionManager::setFlash('success', 'Welcome back, ' . ($user->name ?? 'Student') . '!');
                 SessionManager::redirectIfLoggedIn("/mainfeed");
             }else{

@@ -242,6 +242,61 @@
 }
 .form-group textarea { resize: vertical; min-height: 80px; }
 
+.account-action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.account-action-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    background: var(--input);
+    line-height: 1.4;
+}
+
+.account-action-option input {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    margin: 0;
+    flex: 0 0 18px;
+    display: grid;
+    place-content: center;
+}
+
+.account-action-option input::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    transform: scale(0);
+    transition: transform 0.12s ease-in-out;
+    background: var(--accent);
+    border-radius: 2px;
+}
+
+.account-action-option input:checked {
+    border-color: var(--accent);
+}
+
+.account-action-option input:checked::before {
+    transform: scale(1);
+}
+
+.account-action-option span {
+    flex: 1;
+}
+
 /* Avoid horizontal scroll in modals due to child widths */
 .settings-modal-body {
     overflow-x: hidden;

@@ -3,6 +3,10 @@ class M_message extends Database {
     
     /**
      * Get all available users (excluding current user) with optional search
+     * Shows users that:
+     * 1. Current user follows them, OR
+     * 2. They follow current user AND have sent at least one message, OR
+     * 3. Admin role AND there's a message history
      */
     public function getAvailableUsers($currentUserId, $searchTerm = null) {
         $sql = "SELECT 
@@ -10,10 +14,19 @@ class M_message extends Database {
                     u.name,
                     u.display_name,
                     u.email,
-                    u.profile_image as profile_picture
+                    u.profile_image as profile_picture,
+                    COALESCE(MAX(m.message_time), '1970-01-01') as last_activity
                 FROM users u
+                LEFT JOIN followers f_following ON f_following.followed_id = u.id AND f_following.follower_id = :current_user_id
+                LEFT JOIN followers f_follower ON f_follower.follower_id = u.id AND f_follower.followed_id = :current_user_id
+                LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
+                LEFT JOIN messages m_from_them ON m_from_them.sender_id = u.id AND m_from_them.receiver_id = :current_user_id              
                 WHERE u.id != :current_user_id
-                    AND u.role <> 'admin'";
+                    AND (
+                        f_following.follower_id IS NOT NULL 
+                        OR (f_follower.follower_id IS NOT NULL AND m_from_them.message_id IS NOT NULL)
+                        OR (u.role = 'admin' AND m.message_id IS NOT NULL)
+                    )";
         
         // Add search filter if provided
         if ($searchTerm) {
@@ -22,7 +35,8 @@ class M_message extends Database {
                       OR u.email LIKE :search)";
         }
         
-        $sql .= " ORDER BY u.name ASC";
+        $sql .= " GROUP BY u.id, u.name, u.display_name, u.email, u.profile_image
+                  ORDER BY last_activity DESC, u.name ASC";
         
         $this->query($sql);
         $this->bind(':current_user_id', $currentUserId);
@@ -92,7 +106,10 @@ class M_message extends Database {
         $this->bind(':receiver_id', $receiverId);
         $this->bind(':message_text', $messageText);
         
-        return $this->execute();
+        if ($this->execute()) {
+            return $this->lastInsertId();
+        }
+        return false;
     }
     
     /**
@@ -142,5 +159,9 @@ class M_message extends Database {
 
         return $this->execute();
     }
+
+
+
+
 }
 ?>

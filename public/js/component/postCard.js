@@ -790,12 +790,31 @@ class PostCard extends HTMLElement {
       }
       const details = overlay.querySelector(`#reportDetails-${postId}`)?.value || '';
       const link = overlay.querySelector(`#reportLink-${postId}`)?.value || '';
-      // Emit an event; backend integration can be added later
-      const ev = new CustomEvent('post:report', { bubbles: true, detail: { postId, category: cat.value, details, link } });
-      this.dispatchEvent(ev);
-      overlay.style.display = 'none';
-      // Optional: optimistic toast
-      // alert('Thanks for your report');
+      try {
+        const response = await fetch(`${window.URLROOT}/post/report`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({
+            post_id: postId,
+            category: cat.value,
+            details,
+            link,
+          }),
+        });
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result || result.status !== 'success') {
+          alert((result && result.message) ? result.message : 'Failed to submit report');
+          return;
+        }
+        overlay.style.display = 'none';
+        alert('Thanks for your report');
+      } catch (error) {
+        console.error('Report submit error:', error);
+        alert('Network error while submitting report');
+      }
     });
     overlay.style.display = 'flex';
   }

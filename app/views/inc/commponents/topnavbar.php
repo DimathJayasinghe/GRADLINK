@@ -1,6 +1,7 @@
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/topnavbar_styles.css">
 <div class="topnav">
-    <a href="<?php echo URLROOT; ?>/mainfeed" class="logo">
+    
+    <a href="<?php if (SessionManager::hasRole('admin')) echo URLROOT."/admin"; else echo URLROOT."/mainfeed"; ?>" class="logo">
         <img src="<?php echo URLROOT ?>/img/logo_white.png" alt="GradLink Logo">
         <span>GRADLINK</span>
     </a>

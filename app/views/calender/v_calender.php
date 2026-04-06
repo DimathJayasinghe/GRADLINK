@@ -288,7 +288,7 @@ ob_start(); ?>
     background: rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-md);
     padding: 1rem;
-}
+    }
 
     .selected-date {
         margin: 0 0 12px;
@@ -656,7 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button style="padding: 9px; color:white;" class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}">
                             ${event.bookmarked ? 'Remove Bookmark' : 'Add to Bookmarks'}
                         </button>
-                        <button class="btn btn-rsvp" style="background-color: #455663;padding:9px;" data-event-id="${event.id}">RSVP <span class="rsvp-count" data-event-id="${event.id}"></span></button>
+                        <button class="btn btn-rsvp" style="background-color: #455663;padding:9px;" data-event-id="${event.id}">RSVP (<span class="rsvp-count" data-event-id="${event.id}"></span>)</button>
                         <a style="padding: 9px;" class="btn btn-view" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" value=${event.id}>View Details</a>
                     </div>
                     `;
@@ -664,6 +664,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // then attach to DOM
                 eventItem.innerHTML = html;                
                 eventsList.appendChild(eventItem);
+                // refresh the attendee count display for this event (includes guests)
+                try{ refreshAttendeeCountForEvent(event.id); }catch(e){console.error('refresh count failed',e);} 
             });
         } else {
             // No events for this date
@@ -763,7 +765,9 @@ function refreshAttendeeCountForEvent(eventId){
         .then(r=>r.json()).then(data=>{
             if(data && data.ok){
                 const countEls = document.querySelectorAll('.rsvp-count[data-event-id="'+eventId+'"]');
-                countEls.forEach(el=> el.textContent = data.attendees.length);
+                // prefer attendees_count computed by server (includes guests), fallback to attendees length
+                const cnt = (typeof data.attendees_count !== 'undefined') ? data.attendees_count : (data.attendees? data.attendees.length : 0);
+                countEls.forEach(el=> el.textContent = cnt);
                 // If on details page, update attendees list too (in that view we'll fetch attendees separately)
             }
         }).catch(err=>console.error('Could not refresh attendees',err));

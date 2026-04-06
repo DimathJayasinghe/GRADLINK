@@ -342,7 +342,8 @@ document.addEventListener('DOMContentLoaded', function(){
                     var html = '<h3 style="margin-top:0;">Attendees</h3><ul style="list-style:none;padding:0;margin:0;">';
                     data.attendees.forEach(function(a){
                         var name = a.name || a.email || 'User';
-                        html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+name+'</strong>' + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>';
+                        var batch = a.batch_no ? (' • Batch ' + a.batch_no) : '';
+                        html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+name+'</strong>' + batch + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>';
                     });
                     html += '</ul>';
                     container.innerHTML = html;
@@ -353,6 +354,13 @@ document.addEventListener('DOMContentLoaded', function(){
                     var me = data.attendees.find(function(a){ return Number(a.user_id) === Number(uid); });
                     if(me){ detailCancel.style.display = 'inline-flex'; } else { detailCancel.style.display = 'none'; }
                 }).catch(()=>{});
+                // update detail RSVP button label to include count (if present)
+                var detailBtn = document.getElementById('detail-rsvp-btn');
+                if(detailBtn){
+                    var cnt = (typeof data.attendees_count !== 'undefined') ? data.attendees_count : (data.attendees? data.attendees.length : 0);
+                    var span = detailBtn.querySelector('span.btn');
+                    if(span) span.textContent = 'RSVP' + (cnt?(' ( '+cnt+' )') : '');
+                }
             }
         }).catch(err=>console.error('attendees fetch failed',err));
     };
@@ -376,10 +384,10 @@ document.addEventListener('DOMContentLoaded', function(){
             // render initial attendees into the list container
             var container = document.querySelector('.event-info + .event-info');
             if(container){
-                if(data.attendees.length === 0){ container.innerHTML = '<p class="no-events">No attendees yet.</p>'; }
+                if(!data.attendees || data.attendees.length === 0){ container.innerHTML = '<p class="no-events">No attendees yet.</p>'; }
                 else {
                     var html = '<h3 style="margin-top:0;">Attendees</h3><ul style="list-style:none;padding:0;margin:0;">';
-                    data.attendees.forEach(function(a){ html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+ (a.name||a.email||'User') +'</strong>' + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>'; });
+                    data.attendees.forEach(function(a){ var batch = a.batch_no ? (' • Batch ' + a.batch_no) : ''; html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+ (a.name||a.email||'User') +'</strong>' + batch + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>'; });
                     html += '</ul>';
                     container.innerHTML = html;
                 }
@@ -390,6 +398,13 @@ document.addEventListener('DOMContentLoaded', function(){
                 var me = data.attendees.find(function(a){ return Number(a.user_id) === Number(uid); });
                 if(me){ detailCancel.style.display = 'inline-flex'; } else { detailCancel.style.display = 'none'; }
             }).catch(()=>{});
+            // update button label with count
+            var detailBtn = document.getElementById('detail-rsvp-btn');
+            if(detailBtn){
+                var cnt = (typeof data.attendees_count !== 'undefined') ? data.attendees_count : (data.attendees? data.attendees.length : 0);
+                var span = detailBtn.querySelector('span.btn');
+                if(span) span.textContent = 'RSVP' + (cnt?(' ( '+cnt+' )') : '');
+            }
         }
     }).catch(()=>{});
 

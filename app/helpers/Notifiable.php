@@ -9,6 +9,7 @@ trait Notifiable
         'message',
         'follow_request',
         'started_following',
+        'new_message',
         'like',
         'comment',
         'event_update',

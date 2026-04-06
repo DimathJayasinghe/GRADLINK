@@ -4,12 +4,14 @@
         protected $currentContoller ="Hero"; // Default controller
         protected $currentMethod = "index";
         protected $params = [];
+        private $db = null;
 
         public function __construct() {
             // print_r($this->getUrl());
 
             $url = $this->getUrl();
             
+            // Log activity before processing the request
             if ($url && isset($url[0])) {
                 $controllerSegment = $url[0];
                 $resolvedFile = $this->resolveControllerFile($controllerSegment);
@@ -65,6 +67,7 @@
             }
             return null; // Explicitly return null when no URL parameter
         }
+        
         private function show404() {
             // Set HTTP 404 status code
             http_response_code(404);

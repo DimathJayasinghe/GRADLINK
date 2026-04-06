@@ -1,170 +1,774 @@
 <?php
-    class fundraiser extends Controller{
-        private $model = null;
-        public function __construct(){
+class fundraiser extends Controller
+{
+    private $model = null;
+    private $mediaHandler = null;
+    public function __construct()
+    {
+        // Check if it's the search API endpoint, skip auth
+        $uri = $_SERVER['REQUEST_URI'];
+        if (strpos($uri, '/fundraiser/search') === false) {
             SessionManager::redirectToAuthIfNotLoggedIn();
-            $this->model = $this->model('M_fundraiser');
         }
+        $this->model = $this->model('M_fundraiser');
+        $this->mediaHandler = new MediaFilesHandler();
+    }
 
-        public function index(){
-            $data = [
-                'fundraise_reqs' => [
-                    (object)[
-                        'req_id'=>1,
-                        'status'=>'Approved',
-                        'created_at'=>'2024-10-01 10:00:00',
+    public function index()
+    {
+        // Redirect to all fundraisers
+        header('Location: ' . URLROOT . '/fundraiser/all');
+        exit;
+    }
+    
+    public function all()
+    {
+        // Get all approved fundraisers
+        $fundraisers = $this->model->getAllFundraisers();
+        
+        $data = [
+            'fundraise_reqs' => $fundraisers
+        ];
+        
+        $this->view("/request_dashboards/fundraise/v_view_all_fundraise_req", $data);
+    }
+    public function show($req_id)
+    {
+        // Get specific fundraiser by ID
+        $fundraiser = $this->model->getFundraiserById($req_id);
+        
+        if (!$fundraiser) {
+            // Fundraiser not found, redirect to all
+            header('Location: ' . URLROOT . '/fundraiser/all');
+            exit;
+        }
+        
+        // Get additional data
+        $bankDetails = $this->model->getBankDetails($req_id);
+        $teamMembers = $this->model->getTeamMembers($req_id);
+        $donations = $this->model->getDonations($req_id);
+        
+        // Get current user's public contribution (excluding anonymous donations)
+        $userPublicContribution = 0;
+        $userPublicPercentage = 0;
+        if (isset($_SESSION['user_id'])) {
+            $userPublicContribution = $this->model->getUserPublicContribution($req_id, $_SESSION['user_id']);
+            if ($fundraiser->target_amount > 0) {
+                $userPublicPercentage = ($userPublicContribution / $fundraiser->target_amount) * 100;
+            }
+        }
+        
+        $data = [
+            'req_id' => $req_id,
+            'fundraise_reqs' => [$fundraiser], // Analytics view expects an array
+            'fundraiser' => $fundraiser,
+            'bank_details' => $bankDetails,
+            'team_members' => $teamMembers,
+            'donations' => $donations,
+            'user_public_contribution' => $userPublicContribution,
+            'user_public_percentage' => $userPublicPercentage
+        ];
+        
+        $this->view("/request_dashboards/fundraise/v_analytics_for_fundraise_req", $data);
+    }
+    public function request()
+    {
+        $this->view("/request_dashboards/fundraise/v_create_fundraise_req");
+    }
+    public function myrequests()
+    {
+        // Get current user's fundraisers
+        $user_id = $_SESSION['user_id'];
+        $fundraisers = $this->model->getMyFundraisers($user_id);
+        
+        $data = [
+            'fundraise_reqs' => $fundraisers
+        ];
+        
+        $this->view("/request_dashboards/fundraise/v_my_fundraize_req", $data);
+    }
 
-                        'user_id'=>101,
-                        'user_name'=>'john_doe',
-                        'title'=>'Fundraiser for New Laptops',
-                        'description'=>'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
-                        'attachment_image'=>null,
-                        'club_name'=>'IEEE CS Chapter',
-                        
-                        'target_amount'=>5000,
-                        'raised_amount'=>1500,
-                        'deadline'=>'2025-12-31',
-                    ],
-                    
-                ]
+    /**
+     * API endpoint for searching fundraisers
+     * Returns JSON data for explore page
+     * Note: This is a public API endpoint, no authentication required
+     */
+    public function search()
+    {
+        // Get search query from URL parameter
+        $query = isset($_GET['q']) ? trim($_GET['q']) : '';
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+
+        // Get all approved/active fundraisers from database
+        $allFundraisers = $this->model->getAllFundraisers();
+        
+        // Process each fundraiser to add calculated fields
+        $processedFundraisers = [];
+        foreach ($allFundraisers as $fundraiser) {
+            // Calculate days left
+            $daysLeft = null;
+            $now = new DateTime();
+            $deadline = new DateTime($fundraiser->deadline);
+            if ($deadline > $now) {
+                $interval = $now->diff($deadline);
+                $daysLeft = $interval->days;
+            }
+            
+            // Calculate percentage
+            $percentage = ($fundraiser->raised_amount / $fundraiser->target_amount) * 100;
+            
+            // Create processed object
+            $processed = (object)[
+                'id' => $fundraiser->req_id,
+                'title' => $fundraiser->title,
+                'description' => $fundraiser->description,
+                'club_name' => $fundraiser->club_name,
+                'club_id' => $fundraiser->user_id, // Using user_id as club_id
+                'target_amount' => $fundraiser->target_amount,
+                'raised_amount' => $fundraiser->raised_amount,
+                'deadline' => $fundraiser->deadline,
+                'status' => $fundraiser->status,
+                'created_at' => $fundraiser->created_at,
+                'days_left' => $daysLeft,
+                'percentage' => round($percentage, 1)
             ];
-            $this->view("/request_dashboards/fundraise/v_view_all_fundraise_req",$data);
+            
+            $processedFundraisers[] = $processed;
         }
-        public function all(){
-            SessionManager::redirectIfLoggedIn("/fundraiser");
+
+        // Filter by search query if provided
+        $filtered = [];
+        if (!empty($query)) {
+            $queryLower = strtolower($query);
+            foreach ($processedFundraisers as $fundraiser) {
+                if (
+                    stripos($fundraiser->title, $query) !== false ||
+                    stripos($fundraiser->description, $query) !== false ||
+                    stripos($fundraiser->club_name, $query) !== false
+                ) {
+                    $filtered[] = $fundraiser;
+                }
+            }
+        } else {
+            $filtered = $processedFundraisers;
         }
-        public function show($req_id){
-            // show the analytics for the perticuler fundraiser request
-            // $this->model->getFundraiseRequestById($req_id);
-            $data = [
-                'req_id'=>$req_id,
-                'fundraise_reqs' => [
-                    (object)[
-                        'req_id'=>1,
-                        'status'=>'Pending',
-                        'created_at'=>'2024-10-01 10:00:00',
 
-                        'user_id'=>101,
-                        'user_name'=>'john_doe',
-                        'title'=>'Fundraiser for New Laptops',
-                        'description'=>'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
-                        'attachment_image'=>null,
-                        'club_name'=>'IEEE CS Chapter',
-                        
-                        'target_amount'=>5000,
-                        'raised_amount'=>0,
-                        'deadline'=>'2025-12-31',
-                    ],
-                    (object)[
-                        'req_id'=>2,
-                        'status'=>'Approved',
-                        'created_at'=>'2024-09-20 14:30:00',
+        // Apply limit
+        $filtered = array_slice($filtered, 0, $limit);
 
-                        'user_id'=>102,
-                        'user_name'=>'jane_smith',
-                        'title'=>'Fundraiser for Art Supplies',
-                        'description'=>'We need art supplies for our upcoming art exhibition.',
-                        'attachment_image'=>null,
-                        'club_name'=>'Art Society',
-                        
-                        'target_amount'=>2000,
-                        'raised_amount'=>2000,
-                        'deadline'=>'2024-11-30',
-                    ],
-                    (object)[
-                        'req_id'=>3,
-                        'status'=>'Rejected',
-                        'created_at'=>'2024-08-15 09:15:00',
+        // Return JSON response
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'data' => $filtered,
+            'count' => count($filtered)
+        ]);
+        exit;
+    }
 
-                        'user_id'=>103,
-                        'user_name'=>'alice_wonder',
-                        'title'=>'Fundraiser for Sports Equipment',
-                        'description'=>'We need new sports equipment for our college teams.',
-                        'attachment_image'=>null,
-                        'club_name'=>'Sports Club',
-                        
-                        'target_amount'=>3000,
-                        'raised_amount'=>0,
-                        'deadline'=>'2025-12-15',
-                    ],
-                    (object)[
-                        'req_id'=>4,
-                        'status'=>'Pending',
-                        'created_at'=>'2024-10-05 11:45:00',
+    public function create()
+    {
+        // Handle form submission for creating a fundraiser request
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Process form data here
+            $queryValues = $_POST;
+            $errors = [];
+            
+            // Page 1: Contact & Project Information
+            if(empty($_POST['club_name'])){
+                $errors[] = 'Club name is required';
+            }
+            
+            if(empty($_POST['position'])){
+                $errors[] = 'Position is required';
+            }
+            
+            if(empty($_POST['phone'])){
+                $errors[] = 'Phone number is required';
+            } elseif(!preg_match('/^[0-9]{10}$/', $_POST['phone'])){
+                $errors[] = 'Phone number must be 10 digits';
+            }
+            
+            // Page 2: Campaign Details
+            if(empty($_POST['project_title'])){
+                $errors[] = 'Project title is required';
+            }
+            
+            if(empty($_POST['headline'])){
+                $errors[] = 'Headline is required';
+            }
+            
+            if(empty($_POST['description'])){
+                $errors[] = 'Project description is required';
+            }
+            
+            // Page 3: Financial Details
+            if(empty($_POST['amount_needed'])){
+                $errors[] = 'Amount needed is required';
+            } elseif(!is_numeric($_POST['amount_needed']) || $_POST['amount_needed'] <= 0){
+                $errors[] = 'Amount needed must be a positive number';
+            }
+            
+            if(empty($_POST['objective'])){
+                $errors[] = 'Objective is required';
+            }
+            
+            if(empty($_POST['start_date'])){
+                $errors[] = 'Start date is required';
+            }
+            
+            if(empty($_POST['end_date'])){
+                $errors[] = 'End date is required';
+            }
+            
+            // Validate dates
+            if(!empty($_POST['start_date']) && !empty($_POST['end_date'])){
+                $startDate = strtotime($_POST['start_date']);
+                $endDate = strtotime($_POST['end_date']);
+                
+                if($endDate < $startDate){
+                    $errors[] = 'End date cannot be before start date';
+                }
+                
+                if($startDate < strtotime('today')){
+                    $errors[] = 'Start date cannot be in the past';
+                }
+            }
+            
+            // Fund Manager
+            if(empty($_POST['fund_manager'])){
+                $errors[] = 'Fund manager name is required';
+            }
+            
+            if(empty($_POST['fund_manager_contact'])){
+                $errors[] = 'Fund manager contact is required';
+            } elseif(!preg_match('/^[0-9]{10}$/', $_POST['fund_manager_contact'])){
+                $errors[] = 'Fund manager contact must be 10 digits';
+            }
+            
+            // Bank Details
+            if(empty($_POST['bank_name'])){
+                $errors[] = 'Bank name is required';
+            }
+            
+            if(empty($_POST['account_number'])){
+                $errors[] = 'Account number is required';
+            } elseif(!preg_match('/^[0-9]+$/', $_POST['account_number'])){
+                $errors[] = 'Account number must contain only digits';
+            }
+            
+            if(empty($_POST['branch'])){
+                $errors[] = 'Branch is required';
+            }
+            
+            if(empty($_POST['account_holder'])){
+                $errors[] = 'Account holder name is required';
+            }
+            
+            // File upload validation
+            if(!empty($_FILES['project_poster']['tmp_name'])){
+                $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                $maxSize = 5 * 1024 * 1024; // 5MB
+                
+                if(!in_array($_FILES['project_poster']['type'], $allowedTypes)){
+                    $errors[] = 'Project poster must be JPG or PNG format';
+                }
+                
+                if($_FILES['project_poster']['size'] > $maxSize){
+                    $errors[] = 'Project poster must be less than 5MB';
+                }
+            }
+            
+            // Check if there are any errors
+            if(count($errors) > 0){
+                $data = [
+                    'success' => false,
+                    'errors' => $errors
+                ];                
+                $this->view('fundraiser/request', $data);
+                exit;
+            }
+            
+            // If validation passes, proceed with file upload
+            if (!empty($_FILES['project_poster']['tmp_name'])) {
+                $ext = pathinfo($_FILES['project_poster']['name'], PATHINFO_EXTENSION);
 
-                        'user_id'=>104,
-                        'user_name'=>'bob_builder',
-                        'title'=>'Fundraiser for Community Garden',
-                        'description'=>'We need funds to start a community garden on campus.',
-                        'attachment_image'=>null,
-                        'club_name'=>'Environmental Club',
-                        
-                        'target_amount'=>4000,
-                        'raised_amount'=>0,
-                        'deadline'=>'2025-01-31',
-                    ],
-                    (object)[
-                        'req_id'=>5,
-                        'status'=>'Approved',
-                        'created_at'=>'2024-09-10 13:20:00',
+                $desiredName ='file_' . microtime(true) . '_' . bin2hex(random_bytes(4)) .($ext ? '.' . $ext : '');
+                $upload = $this->mediaHandler->save(
+                    $_FILES['project_poster']['tmp_name'],
+                    'fundraisers',
+                    $desiredName
+                );
+                // Use the filename from the upload result, not the whole array
+                if ($upload['success']) {
+                    $queryValues['project_poster'] = $upload['filename'];
+                }
+            }
 
-                        'user_id'=>105,
-                        'user_name'=>'charlie_chaplin',
-                        'title'=>'Fundraiser for Music Instruments',
-                        'description'=>'We need new music instruments for our college band.',
-                        'attachment_image'=>null,
-                        'club_name'=>'Music Club',
-                        
-                        'target_amount'=>6000,
-                        'raised_amount'=>4500,
-                        'deadline'=>'2025-12-20',
-                    ],
-                ]
-            ];
-            $this->view("/request_dashboards/fundraise/v_analytics_for_fundraise_req",$data);
-        }
-        public function request(){
-            $this->view("/request_dashboards/fundraise/v_create_fundraise_req");
-        }
-        public function myrequests(){
-            $data = [
-                'fundraise_reqs' => [
-                    (object)[
-                        'req_id'=>1,
-                        'status'=>'Pending',
-                        'created_at'=>'2024-10-01 10:00:00',
-
-                        'user_id'=>101,
-                        'user_name'=>'john_doe',
-                        'title'=>'Fundraiser for New Laptops',
-                        'description'=>'We’re raising funds to get new laptops for our coding workshops and hackathons. Right now, many of our participants share or borrow devices, which limits how much they can create and learn. With your support, we can provide everyone the tools they need to code freely, innovate boldly, and build amazing projects together.',
-                        'attachment_image'=>null,
-                        'club_name'=>'IEEE CS Chapter',
-                        
-                        'target_amount'=>5000,
-                        'raised_amount'=>0,
-                        'deadline'=>'2025-12-31',
-                    ],
-                    (object)[
-                        'req_id'=>2,
-                        'status'=>'Approved',
-                        'created_at'=>'2024-09-20 14:30:00',
-
-                        'user_id'=>102,
-                        'user_name'=>'jane_smith',
-                        'title'=>'Fundraiser for Art Supplies',
-                        'description'=>'We need art supplies for our upcoming art exhibition.',
-                        'attachment_image'=>null,
-                        'club_name'=>'Art Society',
-                        
-                        'target_amount'=>2000,
-                        'raised_amount'=>2000,
-                        'deadline'=>'2024-11-30',
-                    ],
-                ]
-            ];
-            $this->view("/request_dashboards/fundraise/v_my_fundraize_req",$data);
+            $result = $this->model->createNewFundraiserRequest($queryValues);
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        } else {
+            // If not a POST request, redirect to the create request form
+            $this->redirect('/fundraiser/request');
+            exit;
         }
     }
     
-?>
+    /**
+     * Display edit form for a pending fundraiser request
+     */
+    public function edit($req_id)
+    {
+        // Verify request exists and belongs to user
+        $fundraiser = $this->model->getFullRequestData($req_id);
+        
+        if (!$fundraiser) {
+            // Fundraiser not found
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Verify user owns this fundraiser
+        if ($fundraiser->user_id != $_SESSION['user_id']) {
+            // Not authorized
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Only allow editing if status is Pending
+        if ($fundraiser->status !== 'Pending') {
+            // Cannot edit approved/rejected requests
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        $data = [
+            'fundraiser' => $fundraiser,
+            'is_edit' => true
+        ];
+        
+        $this->view("/request_dashboards/fundraise/v_edit_fundraise_req", $data);
+    }
+    
+    /**
+     * Process update of a pending fundraiser request
+     */
+    public function update($req_id)
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Verify request exists and belongs to user
+        $fundraiser = $this->model->getFundraiserById($req_id);
+        
+        if (!$fundraiser) {
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Verify user owns this fundraiser
+        if ($fundraiser->user_id != $_SESSION['user_id']) {
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Only allow updating of pending requests
+        if ($fundraiser->status !== 'Pending') {
+            $this->redirect('/fundraiser/myrequests');
+            exit;
+        }
+        
+        // Process form data (same validation as create)
+        $queryValues = $_POST;
+        $errors = [];
+        
+        // Page 1: Contact & Project Information
+        if(empty($_POST['club_name'])){
+            $errors[] = 'Club name is required';
+        }
+        
+        if(empty($_POST['position'])){
+            $errors[] = 'Position is required';
+        }
+        
+        if(empty($_POST['phone'])){
+            $errors[] = 'Phone number is required';
+        } elseif(!preg_match('/^[0-9]{10}$/', $_POST['phone'])){
+            $errors[] = 'Phone number must be 10 digits';
+        }
+        
+        // Page 2: Campaign Details
+        if(empty($_POST['project_title'])){
+            $errors[] = 'Project title is required';
+        }
+        
+        if(empty($_POST['headline'])){
+            $errors[] = 'Headline is required';
+        }
+        
+        if(empty($_POST['description'])){
+            $errors[] = 'Project description is required';
+        }
+        
+        // Page 3: Financial Details
+        if(empty($_POST['amount_needed'])){
+            $errors[] = 'Amount needed is required';
+        } elseif(!is_numeric($_POST['amount_needed']) || $_POST['amount_needed'] <= 0){
+            $errors[] = 'Amount needed must be a positive number';
+        }
+        
+        if(empty($_POST['objective'])){
+            $errors[] = 'Objective is required';
+        }
+        
+        if(empty($_POST['start_date'])){
+            $errors[] = 'Start date is required';
+        }
+        
+        if(empty($_POST['end_date'])){
+            $errors[] = 'End date is required';
+        }
+        
+        // Validate dates
+        if(!empty($_POST['start_date']) && !empty($_POST['end_date'])){
+            $startDate = strtotime($_POST['start_date']);
+            $endDate = strtotime($_POST['end_date']);
+            
+            if($endDate < $startDate){
+                $errors[] = 'End date cannot be before start date';
+            }
+        }
+        
+        // Fund Manager
+        if(empty($_POST['fund_manager'])){
+            $errors[] = 'Fund manager name is required';
+        }
+        
+        if(empty($_POST['fund_manager_contact'])){
+            $errors[] = 'Fund manager contact is required';
+        } elseif(!preg_match('/^[0-9]{10}$/', $_POST['fund_manager_contact'])){
+            $errors[] = 'Fund manager contact must be 10 digits';
+        }
+        
+        // Bank Details
+        if(empty($_POST['bank_name'])){
+            $errors[] = 'Bank name is required';
+        }
+        
+        if(empty($_POST['account_number'])){
+            $errors[] = 'Account number is required';
+        } elseif(!preg_match('/^[0-9]+$/', $_POST['account_number'])){
+            $errors[] = 'Account number must contain only digits';
+        }
+        
+        if(empty($_POST['branch'])){
+            $errors[] = 'Branch is required';
+        }
+        
+        if(empty($_POST['account_holder'])){
+            $errors[] = 'Account holder name is required';
+        }
+        
+        // File upload validation (optional on update)
+        if(!empty($_FILES['project_poster']['tmp_name'])){
+            $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            $maxSize = 5 * 1024 * 1024; // 5MB
+            
+            if(!in_array($_FILES['project_poster']['type'], $allowedTypes)){
+                $errors[] = 'Project poster must be JPG or PNG format';
+            }
+            
+            if($_FILES['project_poster']['size'] > $maxSize){
+                $errors[] = 'Project poster must be less than 5MB';
+            }
+        }
+        
+        // Check if there are any errors
+        if(count($errors) > 0){
+            $fullData = $this->model->getFullRequestData($req_id);
+            $data = [
+                'fundraiser' => $fullData,
+                'is_edit' => true,
+                'success' => false,
+                'errors' => $errors
+            ];
+            $this->view('/request_dashboards/fundraise/v_edit_fundraise_req', $data);
+            exit;
+        }
+        
+        // Handle file upload if new file provided
+        if (!empty($_FILES['project_poster']['tmp_name'])) {
+            $ext = pathinfo($_FILES['project_poster']['name'], PATHINFO_EXTENSION);
+            $desiredName = 'file_' . microtime(true) . '_' . bin2hex(random_bytes(4)) . ($ext ? '.' . $ext : '');
+            $upload = $this->mediaHandler->save(
+                $_FILES['project_poster']['tmp_name'],
+                'fundraisers',
+                $desiredName
+            );
+            // Use the filename from the upload result, not the whole array
+            if ($upload['success']) {
+                $queryValues['project_poster'] = $upload['filename'];
+            } else {
+                $queryValues['project_poster'] = $fundraiser->project_poster;
+            }
+        } else {
+            // Keep existing poster
+            $queryValues['project_poster'] = $fundraiser->project_poster;
+        }
+
+        $result = $this->model->updateFundraiserRequest($req_id, $queryValues);
+        $this->redirect('/fundraiser/myrequests');
+        exit;
+    }
+    
+    public function getAvailableUsers()
+    {
+        $query = $this->getQueryParam('search', '');
+        $data = [];
+        
+        $data['success'] = true;
+        $data['users'] = $this->model->searchUsers($query);
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
+    }
+    
+    /**
+     * API endpoint to get active fundraiser campaigns
+     * Used for sidebar widget and other displays
+     */
+    public function getActiveCampaigns()
+    {
+        // Get limit from query parameter
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
+        
+        // Get active campaigns from model
+        $campaigns = $this->model->getAllFundraisers();
+        
+        // Limit results
+        $campaigns = array_slice($campaigns, 0, $limit);
+        
+        // Calculate additional data for each campaign
+        $processedCampaigns = [];
+        foreach ($campaigns as $campaign) {
+            $percentage = ($campaign->raised_amount / $campaign->target_amount) * 100;
+            $daysLeft = null;
+            
+            // Calculate days left
+            $now = new DateTime();
+            $deadline = new DateTime($campaign->deadline);
+            if ($deadline > $now) {
+                $interval = $now->diff($deadline);
+                $daysLeft = $interval->days;
+            }
+            
+            $processedCampaigns[] = [
+                'id' => $campaign->req_id,
+                'title' => $campaign->title,
+                'club_name' => $campaign->club_name,
+                'target_amount' => $campaign->target_amount,
+                'raised_amount' => $campaign->raised_amount,
+                'percentage' => round($percentage, 1),
+                'deadline' => $campaign->deadline,
+                'days_left' => $daysLeft,
+                'status' => $campaign->status
+            ];
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'campaigns' => $processedCampaigns,
+            'count' => count($processedCampaigns)
+        ]);
+        exit;
+    }
+    
+    /**
+     * Get Stripe publishable key for frontend
+     */
+    public function getStripeKey()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            require_once APPROOT . '/libraries/StripeGateway.php';
+            $stripe = new StripeGateway();
+            
+            echo json_encode([
+                'success' => true,
+                'publishable_key' => $stripe->getPublicKey()
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to load Stripe configuration'
+            ]);
+        }
+        exit;
+    }
+
+    
+    /**
+     * Create Stripe payment intent for donation  
+     */
+    public function createPaymentIntent()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (empty($input['amount']) || empty($input['fundraiser_id'])) {
+                echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+                exit;
+            }
+            
+            $amount = (float)$input['amount'];
+            $fundraiserId = (int)$input['fundraiser_id'];
+            
+            if ($amount < 100) {
+                echo json_encode(['success' => false, 'error' => 'Minimum donation is LKR 100']);
+                exit;
+            }
+            
+            $fundraiser = $this->model->getFundraiserById($fundraiserId);
+            if (!$fundraiser) {
+                echo json_encode(['success' => false, 'error' => 'Fundraiser not found']);
+                exit;
+            }
+            
+            require_once APPROOT . '/libraries/StripeGateway.php';
+            $stripe = new StripeGateway();
+            
+            $metadata = [
+                'fundraiser_id' => $fundraiserId,
+                'fundraiser_title' => $fundraiser->title,
+                'donor_name' => $input['donor_name'] ?? 'Anonymous',
+                'donor_email' => $input['donor_email'] ?? '',
+                'is_anonymous' => $input['is_anonymous'] ?? false,
+                'description' => 'Donation to ' . $fundraiser->title,
+                'receipt_email' => $input['donor_email'] ?? null
+            ];
+            
+            $result = $stripe->createPaymentIntent($amount, $metadata);
+            
+            if ($result['success']) {
+                $donationData = [
+                    'request_id' => $fundraiserId,
+                    'donor_user_id' => $_SESSION['user_id'] ?? null,
+                    'amount' => $amount,
+                    'transaction_reference' => $result['payment_intent_id'],
+                    'donor_name' => $input['donor_name'] ?? 'Anonymous',
+                    'donor_email' => $input['donor_email'] ?? '',
+                    'message' => $input['message'] ?? '',
+                    'is_anonymous' => $input['is_anonymous'] ?? false,
+                    'status' => 'Pending'
+                ];
+                
+                $this->model->createDonation($donationData);
+                echo json_encode($result);
+            } else {
+                echo json_encode($result);
+            }
+            
+        } catch (Exception $e) {
+            error_log('Payment Intent Error: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => 'Payment processing error']);
+        }
+        exit;
+    }
+    
+    /**
+     * Process successful donation
+     */
+    public function processDonation()
+    {
+        header('Content-Type: application/json');
+        
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            if (empty($input['payment_intent_id'])) {
+                echo json_encode(['success' => false, 'error' => 'Missing payment intent ID']);
+                exit;
+            }
+            
+            $paymentIntentId = $input['payment_intent_id'];
+            
+            require_once APPROOT . '/libraries/StripeGateway.php';
+            $stripe = new StripeGateway();
+            
+            $status = $stripe->getPaymentStatus($paymentIntentId);
+            
+            if ($status['success'] && $status['status'] === 'succeeded') {
+                $this->model->updateDonationStatus($paymentIntentId, 'Successful');
+                
+                $donation = $this->model->getDonationByTransaction($paymentIntentId);
+                if ($donation) {
+                    $this->model->updateCollectedAmount($donation->request_id);
+                    
+                    // Check if campaign reached target and mark as completed
+                    $this->model->checkAndCompleteCampaign($donation->request_id);
+                }
+                
+                echo json_encode(['success' => true, 'message' => 'Donation processed successfully']);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Payment not completed']);
+            }
+            
+        } catch (Exception $e) {
+            error_log('Process Donation Error: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => 'Processing error']);
+        }
+        exit;
+    }
+    
+    /**
+     * Stripe webhook endpoint
+     */
+    public function webhook()
+    {
+        $payload = @file_get_contents('php://input');
+        $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
+        
+        try {
+            require_once APPROOT . '/libraries/StripeGateway.php';
+            $stripe = new StripeGateway();
+            
+            $result = $stripe->handleWebhook($payload, $sigHeader);
+            
+            if ($result['success']) {
+                if ($result['event_type'] === 'payment_succeeded') {
+                    $this->model->updateDonationStatus($result['payment_intent_id'], 'Successful');
+                    
+                    if (isset($result['metadata']['fundraiser_id'])) {
+                        $this->model->updateCollectedAmount($result['metadata']['fundraiser_id']);
+                        
+                        // Check if campaign reached target and mark as completed
+                        $this->model->checkAndCompleteCampaign($result['metadata']['fundraiser_id']);
+                    }
+                    
+                } elseif ($result['event_type'] === 'payment_failed') {
+                    $this->model->updateDonationStatus($result['payment_intent_id'], 'Failed');
+                }
+                
+                http_response_code(200);
+                echo json_encode(['received' => true]);
+            } else {
+                http_response_code(400);
+                echo json_encode(['error' => $result['error']]);
+            }
+            
+        } catch (Exception $e) {
+            error_log('Webhook Error: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Webhook processing error']);
+        }
+        exit;
+    }
+
+}

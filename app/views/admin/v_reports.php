@@ -1,4 +1,5 @@
 <?php ob_start()?>
+<?php $postReports = $data['reports'] ?? []; ?>
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/common.css">   
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard-common.css">   
     <style>
@@ -139,35 +140,30 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>201</td>
-                    <td>Post #1</td>
-                    <td>Inappropriate</td>
-                    <td><span class="status-badge status-pending">Pending</span></td>
-                    <td>2025-09-02</td>
-                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
-                        <select class="admin-select">
-                            <option value="">Change Status</option>
-                            <option value="resolved">Mark as Resolved</option>
-                            <option value="rejected">Reject Report</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td>202</td>
-                    <td>Comment #5</td>
-                    <td>Spam</td>
-                    <td><span class="status-badge status-rejected">Rejected</span></td>
-                    <td>2025-09-04</td>
-                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
-                        <select class="admin-select">
-                            <option value="">Change Status</option>
-                            <option value="pending">Mark as Pending</option>
-                            <option value="resolved">Mark as Resolved</option>
-                            <option value="rejected">Reject Report</option>
-                        </select>
-                    </td>
-                </tr>
+                <?php if (!empty($postReports)): ?>
+                    <?php foreach ($postReports as $report): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($report->id ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($report->post_content ?? ('Post #' . ($report->post_id ?? ''))); ?></td>
+                            <td><?php echo htmlspecialchars($report->category ?? ''); ?></td>
+                            <td><span class="status-badge status-<?php echo htmlspecialchars($report->status ?? 'pending'); ?>"><?php echo ucfirst(htmlspecialchars($report->status ?? 'pending')); ?></span></td>
+                            <td><?php echo htmlspecialchars($report->created_at ?? ''); ?></td>
+                            <td style="display:flex; gap:0.5rem;">
+                                <button class="admin-btn view-report">View</button>
+                                <select class="admin-select">
+                                    <option value="">Change Status</option>
+                                    <option value="pending">Mark as Pending</option>
+                                    <option value="resolved">Mark as Resolved</option>
+                                    <option value="rejected">Reject Report</option>
+                                </select>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6">No post reports yet.</td>
+                    </tr>
+                <?php endif; ?>
             </tbody>
         </table>
     </div>
@@ -194,8 +190,9 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.onclick = function() {
             const row = this.closest('tr');
             let details = '';
+            const headers = row.closest('table')?.querySelectorAll('thead th') || [];
             row.querySelectorAll('td').forEach((td, i) => {
-                if (i < 5) details += `<b>${document.querySelectorAll('thead th')[i].textContent}:</b> ${td.textContent}<br>`;
+                if (i < 5 && headers[i]) details += `<b>${headers[i].textContent}:</b> ${td.textContent}<br>`;
             });
             document.getElementById('modalReportContent').innerHTML = details;
             modal.style.display = 'block';

@@ -168,6 +168,17 @@
             border-color: var(--primary);
         }
 
+        .profile-actions .connect-btn.pending {
+            background-color: #FFA726;
+            color: var(--surface-0);
+            border-color: #FFA726;
+        }
+
+        .profile-actions .connect-btn.pending:hover {
+            background-color: #FF9800;
+            border-color: #FF9800;
+        }
+
         /* Updated navigation button styles */
         .profile-navigation {
             margin-top: 4px; /* default spacing */
