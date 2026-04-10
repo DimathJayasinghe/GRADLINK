@@ -64,7 +64,7 @@
             </div>
             <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 20px;">
                 <button type="button" id="cancelDeleteWorkBtn" class="save-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
-                <button type="button" id="confirmDeleteWorkBtn" class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
+                <button type="button" id="confirmDeleteWorkBtn"  class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
             </div>
         </div>
     </div>

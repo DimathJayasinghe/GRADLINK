@@ -26,10 +26,11 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
-    public function updateProfileBioImage($user_id, $profile_image, $bio){
-        $this->db->query('UPDATE users SET profile_image = :profile_image, bio = :bio WHERE id = :user_id');
+    public function updateProfileBioImage($user_id, $profile_image, $bio, $batch_no){
+        $this->db->query('UPDATE users SET profile_image = :profile_image, bio = :bio, batch_no = :batch_no WHERE id = :user_id');
         $this->db->bind(':profile_image', $profile_image);
         $this->db->bind(':bio', $bio);
+        $this->db->bind(':batch_no', $batch_no);
         $this->db->bind(':user_id', $user_id);
 
         $ok = $this->db->execute();
