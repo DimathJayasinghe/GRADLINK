@@ -105,6 +105,13 @@
         const eventDiv = document.createElement('div');
         eventDiv.className = 'event';
         eventDiv.style.cursor = 'pointer';
+
+        const status = String(campaign.status || '').toLowerCase();
+        const isExpired = campaign.days_left === null || ['completed', 'cancelled', 'rejected'].includes(status);
+
+        if (isExpired) {
+            eventDiv.classList.add('is-expired');
+        }
         
         // Make it clickable
         eventDiv.onclick = function() {
@@ -137,11 +144,17 @@
         const progressBar = document.createElement('div');
         progressBar.style.cssText = 'margin-top: 0.5rem; background: rgba(255,255,255,0.1); border-radius: 4px; height: 4px; overflow: hidden;';
         const progressFill = document.createElement('div');
-        progressFill.style.cssText = `background: linear-gradient(90deg, #4caf50, #2e7d32); height: 100%; width: ${Math.min(percentage, 100)}%; transition: width 0.4s ease;`;
+        const progressColor = isExpired ? 'linear-gradient(90deg, #7a7a7a, #5a5a5a)' : 'linear-gradient(90deg, #4caf50, #2e7d32)';
+        progressFill.style.cssText = `background: ${progressColor}; height: 100%; width: ${Math.min(percentage, 100)}%; transition: width 0.4s ease;`;
         progressBar.appendChild(progressFill);
         
         // Add days left if applicable
-        if (campaign.days_left !== null) {
+        if (isExpired) {
+            const expiredSpan = document.createElement('div');
+            expiredSpan.className = 'sidebar-expired-text';
+            expiredSpan.innerHTML = '<i class="fas fa-hourglass-end"></i> Expired';
+            dateDiv.appendChild(expiredSpan);
+        } else if (campaign.days_left !== null) {
             const daysLeftSpan = document.createElement('div');
             daysLeftSpan.style.cssText = 'margin-top: 0.25rem; font-size: 0.8rem; color: var(--muted);';
             daysLeftSpan.innerHTML = `<i class="far fa-clock"></i> ${campaign.days_left} days left`;
