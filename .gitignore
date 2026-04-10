@@ -1,7 +1,10 @@
+.gitignore
+
 # Environment files
 .env
 .env.local
 
+vendor/
 # IDE and editor files
 .vscode/
 .idea/

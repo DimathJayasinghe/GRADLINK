@@ -11,9 +11,7 @@ class PostCard extends HTMLElement {
     if (!window.URLROOT || typeof window.URLROOT !== 'string') {
       window.URLROOT = `${location.origin}/GRADLINK`;
     }
-    // const root = `${location.origin}/GRADLINK/public/img`;
-    // Use Media controller endpoints: /media/profile and /media/post
-    // const appBase = `${location.origin}/GRADLINK`;
+    const appBase = window.URLROOT || `${location.origin}/GRADLINK`;
     const mediaProfile = (name) =>`${appBase}/media/profile/${encodeURIComponent(name)}`;
     const mediaPost = (name) =>`${appBase}/media/post/${encodeURIComponent(name)}`;
     const rawProfile = this.getAttribute("profile-img");
@@ -284,7 +282,7 @@ class PostCard extends HTMLElement {
 
         if (js.status === "error") {
           console.error("Like error:", js.message);
-          alert("Error: " + js.message);
+          show_popup("Error: " + js.message);
           return;
         }
 
@@ -592,11 +590,11 @@ class PostCard extends HTMLElement {
           }
         }
       } else {
-        alert('Error: ' + (result.message || 'Failed to update post'));
+        show_popup('Error: ' + (result.message || 'Failed to update post'));
       }
     } catch (error) {
       console.error('Edit error:', error);
-      alert('Error saving changes. Please try again.');
+      show_popup('Error saving changes. Please try again.');
     }
   }
   
@@ -708,11 +706,11 @@ class PostCard extends HTMLElement {
           (this.closest('.post-container') || this).remove();
           overlay.style.display='none';
         } else {
-          alert(js && js.message ? js.message : 'Failed to delete post');
+          show_popup(js && js.message ? js.message : 'Failed to delete post');
         }
       } catch(err){
         console.error('Delete error', err);
-        alert('Network error while deleting');
+        show_popup('Network error while deleting');
       }
     });
     overlay.style.display = 'flex';
@@ -787,15 +785,60 @@ class PostCard extends HTMLElement {
       e.preventDefault();
       const cat = overlay.querySelector(`#reportCategory-${postId}`);
       if (!cat || !cat.value){
-        alert('Please select a category');
+        show_popup('Please select a category');
         return;
       }
-      const details = overlay.querySelector(`#reportDetails-${postId}`)?.value || '';
-      const link = overlay.querySelector(`#reportLink-${postId}`)?.value || '';
+      const details = (overlay.querySelector(`#reportDetails-${postId}`)?.value || '').trim();
+      const link = (overlay.querySelector(`#reportLink-${postId}`)?.value || '').trim();
       // Emit an event; backend integration can be added later
       const ev = new CustomEvent('post:report', { bubbles: true, detail: { postId, category: cat.value, details, link } });
-      this.dispatchEvent(ev);
-      overlay.style.display = 'none';
+      /**
+       * On report, create an async post request to api end point,
+       * /report/submitReport/post
+       */
+      async function submitReport(){
+        try {
+          const fd = new FormData();
+          fd.append('post_id', postId);
+          fd.append('category', cat.value);
+          fd.append('details', details);
+          if (link) {
+            fd.append('link', link);
+          }
+          const r = await fetch(`${window.URLROOT}/report/submitReport/post`, {
+            method: 'POST',
+            body: fd
+          });
+          const data = await r.json().catch(()=>null);
+          if (r.ok && data && (data.status === 'success' || data.success === true)) {
+            // alert('Thanks for your report. Our team will review it shortly.');
+            show_popup('Thanks for your report. Our team will review it shortly.');
+            return true;
+          }
+          throw new Error((data && data.message) ? data.message : 'Failed to submit report');
+        } catch(err){
+          console.error('Report submission error', err);
+          // alert('Error submitting report. Please try again later.');
+          show_popup('Error submitting report. Please try again later.');
+          return false;
+          }
+      }
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const submitBtnText = submitBtn?.textContent || '';
+      
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+      }
+      const ok = await submitReport();
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitBtnText || 'Submit Report';
+      }
+      if (ok) {
+        this.dispatchEvent(ev);
+        overlay.style.display = 'none';
+      }
       // Optional: optimistic toast
       // alert('Thanks for your report');
     });
@@ -834,11 +877,36 @@ class PostCard extends HTMLElement {
         copyBtn.textContent = 'Copied!';
         setTimeout(()=>{ copyBtn.textContent = 'Copy Link'; }, 1200);
       } catch(err){
-        alert('Could not copy link');
+        show_popup('Could not copy link');
       }
     });
     overlay.style.display = 'flex';
   }
+}
+
+
+async function show_popup(message) {
+  let overlay = document.getElementById('popup');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'popup';
+    overlay.className = 'certificate-add-popup';
+    overlay.style.display = 'none';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e)=>{ if (e.target === overlay) overlay.style.display = 'none'; });
+  }
+  overlay.innerHTML = `
+    <div class="certificate-add" style="max-width:400px;">
+      <div class="form-title">Notification</div>
+      <div style="color:var(--text); padding:16px;">
+        <p>${message}</p>
+      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button type="button" class="save-btn" data-action="close" style="background:var(--primary);color:#fff;">OK</button>
+      </div>
+    </div>`;
+  overlay.querySelector('[data-action="close"]')?.addEventListener('click', ()=> overlay.style.display='none');
+  overlay.style.display = 'flex';
 }
 
 if (!customElements.get("post-card"))

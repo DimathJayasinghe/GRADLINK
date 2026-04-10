@@ -278,6 +278,7 @@ if (!empty($flashMessages)): ?>
                     <div class="form-group">
                         <label>Project Poster</label>
                         <input type="file" name="project_poster" accept="image/*">
+                        <small style="color: #666; display: block; margin-top: 0.25rem;">Recommended: 1200 × 400 px (3:1 ratio, banner style), PNG or JPG, max 5MB</small>
                     </div>
                 </div>
 

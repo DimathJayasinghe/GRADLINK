@@ -23,12 +23,23 @@
             $activity = $this->adminModel->getRecentActivity();
             $users = $this->adminModel->getAllUsers();
             $engagement = $this->adminModel->getEngagementMetrics();
+            
+            // Online users and activity monitoring
+            $onlineUsers = $this->adminModel->getOnlineUsers();
+            $onlineCount = count($onlineUsers);
+            $accessStats = $this->adminModel->getAccessLogStats();
+            $recentLogs = $this->adminModel->getRecentAccessLogs(20);
+            
             $data = [
                 'metrics' => $metrics,
                 'detailed' => $detailed,
                 'activity' => $activity,
                 'users' => $users,
                 'engagement' => $engagement,
+                'online_users' => $onlineUsers,
+                'online_count' => $onlineCount,
+                'access_stats' => $accessStats,
+                'recent_logs' => $recentLogs,
             ];
             $this->view('admin/v_overview', $data);
         }
@@ -307,7 +318,10 @@
                     $ext = pathinfo($_FILES['project_poster']['name'], PATHINFO_EXTENSION);
                     $desiredName = 'admin_fund_' . microtime(true) . '_' . bin2hex(random_bytes(4)) . ($ext ? '.' . $ext : '');
                     $upload = $mediaHandler->save($_FILES['project_poster']['tmp_name'], 'fundraisers', $desiredName);
-                    $data['project_poster'] = $upload;
+                    // Use the filename from the upload result, not the whole array
+                    if ($upload['success']) {
+                        $data['project_poster'] = $upload['filename'];
+                    }
                 }
 
                 $result = $this->adminModel->createAdminFundraiser($data);

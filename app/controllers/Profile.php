@@ -24,7 +24,9 @@ class Profile extends Controller{
             }
         }
 
-        // For normal page routes, keep default redirect behavior
+        // For normal page routes, keep default redirect behavior  
+        // json_encode() → PHP → JSON
+        // json_decode() → JSON → PHP
         SessionManager:: redirectToAuthIfNotLoggedIn();
         $this->Model = $this->model('M_Profile');
     }
@@ -34,10 +36,18 @@ class Profile extends Controller{
         if (!$user_id){
             $user_id = $_SESSION['user_id'];
         }
+        $isBlocked = $this->Model->isBlocked($_SESSION['user_id'], $user_id);
+        if ($isBlocked){
+            header("Location: " . URLROOT . "/profile?userid=" . $_SESSION['user_id']);
+            exit;
+        }
+
+
         // handle other user profile view
         $user = $this->Model->getUser($user_id);
         if ($user == 1) {
             $data['userDetails'] = $this->Model->getUserDetails($user_id);
+            $data['work_experiences'] = $this->Model->getWorkExperiences($user_id); 
             $data['certificates'] = $this->Model->getCertificates($user_id);
             $data['projects'] = $this->Model->getProjects($user_id);
             $isFollwed = $this->Model->isFollowed($_SESSION['user_id'], $user_id);
@@ -156,6 +166,109 @@ class Profile extends Controller{
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
             return;
         }
+    }
+
+    public function blockProfile()
+    {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            header('Content-Type: application/json');
+
+            $target_id = intval($_POST['target_id']);
+            $current_user_id = $_SESSION['user_id'];
+
+            if($target_id == $current_user_id) {
+                echo json_encode(['success' => false, 'error' => 'Cannot block yourself']);
+                return;
+            }
+
+            $isBlocked = $this->Model->isBlocked($current_user_id, $target_id);
+
+            if($isBlocked) {
+                $this->Model->unblockUser($current_user_id, $target_id);
+                echo json_encode(['success' => true, 'blocked' => false]);
+            }else{
+                $this->Model->blockUser($current_user_id, $target_id);
+                echo json_encode(['success' => true, 'blocked' => true]);
+            }
+        }   
+
+    }
+
+    public function updateProfileBioImage()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Content-Type: application/json');
+            http_response_code(405);
+            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        header('Content-Type: application/json');
+
+        $bio = trim($_POST['profileBioInput'] ?? '');
+        
+
+        // Validation
+        if ($bio === '') {
+            echo json_encode(['success' => false, 'error' => 'Bio cannot be empty']);
+            return;
+        }
+
+        // Preserve current image if no new upload
+       $current = $this->Model->getUserDetails($_SESSION['user_id']);
+       $currentImage = $current->profile_image ?? null;
+       $profile_image = $currentImage;
+
+        //Handle profile image upload
+        if (!empty($_FILES['profileImageInput']['name']) && is_uploaded_file($_FILES['profileImageInput']['tmp_name'])) {
+            $original_name = basename($_FILES['profileImageInput']['name']);
+            $fileTmp = $_FILES['profileImageInput']['tmp_name'];
+            $fileSize = $_FILES['profileImageInput']['size'];
+            $mime = mime_content_type($fileTmp);
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+            if (!in_array($mime, $allowedMimes, true)) {
+                echo json_encode(['success' => false, 'error' => 'Invalid file format. Only JPG, PNG, GIF, WEBP allowed.']);
+                return;
+            }
+            if ($fileSize > 5 * 1024 * 1024) {
+                echo json_encode(['success' => false, 'error' => 'File too large. Max 5MB allowed.']);
+                return;
+            }
+
+            $safeBase = preg_replace('/[^A-Za-z0-9._-]/', '_', pathinfo($original_name, PATHINFO_FILENAME));
+            if ($safeBase === '') $safeBase = 'profile';
+            $ext = pathinfo($original_name, PATHINFO_EXTENSION);
+            if (!$ext) $ext = 'jpg';
+            
+            $profile_image = time() . '_' . substr(sha1($safeBase . random_bytes(4)), 0, 8) . '.' . $ext;
+
+            $targetDir = APPROOT . '/storage/profile_pic';
+            if (!is_dir($targetDir)) {
+                if (!@mkdir($targetDir, 0755, true)) {
+                    echo json_encode(['success' => false, 'error' => 'Server error: cannot create storage directory.']);
+                    return;
+                }
+            }
+
+            $dest = $targetDir . '/' . $profile_image;
+            if (!@move_uploaded_file($fileTmp, $dest)) {
+                echo json_encode(['success' => false, 'error' => 'Failed to save uploaded file on server.']);
+                return;
+            }
+            @chmod($dest, 0644);
+        }
+
+        // Update DB record via model
+        if($this->Model->updateProfileBioImage($_SESSION['user_id'], $profile_image, $bio)) {
+            $current = $this->Model->getUserDetails($_SESSION['user_id']);
+            $_SESSION['profile_image'] = $current->profile_image ?? null;
+            // $_SESSION['bio'] = $current->bio ?? null;
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Failed to update profile image and bio']);
+            return;
+        }
+
     }
 
   

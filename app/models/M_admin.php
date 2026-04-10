@@ -572,8 +572,152 @@ class M_admin {
 
         return $this->db->resultSet();
     }
+
+    // ==================== ACTIVITY MONITORING METHODS ====================
+
+    /**
+     * Get currently online users (active in last 5 minutes)
+     */
+    public function getOnlineUsers() {
+        try {
+            $this->db->query("
+                SELECT 
+                    ou.user_id,
+                    ou.session_id,
+                    ou.ip_address,
+                    ou.current_url,
+                    ou.last_activity,
+                    u.name,
+                    u.display_name,
+                    u.email,
+                    u.profile_image,
+                    u.role
+                FROM online_users ou
+                JOIN users u ON ou.user_id = u.id
+                WHERE ou.last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                ORDER BY ou.last_activity DESC
+            ");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting online users: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get count of currently online users
+     */
+    public function getOnlineUsersCount() {
+        try {
+            $this->db->query("
+                SELECT COUNT(*) as count 
+                FROM online_users 
+                WHERE last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+            ");
+            return (int)($this->db->single()->count ?? 0);
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get recent access logs
+     */
+    public function getRecentAccessLogs($limit = 50) {
+        try {
+            $this->db->query("
+                SELECT 
+                    al.id,
+                    al.user_id,
+                    al.user_name,
+                    al.user_role,
+                    al.url,
+                    al.method,
+                    al.controller,
+                    al.action,
+                    al.ip_address,
+                    al.created_at
+                FROM access_logs al
+                ORDER BY al.created_at DESC
+                LIMIT :limit
+            ");
+            $this->db->bind(':limit', $limit);
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting access logs: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get access log statistics (page views today, unique visitors, etc.)
+     */
+    public function getAccessLogStats() {
+        $stats = [
+            'page_views_today' => 0,
+            'unique_visitors_today' => 0,
+            'page_views_hour' => 0,
+            'most_active_page' => null
+        ];
+
+        try {
+            // Page views today
+            $this->db->query("SELECT COUNT(*) as c FROM access_logs WHERE DATE(created_at) = CURDATE()");
+            $stats['page_views_today'] = (int)($this->db->single()->c ?? 0);
+
+            // Unique visitors today (by IP or user_id)
+            $this->db->query("
+                SELECT COUNT(DISTINCT COALESCE(user_id, ip_address)) as c 
+                FROM access_logs 
+                WHERE DATE(created_at) = CURDATE()
+            ");
+            $stats['unique_visitors_today'] = (int)($this->db->single()->c ?? 0);
+
+            // Page views last hour
+            $this->db->query("
+                SELECT COUNT(*) as c 
+                FROM access_logs 
+                WHERE created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+            ");
+            $stats['page_views_hour'] = (int)($this->db->single()->c ?? 0);
+
+            // Most active page today
+            $this->db->query("
+                SELECT url, COUNT(*) as visits 
+                FROM access_logs 
+                WHERE DATE(created_at) = CURDATE()
+                GROUP BY url 
+                ORDER BY visits DESC 
+                LIMIT 1
+            ");
+            $topPage = $this->db->single();
+            $stats['most_active_page'] = $topPage ? $topPage->url : null;
+
+        } catch (Exception $e) {
+            error_log("Error getting access log stats: " . $e->getMessage());
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get hourly activity chart data (last 24 hours)
+     */
+    public function getHourlyActivity() {
+        try {
+            $this->db->query("
+                SELECT 
+                    DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') as hour,
+                    COUNT(*) as requests
+                FROM access_logs
+                WHERE created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                GROUP BY hour
+                ORDER BY hour ASC
+            ");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
 }
 ?>
-
-
-

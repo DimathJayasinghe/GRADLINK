@@ -190,6 +190,15 @@
         <div class="analytics-header">
             <h2>Analytics for: <?php echo htmlspecialchars($target_post->title); ?></h2>
             <p class="description"><?php echo htmlspecialchars($target_post->description); ?></p>
+            
+            <?php if (!empty($target_post->project_poster)): ?>
+                <div class="project-poster-banner" style="margin: 1.5rem 0;">
+                    <img src="<?php echo URLROOT . '/media/fundraiser/' . basename($target_post->project_poster); ?>" 
+                         alt="<?php echo htmlspecialchars($target_post->title); ?> - Project Poster" 
+                         style="width: 100%; max-height: 400px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                         onerror="this.parentElement.style.display='none';">
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="analytics-info">
