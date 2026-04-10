@@ -1,129 +1,3 @@
-<?php ob_start() ?>
-<title>Alumni Profile</title>
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/style.css">
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/color-pallate.css">
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardStyles.css">
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/profile_styles.css"> <!-- Import profile specific styles -->
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css"> <!-- Import main feed styles -->
-<?php $styles = ob_get_clean(); ?>
-
-<?php
-    $notifications = [
-        (object)[
-            'type' => 'like',
-            'user' => 'Alice',
-            'content' => ' liked your post.',
-            'time' => '2h ago',
-            'userImg' => URLROOT . '/media/profile/alice.jpg'
-        ],
-        (object)[
-            'type' => 'follow',
-            'user' => 'Bob',
-            'content' => ' started following you.',
-            'time' => '3h ago',
-            'userImg' => URLROOT . '/media/profile/bob.jpg'
-        ]
-    ];
-    $isOwner = isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] == $data['userDetails']->id;
-?>
-
-<?php ob_start() ?>
-    <?php
-    $leftside_buttons = [
-        ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'"],
-        ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
-        ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'badge' => true],
-        ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
-        ['icon' => 'user', 'label' => 'Profile', 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=" . $_SESSION['user_id'] . "'", 'active' => true],
-        // icon for fundraiser
-        ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
-        //icon for post requests
-        ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
-        ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
-    ];
-    //  new portal to approve new alumnis only available for special alumnis
-    if ($_SESSION['special_alumni']) {
-        $leftside_buttons[] = [
-            'icon' => 'user-check',
-            'label' => 'Approve Alumni',
-            'onclick' => "window.location.href='" . URLROOT . "/alumni/approve'"
-        ];
-    };
-    $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
-    require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
-<?php $leftsidebar = ob_get_clean(); ?>
-
-
-<?php ob_start() ?>
-<div class="main-content">
-    
-    <!-- Profile Section -->
-    <?php require APPROOT . '/views/profiles/partials/sections/profile.php'; ?>
-
-    <!-- Navigation Buttons -->
-    <div class="profile-navigation">
-        <div class="nav-button active" id="postsTab" onclick="showTab('posts')">
-            POSTS
-        </div>
-        <div class="nav-button" id="infoTab" onclick="showTab('info')">
-            INFO
-        </div>
-    </div>
-
-    <!-- Import newpost_section below navigation -->
-    <?php
-    if ($isOwner) {
-        require APPROOT . '/views/inc/commponents/newpost_section.php';
-    } ?>
-
-    <!-- Posts Section -->
-    <?php require APPROOT . '/views/profiles/partials/sections/post.php'; ?>
-
-    <!-- Info Section -->
-    <?php require APPROOT . '/views/profiles/partials/sections/info.php'; ?>
-</div>
-
-<?php
-// Hidden form for POST-based navigation to Messages with target user id
-require_once APPROOT . '/helpers/Csrf.php';
-?>
-<form id="profileMessageForm" method="post" action="<?= URLROOT; ?>/messages" style="display:none;">
-    <input type="hidden" name="user" id="profileMessageUserId" value="">
-    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
-</form>
-
-<!-- Profile Popup -->
-<?php require APPROOT . '/views/profiles/partials/popups/profile.php'; ?>
-
-<!-- Work Experience Popup -->
-<?php require APPROOT . '/views/profiles/partials/popups/work_experience.php'; ?>
-
-<!-- Projects Popup -->
-<?php require APPROOT . '/views/profiles/partials/popups/projects.php'; ?>
-
-<!-- Certificates Popup -->
-<?php require APPROOT . '/views/profiles/partials/popups/certificates.php'; ?>
-
-<?php $center_content = ob_get_clean(); ?>
-<?php ob_start() ?>
-<!-- Include the right sidebar component -->
-<?php
-    $rightSidebarStylesIncluded = true; // Prevent duplicate styles
-    require APPROOT . '/views/inc/commponents/rightSideBar.php';
-?>
-<?php $rightsidebar = ob_get_clean(); ?>
-
-<script>window.URLROOT = "<?= URLROOT; ?>";</script>
-<script defer src="<?php echo URLROOT ?>/js/component/postCard.js"></script>
-<script defer src="<?php echo URLROOT ?>/js/profile/index.js"></script>
-
-<?php ob_start() ?>
-
-<script>
-    window.URLROOT = "<?php echo URLROOT; ?>";
-</script>
-<script src="<?php echo URLROOT ?>/js/component/postCard.js"></script>
-<script>
     // Function to switch between posts and info tabs
     function showTab(tab) {
         // Get the sections
@@ -134,6 +8,12 @@ require_once APPROOT . '/helpers/Csrf.php';
         // Get the tab buttons
         const postsTab = document.getElementById('postsTab');
         const infoTab = document.getElementById('infoTab');
+
+        // Return early if required elements don't exist
+        if (!postsSection || !infoSection || !postsTab || !infoTab) {
+            console.warn('showTab: Missing required elements');
+            return;
+        }
 
         // Hide all sections first
         postsSection.style.display = 'none';
@@ -204,7 +84,9 @@ require_once APPROOT . '/helpers/Csrf.php';
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ profile_user_id: targetId })
+                        body: JSON.stringify({
+                            profile_user_id: targetId
+                        })
                     });
                     const json = await res.json();
                     if (json && json.success) {
@@ -243,38 +125,111 @@ require_once APPROOT . '/helpers/Csrf.php';
                 }
             });
         }
-    });
+
+        const blockBtn = document.getElementById('blockBtn');
+        
+
+
+        if (blockBtn) {
+            blockBtn.addEventListener("click", async function () {
+
+                const targetId = this.getAttribute("data-user-id");
+                if (!targetId) return;
+
+                if (this.disabled) return;
+                this.disabled = true;
+
+                const span = this.querySelector("span");
+                const icon = this.querySelector("i");
+                const originalText = span.textContent;
+
+                span.textContent = "...";
+
+                try {
+                    const res = await fetch(`${window.URLROOT}/profile/blockProfile`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: `target_id=${targetId}`
+                    });
+
+                    const data = await res.json();
+
+                    if (data.success) {
+
+                        if (data.blocked) {
+                            this.setAttribute("data-blocked", "1");
+                            this.classList.add("active");
+
+                            span.textContent = "Unblock";
+                            icon.className = "fas fa-user-slash";
+
+                            alert("User blocked");
+                            window.location.reload();
+
+
+                        } else {
+                            this.setAttribute("data-blocked", "0");
+                            this.classList.remove("active");
+
+                            span.textContent = "Block";
+                            icon.className = "fas fa-ban";
+
+                            alert("User unblocked");
+                        }
+
+                    } else {
+                        alert(data.error || "Failed to update block status");
+                        span.textContent = originalText;
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Network error");
+                    span.textContent = originalText;
+
+                } finally {
+                    this.disabled = false;
+                }
+            });
+        }
+});
 
     // Updated function to set up edit mode only for specific sections
     function setupEditModeForSection(btnId, containerId, cardClass) {
         const editBtn = document.getElementById(btnId);
         const container = document.getElementById(containerId);
-
         if (editBtn && container) {
-            const cards = container.querySelectorAll('.' + cardClass);
+            // Attach event listener unconditionally - cards may be added dynamically
+            editBtn.addEventListener('click', function() {
+                // Get cards at the time of click, not at setup time
+                const cards = container.querySelectorAll('.' + cardClass);
+                
+                if (cards.length === 0) {
+                    console.log(btnId + ': No cards found to toggle edit mode');
+                    return;
+                }
+                
+                const isInEditMode = cards[0].classList.contains('edit-mode');
 
-            if (cards.length > 0) {
-                editBtn.addEventListener('click', function() {
-                    const isInEditMode = cards[0].classList.contains('edit-mode');
-
-                    cards.forEach(card => {
-                        if (isInEditMode) {
-                            card.classList.remove('edit-mode');
-                        } else {
-                            card.classList.add('edit-mode');
-                        }
-                    });
-
-                    // Toggle edit button appearance
+                cards.forEach(card => {
                     if (isInEditMode) {
-                        editBtn.style.backgroundColor = '';
-                        editBtn.style.color = '';
+                        card.classList.remove('edit-mode');
                     } else {
-                        editBtn.style.backgroundColor = 'var(--primary)';
-                        editBtn.style.color = 'var(--surface-0)';
+                        card.classList.add('edit-mode');
                     }
                 });
-            }
+
+                // Toggle edit button appearance
+                if (isInEditMode) {
+                    editBtn.style.backgroundColor = '';
+                    editBtn.style.color = '';
+                } else {
+                    editBtn.style.backgroundColor = 'var(--primary)';
+                    editBtn.style.color = 'var(--surface-0)';
+                }
+            });
         }
     }
 
@@ -302,8 +257,7 @@ require_once APPROOT . '/helpers/Csrf.php';
             }
         });
     }
-</script>
-<script>
+
     // Certificate Preview Modal logic (uses explicit View button)
     (function() {
         const container = document.getElementById('certificatesContainer');
@@ -358,6 +312,7 @@ require_once APPROOT . '/helpers/Csrf.php';
             }
         });
     })();
+
     // --- New: per-form element references ---
     const addCertificateBtn = document.getElementById('addCertificateBtn'); // existing in page
     const addCertificatePopup = document.getElementById('addCertificatePopup');
@@ -682,9 +637,31 @@ require_once APPROOT . '/helpers/Csrf.php';
         if (form) {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
-                // visually update page image and bio
-                if (pageImg && preview) pageImg.src = preview.src;
-                if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
+
+                const fd = new FormData(this);
+                fetch(this.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(json => {
+                        if (json.success) {
+                            if (pageImg && preview) pageImg.src = preview.src;
+                            if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
+                            window.location.reload();
+                        } else {
+                            alert(json.error || 'Failed to update profile');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error while updating profile');
+                    });
+
+
                 // close popup
                 const closeBtn = popup.querySelector('.close-popup');
                 if (closeBtn) closeBtn.click();
@@ -693,7 +670,7 @@ require_once APPROOT . '/helpers/Csrf.php';
         }
     })();
 
-    // Work Experience and Projects Popups (visual only)
+
     (function() {
         // Work Add
         const addWorkBtn = document.getElementById('addWorkBtn');
@@ -709,34 +686,61 @@ require_once APPROOT . '/helpers/Csrf.php';
         if (addWorkForm && workContainer) {
             addWorkForm.addEventListener('submit', function(e) {
                 e.preventDefault();
-                const title = document.getElementById('workTitleAdd').value.trim();
+                const position = document.getElementById('workPositionAdd').value.trim();
                 const company = document.getElementById('workCompanyAdd').value.trim();
                 const period = document.getElementById('workPeriodAdd').value.trim();
-                if (!title || !company || !period) return;
-                const id = Date.now();
-                const card = document.createElement('div');
-                card.className = 'certificate-card work-card';
-                card.setAttribute('data-id', String(id));
-                card.setAttribute('data-title', title);
-                card.setAttribute('data-company', company);
-                card.setAttribute('data-period', period);
-                card.innerHTML = `
-                <div class="certificate-card-image"><i class="fas fa-briefcase"></i></div>
-                <div class="certificate-details">
-                    <div class="certificate-card-title"></div>
-                    <div class="certificate-issuer"></div>
-                    <div class="certificate-date"></div>
-                </div>
-                <div class="certificate-actions">
-                    <div class="certificate-action-btn edit-btn" title="Edit Work Experience"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="certificate-action-btn delete-btn" title="Delete Work Experience"><i class="fas fa-trash-alt"></i></div>
-                </div>`;
-                card.querySelector('.certificate-card-title').textContent = title;
-                card.querySelector('.certificate-issuer').textContent = company;
-                card.querySelector('.certificate-date').textContent = period;
-                workContainer.appendChild(card);
-                bindWorkCardActions(card);
-                addWorkPopup.style.display = 'none';
+                const noWorkExpMessage = document.getElementById('noWorkExpMessage');
+
+                if (!position || !company || !period) return;
+
+                //# Sending data to the backend
+                const fd = new FormData(this);
+
+                fetch(this.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json()).then(json => {
+                        if (json.success) {
+                            if (noWorkExpMessage) noWorkExpMessage.remove();
+                            window.location.reload();
+
+                            //# Creating the new work experience card in the UI
+                            const id = Date.now();
+                            const card = document.createElement('div');
+                            card.className = 'certificate-card work-card';
+                            card.setAttribute('data-id', String(id));
+                            card.setAttribute('data-position', position);
+                            card.setAttribute('data-company', company);
+                            card.setAttribute('data-period', period);
+                            card.innerHTML = `
+                            <div class="certificate-card-image"><i class="fas fa-briefcase"></i></div>
+                            <div class="certificate-details">
+                                <div class="certificate-card-position"></div>
+                                <div class="certificate-issuer"></div>
+                                <div class="certificate-date"></div>
+                            </div>
+                            <div class="certificate-actions">
+                                <div class="certificate-action-btn edit-btn" title="Edit Work Experience"><i class="fas fa-pencil-alt"></i></div>
+                                <div class="certificate-action-btn delete-btn" title="Delete Work Experience"><i class="fas fa-trash-alt"></i></div>
+                            </div>`;
+                            card.querySelector('.certificate-card-position').textContent = position;
+                            card.querySelector('.certificate-issuer').textContent = company;
+                            card.querySelector('.certificate-date').textContent = period;
+                            workContainer.appendChild(card);
+                            bindWorkCardActions(card);
+                            addWorkPopup.style.display = 'none';
+
+                        } else {
+                            alert(json.error || 'Failed to add work experience');
+                        }
+                    }).catch(() => {
+                        alert('Error while adding work experience');
+                    })
+
             });
         }
 
@@ -750,38 +754,70 @@ require_once APPROOT . '/helpers/Csrf.php';
             if (editBtn) editBtn.addEventListener('click', function() {
                 const id = card.dataset.id || '';
                 document.getElementById('workIdEdit').value = id;
-                document.getElementById('workTitleEdit').value = card.dataset.title || '';
+                document.getElementById('workPositionEdit').value = card.dataset.position || '';
                 document.getElementById('workCompanyEdit').value = card.dataset.company || '';
                 document.getElementById('workPeriodEdit').value = card.dataset.period || '';
                 editWorkPopup.style.display = 'flex';
             });
+
             if (deleteBtn) deleteBtn.addEventListener('click', function() {
-                // if (confirm('Are you sure you want to delete this work experience?')) card.remove();
+                if (confirm('Are you sure you want to delete this work experience?')) card.remove();
             });
+
+
+
+
+
         }
         // bind existing
         document.querySelectorAll('#workContainer .work-card').forEach(bindWorkCardActions);
+
         if (editWorkForm) {
             editWorkForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+
                 const id = document.getElementById('workIdEdit').value;
-                const title = document.getElementById('workTitleEdit').value.trim();
+                const position = document.getElementById('workPositionEdit').value.trim();
                 const company = document.getElementById('workCompanyEdit').value.trim();
                 const period = document.getElementById('workPeriodEdit').value.trim();
+
+
                 const card = document.querySelector(`#workContainer .work-card[data-id="${CSS.escape(id)}"]`);
+
+                const fd = new FormData(this);
+                fetch(this.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(json => {
+                        if (json.success) {
+                            window.location.reload();
+                        } else {
+                            alert(json.error || 'Failed to update work experience');
+                        }
+                    }).catch(() => {
+                        alert('Error while updating work experience');
+                    });
+
                 if (card) {
-                    card.dataset.title = title;
+                    card.dataset.position = position;
                     card.dataset.company = company;
                     card.dataset.period = period;
-                    card.querySelector('.certificate-card-title').textContent = title;
+                    card.querySelector('.certificate-card-position').textContent = position;
                     card.querySelector('.certificate-issuer').textContent = company;
                     card.querySelector('.certificate-date').textContent = period;
                 }
                 editWorkPopup.style.display = 'none';
             });
         }
+    })();
 
-        // Project Add
+    // Project Add
+    (function() {
         const addProjectBtn = document.getElementById('addProjectBtn');
         const addProjectPopup = document.getElementById('addProjectPopup');
         const addProjectForm = document.getElementById('addProjectForm');
@@ -796,25 +832,121 @@ require_once APPROOT . '/helpers/Csrf.php';
             addProjectForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const title = document.getElementById('projectTitleAdd').value.trim();
-                if (!title) return;
-                const id = Date.now();
-                const card = document.createElement('div');
-                card.className = 'project-card';
-                card.setAttribute('data-id', String(id));
-                card.setAttribute('data-title', title);
-                card.innerHTML = `
-                <div class="project-card-image"><i class="fas fa-project-diagram"></i></div>
-                <div class="project-card-title"></div>
-                <div class="certificate-actions">
-                    <div class="certificate-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="certificate-action-btn delete-btn" title="Delete Project"><i class="fas fa-trash-alt"></i></div>
-                </div>`;
-                card.querySelector('.project-card-title').textContent = title;
-                projectsContainer.appendChild(card);
-                bindProjectCardActions(card);
-                addProjectPopup.style.display = 'none';
+                const description = document.getElementById('projectDescAdd').value.trim();
+                const skills_used = document.getElementById('projectSkillsAdd').value.trim();
+                const start_date = document.getElementById('startDateAdd').value;
+                const end_date = document.getElementById('endDateAdd').value;
+
+                console.log('Form data:', {
+                    title,
+                    description,
+                    skills_used,
+                    start_date,
+                    end_date
+                });
+
+
+                if (!title || !description || !skills_used)
+                    return;
+
+                //# Sending data to the backend
+                const fd = new FormData(this);
+
+                fetch(this.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json()).then(json => {
+                        if (json.success) {
+                            window.location.reload();
+
+                            //# Creating the new project card in the UI
+                            const id = Date.now();
+                            const card = document.createElement('div');
+                            card.className = 'certificate-card project-card';
+                            card.setAttribute('data-id', String(id));
+                            card.setAttribute('data-title', title);
+                            card.setAttribute('data-description', description);
+                            card.setAttribute('data-skills', skills_used);
+                            card.setAttribute('data-start-date', start_date);
+                            card.setAttribute('data-end-date', end_date);
+                            card.innerHTML = `
+                            <div class="certificate-details">
+                                <div class="certificate-card-title"></div>
+                                <div class="certificate-description"></div>
+                                <div class="certificate-skills"></div>
+                                <div class="certificate-start-date"></div>
+                                <div class="certificate-end-date"></div>
+                            </div>
+                            <div class="certificate-actions">
+                                <div class="certificate-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
+                                <div class="certificate-action-btn delete-btn" title="Delete Project"><i class="fas fa-trash-alt"></i></div>
+                            </div>`;
+                            card.querySelector('.certificate-card-title').textContent = title;
+                            card.querySelector('.certificate-description').textContent = description;
+                            card.querySelector('.certificate-skills').textContent = skills_used;
+                            card.querySelector('.certificate-start-date').textContent = start_date;
+                            card.querySelector('.certificate-end-date').textContent = end_date;
+                            projectsContainer.appendChild(card);
+                            bindProjectCardActions(card);
+                            addProjectPopup.style.display = 'none';
+
+                        } else {
+                            alert(json.error || 'Failed to add project');
+                        }
+                    }).catch(() => {
+                        alert('Error while adding project');
+                    })
             });
         }
+
+        // Project View
+        (function() {
+            const container = document.getElementById('projectsContainer');
+            const viewProjectPopup = document.getElementById('viewProjectPopup');
+            if (!container || !viewProjectPopup) return;
+
+            // Delegated handler for View buttons
+            container.addEventListener('click', function(e) {
+                const viewBtn = e.target.closest('.project-card .view-btn');
+                if (!viewBtn) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                const card = viewBtn.closest('.project-card');
+                if (!card) return;
+
+                // Populate the view popup with project data
+                const title = card.dataset.title || 'No title';
+                const descrption = card.dataset.desc || 'No description';
+                const skills = card.dataset.skills || 'No skills listed';
+                const startDate = card.dataset.start_date || '-';
+                const endDate = card.dataset.end_date || '';
+
+                document.getElementById('viewProjectTitle').textContent = title;
+                document.getElementById('viewProjectDesc').textContent = descrption;
+                document.getElementById('viewProjectSkills').textContent = skills;
+                document.getElementById('viewProjectStartDate').textContent = startDate;
+
+                // Show 'Present' if end date is empty
+                const displayEndDate = (!endDate || endDate === '0000-00-00') ? 'Present' : endDate;
+                document.getElementById('viewProjectEndDate').textContent = displayEndDate;
+
+                viewProjectPopup.style.display = 'flex';
+            });
+
+            // Close button
+            const closeBtn = viewProjectPopup.querySelector('.close-popup');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    viewProjectPopup.style.display = 'none';
+                });
+            }
+        })();
+
 
         // Project Edit
         const editProjectPopup = document.getElementById('editProjectPopup');
@@ -826,30 +958,65 @@ require_once APPROOT . '/helpers/Csrf.php';
             if (editBtn) editBtn.addEventListener('click', function() {
                 const id = card.dataset.id || '';
                 document.getElementById('projectIdEdit').value = id;
-                document.getElementById('projectTitleEdit').value = card.dataset.title || card.querySelector('.project-card-title')?.textContent || '';
+                document.getElementById('projectTitleEdit').value = card.dataset.title || '';
+                document.getElementById('projectDescEdit').value = card.dataset.desc || '';
+                document.getElementById('projectSkillsEdit').value = card.dataset.skills || '';
+                document.getElementById('startDateEdit').value = card.dataset.start_date || '';
+                document.getElementById('endDateEdit').value = card.dataset.end_date || '';
                 editProjectPopup.style.display = 'flex';
             });
-            if (deleteBtn) deleteBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete this project?')) card.remove();
-            });
+
         }
         // bind existing
         document.querySelectorAll('#projectsContainer .project-card').forEach(bindProjectCardActions);
         if (editProjectForm) {
             editProjectForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+
                 const id = document.getElementById('projectIdEdit').value;
                 const title = document.getElementById('projectTitleEdit').value.trim();
+                const description = document.getElementById('projectDescEdit').value.trim();
+                const skills = document.getElementById('projectSkillsEdit').value.trim();
+                const startDate = document.getElementById('startDateEdit').value;
+                const endDate = document.getElementById('endDateEdit').value;
+
                 const card = document.querySelector(`#projectsContainer .project-card[data-id="${CSS.escape(id)}"]`);
+
+                const fd = new FormData(this);
+                fetch(this.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(r => r.json())
+                    .then(json => {
+                        if (json.success) {
+                            window.location.reload();
+                        } else {
+                            alert(json.error || 'Failed to update project');
+                        }
+                    }).catch(() => {
+                        alert('Error while updating project');
+                    });
                 if (card) {
                     card.dataset.title = title;
-                    const titleEl = card.querySelector('.project-card-title');
-                    if (titleEl) titleEl.textContent = title;
+                    card.dataset.desc = description;
+                    card.dataset.skills = skills;
+                    card.dataset.start_date = startDate;
+                    card.dataset.end_date = endDate;
+                    card.querySelector('.project-card-title').textContent = title;
+                    card.querySelector('.project-card-description').textContent = description;
+                    card.querySelector('.project-card-skills').textContent = skills;
+                    card.querySelector('.project-card-start-date').textContent = startDate;
+                    card.querySelector('.project-card-end-date').textContent = endDate;
                 }
                 editProjectPopup.style.display = 'none';
             });
         }
     })();
+
 
     // Delegated handler to ensure Project edit popup always opens
     (function() {
@@ -871,7 +1038,7 @@ require_once APPROOT . '/helpers/Csrf.php';
         });
     })();
 
-    // Work/Project delete confirmation popups (visual only)
+
     (function() {
         // Work delete
         const workContainer = document.getElementById('workContainer');
@@ -879,6 +1046,7 @@ require_once APPROOT . '/helpers/Csrf.php';
         const confirmWorkBtn = document.getElementById('confirmDeleteWorkBtn');
         const cancelWorkBtn = document.getElementById('cancelDeleteWorkBtn');
         let pendingWorkCard = null;
+
         if (workContainer && deleteWorkPopup) {
             workContainer.addEventListener('click', function(e) {
                 const btn = e.target.closest('.work-card .delete-btn');
@@ -895,10 +1063,46 @@ require_once APPROOT . '/helpers/Csrf.php';
             });
         }
         if (confirmWorkBtn) {
-            confirmWorkBtn.addEventListener('click', function() {
-                if (pendingWorkCard) pendingWorkCard.remove();
-                pendingWorkCard = null;
-                if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+            confirmWorkBtn.addEventListener('click', async function() {
+                // if (pendingWorkCard) pendingWorkCard.remove();
+                // pendingWorkCard = null;
+                // if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+                if (!pendingWorkCard) return;
+
+                const id = pendingWorkCard.dataset.id || '';
+
+                try {
+
+                    const url = '<?php echo URLROOT; ?>/profile/deleteWorkExperience?id=' + encodeURIComponent(id);
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const ct = res.headers.get('content-type') || '';
+                    if (!ct.includes('application/json')) {
+                        const text = await res.text();
+                        console.error('Non-JSON response:', text);
+                        alert('Failed to delete work experience: unexpected server response');
+                        return;
+                    }
+                    const json = await res.json();
+                    if (json && json.success) {
+                        //Refresh to ensure server state is reflected in UI
+                        window.location.reload();
+                    } else {
+                        alert((json && json.error) || 'Failed to delete work experience');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error while deleting work experience: ' + (err && err.message ? err.message : 'unknown error'));
+                } finally {
+                    pendingWorkCard = null;
+                    if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+                }
+
             });
         }
 
@@ -908,6 +1112,7 @@ require_once APPROOT . '/helpers/Csrf.php';
         const confirmProjectBtn = document.getElementById('confirmDeleteProjectBtn');
         const cancelProjectBtn = document.getElementById('cancelDeleteProjectBtn');
         let pendingProjectCard = null;
+
         if (projectsContainer && deleteProjectPopup) {
             projectsContainer.addEventListener('click', function(e) {
                 const btn = e.target.closest('.project-card .delete-btn');
@@ -924,10 +1129,41 @@ require_once APPROOT . '/helpers/Csrf.php';
             });
         }
         if (confirmProjectBtn) {
-            confirmProjectBtn.addEventListener('click', function() {
-                if (pendingProjectCard) pendingProjectCard.remove();
-                pendingProjectCard = null;
-                if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
+            confirmProjectBtn.addEventListener('click', async function() {
+                if (!pendingProjectCard) return;
+
+                const id = pendingProjectCard.dataset.id || '';
+
+                try {
+                    const url = '<?php echo URLROOT; ?>/profile/deleteProject?id=' + encodeURIComponent(id);
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const ct = res.headers.get('content-type') || '';
+                    if (!ct.includes('application/json')) {
+                        const text = await res.text();
+                        console.error('Non-JSON response:', text);
+                        alert('Failed to delete project: unexpected server response');
+                        return;
+                    }
+                    const json = await res.json();
+                    if (json && json.success) {
+                        //Refresh to ensure server state is reflected in UI
+                        window.location.reload();
+                    } else {
+                        alert((json && json.error) || 'Failed to delete project');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error while deleting project: ' + (err && err.message ? err.message : 'unknown error'));
+                } finally {
+                    pendingProjectCard = null;
+                    if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
+                }
             });
         }
 
@@ -939,7 +1175,3 @@ require_once APPROOT . '/helpers/Csrf.php';
             });
         });
     })();
-</script>
-<?php $scripts = ob_get_clean(); ?>
-
-<?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>

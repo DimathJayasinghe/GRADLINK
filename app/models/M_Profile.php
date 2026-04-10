@@ -26,8 +26,18 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
+    public function updateProfileBioImage($user_id, $profile_image, $bio){
+        $this->db->query('UPDATE users SET profile_image = :profile_image, bio = :bio WHERE id = :user_id');
+        $this->db->bind(':profile_image', $profile_image);
+        $this->db->bind(':bio', $bio);
+        $this->db->bind(':user_id', $user_id);
+
+        $ok = $this->db->execute();
+        return $ok;
+    }
+
     /**
-     * Fetch a single certificate by id.
+     * Fetch a single certificate by id. use to view the certificate.
      */
     public function getCertificateById($cert_id){
         $this->db->query('SELECT * FROM certificates WHERE id = :id LIMIT 1');
@@ -35,14 +45,10 @@ class M_Profile{
         return $this->db->single();
     }
 
+    
 
-// ...existing code...
 
-    /**
-     * Create a certificate for a user.
-     * If the certificate_file column does not exist yet, it will gracefully
-     * fall back to inserting without the file instead of crashing.
-     */
+    
     public function createCertificate($user_id, $name, $issuer, $issued_date, $certificate_file = null) {
         if ($certificate_file === null) {
             // Insert without file
@@ -139,16 +145,151 @@ class M_Profile{
         return (bool)$ok;
     }
 
-// ...existing code...
+    public function getWorkExperiences($user_id){
+        $this->db->query('SELECT w.*, u.name AS user_name, u.profile_image 
+                          FROM work_experiences w 
+                          JOIN users u ON u.id = w.user_id 
+                          WHERE w.user_id = :uid 
+                          ORDER BY w.created_at DESC');
+        $this->db->bind(':uid', $user_id);
+        return $this->db->resultSet();
+    }
 
-// ...existing code...
+    public function getWorkExperiencesById($work_id){
+        $this->db->query('SELECT * FROM work_experiences WHERE id = :id LIMIT 1');
+        $this->db->bind(':id', $work_id);
+        return $this->db->single();
+    }
+
+    public function createWorkExperience($user_id, $position, $company, $period){
+        
+        try {
+            $this->db->query('INSERT INTO work_experiences (user_id, position, company, period) VALUES (:uid, :position, :company, :period)');
+            $this->db->bind(':uid', $user_id);
+            $this->db->bind(':position', $position);
+            $this->db->bind(':company', $company);
+            $this->db->bind(':period', $period);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            error_log("WorkExperience Creation Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function updateWorkExperience($user_id, $work_id, $position, $company, $period){
+        $this->db->query('SELECT * FROM work_experiences WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $work_id);
+        $this->db->bind(':uid', $user_id);
+        $existing = $this->db->single();
+
+        if(!$existing){
+            return false; // Work experience not found or does not belong to user
+        }
+
+        $this->db->query('UPDATE work_experiences SET position = :position, company = :company, period = :period WHERE id = :id AND user_id = :uid');
+
+        $this->db->bind(':position', $position);
+        $this->db->bind(':company', $company);
+        $this->db->bind(':period', $period);
+        $this->db->bind(':id', $work_id);
+        $this->db->bind(':uid', $user_id);
+        
+        $ok =$this->db->execute();
+        return $ok;
+
+    }
+
+    public function deleteWorkExperience($user_id, $work_id){
+        //fetch existing record
+        $this->db->query('SELECT * FROM work_experiences WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $work_id);
+        $this->db->bind(':uid', $user_id);
+        $this->db->single();
+
+        //delete record
+        $this->db->query('DELETE FROM work_experiences WHERE id = :id AND user_id = :uid');
+        $this->db->bind(':id', $work_id);
+        $this->db->bind(':uid', $user_id);
+        $ok = $this->db->execute();
+
+        return $ok;
+
+
+    }
 
     public function getProjects($user_id){
-        return [
-            (object)['title' => 'Project A', 'description' => 'Description for Project A'],
-            (object)['title' => 'Project B', 'description' => 'Description for Project B'],
-            (object)['title' => 'Project C', 'description' => 'Description for Project C']
-        ];
+        $this->db->query('SELECT pr.*, u.name AS user_name, u.profile_image
+                          FROM projects pr 
+                          JOIN users u ON u.id = pr.user_id 
+                          WHERE pr.user_id = :uid 
+                          ORDER BY pr.created_at DESC');
+        $this->db->bind(':uid', $user_id);
+        return $this->db->resultSet();
+    }
+
+    public function getProjectById($project_id){
+        $this->db->query('SELECT * FROM projects WHERE id = :id LIMIT 1');
+        $this->db->bind(':id', $project_id);
+        return $this->db->single();
+    }
+
+    public function createProject($user_id, $title, $description, $skills, $start_date, $end_date){
+
+        try{
+            $this->db->query('INSERT INTO projects (user_id, title, description, skills_used, start_date, end_date) VALUES (:uid, :title, :description, :skills, :start_date, :end_date)');
+            $this->db->bind(':uid', $user_id);
+            $this->db->bind(':title', $title);
+            $this->db->bind(':description', $description);
+            $this->db->bind(':skills', $skills);
+            $this->db->bind(':start_date', $start_date);
+            $this->db->bind(':end_date', $end_date);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            error_log("Project Creation Error: " . $e->getMessage());
+            echo $e->getMessage();
+            return false;
+        }
+    }
+
+    public function updateProject($user_id, $project_id, $title, $description, $skills, $start_date, $end_date){
+        $this->db->query('SELECT * FROM projects WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $project_id);
+        $this->db->bind(':uid', $user_id);
+        $existing = $this->db->single();
+
+        if(!$existing){
+            return false; // Project not found or does not belong to user
+        }
+
+        $this->db->query('UPDATE projects SET title = :title, description = :description, skills_used = :skills, start_date = :start_date, end_date = :end_date WHERE id = :id AND user_id = :uid');
+
+        $this->db->bind(':title', $title);
+        $this->db->bind(':description', $description);
+        $this->db->bind(':skills', $skills);
+        $this->db->bind(':start_date', $start_date);
+        $this->db->bind(':end_date', $end_date);
+        $this->db->bind(':id', $project_id);
+        $this->db->bind(':uid', $user_id);
+
+        $ok = $this->db->execute();
+        return $ok;
+    }
+
+    public function deleteProject($user_id, $project_id){
+        //fetch existing record
+        $this->db->query('SELECT * FROM projects WHERE id = :id AND user_id = :uid LIMIT 1');
+        $this->db->bind(':id', $project_id);
+        $this->db->bind(':uid', $user_id);
+        $this->db->single();
+
+        //delete record
+        $this->db->query('DELETE FROM projects WHERE id = :id AND user_id = :uid');
+        $this->db->bind(':id', $project_id);
+        $this->db->bind(':uid', $user_id);
+        $ok = $this->db->execute();
+
+        return $ok;
+        
     }
     
     public function getPosts($user_id){
@@ -248,5 +389,28 @@ class M_Profile{
         return $this->db->execute();
     }
 
+    public function blockUser($blocker_id, $blocked_id){
+        $this->db->query('INSERT INTO User_blocks (blocker_id, blocked_id) VALUES (:blocker_id, :blocked_id)');
+        $this->db->bind(':blocker_id', $blocker_id);
+        $this->db->bind(':blocked_id', $blocked_id);
+        return $this->db->execute();
+    }
+
+    public function unblockUser($blocker_id, $blocked_id){
+        $this->db->query('DELETE FROM User_blocks WHERE blocker_id = :blocker_id AND blocked_id = :blocked_id');
+        $this->db->bind(':blocker_id', $blocker_id);    
+        $this->db->bind(':blocked_id', $blocked_id);
+        return $this->db->execute();
+    }
+
+    public function isBlocked($current_user_id, $profile_user_id){
+        $this->db->query('SELECT 1 FROM User_blocks WHERE 
+                        (blocker_id = :current_user_id AND blocked_id = :profile_user_id) 
+                        OR (blocker_id = :profile_user_id AND blocked_id = :current_user_id) 
+                        LIMIT 1');
+        $this->db->bind(':current_user_id', $current_user_id);
+        $this->db->bind(':profile_user_id', $profile_user_id);
+        $result = $this->db->single();
+        return $result ? true : false;
+    }
 }
-?>
