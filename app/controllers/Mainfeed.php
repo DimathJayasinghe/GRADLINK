@@ -65,4 +65,28 @@ class Mainfeed extends Controller
             'count' => $count
         ]);
     }
+
+    public function getPost($id = null)
+    {
+        SessionManager::redirectToAuthIfNotLoggedIn();
+        header('Content-Type: application/json');
+
+        if (!is_numeric($id) || (int)$id <= 0) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'invalid_post_id']);
+            return;
+        }
+
+        $post = $this->pagesModel->getPostById((int)$id);
+        if (!$post) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'post_not_found']);
+            return;
+        }
+
+        $uid = $_SESSION['user_id'] ?? null;
+        $post->liked = $uid ? $this->postModel->isLiked($post->id, $uid) : false;
+
+        echo json_encode(['success' => true, 'post' => $post]);
+    }
 }

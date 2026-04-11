@@ -136,8 +136,8 @@ class PostCard extends HTMLElement {
           // Open bookmark confirmation popup
           this._openBookmarkPopup(postId);
         } else if (act === 'share') {
-          // Build a shareable link to this post (anchor link)
-          const shareUrl = `${window.URLROOT}/mainfeed#post-${postId}`;
+          // Build a shareable link to open this post in a popup window view
+          const shareUrl = `${window.URLROOT}/mainfeed?post_id=${encodeURIComponent(postId)}`;
           this._openSharePopup(postId, shareUrl);
         } else if(act === 'report') {
           // Open report form popup
