@@ -702,8 +702,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const currentlyBookmarked = (idx !== -1) ? !!events[selectedDate][idx].bookmarked : false;
-                const endpoint = currentlyBookmarked ? '<?php echo URLROOT; ?>/calender/removeBookmarkAjax' : '<?php echo URLROOT; ?>/calender/addBookmark';
-                const payload = { event_id: Number(eventId), csrf_token: (window.GL_CSRF_TOKEN || null) };
+                const endpoint = '<?php echo URLROOT; ?>/bookmark/update';
+                const payload = {
+                    type: 'events',
+                    reference_id: Number(eventId),
+                    bookmarked: !currentlyBookmarked,
+                    csrf_token: (window.GL_CSRF_TOKEN || null)
+                };
 
                 fetch(endpoint, {
                     method: 'POST',

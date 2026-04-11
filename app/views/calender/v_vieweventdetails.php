@@ -207,7 +207,12 @@
                 <?php
                     $isBookmarked = !empty($request->bookmarked);
                 ?>
-                <button id="bookmark-btn" style="background-color:<?php echo $isBookmarked ? '#ec2424ff' : '#4caf50'; ?>" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
+                <button
+                    id="bookmark-btn"
+                    style="background-color:<?php echo $isBookmarked ? '#ec2424ff' : '#4caf50'; ?>; margin:0;"
+                    data-bookmarked="<?php echo $isBookmarked ? '1' : '0'; ?>"
+                    data-event-id="<?php echo htmlspecialchars($request->event_id); ?>"
+                >
                     <span class="btn" style="color: ffffff;" id="bookmark-label"><?php echo $isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'; ?></span>
                 </button>
             </div>
@@ -291,20 +296,19 @@ document.addEventListener('DOMContentLoaded', function(){
 
     btn.addEventListener('click', function(e){
         e.preventDefault();
-        var currently = btn.classList.contains('btn-primary');
-        var target = currently ? '/calender/removeBookmarkAjax' : '/calender/addBookmark';
-        postJson(target, { event_id: parseInt(eventId), csrf_token: window.GL_CSRF_TOKEN })
+        var currently = String(btn.getAttribute('data-bookmarked') || '0') === '1';
+        postJson('/bookmark/update', {
+            type: 'events',
+            reference_id: parseInt(eventId, 10),
+            bookmarked: !currently,
+            csrf_token: window.GL_CSRF_TOKEN
+        })
             .then(function(data){
                 if(data && data.ok){
-                    if(currently){
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-danger');
-                        label.textContent = 'Add Bookmark';
-                    } else {
-                        btn.classList.remove('btn-danger');
-                        btn.classList.add('btn-primary');
-                        label.textContent = 'Bookmarked';
-                    }
+                    var nextState = !!data.bookmarked;
+                    btn.setAttribute('data-bookmarked', nextState ? '1' : '0');
+                    btn.style.backgroundColor = nextState ? '#ec2424ff' : '#4caf50';
+                    label.textContent = nextState ? 'Remove Bookmark' : 'Add Bookmark';
                 } else {
                     console.error('Bookmark action failed', data);
                     alert('Could not update bookmark: ' + (data && data.error ? data.error : 'Unknown error'));

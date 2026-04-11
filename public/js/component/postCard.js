@@ -32,6 +32,7 @@ class PostCard extends HTMLElement {
     const postId = this.getAttribute("post-id") || "post-0";
     const postUserId = this.getAttribute('post-user-id') || null;
     const currentUserId = this.getAttribute('current-user-id') || null;
+    this.currentUserId = String(currentUserId || '');
     const currentUserRole = this.getAttribute('current-user-role') || 'undergrad';
     const isOwner = postUserId && currentUserId && postUserId === currentUserId;
 
@@ -135,8 +136,8 @@ class PostCard extends HTMLElement {
           // Open bookmark confirmation popup
           this._openBookmarkPopup(postId);
         } else if (act === 'share') {
-          // Build a shareable link to this post (anchor link)
-          const shareUrl = `${window.URLROOT}/mainfeed#post-${postId}`;
+          // Build a shareable link to open this post in a popup window view
+          const shareUrl = `${window.URLROOT}/mainfeed?post_id=${encodeURIComponent(postId)}`;
           this._openSharePopup(postId, shareUrl);
         } else if(act === 'report') {
           // Open report form popup
@@ -175,7 +176,7 @@ class PostCard extends HTMLElement {
     // Post text expand / collapse (event delegation)
   const postTextEl = this.querySelector('.post-content .post-text');
     // Delegated click handler (post + comments)
-    this.addEventListener('click', (e)=>{
+    this.addEventListener('click', async (e)=>{
       const target = e.target;
       // Comment author click -> navigate to profile
       const author = target.closest('.comment-author');
@@ -213,6 +214,26 @@ class PostCard extends HTMLElement {
         }
         return;
       }
+
+      // Comment edit (owner only)
+      const editCommentBtn = target.closest('[data-action="edit-comment"]');
+      if(editCommentBtn){
+        const cid = editCommentBtn.getAttribute('data-comment-id');
+        const raw = decodeURIComponent(editCommentBtn.getAttribute('data-content') || '');
+        if(!cid) return;
+        this._openEditCommentPopup(cid, raw, list);
+        return;
+      }
+
+      // Comment delete (owner only)
+      const deleteCommentBtn = target.closest('[data-action="delete-comment"]');
+      if(deleteCommentBtn){
+        const cid = deleteCommentBtn.getAttribute('data-comment-id');
+        if(!cid) return;
+        this._openDeleteCommentPopup(cid, list);
+        return;
+      }
+
       // Comment collapse
       if(target.matches('[data-action="collapse-comment"]')){
         const full = decodeURIComponent(target.getAttribute('data-full')||'');
@@ -329,14 +350,19 @@ class PostCard extends HTMLElement {
       .map((c) => {
         const rel = this._relTime(c.created_at);
         const star = c.role === "alumni" ? " ★" : c.role === "admin" ? " ★★" : "";
-        const full = this._esc(c.content || "");
+        const raw = c.content || "";
+        const full = this._esc(raw);
         const needsTruncate = full.length > 160;
         const short = needsTruncate ? full.slice(0, 140) + "..." : full;
         const body = needsTruncate
           ? `${short} <span class=\"seemore-btn\" data-action=\"expand-comment\" data-full=\"${encodeURIComponent(full)}\">Show more</span>`
           : full;
         const uid = c.user_id || c.id; // fallback for older API
-        return `<div class=\"comment-item\" style=\"margin-bottom:10px\"><div class=\"bubble\"><strong class=\"comment-author\" data-user-id=\"${this._esc(uid)}\" style=\"cursor: pointer;\">${this._esc((c.name || "User") + star)}</strong><br><span class=\"comment-text post-text\">${body}</span><span class=\"meta\">${rel}</span></div></div>`;
+        const own = this.currentUserId && String(uid) === String(this.currentUserId);
+        const controls = own
+          ? ` <span class=\"seemore-btn\" data-action=\"edit-comment\" data-comment-id=\"${this._esc(c.comment_id)}\" data-content=\"${encodeURIComponent(raw)}\">Edit</span> · <span class=\"seemore-btn\" data-action=\"delete-comment\" data-comment-id=\"${this._esc(c.comment_id)}\">Delete</span>`
+          : '';
+        return `<div class=\"comment-item\" style=\"margin-bottom:10px\"><div class=\"bubble\"><strong class=\"comment-author\" data-user-id=\"${this._esc(uid)}\" style=\"cursor: pointer;\">${this._esc((c.name || "User") + star)}</strong><br><span class=\"comment-text post-text\">${body}</span><span class=\"meta\">${rel}${controls}</span></div></div>`;
       })
       .join("");
   }
@@ -677,6 +703,113 @@ class PostCard extends HTMLElement {
     return el;
   }
 
+  _openEditCommentPopup(commentId, initialContent, list){
+    const overlay = this._ensureOverlay(`comment-edit-popup-${commentId}`);
+    const safe = this._esc(initialContent || '');
+    overlay.innerHTML = `
+      <div class="certificate-add" style="max-width:560px;">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Edit Comment</div>
+        <form class="certificate-form" id="editCommentForm-${commentId}" novalidate>
+          <div class="form-group">
+            <label for="editCommentText-${commentId}">Comment</label>
+            <textarea id="editCommentText-${commentId}" rows="4" style="padding:10px;border-radius: var(--radius-lg);border:1px solid var(--border);background:var(--input);color:var(--text);">${safe}</textarea>
+          </div>
+          <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+            <button type="submit" class="save-btn" style="background:var(--primary);color:#fff;">Save</button>
+          </div>
+        </form>
+      </div>`;
+    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+
+    const form = overlay.querySelector(`#editCommentForm-${commentId}`);
+    const textarea = overlay.querySelector(`#editCommentText-${commentId}`);
+    form?.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const content = (textarea?.value || '').trim();
+      if(!content){
+        show_popup('Comment cannot be empty');
+        return;
+      }
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const prevText = submitBtn?.textContent || 'Save';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+      }
+      try {
+        const fd = new FormData();
+        fd.append('content', content);
+        const r = await fetch(`${window.URLROOT}/post/editComment/${commentId}`, { method: 'POST', body: fd });
+        const js = await r.json();
+        if(js.ok){
+          this._renderComments(js.comments, list);
+          this._setCommentCount(js.comments.length);
+          overlay.style.display = 'none';
+        } else {
+          show_popup(js.error || 'Failed to edit comment');
+        }
+      } catch (err) {
+        show_popup('Network error while editing comment');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = prevText;
+        }
+      }
+    });
+
+    overlay.style.display = 'flex';
+    setTimeout(() => textarea?.focus(), 0);
+  }
+
+  _openDeleteCommentPopup(commentId, list){
+    const overlay = this._ensureOverlay(`comment-delete-popup-${commentId}`);
+    overlay.innerHTML = `
+      <div class="certificate-add">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Delete Comment</div>
+        <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
+          <p>Are you sure you want to delete this comment?</p>
+        </div>
+        <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 4px;">
+          <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+          <button type="button" class="save-btn" data-action="confirm" style="background:var(--danger);color:#fff;">Delete</button>
+        </div>
+      </div>`;
+    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', async ()=>{
+      const confirmBtn = overlay.querySelector('[data-action="confirm"]');
+      const prevText = confirmBtn?.textContent || 'Delete';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Deleting...';
+      }
+      try {
+        const r = await fetch(`${window.URLROOT}/post/deleteComment/${commentId}`, { method: 'POST' });
+        const js = await r.json();
+        if(js.ok){
+          this._renderComments(js.comments, list);
+          this._setCommentCount(js.comments.length);
+          overlay.style.display = 'none';
+        } else {
+          show_popup(js.error || 'Failed to delete comment');
+        }
+      } catch (err) {
+        show_popup('Network error while deleting comment');
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = prevText;
+        }
+      }
+    });
+    overlay.style.display = 'flex';
+  }
+
   _openDeletePopup(postId){
     const overlay = this._ensureOverlay(`post-delete-popup-${postId}`);
     overlay.innerHTML = `
@@ -733,12 +866,38 @@ class PostCard extends HTMLElement {
     overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
     overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
     overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', async ()=>{
-      // Dispatch an event for app-level handling; backend can listen or we can add later
-      const ev = new CustomEvent('post:bookmark', { bubbles: true, detail: { postId } });
-      this.dispatchEvent(ev);
-      overlay.style.display='none';
-      // Optional UX hint
-      // alert('Bookmarked');
+      const btn = overlay.querySelector('[data-action="confirm"]');
+      const prevText = btn?.textContent || 'Add Bookmark';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+      }
+      try {
+        const response = await fetch(`${window.URLROOT}/bookmark/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'posts',
+            reference_id: Number(postId),
+            url: `/mainfeed?post_id=${encodeURIComponent(postId)}`,
+            title: 'Bookmarked post'
+          })
+        });
+        const json = await response.json().catch(() => null);
+        if (response.ok && json && json.ok) {
+          overlay.style.display = 'none';
+          show_popup('Post added to bookmarks');
+        } else {
+          show_popup((json && json.error) ? json.error : 'Could not bookmark post');
+        }
+      } catch (err) {
+        show_popup('Network error while bookmarking');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prevText;
+        }
+      }
     });
     overlay.style.display = 'flex';
   }
@@ -858,12 +1017,21 @@ class PostCard extends HTMLElement {
           </div>
           <div style="display:flex; gap:12px; justify-content:flex-end;">
             <button type="button" class="save-btn" data-action="copy" style="background:var(--primary);color:#fff;">Copy Link</button>
+            <button type="button" class="save-btn" data-action="share-message" style="background:var(--link);color:#fff;">Share to Messages</button>
             <a class="save-btn" href="${shareUrl}" target="_blank" rel="noopener" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Open</a>
+          </div>
+          <div id="shareMessagesWrap-${postId}" style="display:none; margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px;">
+            <div style="color:var(--muted); font-size:0.9em; margin-bottom:8px;">Select a chat to send this link:</div>
+            <div id="shareMessagesList-${postId}" style="display:flex; flex-direction:column; gap:8px; max-height:230px; overflow:auto;"></div>
           </div>
         </form>
       </div>`;
     overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
     const copyBtn = overlay.querySelector('[data-action="copy"]');
+    const shareMsgBtn = overlay.querySelector('[data-action="share-message"]');
+    const shareMessagesWrap = overlay.querySelector(`#shareMessagesWrap-${postId}`);
+    const shareMessagesList = overlay.querySelector(`#shareMessagesList-${postId}`);
+
     copyBtn?.addEventListener('click', async ()=>{
       const input = overlay.querySelector(`#shareLink-${postId}`);
       const val = input?.value || shareUrl;
@@ -880,6 +1048,85 @@ class PostCard extends HTMLElement {
         show_popup('Could not copy link');
       }
     });
+
+    const loadChats = async () => {
+      if (!shareMessagesList) return;
+      shareMessagesList.innerHTML = '<div style="color:var(--muted)">Loading chats...</div>';
+      try {
+        const response = await fetch(`${window.URLROOT}/messages/getAvailableUsers`, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await response.json().catch(() => null);
+        const users = data && data.success && Array.isArray(data.users) ? data.users : [];
+
+        if (!users.length) {
+          shareMessagesList.innerHTML = '<div style="color:var(--muted)">No active chats available.</div>';
+          return;
+        }
+
+        shareMessagesList.innerHTML = users.map((user) => {
+          const uid = this._esc(user.user_id || '');
+          const rawName = String(user.display_name || user.name || 'User');
+          const displayName = this._esc(rawName);
+          const avatar = this._esc(user.profile_picture || 'default.jpg');
+          return `
+            <button type="button" class="share-chat-item" data-user-id="${uid}" data-user-name="${encodeURIComponent(rawName)}"
+              style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px; cursor:pointer;">
+              <img src="${window.URLROOT}/media/profile/${avatar}" alt="${displayName}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;" onerror="this.onerror=null;this.src='${window.URLROOT}/media/profile/default.jpg'">
+              <span style="font-weight:600;">${displayName}</span>
+            </button>
+          `;
+        }).join('');
+      } catch (err) {
+        shareMessagesList.innerHTML = '<div style="color:var(--danger, #f66)">Failed to load chats.</div>';
+      }
+    };
+
+    shareMsgBtn?.addEventListener('click', async () => {
+      if (!shareMessagesWrap) return;
+      const opening = shareMessagesWrap.style.display === 'none';
+      shareMessagesWrap.style.display = opening ? 'block' : 'none';
+      if (opening && !shareMessagesWrap.dataset.loaded) {
+        await loadChats();
+        shareMessagesWrap.dataset.loaded = '1';
+      }
+    });
+
+    shareMessagesList?.addEventListener('click', async (e) => {
+      const item = e.target.closest('.share-chat-item');
+      if (!item) return;
+      const recipientId = item.getAttribute('data-user-id');
+      const encodedName = item.getAttribute('data-user-name') || '';
+      const name = decodeURIComponent(encodedName);
+      if (!recipientId) return;
+
+      const originalText = item.innerHTML;
+      item.disabled = true;
+      item.innerHTML = `<span style="color:var(--muted);">Sending...</span>`;
+      try {
+        const response = await fetch(`${window.URLROOT}/messages/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipientId: Number(recipientId),
+            content: `Check this post: ${shareUrl}`
+          })
+        });
+        const data = await response.json().catch(() => null);
+        if (response.ok && data && data.success) {
+          overlay.style.display = 'none';
+          show_popup(`Post link sent to ${name}`);
+          return;
+        }
+        show_popup((data && data.error) ? data.error : 'Failed to send link');
+      } catch (err) {
+        show_popup('Network error while sharing to messages');
+      } finally {
+        item.disabled = false;
+        item.innerHTML = originalText;
+      }
+    });
+
     overlay.style.display = 'flex';
   }
 }

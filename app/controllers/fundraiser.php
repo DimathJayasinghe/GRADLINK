@@ -588,39 +588,19 @@ class fundraiser extends Controller
     }
     
     /**
-     * Get Stripe publishable key for frontend
+     * Process a simulated donation (no external payment gateway).
      */
-    public function getStripeKey()
-    {
-        header('Content-Type: application/json');
-        
-        try {
-            require_once APPROOT . '/libraries/StripeGateway.php';
-            $stripe = new StripeGateway();
-            
-            echo json_encode([
-                'success' => true,
-                'publishable_key' => $stripe->getPublicKey()
-            ]);
-        } catch (Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'error' => 'Failed to load Stripe configuration'
-            ]);
-        }
-        exit;
-    }
-
-    
-    /**
-     * Create Stripe payment intent for donation  
-     */
-    public function createPaymentIntent()
+    public function processDonation()
     {
         header('Content-Type: application/json');
         
         try {
             $input = json_decode(file_get_contents('php://input'), true);
+
+            if (!is_array($input)) {
+                echo json_encode(['success' => false, 'error' => 'Invalid request payload']);
+                exit;
+            }
             
             if (empty($input['amount']) || empty($input['fundraiser_id'])) {
                 echo json_encode(['success' => false, 'error' => 'Missing required fields']);
@@ -634,141 +614,76 @@ class fundraiser extends Controller
                 echo json_encode(['success' => false, 'error' => 'Minimum donation is LKR 100']);
                 exit;
             }
-            
+
             $fundraiser = $this->model->getFundraiserById($fundraiserId);
             if (!$fundraiser) {
                 echo json_encode(['success' => false, 'error' => 'Fundraiser not found']);
                 exit;
             }
-            
-            require_once APPROOT . '/libraries/StripeGateway.php';
-            $stripe = new StripeGateway();
-            
-            $metadata = [
-                'fundraiser_id' => $fundraiserId,
-                'fundraiser_title' => $fundraiser->title,
-                'donor_name' => $input['donor_name'] ?? 'Anonymous',
-                'donor_email' => $input['donor_email'] ?? '',
-                'is_anonymous' => $input['is_anonymous'] ?? false,
-                'description' => 'Donation to ' . $fundraiser->title,
-                'receipt_email' => $input['donor_email'] ?? null
-            ];
-            
-            $result = $stripe->createPaymentIntent($amount, $metadata);
-            
-            if ($result['success']) {
-                $donationData = [
-                    'request_id' => $fundraiserId,
-                    'donor_user_id' => $_SESSION['user_id'] ?? null,
-                    'amount' => $amount,
-                    'transaction_reference' => $result['payment_intent_id'],
-                    'donor_name' => $input['donor_name'] ?? 'Anonymous',
-                    'donor_email' => $input['donor_email'] ?? '',
-                    'message' => $input['message'] ?? '',
-                    'is_anonymous' => $input['is_anonymous'] ?? false,
-                    'status' => 'Pending'
-                ];
-                
-                $this->model->createDonation($donationData);
-                echo json_encode($result);
-            } else {
-                echo json_encode($result);
-            }
-            
-        } catch (Exception $e) {
-            error_log('Payment Intent Error: ' . $e->getMessage());
-            echo json_encode(['success' => false, 'error' => 'Payment processing error']);
-        }
-        exit;
-    }
-    
-    /**
-     * Process successful donation
-     */
-    public function processDonation()
-    {
-        header('Content-Type: application/json');
-        
-        try {
-            $input = json_decode(file_get_contents('php://input'), true);
-            
-            if (empty($input['payment_intent_id'])) {
-                echo json_encode(['success' => false, 'error' => 'Missing payment intent ID']);
+
+            if (!in_array($fundraiser->status, ['Approved', 'Active'], true)) {
+                echo json_encode(['success' => false, 'error' => 'This campaign is not accepting donations']);
                 exit;
             }
-            
-            $paymentIntentId = $input['payment_intent_id'];
-            
-            require_once APPROOT . '/libraries/StripeGateway.php';
-            $stripe = new StripeGateway();
-            
-            $status = $stripe->getPaymentStatus($paymentIntentId);
-            
-            if ($status['success'] && $status['status'] === 'succeeded') {
-                $this->model->updateDonationStatus($paymentIntentId, 'Successful');
-                
-                $donation = $this->model->getDonationByTransaction($paymentIntentId);
-                if ($donation) {
-                    $this->model->updateCollectedAmount($donation->request_id);
-                    
-                    // Check if campaign reached target and mark as completed
-                    $this->model->checkAndCompleteCampaign($donation->request_id);
-                }
-                
-                echo json_encode(['success' => true, 'message' => 'Donation processed successfully']);
-            } else {
-                echo json_encode(['success' => false, 'error' => 'Payment not completed']);
+
+            $remainingAmount = (float)$fundraiser->target_amount - (float)$fundraiser->raised_amount;
+            if ($remainingAmount <= 0) {
+                echo json_encode(['success' => false, 'error' => 'This campaign has already reached its target']);
+                exit;
             }
+
+            if ($amount > $remainingAmount) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Donation exceeds remaining amount',
+                    'remaining_amount' => round($remainingAmount, 2)
+                ]);
+                exit;
+            }
+
+            $donorName = trim((string)($input['donor_name'] ?? ''));
+            if ($donorName === '') {
+                $donorName = 'Anonymous';
+            }
+
+            $transactionRef = $this->generateMockTransactionReference();
+
+            $donationData = [
+                'request_id' => $fundraiserId,
+                'donor_user_id' => $_SESSION['user_id'] ?? null,
+                'amount' => $amount,
+                'transaction_reference' => $transactionRef,
+                'donor_name' => $donorName,
+                'donor_email' => (string)($input['donor_email'] ?? ''),
+                'message' => (string)($input['message'] ?? ''),
+                'is_anonymous' => !empty($input['is_anonymous']),
+                'status' => 'Successful'
+            ];
+
+            $saved = $this->model->createDonation($donationData);
+            if (!$saved) {
+                throw new Exception('Failed to save donation record');
+            }
+
+            $this->model->updateCollectedAmount($fundraiserId);
+            $this->model->checkAndCompleteCampaign($fundraiserId);
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Donation completed (simulated payment)',
+                'transaction_reference' => $transactionRef
+            ]);
             
         } catch (Exception $e) {
             error_log('Process Donation Error: ' . $e->getMessage());
-            echo json_encode(['success' => false, 'error' => 'Processing error']);
+            echo json_encode(['success' => false, 'error' => 'Donation processing error']);
         }
         exit;
     }
-    
-    /**
-     * Stripe webhook endpoint
-     */
-    public function webhook()
+
+    private function generateMockTransactionReference()
     {
-        $payload = @file_get_contents('php://input');
-        $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
-        
-        try {
-            require_once APPROOT . '/libraries/StripeGateway.php';
-            $stripe = new StripeGateway();
-            
-            $result = $stripe->handleWebhook($payload, $sigHeader);
-            
-            if ($result['success']) {
-                if ($result['event_type'] === 'payment_succeeded') {
-                    $this->model->updateDonationStatus($result['payment_intent_id'], 'Successful');
-                    
-                    if (isset($result['metadata']['fundraiser_id'])) {
-                        $this->model->updateCollectedAmount($result['metadata']['fundraiser_id']);
-                        
-                        // Check if campaign reached target and mark as completed
-                        $this->model->checkAndCompleteCampaign($result['metadata']['fundraiser_id']);
-                    }
-                    
-                } elseif ($result['event_type'] === 'payment_failed') {
-                    $this->model->updateDonationStatus($result['payment_intent_id'], 'Failed');
-                }
-                
-                http_response_code(200);
-                echo json_encode(['received' => true]);
-            } else {
-                http_response_code(400);
-                echo json_encode(['error' => $result['error']]);
-            }
-            
-        } catch (Exception $e) {
-            error_log('Webhook Error: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => 'Webhook processing error']);
-        }
-        exit;
+        return 'MOCK-' . strtoupper(bin2hex(random_bytes(8)));
     }
 
 }

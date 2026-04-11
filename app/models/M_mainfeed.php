@@ -51,15 +51,18 @@ class M_mainfeed{
     }
 
     public function getPostById($id) {
-        $this->db->query("SELECT p.id, p.content, p.image, p.created_at,
-                                 u.name as user_name, u.handle as user_handle, u.avatar,
-                                 (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments_count,
-                                 (SELECT COUNT(*) FROM likes l WHERE l.post_id = p.id) as likes_count,
-                                 (SELECT COUNT(*) FROM reposts r WHERE r.post_id = p.id) as reposts_count
+        $this->db->query("SELECT
+                                p.*,
+                                u.name,
+                                u.profile_image,
+                                u.role,
+                                (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments,
+                                (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes
                           FROM posts p
-                          JOIN users u ON u.id = p.user_id
-                          WHERE p.id = :id");
-        $this->db->bind(':id',$id);
+                          INNER JOIN users u ON u.id = p.user_id
+                          WHERE p.id = :id
+                          LIMIT 1");
+        $this->db->bind(':id', (int)$id, PDO::PARAM_INT);
         return $this->db->single();
     }
 
