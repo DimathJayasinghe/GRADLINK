@@ -205,11 +205,16 @@ class Profile extends Controller{
         header('Content-Type: application/json');
 
         $bio = trim($_POST['profileBioInput'] ?? '');
+        $batch_no = trim($_POST['profileBatchNoInput'] ?? '');
         
 
         // Validation
         if ($bio === '') {
             echo json_encode(['success' => false, 'error' => 'Bio cannot be empty']);
+            return;
+        }
+        if ($batch_no === '') {
+            echo json_encode(['success' => false, 'error' => 'Batch number cannot be empty']);
             return;
         }
 
@@ -259,7 +264,7 @@ class Profile extends Controller{
         }
 
         // Update DB record via model
-        if($this->Model->updateProfileBioImage($_SESSION['user_id'], $profile_image, $bio)) {
+        if($this->Model->updateProfileBioImage($_SESSION['user_id'], $profile_image, $bio, $batch_no)) {
             $current = $this->Model->getUserDetails($_SESSION['user_id']);
             $_SESSION['profile_image'] = $current->profile_image ?? null;
             // $_SESSION['bio'] = $current->bio ?? null;
