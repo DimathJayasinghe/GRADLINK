@@ -866,12 +866,38 @@ class PostCard extends HTMLElement {
     overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
     overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
     overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', async ()=>{
-      // Dispatch an event for app-level handling; backend can listen or we can add later
-      const ev = new CustomEvent('post:bookmark', { bubbles: true, detail: { postId } });
-      this.dispatchEvent(ev);
-      overlay.style.display='none';
-      // Optional UX hint
-      // alert('Bookmarked');
+      const btn = overlay.querySelector('[data-action="confirm"]');
+      const prevText = btn?.textContent || 'Add Bookmark';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+      }
+      try {
+        const response = await fetch(`${window.URLROOT}/bookmark/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'posts',
+            reference_id: Number(postId),
+            url: `/mainfeed?post_id=${encodeURIComponent(postId)}`,
+            title: 'Bookmarked post'
+          })
+        });
+        const json = await response.json().catch(() => null);
+        if (response.ok && json && json.ok) {
+          overlay.style.display = 'none';
+          show_popup('Post added to bookmarks');
+        } else {
+          show_popup((json && json.error) ? json.error : 'Could not bookmark post');
+        }
+      } catch (err) {
+        show_popup('Network error while bookmarking');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = prevText;
+        }
+      }
     });
     overlay.style.display = 'flex';
   }

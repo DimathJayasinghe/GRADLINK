@@ -148,15 +148,18 @@ async function loadMessages(userId) {
 
                 const actions = document.createElement('div');
                 actions.className = 'msg-actions';
-                actions.innerHTML = isSent? `
+                actions.innerHTML = `
                     <button class="msg-actions-btn" onclick="toggleMsgDropdown(event)">
                         <i class="fas fa-ellipsis-v"></i>
                     </button>
                     <div class="msg-dropdown" style="display:none;">
-                        <div class=\"msg-dropdown-item\" onclick=\"event.stopPropagation(); editMessagePrompt(this, '${message.message_id || ''}', '${safeText.replace(/'/g, "/'")}')\"><i class=\"fas fa-edit\"></i> Edit</div>
-                        <div class=\"msg-dropdown-item danger\" onclick=\"event.stopPropagation(); deleteMessageConfirm('${message.message_id || ''}', ${userId})\"><i class=\"fas fa-trash\"></i> Delete</div>
+                        <div class="msg-dropdown-item" onclick="event.stopPropagation(); bookmarkMessage('${message.message_id || ''}', ${userId})"><i class="fas fa-bookmark"></i> Bookmark</div>
+                        ${isSent ? `
+                            <div class=\"msg-dropdown-item\" onclick=\"event.stopPropagation(); editMessagePrompt(this, '${message.message_id || ''}', '${safeText.replace(/'/g, "/'")}')\"><i class=\"fas fa-edit\"></i> Edit</div>
+                            <div class=\"msg-dropdown-item danger\" onclick=\"event.stopPropagation(); deleteMessageConfirm('${message.message_id || ''}', ${userId})\"><i class=\"fas fa-trash\"></i> Delete</div>
+                        ` : ''}
                     </div>
-                ` : '';
+                `;
 
                 if (isSent) {
                     // Sent: actions > message (right side), no avatar
@@ -266,6 +269,92 @@ function deleteMessageConfirm(messageId,userId) {
         // restart the message refresh interval if user cancelled
         messageInterval = setInterval(() => loadMessages(userId), 1000);
     }
+}
+
+async function bookmarkMessage(messageId, userId) {
+    if (messageInterval) clearInterval(messageInterval);
+
+    document.querySelectorAll('.msg-dropdown').forEach(dd => {
+        dd.style.display = 'none';
+    });
+
+    const mid = Number(messageId || 0);
+    if (!mid) {
+        showBookmarkPopup('Invalid message for bookmarking', true);
+        messageInterval = setInterval(() => loadMessages(userId), 1000);
+        return;
+    }
+
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (typeof window !== 'undefined' && window.GL_CSRF_TOKEN) {
+            headers['X-CSRF-Token'] = window.GL_CSRF_TOKEN;
+        }
+
+        const response = await fetch(`<?php echo URLROOT; ?>/bookmark/create`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                type: 'messages',
+                reference_id: mid,
+                url: `/messages?user=${encodeURIComponent(userId)}`
+            })
+        });
+        const data = await response.json().catch(() => null);
+
+        if (response.ok && data && data.ok) {
+            showBookmarkPopup('Message added to bookmarks');
+        } else {
+            showBookmarkPopup('Failed to bookmark message: ' + ((data && data.error) ? data.error : 'Unknown error'), true);
+        }
+    } catch (error) {
+        console.error('Error bookmarking message:', error);
+        showBookmarkPopup('Error bookmarking message. Check console for details.', true);
+    } finally {
+        messageInterval = setInterval(() => loadMessages(userId), 1000);
+    }
+}
+
+function showBookmarkPopup(message, isError = false) {
+    let overlay = document.getElementById('message-bookmark-popup');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'message-bookmark-popup';
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.display = 'none';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.background = 'rgba(0,0,0,0.55)';
+        overlay.style.zIndex = '3000';
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                overlay.style.display = 'none';
+            }
+        });
+    }
+
+    const title = isError ? 'Bookmark Error' : 'Bookmark Updated';
+    overlay.innerHTML = `
+        <div style="width:min(92vw,420px);background:var(--surface-2,#1f242a);color:var(--text,#fff);border:1px solid var(--border,#3b3f45);border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,0.35);">
+            <div style="font-size:18px;font-weight:700;margin-bottom:8px;">${title}</div>
+            <div style="font-size:14px;color:var(--muted,#c8c8c8);line-height:1.45;">${escapeHtml(String(message || ''))}</div>
+            <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+                <button type="button" data-action="close-bookmark-popup" style="padding:8px 14px;border:none;border-radius:8px;cursor:pointer;background:${isError ? 'var(--danger,#d9534f)' : 'var(--primary,#4f46e5)'};color:#fff;">OK</button>
+            </div>
+        </div>
+    `;
+
+    const closeBtn = overlay.querySelector('[data-action="close-bookmark-popup"]');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            overlay.style.display = 'none';
+        });
+    }
+
+    overlay.style.display = 'flex';
 }
 
 // simple HTML escape to prevent XSS in message content

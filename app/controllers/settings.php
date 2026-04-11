@@ -45,6 +45,15 @@ class settings extends Controller{
         $this->view('settings/v_settings', $data);
     }
 
+    public function bookmarks(){
+        $bookmarkModel = $this->model('M_bookmark');
+        $data = [
+            'section' => 'bookmark',
+            'bookmarks' => $bookmarkModel->getBookmarksByUserId((int)($_SESSION['user_id'] ?? 0))
+        ];
+        $this->view('settings/v_settings', $data);
+    }
+
     /**
      * API: Update user name and display name
      * POST /settings/updateName
