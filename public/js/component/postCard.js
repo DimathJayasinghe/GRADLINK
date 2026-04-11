@@ -991,12 +991,21 @@ class PostCard extends HTMLElement {
           </div>
           <div style="display:flex; gap:12px; justify-content:flex-end;">
             <button type="button" class="save-btn" data-action="copy" style="background:var(--primary);color:#fff;">Copy Link</button>
+            <button type="button" class="save-btn" data-action="share-message" style="background:var(--link);color:#fff;">Share to Messages</button>
             <a class="save-btn" href="${shareUrl}" target="_blank" rel="noopener" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center;">Open</a>
+          </div>
+          <div id="shareMessagesWrap-${postId}" style="display:none; margin-top:10px; border:1px solid var(--border); border-radius:12px; padding:10px;">
+            <div style="color:var(--muted); font-size:0.9em; margin-bottom:8px;">Select a chat to send this link:</div>
+            <div id="shareMessagesList-${postId}" style="display:flex; flex-direction:column; gap:8px; max-height:230px; overflow:auto;"></div>
           </div>
         </form>
       </div>`;
     overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
     const copyBtn = overlay.querySelector('[data-action="copy"]');
+    const shareMsgBtn = overlay.querySelector('[data-action="share-message"]');
+    const shareMessagesWrap = overlay.querySelector(`#shareMessagesWrap-${postId}`);
+    const shareMessagesList = overlay.querySelector(`#shareMessagesList-${postId}`);
+
     copyBtn?.addEventListener('click', async ()=>{
       const input = overlay.querySelector(`#shareLink-${postId}`);
       const val = input?.value || shareUrl;
@@ -1013,6 +1022,85 @@ class PostCard extends HTMLElement {
         show_popup('Could not copy link');
       }
     });
+
+    const loadChats = async () => {
+      if (!shareMessagesList) return;
+      shareMessagesList.innerHTML = '<div style="color:var(--muted)">Loading chats...</div>';
+      try {
+        const response = await fetch(`${window.URLROOT}/messages/getAvailableUsers`, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const data = await response.json().catch(() => null);
+        const users = data && data.success && Array.isArray(data.users) ? data.users : [];
+
+        if (!users.length) {
+          shareMessagesList.innerHTML = '<div style="color:var(--muted)">No active chats available.</div>';
+          return;
+        }
+
+        shareMessagesList.innerHTML = users.map((user) => {
+          const uid = this._esc(user.user_id || '');
+          const rawName = String(user.display_name || user.name || 'User');
+          const displayName = this._esc(rawName);
+          const avatar = this._esc(user.profile_picture || 'default.jpg');
+          return `
+            <button type="button" class="share-chat-item" data-user-id="${uid}" data-user-name="${encodeURIComponent(rawName)}"
+              style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; color:var(--text); border:1px solid var(--border); border-radius:10px; padding:8px; cursor:pointer;">
+              <img src="${window.URLROOT}/media/profile/${avatar}" alt="${displayName}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;" onerror="this.onerror=null;this.src='${window.URLROOT}/media/profile/default.jpg'">
+              <span style="font-weight:600;">${displayName}</span>
+            </button>
+          `;
+        }).join('');
+      } catch (err) {
+        shareMessagesList.innerHTML = '<div style="color:var(--danger, #f66)">Failed to load chats.</div>';
+      }
+    };
+
+    shareMsgBtn?.addEventListener('click', async () => {
+      if (!shareMessagesWrap) return;
+      const opening = shareMessagesWrap.style.display === 'none';
+      shareMessagesWrap.style.display = opening ? 'block' : 'none';
+      if (opening && !shareMessagesWrap.dataset.loaded) {
+        await loadChats();
+        shareMessagesWrap.dataset.loaded = '1';
+      }
+    });
+
+    shareMessagesList?.addEventListener('click', async (e) => {
+      const item = e.target.closest('.share-chat-item');
+      if (!item) return;
+      const recipientId = item.getAttribute('data-user-id');
+      const encodedName = item.getAttribute('data-user-name') || '';
+      const name = decodeURIComponent(encodedName);
+      if (!recipientId) return;
+
+      const originalText = item.innerHTML;
+      item.disabled = true;
+      item.innerHTML = `<span style="color:var(--muted);">Sending...</span>`;
+      try {
+        const response = await fetch(`${window.URLROOT}/messages/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipientId: Number(recipientId),
+            content: `Check this post: ${shareUrl}`
+          })
+        });
+        const data = await response.json().catch(() => null);
+        if (response.ok && data && data.success) {
+          overlay.style.display = 'none';
+          show_popup(`Post link sent to ${name}`);
+          return;
+        }
+        show_popup((data && data.error) ? data.error : 'Failed to send link');
+      } catch (err) {
+        show_popup('Network error while sharing to messages');
+      } finally {
+        item.disabled = false;
+        item.innerHTML = originalText;
+      }
+    });
+
     overlay.style.display = 'flex';
   }
 }

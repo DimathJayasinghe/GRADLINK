@@ -140,8 +140,9 @@ async function loadMessages(userId) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'message ' + (isSent ? 'sent' : 'received');
                 const safeText = escapeHtml(String(message.content || ''));
+                const linkedText = linkifyText(safeText);
                 messageDiv.innerHTML = `
-                    <p class="message-text">${safeText}</p>
+                    <p class="message-text">${linkedText}</p>
                     <span class="message-time">${message.timestamp || ''}</span>
                 `;
 
@@ -271,6 +272,31 @@ function deleteMessageConfirm(messageId,userId) {
 function escapeHtml(str){
     return str.replace(/[&<>"']/g, function(m){
         return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#039;'}[m]);
+    });
+}
+
+// Convert plain URLs in already-escaped text to safe clickable links.
+function linkifyText(escapedText){
+    const urlRegex = /((https?:\/\/|www\.)[^\s<]+)/gi;
+    return String(escapedText || '').replace(urlRegex, function(match){
+        let url = match;
+        let trailing = '';
+
+        // Keep trailing punctuation outside of the clickable URL.
+        while (/[),.!?]$/.test(url)) {
+            trailing = url.slice(-1) + trailing;
+            url = url.slice(0, -1);
+        }
+
+        if (!url) {
+            return match;
+        }
+
+        const href = /^https?:\/\//i.test(url)
+            ? url.replace(/&amp;/g, '&')
+            : ('https://' + url.replace(/&amp;/g, '&'));
+
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:#002e55;text-decoration:underline;">${url}</a>${trailing}`;
     });
 }
 
