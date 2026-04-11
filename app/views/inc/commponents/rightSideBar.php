@@ -6,34 +6,15 @@
         <div class="card-title">
             <span>Upcoming Events</span>
         </div>
-        <div class="event">
-            <div class="event-category"><i class="fas fa-users"></i><span>IEEE CS Chapter</span></div>
-            <div class="event-name">AI Workshop</div>
-            <div class="sidebar-datetime">
-                <span class="sidebar-date"><i class="far fa-calendar-alt"></i><span>18 Aug</span></span>
-                <span class="sidebar-time"><i class="far fa-clock"></i><span>10:00 AM</span></span>
-                <span class="event-location">@S401</span>
+        <div id="upcoming-events-container">
+            <div class="loading-state" style="padding: 2rem; text-align: center; color: var(--muted);">
+                <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                <p style="margin: 0;">Loading events...</p>
             </div>
         </div>
-        <div class="event">
-            <div class="event-category"><i class="fas fa-university"></i><span>UCSC Alumni</span></div>
-            <div class="event-name">Tech Talk: Scaling Systems</div>
-            <div class="sidebar-datetime">
-                <span class="sidebar-date"><i class="far fa-calendar-alt"></i><span>22 Aug</span></span>
-                <span class="sidebar-time"><i class="far fa-clock"></i><span>05:30 PM</span></span>
-                <span class="event-location">Online</span>
-            </div>
+        <div class="show-more">
+            <a href="<?php echo URLROOT; ?>/calender" style="text-decoration: none; color: inherit;">View all</a>
         </div>
-        <div class="event">
-            <div class="event-category"><i class="fas fa-rocket"></i><span>Startup Club</span></div>
-            <div class="event-name">Founder Fireside</div>
-            <div class="sidebar-datetime">
-                <span class="sidebar-date"><i class="far fa-calendar-alt"></i><span>25 Aug</span></span>
-                <span class="sidebar-time"><i class="far fa-clock"></i><span>06:00 PM</span></span>
-                <span class="event-location">@W104</span>
-            </div>
-        </div>
-        <div class="show-more">Show more</div>
     </div>
 
     <!-- Open Fundraisers Card -->
@@ -57,6 +38,84 @@
 </div>
 
 <script>
+// Load upcoming events
+(function() {
+    const API_URL = '<?php echo URLROOT; ?>/calender/getUpcomingEvents?limit=3';
+    const container = document.getElementById('upcoming-events-container');
+
+    fetch(API_URL)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.events && data.events.length > 0) {
+                container.innerHTML = '';
+
+                data.events.forEach(event => {
+                    const eventElement = createUpcomingEventElement(event);
+                    container.appendChild(eventElement);
+                });
+            } else {
+                container.innerHTML = `
+                    <div style="padding: 2rem; text-align: center; color: var(--muted);">
+                        <i class="far fa-calendar-times" style="font-size: 2rem; opacity: 0.3; margin-bottom: 0.5rem;"></i>
+                        <p style="margin: 0;">No upcoming events</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading events:', error);
+            container.innerHTML = `
+                <div style="padding: 2rem; text-align: center; color: var(--danger);">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+                    <p style="margin: 0;">Failed to load events</p>
+                </div>
+            `;
+        });
+
+    function createUpcomingEventElement(event) {
+        const eventDiv = document.createElement('div');
+        eventDiv.className = 'event';
+        eventDiv.style.cursor = 'pointer';
+
+        eventDiv.onclick = function() {
+            window.location.href = '<?php echo URLROOT; ?>/calender/show/' + event.id;
+        };
+
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'event-category';
+        categoryDiv.innerHTML = `<i class="fas fa-calendar-check"></i><span>${escapeHtml(event.club_name || 'Campus Event')}</span>`;
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'event-name';
+        nameDiv.textContent = event.title || 'Upcoming Event';
+
+        const datetimeDiv = document.createElement('div');
+        datetimeDiv.className = 'sidebar-datetime';
+        datetimeDiv.innerHTML = `
+            <span class="sidebar-date"><i class="far fa-calendar-alt"></i><span>${escapeHtml(event.event_date_display || '')}</span></span>
+            <span class="sidebar-time"><i class="far fa-clock"></i><span>${escapeHtml(event.event_time_display || '')}</span></span>
+            <span class="event-location">${escapeHtml(event.event_venue || 'TBA')}</span>
+        `;
+
+        eventDiv.appendChild(categoryDiv);
+        eventDiv.appendChild(nameDiv);
+        eventDiv.appendChild(datetimeDiv);
+
+        return eventDiv;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+})();
+
 // Load active fundraiser campaigns
 (function() {
     const API_URL = '<?php echo URLROOT; ?>/fundraiser/getActiveCampaigns?limit=3';
