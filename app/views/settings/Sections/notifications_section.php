@@ -30,8 +30,8 @@
 
 		<div class="settings-option">
 			<div class="settings-option-details">
-				<h4>In-App Sounds</h4>
-				<p>Play a sound for new notifications</p>
+				<h4>In-App Notifications</h4>
+				<!-- <p>Play a sound for new notifications</p> -->
 			</div>
 			<label class="toggle">
 				<input type="checkbox" id="soundNotif">
@@ -63,7 +63,7 @@
 		</div>
 	</div> -->
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Categories</h3>
 		<div class="section-divider"></div>
 		<div class="settings-option">
@@ -98,7 +98,7 @@
 		</div>
 	</div>
 
-	<!-- DND Modal -->
+	 DND Modal 
 	<div id="dndModal" class="settings-modal">
 		<div class="settings-modal-content">
 			<div class="settings-modal-header">
@@ -131,7 +131,7 @@
 			</div>
 		</div>
 	</div>
-</div>
+</div> -->
 
 <script>
 document.addEventListener('DOMContentLoaded', function(){

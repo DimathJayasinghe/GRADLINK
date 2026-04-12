@@ -67,6 +67,7 @@ class settings extends Controller{
             return false;
         }
         return true;
+    }
     public function bookmarks(){
         $bookmarkModel = $this->model('M_bookmark');
         $data = [

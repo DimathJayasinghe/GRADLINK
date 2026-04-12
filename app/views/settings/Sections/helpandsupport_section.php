@@ -177,16 +177,89 @@ document.addEventListener('DOMContentLoaded', function(){
 		});
 	});
 
-	['feedbackForm','supportForm','reportForm'].forEach(id => {
-		const form = document.getElementById(id);
-		if (!form) return;
-		form.addEventListener('submit', function(e){
+	// Support form
+	const supportForm = document.getElementById('supportForm');
+	if (supportForm) {
+		supportForm.addEventListener('submit', function(e){
 			e.preventDefault();
-			alert('Submitted. This is a demo only.');
-			const modal = this.closest('.settings-modal');
-			if (modal) closeModal(modal);
+			const payload = {
+				email: document.getElementById('supportEmail').value,
+				topic: document.getElementById('supportTopic').value,
+				message: document.getElementById('supportMessage').value
+			};
+			fetch(URLROOT + '/settings/submitSupportRequest', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify(payload)
+			})
+			.then(r => r.json())
+			.then(res => {
+				if (res.success) {
+					alert('Support ticket submitted successfully! Ticket #' + res.ticket_id);
+					supportForm.reset();
+					closeModal(supportModal);
+				} else {
+					alert(res.error || 'Failed to submit support request.');
+				}
+			})
+			.catch(() => alert('Network error. Please try again.'));
 		});
-	});
+	}
+
+	// Report form
+	const reportForm = document.getElementById('reportForm');
+	if (reportForm) {
+		reportForm.addEventListener('submit', function(e){
+			e.preventDefault();
+			const payload = {
+				report_type: document.getElementById('reportType').value,
+				details: document.getElementById('reportDetails').value
+			};
+			fetch(URLROOT + '/settings/submitProblemReport', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify(payload)
+			})
+			.then(r => r.json())
+			.then(res => {
+				if (res.success) {
+					alert('Problem report submitted successfully! Report #' + res.report_id);
+					reportForm.reset();
+					closeModal(reportModal);
+				} else {
+					alert(res.error || 'Failed to submit report.');
+				}
+			})
+			.catch(() => alert('Network error. Please try again.'));
+		});
+	}
+
+	// Feedback form
+	const feedbackForm = document.getElementById('feedbackForm');
+	if (feedbackForm) {
+		feedbackForm.addEventListener('submit', function(e){
+			e.preventDefault();
+			const payload = {
+				feedback_type: document.getElementById('feedbackType').value,
+				message: document.getElementById('feedbackMessage').value
+			};
+			fetch(URLROOT + '/settings/submitFeedback', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify(payload)
+			})
+			.then(r => r.json())
+			.then(res => {
+				if (res.success) {
+					alert('Feedback submitted successfully! Thank you.');
+					feedbackForm.reset();
+				} else {
+					alert(res.error || 'Failed to submit feedback.');
+				}
+			})
+			.catch(() => alert('Network error. Please try again.'));
+		});
+	}
 
 	function openModal(modal){ if (modal) modal.style.display = 'block'; }
 	function closeModal(modal){ if (modal) modal.style.display = 'none'; }

@@ -38,7 +38,7 @@
         </div>
     </div>
     
-    <div class="settings-section">
+    <!-- <div class="settings-section">
         <h3>Profile Analytics</h3>
         <div class="section-divider"></div>
         <div class="analytics-dashboard">
@@ -60,17 +60,17 @@
                 <div class="analytics-trend">0% <span class="trend-icon">→</span></div>
             </div>
             
-            <!-- <div class="analytics-card">
+            <div class="analytics-card">
                 <div class="analytics-value"><?= isset($userAnalytics) ? $userAnalytics['avg_response_time'] : '0' ?>h</div>
                 <div class="analytics-label">Avg. Response Time</div>
                 <div class="analytics-trend down">-8% <span class="trend-icon">↓</span></div>
-            </div> -->
-        </div>
+            </div>
+        </div> -->
         
-        <div class="view-more-analytics">
+        <!-- <div class="view-more-analytics">
             <a href="#" class="view-more-link">View Detailed Analytics</a>
         </div>
-    </div>
+    </div> -->
     
     <div class="settings-section">
         <h3>Account Management</h3>
