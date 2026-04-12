@@ -53,13 +53,21 @@ class M_notification {
 
     public function markNotificationAsRead($notificationId) {
         $this->db->query('UPDATE notifications SET is_read = 1 WHERE id = :notification_id');
-        $this->db->bind(':notification_id', $notificationId);
+        $this->db->bind(':notification_id', (int)$notificationId);
+        return $this->db->execute();
+    }
+
+    public function markNotificationAsReadForUser($notificationId, $userId) {
+        $this->db->query('UPDATE notifications SET is_read = 1 WHERE id = :notification_id AND receiver_id = :receiver_id');
+        $this->db->bind(':notification_id', (int)$notificationId);
+        $this->db->bind(':receiver_id', (int)$userId);
         return $this->db->execute();
     }
 
     public function markAllAsRead($userId) {
-        $this->db->query('UPDATE notifications SET is_read = 1 WHERE receiver_id = :receiver_id AND is_read = 0');
+        $this->db->query('UPDATE notifications SET is_read = 1 WHERE receiver_id = :receiver_id AND is_read = 0 AND type <> :follow_type');
         $this->db->bind(':receiver_id', $userId);
+        $this->db->bind(':follow_type', 'follow_request');
         return $this->db->execute();
     }
 

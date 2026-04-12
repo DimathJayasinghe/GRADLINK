@@ -46,7 +46,7 @@ class NotificationManager {
         if (this.modalElement) {
             this.modalElement.addEventListener('click', (e) => {
                 if (e.target === this.modalElement) {
-                    $this.closeModal();
+                    this.closeModal();
                 }
             });
         }
@@ -183,12 +183,12 @@ class NotificationManager {
                         <div class="notification-time">${timeAgo}</div>
                         <div class="notification-actions" style="margin-top: 8px; display: flex; gap: 8px;">
                             <button class="btn-approve" 
-                                    onclick="event.stopPropagation(); notificationManager.handleFollowRequest(${requesterId}, 'approve', ${notification.id})"
+                                    onclick="event.stopPropagation(); window.notificationManager && window.notificationManager.handleFollowRequest(${requesterId}, 'approve', ${notification.id})"
                                     style="padding: 4px 12px; background: var(--primary-color, #4CAF50); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
                                 Accept
                             </button>
                             <button class="btn-reject" 
-                                    onclick="event.stopPropagation(); notificationManager.handleFollowRequest(${requesterId}, 'reject', ${notification.id})"
+                                    onclick="event.stopPropagation(); window.notificationManager && window.notificationManager.handleFollowRequest(${requesterId}, 'reject', ${notification.id})"
                                     style="padding: 4px 12px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
                                 Reject
                             </button>
@@ -292,6 +292,9 @@ class NotificationManager {
                 // Update UI
                 if (this.listElement) {
                     this.listElement.querySelectorAll('.notification-item').forEach(item => {
+                        if ((item.dataset.type || '') === 'follow_request') {
+                            return;
+                        }
                         item.classList.remove('unread');
                         item.classList.add('read');
                         const indicator = item.querySelector('.unread-indicator');
