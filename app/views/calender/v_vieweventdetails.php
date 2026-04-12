@@ -287,8 +287,7 @@ document.addEventListener('DOMContentLoaded', function(){
             method: 'POST',
             credentials: 'same-origin',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': window.GL_CSRF_TOKEN || ''
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(body)
         }).then(function(resp){ return resp.json(); });
@@ -300,8 +299,7 @@ document.addEventListener('DOMContentLoaded', function(){
         postJson('/bookmark/update', {
             type: 'events',
             reference_id: parseInt(eventId, 10),
-            bookmarked: !currently,
-            csrf_token: window.GL_CSRF_TOKEN
+            bookmarked: !currently
         })
             .then(function(data){
                 if(data && data.ok){
@@ -373,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(detailCancel){
         detailCancel.addEventListener('click', function(){
             if(!confirm('Cancel your RSVP?')) return;
-            fetch('<?php echo URLROOT; ?>/calender/cancelRsvp', { method: 'POST', credentials: 'same-origin', headers: Object.assign({'Content-Type':'application/json'}, (window.GL_CSRF_TOKEN?{'X-CSRF-Token':window.GL_CSRF_TOKEN}:{})), body: JSON.stringify({ event_id: Number(evtId), csrf_token: (window.GL_CSRF_TOKEN||null) }) }).then(r=>r.json()).then(function(data){
+            fetch('<?php echo URLROOT; ?>/calender/cancelRsvp', { method: 'POST', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ event_id: Number(evtId) }) }).then(r=>r.json()).then(function(data){
                 if(data && data.ok){
                     // refresh attendees UI
                     window.__GL_onRsvpConfirmed && window.__GL_onRsvpConfirmed(evtId);
