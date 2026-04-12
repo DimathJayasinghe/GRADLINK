@@ -287,9 +287,6 @@ async function bookmarkMessage(messageId, userId) {
 
     try {
         const headers = { 'Content-Type': 'application/json' };
-        if (typeof window !== 'undefined' && window.GL_CSRF_TOKEN) {
-            headers['X-CSRF-Token'] = window.GL_CSRF_TOKEN;
-        }
 
         const response = await fetch(`<?php echo URLROOT; ?>/bookmark/create`, {
             method: 'POST',

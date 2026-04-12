@@ -80,12 +80,6 @@ class eventrequest extends Controller{
             header('Location: ' . URLROOT . '/eventrequest/all'); exit();
         }
 
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            SessionManager::setFlash('error','Invalid CSRF token');
-            header('Location: ' . URLROOT . '/eventrequest/all'); exit();
-        }
-
         $row = $this->model->getById((int)$id);
         if(!$row){ SessionManager::setFlash('error','Event request not found'); header('Location: ' . URLROOT . '/eventrequest/all'); exit(); }
 
@@ -148,13 +142,6 @@ class eventrequest extends Controller{
             exit();
         }
 
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            SessionManager::setFlash('error','Invalid CSRF token');
-            header('Location: ' . URLROOT . '/eventrequest');
-            exit();
-        }
-
         $userId = SessionManager::getUserId();
         if(!$userId){
             SessionManager::setFlash('error','Please login to request events');
@@ -207,7 +194,7 @@ class eventrequest extends Controller{
         }
     }
 
-    // Delete an event request (allow GET for existing UI link; POST validated with CSRF)
+    // Delete an event request (allow GET for existing UI link; accept POST for compatibility)
     public function delete($id){
         SessionManager::ensureStarted();
         if($id === null){
@@ -215,14 +202,7 @@ class eventrequest extends Controller{
             exit();
         }
 
-        // If POST, require CSRF validation. If GET, allow (legacy UI uses a simple link).
-        if($_SERVER['REQUEST_METHOD'] === 'POST'){
-            require_once APPROOT . '/helpers/Csrf.php';
-            if(!Csrf::validateRequest()){
-                header('Location: ' . URLROOT . '/eventrequest/all');
-                exit();
-            }
-        } elseif($_SERVER['REQUEST_METHOD'] !== 'GET'){
+        if($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET'){
             // Only accept GET or POST for deletion
             header('Location: ' . URLROOT . '/eventrequest/all');
             exit();

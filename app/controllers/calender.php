@@ -199,13 +199,6 @@ class calender extends Controller{
                 exit();
             }
 
-            // Validate CSRF
-            require_once APPROOT . '/helpers/Csrf.php';
-            if(!Csrf::validateRequest()){
-                header('Location: ' . URLROOT . '/calender/bookmarks');
-                exit();
-            }
-
             if(!$userId || $eventId === null){
                 header('Location: ' . URLROOT . '/calender/bookmarks');
                 exit();
@@ -276,13 +269,6 @@ class calender extends Controller{
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
             return;
         }
-        // Validate CSRF token for AJAX POSTs
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
-            return;
-        }
-
         $input = json_decode(file_get_contents('php://input'), true);
         $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
         if(!$eventId){
@@ -303,11 +289,6 @@ class calender extends Controller{
         $userId = SessionManager::getUserId();
         if(!$userId){
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
-            return;
-        }
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
             return;
         }
         $input = json_decode(file_get_contents('php://input'), true);
@@ -336,11 +317,6 @@ class calender extends Controller{
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
             return;
         }
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
-            return;
-        }
         $input = json_decode(file_get_contents('php://input'), true);
         $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
         if(!$eventId){
@@ -366,13 +342,6 @@ class calender extends Controller{
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
             return;
         }
-        // Validate CSRF token for AJAX POSTs
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
-            return;
-        }
-
         $input = json_decode(file_get_contents('php://input'), true);
         $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
         $status = isset($input['status']) ? $input['status'] : 'attending';
@@ -404,11 +373,6 @@ class calender extends Controller{
         $userId = SessionManager::getUserId();
         if(!$userId){
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
-            return;
-        }
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
             return;
         }
         $input = json_decode(file_get_contents('php://input'), true);

@@ -200,9 +200,6 @@ document.addEventListener('click', function(e){
     btn.textContent = 'Removing...';
 
     var __gl_headers = { 'Content-Type': 'application/json' };
-    if(typeof window !== 'undefined' && window.GL_CSRF_TOKEN){
-        __gl_headers['X-CSRF-Token'] = window.GL_CSRF_TOKEN;
-    }
 
     fetch('<?php echo URLROOT; ?>/bookmark/delete', {
         method: 'POST',
