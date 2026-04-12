@@ -22,6 +22,13 @@
 .post-user-name { font-weight: 600; }
 .post-user-handle, .post-time { color: var(--muted); }
 .post-content { margin: 10px 0; line-height: 1.5; position: relative; max-width: fit-content; overflow-y: w;}
+.post-content-editing {
+	max-width: 100%;
+	padding: 12px;
+	border: 1px solid var(--primary);
+	border-radius: var(--radius-lg);
+	background: rgba(255,255,255,0.03);
+}
 .post-text { white-space: pre-wrap; word-break: break-word; }
 .seemore-btn ,.seeless-btn { color: var(--link); font-weight: bold; cursor: pointer; }
 .post-actions { display: flex; justify-content: space-around; margin-top: 15px; padding: 0 60px; }
@@ -30,6 +37,105 @@
 .post-actions i:hover { color: var(--link); transform: scale(1.2); }
 .post-media { margin-top: 10px; border-radius: 15px; overflow: hidden; position: relative; width: 100%; padding-bottom: 100%; }
 .post-media img { position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; }
+.post-media-editing { border: 1px solid var(--primary); }
+
+.post-edit-textarea {
+	width: 100%;
+	min-height: 110px;
+	padding: 10px 12px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	background: var(--input);
+	color: var(--text);
+	font-family: inherit;
+	font-size: 0.95rem;
+	line-height: 1.5;
+	resize: vertical;
+}
+.post-edit-textarea:focus {
+	outline: none;
+	border-color: var(--primary);
+}
+
+.edit-controls {
+	margin-top: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+.post-edit-file-input { display: none; }
+.post-edit-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.post-edit-image-btn,
+.post-edit-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 40px;
+	padding: 0 14px;
+	border-radius: var(--radius-lg);
+	border: 1px solid transparent;
+	font-size: 0.9rem;
+	font-weight: 600;
+	line-height: 1;
+	cursor: pointer;
+	transition: all .2s;
+	white-space: nowrap;
+	gap: 8px;
+}
+
+.post-edit-image-btn {
+	background: var(--surface-3);
+	color: var(--text);
+	border-color: var(--border);
+}
+.post-edit-image-btn:hover {
+	background: rgba(255,255,255,0.08);
+}
+
+.post-edit-btn-save {
+	background: var(--primary);
+	color: #fff;
+}
+.post-edit-btn-save:hover {
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-1);
+}
+
+.post-edit-btn-cancel {
+	background: transparent;
+	color: var(--text);
+	border-color: var(--border);
+}
+.post-edit-btn-cancel:hover {
+	background: rgba(255,255,255,0.08);
+}
+
+.post-edit-btn:disabled,
+.post-edit-image-btn:disabled {
+	opacity: .65;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: none;
+}
+
+@media (max-width: 640px) {
+	.post-edit-image-btn {
+		width: 100%;
+	}
+	.post-edit-actions {
+		width: 100%;
+	}
+	.post-edit-btn {
+		flex: 1;
+	}
+}
 
 /* State styles */
 .post-actions .liked i { color: #e0245e; }
@@ -85,3 +191,44 @@
 .form-group input:focus, .form-group select:focus, .certificate-form textarea:focus { outline:none; border-color: var(--primary); }
 .save-btn { background-color: var(--primary); color: var(--surface-0); padding: 12px; border: none; border-radius: var(--radius-lg); font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 10px; }
 .save-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+
+/* Confirm popup used by post edit actions */
+.post-confirm-modal { max-width: 460px; }
+.post-confirm-body {
+	color: var(--text);
+	padding: 8px 0 14px;
+}
+.post-confirm-body p {
+	margin: 0;
+	line-height: 1.5;
+}
+.post-confirm-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 10px;
+}
+.post-confirm-btn {
+	margin-top: 0;
+	height: 40px;
+	padding: 0 14px;
+	line-height: 1;
+}
+.post-confirm-btn-cancel {
+	background: transparent;
+	color: var(--text);
+	border: 1px solid var(--border);
+}
+.post-confirm-btn-cancel:hover {
+	background: rgba(255,255,255,0.08);
+	box-shadow: none;
+	transform: none;
+}
+.post-confirm-btn-primary {
+	background: var(--primary);
+	color: #fff;
+}
+.post-confirm-btn-danger {
+	background: var(--danger, #e53935);
+	color: #fff;
+}
