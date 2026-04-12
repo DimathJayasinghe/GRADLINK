@@ -52,6 +52,51 @@ class calender extends Controller{
         $data = ['events_payload' => $payload];
         $this->view("/calender/v_calender", $data);
     }
+
+    /**
+     * API endpoint to get upcoming public events for sidebar cards.
+     */
+    public function getUpcomingEvents()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 3;
+        if ($limit < 1) {
+            $limit = 3;
+        }
+        if ($limit > 20) {
+            $limit = 20;
+        }
+
+        $eventModel = $this->model('M_event');
+        $events = $eventModel->findList([
+            'start' => date('Y-m-d H:i:s'),
+            'visibility' => 'public',
+            'limit' => $limit
+        ]);
+
+        $payload = [];
+        foreach ($events as $event) {
+            $payload[] = [
+                'id' => (int)$event->id,
+                'title' => (string)$event->title,
+                'club_name' => (string)($event->organizer_name ?? 'Campus Event'),
+                'event_date' => date('Y-m-d', strtotime($event->start_datetime)),
+                'event_date_display' => date('d M', strtotime($event->start_datetime)),
+                'event_time' => date('H:i', strtotime($event->start_datetime)),
+                'event_time_display' => date('h:i A', strtotime($event->start_datetime)),
+                'event_venue' => (string)($event->venue ?? 'TBA')
+            ];
+        }
+
+        echo json_encode([
+            'success' => true,
+            'events' => $payload,
+            'count' => count($payload)
+        ]);
+        return;
+    }
+
     public function show($id = null) {
         // If no id is provided, redirect to the all page
         if($id === null) {

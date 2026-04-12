@@ -58,6 +58,7 @@
 <div class="main-content">
     
     <!-- Profile Section -->
+<<<<<<< HEAD
     <?php $hasProfileActions = (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id); ?>
     <div class="profile <?= $hasProfileActions ? 'has-actions' : 'no-actions' ?>">
         <div class="profile-up-part">
@@ -118,6 +119,9 @@
             </div>
         </div>
     </div>
+=======
+    <?php require APPROOT . '/views/profiles/partials/sections/profile.php'; ?>
+>>>>>>> origin/dev
 
     <!-- Navigation Buttons -->
     <div class="profile-navigation">
@@ -135,6 +139,7 @@
         require APPROOT . '/views/inc/commponents/newpost_section.php';
     } ?>
 
+<<<<<<< HEAD
     <!-- Posts Section - Using same structure as main feed -->
     <div class="feed" id="postsSection">
         <?php if (!empty($data['posts'])): foreach ($data['posts'] as $p): ?>
@@ -159,6 +164,10 @@
             <div class="no-posts-message">No posts yet.</div>
         <?php endif; ?>
     </div>
+=======
+    <!-- Posts Section -->
+    <?php require APPROOT . '/views/profiles/partials/sections/post.php'; ?>
+>>>>>>> origin/dev
 
     <!-- Info Section: Certificates, Work Experience and Projects -->
     <div class="info-section" id="infoSection">

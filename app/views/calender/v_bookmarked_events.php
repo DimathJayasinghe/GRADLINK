@@ -204,10 +204,13 @@ document.addEventListener('click', function(e){
         __gl_headers['X-CSRF-Token'] = window.GL_CSRF_TOKEN;
     }
 
-    fetch('<?php echo URLROOT; ?>/calender/toggleBookmark', {
+    fetch('<?php echo URLROOT; ?>/bookmark/delete', {
         method: 'POST',
         headers: __gl_headers,
-        body: JSON.stringify({ event_id: parseInt(eventId,10) })
+        body: JSON.stringify({
+            type: 'events',
+            reference_id: parseInt(eventId,10)
+        })
     }).then(function(res){
         return res.json();
     }).then(function(json){

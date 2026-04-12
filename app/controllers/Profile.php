@@ -36,11 +36,11 @@ class Profile extends Controller{
         if (!$user_id){
             $user_id = $_SESSION['user_id'];
         }
-        $isBlocked = $this->Model->isBlocked($_SESSION['user_id'], $user_id);
-        if ($isBlocked){
-            header("Location: " . URLROOT . "/profile?userid=" . $_SESSION['user_id']);
-            exit;
-        }
+        // $isBlocked = $this->Model->isBlocked($_SESSION['user_id'], $user_id);
+        // if ($isBlocked){
+        //     header("Location: " . URLROOT . "/profile?userid=" . $_SESSION['user_id']);
+        //     exit;
+        // }
 
 
         // handle other user profile view

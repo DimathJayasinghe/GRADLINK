@@ -37,6 +37,7 @@ class Notification extends Controller
         }
         $notifications = $this->notificationModel->getUserNotifications($userId);
         echo json_encode(['notifications' => $notifications, 'success' => true]);
+        $this->notificationModel->markAllAsRead($userId);
     }
 
     public function markAsRead()

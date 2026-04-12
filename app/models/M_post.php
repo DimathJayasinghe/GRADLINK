@@ -68,6 +68,9 @@ class M_post {
 		$this->db->bind(':l',(int)$limit,PDO::PARAM_INT); return $this->db->resultSet(); }
 		
 	public function addComment($pid,$uid,$content){ $this->db->query('INSERT INTO comments (post_id,user_id,content) VALUES (:p,:u,:c)'); $this->db->bind(':p',$pid); $this->db->bind(':u',$uid); $this->db->bind(':c',$content); return $this->db->execute(); }
+	public function getCommentById($cid){ $this->db->query('SELECT id,post_id,user_id,content FROM comments WHERE id=:id LIMIT 1'); $this->db->bind(':id',$cid); return $this->db->single(); }
+	public function updateComment($cid,$content){ $this->db->query('UPDATE comments SET content=:c WHERE id=:id'); $this->db->bind(':c',$content); $this->db->bind(':id',$cid); return $this->db->execute(); }
+	public function deleteComment($cid){ $this->db->query('DELETE FROM comments WHERE id=:id'); $this->db->bind(':id',$cid); return $this->db->execute(); }
 	public function getComments($pid){
 		// Alias IDs to avoid name collisions and provide stable keys for frontend
 		$this->db->query('SELECT c.id AS comment_id, c.content, c.created_at, u.name, u.profile_image, u.role, u.id AS user_id FROM comments c JOIN users u ON u.id=c.user_id WHERE c.post_id=:p ORDER BY c.created_at ASC');

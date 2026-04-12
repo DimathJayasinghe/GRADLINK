@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   } finally {
     hidePostSkeletons();
     scrollToTop();
+    await maybeOpenSharedPostFromQuery();
     startPollingNewPosts();
   }
 
@@ -307,4 +308,65 @@ function getLatestCreatedAt(posts) {
     }
   }
   return max;
+}
+
+async function maybeOpenSharedPostFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const postId = params.get("post_id");
+  if (!postId || !/^\d+$/.test(postId)) return;
+  await openSharedPostPopup(postId);
+}
+
+async function openSharedPostPopup(postId) {
+  let overlay = document.getElementById("shared-post-popup");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "shared-post-popup";
+    overlay.className = "certificate-add-popup";
+    overlay.style.display = "none";
+    document.body.appendChild(overlay);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.style.display = "none";
+    });
+  }
+
+  overlay.innerHTML = `
+    <div class="certificate-add" style="max-width:760px; width:95%; max-height:90vh; overflow:auto;">
+      <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+      <div class="form-title">Shared Post</div>
+      <div id="shared-post-popup-content" style="margin-top:10px;"></div>
+    </div>`;
+
+  overlay.querySelector(".close-popup")?.addEventListener("click", () => {
+    overlay.style.display = "none";
+  });
+
+  const content = overlay.querySelector("#shared-post-popup-content");
+  if (content) {
+    content.innerHTML = '<p style="color:var(--muted);">Loading post...</p>';
+  }
+
+  overlay.style.display = "flex";
+
+  try {
+    const response = await fetch(`mainfeed/getPost/${encodeURIComponent(postId)}`, {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data?.success || !data?.post) {
+      if (content) content.innerHTML = '<p style="color:var(--danger, #f66);">Post not found.</p>';
+      return;
+    }
+
+    if (content) {
+      content.innerHTML = "";
+      const postCard = createPostCard(data.post);
+      content.appendChild(postCard);
+    }
+  } catch (error) {
+    if (content) {
+      content.innerHTML = '<p style="color:var(--danger, #f66);">Failed to load post.</p>';
+    }
+  }
 }

@@ -90,49 +90,74 @@ class Post extends Controller
         echo json_encode($this->m->getComments($pid));
     }
 
-    public function report($pid = null)
+    public function editComment($cid)
     {
         header('Content-Type: application/json');
-
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
-            echo json_encode(['status' => 'error', 'message' => 'Method not allowed']);
+            echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        if (!is_numeric($cid) || (int)$cid <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid comment ID']);
             return;
         }
 
-        if (!isset($_SESSION['user_id'])) {
-            echo json_encode(['status' => 'error', 'message' => 'User not logged in']);
+        $comment = $this->m->getCommentById((int)$cid);
+        if (!$comment) {
+            echo json_encode(['ok' => false, 'error' => 'Comment not found']);
+            return;
+        }
+        if ((int)$comment->user_id !== (int)($_SESSION['user_id'] ?? 0)) {
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
             return;
         }
 
-        $input = json_decode(file_get_contents('php://input'), true);
-        $postId = $pid ?? ($input['post_id'] ?? ($_POST['post_id'] ?? null));
-        $category = trim($input['category'] ?? ($_POST['category'] ?? ''));
-        $details = trim($input['details'] ?? ($_POST['details'] ?? ''));
-        $referenceLink = trim($input['link'] ?? ($input['reference_link'] ?? ($_POST['link'] ?? ($_POST['reference_link'] ?? ''))));
-
-        if (!is_numeric($postId) || (int)$postId <= 0) {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid post ID']);
+        $content = trim($_POST['content'] ?? '');
+        if ($content === '') {
+            echo json_encode(['ok' => false, 'error' => 'Comment cannot be empty']);
             return;
         }
 
-        if ($category === '') {
-            echo json_encode(['status' => 'error', 'message' => 'Report category is required']);
+        $ok = $this->m->updateComment((int)$cid, $content);
+        if (!$ok) {
+            echo json_encode(['ok' => false, 'error' => 'Failed to update comment']);
             return;
         }
 
-        $reportId = $this->m->reportPost((int)$postId, (int)$_SESSION['user_id'], $category, $details, $referenceLink);
+        echo json_encode(['ok' => true, 'comments' => $this->m->getComments((int)$comment->post_id)]);
+    }
 
-        if ($reportId === false) {
-            echo json_encode(['status' => 'error', 'message' => 'Failed to submit report']);
+    public function deleteComment($cid)
+    {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        if (!is_numeric($cid) || (int)$cid <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid comment ID']);
             return;
         }
 
-        echo json_encode([
-            'status' => 'success',
-            'message' => 'Post reported successfully',
-            'report_id' => $reportId,
-        ]);
+        $comment = $this->m->getCommentById((int)$cid);
+        if (!$comment) {
+            echo json_encode(['ok' => false, 'error' => 'Comment not found']);
+            return;
+        }
+        if ((int)$comment->user_id !== (int)($_SESSION['user_id'] ?? 0)) {
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+
+        $ok = $this->m->deleteComment((int)$cid);
+        if (!$ok) {
+            echo json_encode(['ok' => false, 'error' => 'Failed to delete comment']);
+            return;
+        }
+
+        echo json_encode(['ok' => true, 'comments' => $this->m->getComments((int)$comment->post_id)]);
     }
 
     public function like($pid)

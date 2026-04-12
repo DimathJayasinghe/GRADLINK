@@ -1,3 +1,9 @@
+.gitignore
+
+/storage/certificates/
+/storage/posts/
+
+
 # Environment files
 .env
 .env.local
