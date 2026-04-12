@@ -58,70 +58,7 @@
 <div class="main-content">
     
     <!-- Profile Section -->
-<<<<<<< HEAD
-    <?php $hasProfileActions = (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id); ?>
-    <div class="profile <?= $hasProfileActions ? 'has-actions' : 'no-actions' ?>">
-        <div class="profile-up-part">
-            <?php if ($isOwner) {
-                echo '
-                            <div class="profile-edit-btn">
-                        <i class="fas fa-pencil-alt"></i>
-                    </div>
-                        ';
-            } ?>
-
-        </div>
-        <div class="profile-down-part">
-            <div class="profile-image">
-                <img src="<?php echo URLROOT; ?>/media/profile/<?php echo $data['userDetails']->profile_image ?? 'default.jpg'; ?>" alt="Profile" id="profileImageEl">
-            </div>
-            <div class="profile-name-container">
-                <div class="profile-name">
-                    <?= isset($data['userDetails']->name) ? htmlspecialchars($data['userDetails']->name) : 'Alumni Name' ?>
-                    <div class="batch-indicator">
-                        <?= isset($data['userDetails']->batch_no) ? htmlspecialchars($data['userDetails']->batch_no) : '20' ?>
-                    </div>
-                </div>
-                <div class="profile-bio" id="profileBioEl">
-                    <?= isset($data['userDetails']->bio) ? htmlspecialchars($data['userDetails']->bio) : 'Software Engineer at Google' ?>
-                </div>
-                <div class="profile-footer-spacer"></div>
-                <?php if (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id): ?>
-                    <div class="profile-actions">
-                        <?php 
-                        $isFollowing = $data['isfollowed'];
-                        $hasPending = $data['has_pending_request'] ?? false;
-                        $buttonState = $isFollowing ? 'following' : ($hasPending ? 'pending' : 'follow');
-                        ?>
-                        <button
-                            class="action-btn connect-btn <?= $isFollowing ? 'active' : '' ?> <?= $hasPending ? 'pending' : '' ?>"
-                            id="connectBtn"
-                            data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
-                            data-connected="<?= $isFollowing ?  '1' : '0'; ?>"
-                            data-pending="<?= $hasPending ? '1' : '0'; ?>"
-                            title="<?= htmlspecialchars(($isFollowing ? 'Following ' : ($hasPending ? 'Request pending for ' : 'Follow ')) . ($data['userDetails']->name ?? 'user')) ?>">
-                            <i class="<?= $isFollowing ? 'fas fa-user-check' : ($hasPending ? 'fas fa-clock' : 'fas fa-user-plus') ?>" aria-hidden="true"></i>
-                            <span><?= $isFollowing ? 'Following' : ($hasPending ? 'Pending' : 'Follow') ?></span>
-                        </button>
-                        <?php if ($isFollowing): ?>
-                        <button
-                            class="action-btn message-btn"
-                            id="messageBtn"
-                            data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
-                            title="Message <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
-                            <i class="fas fa-envelope" aria-hidden="true"></i>
-                            <span>Message</span>
-                        </button>
-                        <?php endif; ?>
-                       
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-=======
     <?php require APPROOT . '/views/profiles/partials/sections/profile.php'; ?>
->>>>>>> origin/dev
 
     <!-- Navigation Buttons -->
     <div class="profile-navigation">
@@ -139,35 +76,8 @@
         require APPROOT . '/views/inc/commponents/newpost_section.php';
     } ?>
 
-<<<<<<< HEAD
-    <!-- Posts Section - Using same structure as main feed -->
-    <div class="feed" id="postsSection">
-        <?php if (!empty($data['posts'])): foreach ($data['posts'] as $p): ?>
-                <post-card
-                    profile-img="<?php echo htmlspecialchars($p->profile_image ?? ''); ?>"
-                    user-role="<?php echo htmlspecialchars($p->role ?? ''); ?>"
-                    user-name="<?php echo htmlspecialchars($p->name ?? 'User'); ?>"
-                    tag="@user<?php echo $p->user_id ?? ''; ?>"
-                    post-time="<?php echo isset($p->created_at) ? date('M d', strtotime($p->created_at)) : ''; ?>"
-                    post-content="<?php echo htmlspecialchars($p->content ?? ''); ?>"
-                    post-img="<?php echo htmlspecialchars($p->image ?? ''); ?>"
-                    like-count="<?php echo $p->likes ?? 0; ?>"
-                    cmnt-count="<?php echo $p->comments ?? 0; ?>"
-                    liked="<?php echo !empty($p->liked) ? 1 : 0; ?>"
-                    post-id="<?php echo $p->id ?? ''; ?>"
-                    post-user-id="<?php echo $p->user_id ?? ''; ?>"
-                    current-user-id="<?php echo $_SESSION['user_id'] ?? ''; ?>"
-                    current-user-role="<?php echo $_SESSION['user_role'] ?? ''; ?>">
-                </post-card>
-            <?php endforeach;
-        else: ?>
-            <div class="no-posts-message">No posts yet.</div>
-        <?php endif; ?>
-    </div>
-=======
     <!-- Posts Section -->
     <?php require APPROOT . '/views/profiles/partials/sections/post.php'; ?>
->>>>>>> origin/dev
 
     <!-- Info Section: Certificates, Work Experience and Projects -->
     <div class="info-section" id="infoSection">
