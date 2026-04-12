@@ -16,6 +16,7 @@ if (!function_exists('gl_bootstrap_env')) {
         $paths = $paths ?? [
             $projectRoot . '/.env.local',
             $projectRoot . '/.env',
+            $projectRoot . '/.env.example',
         ];
         
         foreach ($paths as $path) {
