@@ -145,8 +145,7 @@ class PostCard extends HTMLElement {
         } else if(act === 'suspend') {
           // Only admin can suspend (not themselves)
           if(!isAdmin || isOwner) return;
-          // Backend API: POST /api/users/{postUserId}/suspend
-          console.log('Suspend user placeholder for', postUserId);
+          this._openSuspendUserPopup(postUserId, userName);
         } else if(act === 'delete-post') {
           // Owner OR admin can delete
           if(!isOwner && !isAdmin) return;
@@ -846,6 +845,79 @@ class PostCard extends HTMLElement {
         show_popup('Network error while deleting');
       }
     });
+    overlay.style.display = 'flex';
+  }
+
+  _openSuspendUserPopup(targetUserId, targetUserName){
+    const uid = Number(targetUserId || 0);
+    if (!uid) {
+      show_popup('Invalid user selected for suspension');
+      return;
+    }
+
+    const overlay = this._ensureOverlay(`user-suspend-popup-${uid}`);
+    const safeName = this._esc(targetUserName || 'this user');
+    overlay.innerHTML = `
+      <div class="certificate-add" style="max-width:560px;">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Suspend User</div>
+        <form class="certificate-form" id="suspendUserForm-${uid}" novalidate>
+          <div style="color:var(--text); padding:10px 0 6px;">
+            <p>Are you sure you want to suspend <strong>${safeName}</strong>?</p>
+            <p style="color:var(--muted); font-size:0.92em; margin-top:8px;">Suspended users cannot login or create content until admins restore access.</p>
+          </div>
+          <div class="form-group">
+            <label for="suspendReason-${uid}">Reason (optional)</label>
+            <textarea id="suspendReason-${uid}" rows="4" placeholder="Describe why this account is being suspended..." style="padding:10px;border-radius: var(--radius-lg);border:1px solid var(--border);background:var(--input);color:var(--text);"></textarea>
+          </div>
+          <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+            <button type="submit" class="save-btn" style="background:var(--danger);color:#fff;">Suspend User</button>
+          </div>
+        </form>
+      </div>`;
+
+    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+
+    const form = overlay.querySelector(`#suspendUserForm-${uid}`);
+    const reasonEl = overlay.querySelector(`#suspendReason-${uid}`);
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const previousText = submitBtn?.textContent || 'Suspend User';
+      const reason = (reasonEl?.value || '').trim();
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Suspending...';
+      }
+
+      try {
+        const response = await fetch(`${window.URLROOT}/admin/suspendUser`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify({ user_id: uid, reason })
+        });
+
+        const data = await response.json().catch(() => null);
+        if (response.ok && data && data.ok) {
+          overlay.style.display = 'none';
+          show_popup(data.message || 'User suspended successfully');
+        } else {
+          show_popup((data && data.error) ? data.error : 'Failed to suspend user');
+        }
+      } catch (err) {
+        show_popup('Network error while suspending user');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = previousText;
+        }
+      }
+    });
+
     overlay.style.display = 'flex';
   }
 

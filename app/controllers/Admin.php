@@ -74,6 +74,119 @@
             $data = [];
             $this->view('admin/v_posts', $data);
         }
+
+        public function suspendedUsers() {
+            $data = [
+                'active_suspensions' => $this->adminModel->getActiveSuspendedUsers(),
+                'suspension_history' => $this->adminModel->getSuspensionHistory(100),
+            ];
+            $this->view('admin/v_suspended_users', $data);
+        }
+
+        public function suspendUser() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $userId = (int)($input['user_id'] ?? 0);
+            $reason = trim((string)($input['reason'] ?? ''));
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($userId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Invalid user ID'], 400);
+                return;
+            }
+
+            if ($adminId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Unauthenticated'], 401);
+                return;
+            }
+
+            if ($userId === $adminId) {
+                $this->jsonResponse(['ok' => false, 'error' => 'You cannot suspend your own account'], 400);
+                return;
+            }
+
+            $result = $this->adminModel->suspendUser($userId, $adminId, $reason);
+            if (!empty($result['ok'])) {
+                $this->jsonResponse(['ok' => true, 'message' => $result['message'] ?? 'User suspended']);
+                return;
+            }
+
+            $this->jsonResponse(['ok' => false, 'error' => $result['message'] ?? 'Failed to suspend user'], 400);
+        }
+
+        public function liftSuspension() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $suspensionId = (int)($_POST['suspension_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($suspensionId <= 0) {
+                SessionManager::setFlash('error', 'Invalid suspension record.');
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $result = $this->adminModel->liftSuspension($suspensionId, $adminId);
+            if (!empty($result['ok'])) {
+                SessionManager::setFlash('success', $result['message'] ?? 'Suspension removed.');
+            } else {
+                SessionManager::setFlash('error', $result['message'] ?? 'Failed to remove suspension.');
+            }
+
+            $this->redirect('/admin/suspendedUsers');
+        }
+
+        public function removeSuspendedUser() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $suspensionId = (int)($_POST['suspension_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($suspensionId <= 0) {
+                SessionManager::setFlash('error', 'Invalid suspension record.');
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $suspension = $this->adminModel->getSuspensionById($suspensionId);
+            if (!$suspension || (int)($suspension->user_id ?? 0) <= 0) {
+                SessionManager::setFlash('error', 'Suspended user not found.');
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $userId = (int)$suspension->user_id;
+
+            $deleteResult = $this->adminModel->deleteUserCompletely($userId);
+            if (!empty($deleteResult['ok'])) {
+                $markResult = $this->adminModel->markSuspensionRemoved($suspensionId, $adminId);
+
+                if (!empty($markResult['ok'])) {
+                    SessionManager::setFlash('success', 'Suspended user was removed from the system.');
+                } else {
+                    SessionManager::setFlash('warning', 'User was removed, but suspension history could not be updated.');
+                }
+            } else {
+                SessionManager::setFlash('error', $deleteResult['message'] ?? 'Failed to remove user from system.');
+            }
+
+            $this->redirect('/admin/suspendedUsers');
+        }
+
         public function fundraisers() {
             $stats = $this->adminModel->getFundraiserStats();
             $fundraisers = $this->adminModel->getAllFundraisersForAdmin();
@@ -563,6 +676,12 @@
                 SessionManager::setFlash('error', "$failCount alumni could not be rejected.");
             }
             $this->redirect('/admin/verifications');
+        }
+
+        private function jsonResponse(array $payload, int $status = 200): void {
+            http_response_code($status);
+            header('Content-Type: application/json');
+            echo json_encode($payload);
         }
     }
 ?>

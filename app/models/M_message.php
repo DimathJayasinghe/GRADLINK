@@ -1,5 +1,35 @@
 <?php
 class M_message extends Database {
+
+    public function __construct() {
+        parent::__construct();
+        $this->ensureSuspendedUsersTable();
+    }
+
+    private function ensureSuspendedUsersTable(): void {
+        try {
+            $this->query("CREATE TABLE IF NOT EXISTS suspended_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                suspended_by INT NOT NULL,
+                reason TEXT NULL,
+                status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+                suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                lifted_at DATETIME NULL,
+                lifted_by INT NULL,
+                removed_at DATETIME NULL,
+                removed_by INT NULL,
+                snapshot_name VARCHAR(255) NULL,
+                snapshot_email VARCHAR(255) NULL,
+                snapshot_role VARCHAR(50) NULL,
+                INDEX idx_suspended_users_user (user_id),
+                INDEX idx_suspended_users_status (status),
+                INDEX idx_suspended_users_suspended_at (suspended_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->execute();
+        } catch (Exception $e) {
+        }
+    }
     
     /**
      * Get all available users (excluding current user) with optional search
@@ -20,8 +50,10 @@ class M_message extends Database {
                 LEFT JOIN followers f_following ON f_following.followed_id = u.id AND f_following.follower_id = :current_user_id
                 LEFT JOIN followers f_follower ON f_follower.follower_id = u.id AND f_follower.followed_id = :current_user_id
                 LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
-                LEFT JOIN messages m_from_them ON m_from_them.sender_id = u.id AND m_from_them.receiver_id = :current_user_id              
+                LEFT JOIN messages m_from_them ON m_from_them.sender_id = u.id AND m_from_them.receiver_id = :current_user_id
+                LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
                 WHERE u.id != :current_user_id
+                    AND su.id IS NULL
                     AND (
                         f_following.follower_id IS NOT NULL 
                         OR (f_follower.follower_id IS NOT NULL AND m_from_them.message_id IS NOT NULL)
@@ -52,14 +84,16 @@ class M_message extends Database {
      * Get conversation partner info
      */
     public function getConversationPartner($userId) {
-        $sql = "SELECT 
-                    id as user_id,
-                    name,
-                    display_name,
-                    email,
-                    profile_image as profile_picture
-                FROM users
-                WHERE id = :user_id
+                $sql = "SELECT 
+                                        u.id as user_id,
+                                        u.name,
+                                        u.display_name,
+                                        u.email,
+                                        u.profile_image as profile_picture
+                                FROM users u
+                                LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
+                                WHERE u.id = :user_id
+                                    AND su.id IS NULL
                 LIMIT 1";
         
         $this->query($sql);
@@ -98,6 +132,10 @@ class M_message extends Database {
      * Send a message
      */
     public function sendMessage($senderId, $receiverId, $messageText) {
+        if ($this->isUserSuspended($senderId) || $this->isUserSuspended($receiverId)) {
+            return false;
+        }
+
         $sql = "INSERT INTO messages (sender_id, receiver_id, message_text) 
                 VALUES (:sender_id, :receiver_id, :message_text)";
         
@@ -158,6 +196,23 @@ class M_message extends Database {
         $this->bind(':user_id', $userId);
 
         return $this->execute();
+    }
+
+    public function isUserSuspended($userId) {
+        try {
+            $sql = "SELECT 1
+                    FROM suspended_users
+                    WHERE user_id = :user_id
+                      AND status = 'active'
+                    LIMIT 1";
+
+            $this->query($sql);
+            $this->bind(':user_id', (int)$userId);
+
+            return $this->single() !== false;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
 

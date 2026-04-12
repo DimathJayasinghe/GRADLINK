@@ -315,6 +315,13 @@ class Signup extends Controller
             $data['errors'][] = 'Please enter an email address';
         } else if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             $data['errors'][] = 'Please enter a valid email address';
+        } else if (($suspension = $this->signupModel->getActiveSuspensionByEmail($data['email']))) {
+            $message = 'This account is suspended and cannot be used for registration.';
+            $reason = trim((string)($suspension->reason ?? ''));
+            if ($reason !== '') {
+                $message .= ' Reason: ' . $reason;
+            }
+            $data['errors'][] = $message;
         } else if ($this->signupModel->findUserByEmail($data['email'])) {
             $data['errors'][] = 'Email already in use';
         }

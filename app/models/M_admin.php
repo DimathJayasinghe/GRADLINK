@@ -212,6 +212,280 @@ class M_admin {
         return $this->db->single();
     }
 
+    // ==================== USER SUSPENSION METHODS ====================
+
+    private function ensureSuspendedUsersTable(): void {
+        $this->db->query("CREATE TABLE IF NOT EXISTS suspended_users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            suspended_by INT NOT NULL,
+            reason TEXT NULL,
+            status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+            suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            lifted_at DATETIME NULL,
+            lifted_by INT NULL,
+            removed_at DATETIME NULL,
+            removed_by INT NULL,
+            snapshot_name VARCHAR(255) NULL,
+            snapshot_email VARCHAR(255) NULL,
+            snapshot_role VARCHAR(50) NULL,
+            INDEX idx_suspended_users_user (user_id),
+            INDEX idx_suspended_users_status (status),
+            INDEX idx_suspended_users_suspended_at (suspended_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $this->db->execute();
+    }
+
+    public function isUserActivelySuspended(int $userId): bool {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT 1 FROM suspended_users WHERE user_id = :user_id AND status = 'active' LIMIT 1");
+            $this->db->bind(':user_id', $userId);
+            return (bool)$this->db->single();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function getActiveSuspendedUsers(): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT
+                    su.id AS suspension_id,
+                    su.user_id,
+                    COALESCE(u.name, su.snapshot_name, 'Unknown User') AS name,
+                    COALESCE(u.email, su.snapshot_email, '-') AS email,
+                    COALESCE(u.role, su.snapshot_role, '-') AS role,
+                    su.reason,
+                    su.suspended_at,
+                    sb.name AS suspended_by_name
+                FROM suspended_users su
+                LEFT JOIN users u ON u.id = su.user_id
+                LEFT JOIN users sb ON sb.id = su.suspended_by
+                WHERE su.status = 'active'
+                ORDER BY su.suspended_at DESC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public function getSuspensionHistory(int $limit = 100): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT
+                    su.id AS suspension_id,
+                    su.user_id,
+                    COALESCE(u.name, su.snapshot_name, 'Removed User') AS name,
+                    COALESCE(u.email, su.snapshot_email, '-') AS email,
+                    COALESCE(u.role, su.snapshot_role, '-') AS role,
+                    su.reason,
+                    su.status,
+                    su.suspended_at,
+                    su.lifted_at,
+                    su.removed_at,
+                    sb.name AS suspended_by_name,
+                    lb.name AS lifted_by_name,
+                    rb.name AS removed_by_name
+                FROM suspended_users su
+                LEFT JOIN users u ON u.id = su.user_id
+                LEFT JOIN users sb ON sb.id = su.suspended_by
+                LEFT JOIN users lb ON lb.id = su.lifted_by
+                LEFT JOIN users rb ON rb.id = su.removed_by
+                WHERE su.status IN ('lifted', 'removed')
+                ORDER BY su.suspended_at DESC
+                LIMIT :limit");
+            $this->db->bind(':limit', max(1, (int)$limit), PDO::PARAM_INT);
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public function getSuspensionById(int $suspensionId): ?object {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT * FROM suspended_users WHERE id = :id LIMIT 1");
+            $this->db->bind(':id', $suspensionId);
+            $row = $this->db->single();
+            return $row ?: null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    public function suspendUser(int $userId, int $adminId, string $reason = ''): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+
+            $this->db->query("SELECT id, name, email, role FROM users WHERE id = :id LIMIT 1");
+            $this->db->bind(':id', $userId);
+            $user = $this->db->single();
+
+            if (!$user) {
+                return ['ok' => false, 'message' => 'User not found'];
+            }
+
+            if (strtolower((string)($user->role ?? '')) === 'admin') {
+                return ['ok' => false, 'message' => 'Admin accounts cannot be suspended'];
+            }
+
+            $this->db->query("SELECT id FROM suspended_users WHERE user_id = :user_id AND status = 'active' LIMIT 1");
+            $this->db->bind(':user_id', $userId);
+            $active = $this->db->single();
+
+            if ($active) {
+                $this->db->query("UPDATE suspended_users
+                                SET suspended_by = :admin_id,
+                                    reason = :reason,
+                                    suspended_at = NOW(),
+                                    snapshot_name = :snapshot_name,
+                                    snapshot_email = :snapshot_email,
+                                    snapshot_role = :snapshot_role
+                                WHERE id = :id");
+                $this->db->bind(':admin_id', $adminId);
+                $this->db->bind(':reason', $reason !== '' ? $reason : null);
+                $this->db->bind(':snapshot_name', $user->name ?? null);
+                $this->db->bind(':snapshot_email', $user->email ?? null);
+                $this->db->bind(':snapshot_role', $user->role ?? null);
+                $this->db->bind(':id', (int)$active->id);
+                $this->db->execute();
+
+                return ['ok' => true, 'message' => 'User suspension was refreshed'];
+            }
+
+            $this->db->query("INSERT INTO suspended_users
+                            (user_id, suspended_by, reason, status, suspended_at, snapshot_name, snapshot_email, snapshot_role)
+                            VALUES
+                            (:user_id, :suspended_by, :reason, 'active', NOW(), :snapshot_name, :snapshot_email, :snapshot_role)");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':suspended_by', $adminId);
+            $this->db->bind(':reason', $reason !== '' ? $reason : null);
+            $this->db->bind(':snapshot_name', $user->name ?? null);
+            $this->db->bind(':snapshot_email', $user->email ?? null);
+            $this->db->bind(':snapshot_role', $user->role ?? null);
+            $this->db->execute();
+
+            return ['ok' => true, 'message' => 'User suspended successfully'];
+        } catch (Exception $e) {
+            return ['ok' => false, 'message' => 'Failed to suspend user'];
+        }
+    }
+
+    public function liftSuspension(int $suspensionId, int $adminId): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT id FROM suspended_users WHERE id = :id AND status = 'active' LIMIT 1");
+            $this->db->bind(':id', $suspensionId);
+            $row = $this->db->single();
+
+            if (!$row) {
+                return ['ok' => false, 'message' => 'Active suspension not found'];
+            }
+
+            $this->db->query("UPDATE suspended_users
+                            SET status = 'lifted',
+                                lifted_at = NOW(),
+                                lifted_by = :lifted_by
+                            WHERE id = :id");
+            $this->db->bind(':lifted_by', $adminId);
+            $this->db->bind(':id', $suspensionId);
+            $this->db->execute();
+
+            return ['ok' => true, 'message' => 'Suspension removed'];
+        } catch (Exception $e) {
+            return ['ok' => false, 'message' => 'Failed to remove suspension'];
+        }
+    }
+
+    public function markSuspensionRemoved(int $suspensionId, int $adminId): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("UPDATE suspended_users
+                            SET status = 'removed',
+                                removed_at = NOW(),
+                                removed_by = :removed_by,
+                                lifted_at = IFNULL(lifted_at, NOW()),
+                                lifted_by = IFNULL(lifted_by, :removed_by_2)
+                            WHERE id = :id");
+            $this->db->bind(':removed_by', $adminId);
+            $this->db->bind(':removed_by_2', $adminId);
+            $this->db->bind(':id', $suspensionId);
+            $this->db->execute();
+
+            if ($this->db->rowCount() < 1) {
+                return ['ok' => false, 'message' => 'Suspension record not found'];
+            }
+
+            return ['ok' => true, 'message' => 'Suspension updated as removed'];
+        } catch (Exception $e) {
+            return ['ok' => false, 'message' => 'Failed to update suspension status'];
+        }
+    }
+
+    public function deleteUserCompletely(int $userId): array {
+        if ($userId <= 0) {
+            return ['ok' => false, 'message' => 'Invalid user ID'];
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $cleanupQueries = [
+                "DELETE FROM certificates WHERE user_id = :user_id",
+                "DELETE FROM comments WHERE user_id = :user_id",
+                "DELETE FROM post_likes WHERE user_id = :user_id",
+                "DELETE FROM posts WHERE user_id = :user_id",
+                "DELETE FROM notifications WHERE receiver_id = :user_id OR sender_id = :user_id",
+                "DELETE FROM follow_requests WHERE requester_id = :user_id OR target_id = :user_id",
+                "DELETE FROM followers WHERE follower_id = :user_id OR followed_id = :user_id",
+                "DELETE FROM message_unread_tracker WHERE sender_id = :user_id OR receiver_id = :user_id",
+                "DELETE FROM messages WHERE sender_id = :user_id OR receiver_id = :user_id",
+                "DELETE FROM event_attendees WHERE user_id = :user_id",
+                "DELETE FROM event_bookmarks WHERE user_id = :user_id",
+                "DELETE FROM bookmarks WHERE user_id = :user_id",
+                "DELETE FROM event_images WHERE event_id IN (SELECT id FROM events WHERE organizer_id = :user_id)",
+                "DELETE FROM event_requests WHERE user_id = :user_id",
+                "DELETE FROM events WHERE organizer_id = :user_id",
+                "DELETE FROM fundraising_team_members WHERE user_id = :user_id",
+                "DELETE FROM fundraising_bank_details WHERE request_id IN (SELECT id FROM fundraising_requests WHERE user_id = :user_id)",
+                "DELETE FROM fundraising_donations WHERE donor_user_id = :user_id OR request_id IN (SELECT id FROM fundraising_requests WHERE user_id = :user_id)",
+                "DELETE FROM fundraising_requests WHERE user_id = :user_id OR advisor_id = :user_id",
+                "DELETE FROM user_profiles_visibility WHERE user_id = :user_id",
+                "DELETE FROM online_users WHERE user_id = :user_id",
+                "DELETE FROM access_logs WHERE user_id = :user_id"
+            ];
+
+            foreach ($cleanupQueries as $sql) {
+                try {
+                    $this->db->query($sql);
+                    $this->db->bind(':user_id', $userId);
+                    $this->db->execute();
+                } catch (Exception $ignored) {
+                    // Tolerate missing optional tables to keep removal resilient.
+                }
+            }
+
+            $this->db->query("DELETE FROM users WHERE id = :user_id");
+            $this->db->bind(':user_id', $userId);
+            $this->db->execute();
+
+            if ($this->db->rowCount() < 1) {
+                $this->db->rollBack();
+                return ['ok' => false, 'message' => 'User was already removed or not found'];
+            }
+
+            $this->db->commit();
+            return ['ok' => true, 'message' => 'User removed from system'];
+        } catch (Exception $e) {
+            try {
+                $this->db->rollBack();
+            } catch (Exception $ignored) {
+            }
+            return ['ok' => false, 'message' => 'Failed to remove user from system'];
+        }
+    }
+
     // ==================== FUNDRAISER ADMIN METHODS ====================
 
     /**

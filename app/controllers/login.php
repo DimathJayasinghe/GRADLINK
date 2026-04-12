@@ -52,6 +52,20 @@ class login extends Controller{
         // Validation
         $this->validateLogin($data);
         if (empty($data['errors'])){
+            $suspension = $this->loginModel->getActiveSuspensionByEmail($data['email']);
+            if ($suspension) {
+                $reason = trim((string)($suspension->reason ?? ''));
+                $message = 'This account has been suspended.';
+                if ($reason !== '') {
+                    $message .= ' Reason: ' . $reason;
+                }
+                $data['errors'][] = $message;
+                $data['suspended_status'] = true;
+                $data['suspended_reason'] = $reason;
+                $this->view('auth/login/v_login_alumni', $data);
+                return;
+            }
+
             // call model method to verify alumni credentialas
             $user = $this->loginModel->loginAlumni($data['email'],$data['password']);
 
@@ -90,6 +104,20 @@ class login extends Controller{
         // Validation
         $this->validateLogin($data);
         if (empty($data['errors'])){
+            $suspension = $this->loginModel->getActiveSuspensionByEmail($data['email']);
+            if ($suspension) {
+                $reason = trim((string)($suspension->reason ?? ''));
+                $message = 'This account has been suspended.';
+                if ($reason !== '') {
+                    $message .= ' Reason: ' . $reason;
+                }
+                $data['errors'][] = $message;
+                $data['suspended_status'] = true;
+                $data['suspended_reason'] = $reason;
+                $this->view('auth/login/v_login_undergrad', $data);
+                return;
+            }
+
             // Call model method to verify undergrad credentials
             $user = $this->loginModel->loginUndergrad($data['email'], $data['password']);
 
