@@ -67,13 +67,128 @@
         }
 
         public function reports() {
-            $data = [];
+            $data = [
+                'reports' => $this->adminModel->getPostReports(),
+            ];
             $this->view('admin/v_reports', $data);
         }
         public function posts() {
             $data = [];
             $this->view('admin/v_posts', $data);
         }
+
+        public function suspendedUsers() {
+            $data = [
+                'active_suspensions' => $this->adminModel->getActiveSuspendedUsers(),
+                'suspension_history' => $this->adminModel->getSuspensionHistory(100),
+            ];
+            $this->view('admin/v_suspended_users', $data);
+        }
+
+        public function suspendUser() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $userId = (int)($input['user_id'] ?? 0);
+            $reason = trim((string)($input['reason'] ?? ''));
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($userId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Invalid user ID'], 400);
+                return;
+            }
+
+            if ($adminId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Unauthenticated'], 401);
+                return;
+            }
+
+            if ($userId === $adminId) {
+                $this->jsonResponse(['ok' => false, 'error' => 'You cannot suspend your own account'], 400);
+                return;
+            }
+
+            $result = $this->adminModel->suspendUser($userId, $adminId, $reason);
+            if (!empty($result['ok'])) {
+                $this->jsonResponse(['ok' => true, 'message' => $result['message'] ?? 'User suspended']);
+                return;
+            }
+
+            $this->jsonResponse(['ok' => false, 'error' => $result['message'] ?? 'Failed to suspend user'], 400);
+        }
+
+        public function liftSuspension() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $suspensionId = (int)($_POST['suspension_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($suspensionId <= 0) {
+                SessionManager::setFlash('error', 'Invalid suspension record.');
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $result = $this->adminModel->liftSuspension($suspensionId, $adminId);
+            if (!empty($result['ok'])) {
+                SessionManager::setFlash('success', $result['message'] ?? 'Suspension removed.');
+            } else {
+                SessionManager::setFlash('error', $result['message'] ?? 'Failed to remove suspension.');
+            }
+
+            $this->redirect('/admin/suspendedUsers');
+        }
+
+        public function removeSuspendedUser() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $suspensionId = (int)($_POST['suspension_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($suspensionId <= 0) {
+                SessionManager::setFlash('error', 'Invalid suspension record.');
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $suspension = $this->adminModel->getSuspensionById($suspensionId);
+            if (!$suspension || (int)($suspension->user_id ?? 0) <= 0) {
+                SessionManager::setFlash('error', 'Suspended user not found.');
+                $this->redirect('/admin/suspendedUsers');
+                return;
+            }
+
+            $userId = (int)$suspension->user_id;
+
+            $deleteResult = $this->adminModel->deleteUserCompletely($userId);
+            if (!empty($deleteResult['ok'])) {
+                $markResult = $this->adminModel->markSuspensionRemoved($suspensionId, $adminId);
+
+                if (!empty($markResult['ok'])) {
+                    SessionManager::setFlash('success', 'Suspended user was removed from the system.');
+                } else {
+                    SessionManager::setFlash('warning', 'User was removed, but suspension history could not be updated.');
+                }
+            } else {
+                SessionManager::setFlash('error', $deleteResult['message'] ?? 'Failed to remove user from system.');
+            }
+
+            $this->redirect('/admin/suspendedUsers');
+        }
+
         public function fundraisers() {
             $stats = $this->adminModel->getFundraiserStats();
             $fundraisers = $this->adminModel->getAllFundraisersForAdmin();
@@ -556,6 +671,7 @@
                 }
             }
 
+
             if ($successCount > 0) {
                 SessionManager::setFlash('warning', "Rejected $successCount alumni.");
             }
@@ -563,6 +679,226 @@
                 SessionManager::setFlash('error', "$failCount alumni could not be rejected.");
             }
             $this->redirect('/admin/verifications');
+        }
+
+        private function jsonResponse(array $payload, int $status = 200): void {
+            http_response_code($status);
+            header('Content-Type: application/json');
+            echo json_encode($payload);
+        }
+         // ==================== HELP & SUPPORT ====================
+
+        /**
+         * Support management page — tickets, reports, feedback
+         */
+        public function support() {
+            $stats = $this->adminModel->getSupportStats();
+            $tickets = $this->adminModel->getSupportTickets();
+            $reports = $this->adminModel->getProblemReports();
+            $feedback = $this->adminModel->getSupportFeedback();
+
+            $data = [
+                'stats' => $stats,
+                'tickets' => $tickets,
+                'reports' => $reports,
+                'feedback' => $feedback,
+                'activeTab' => 'support'
+            ];
+            $this->view('admin/v_support', $data);
+        }
+
+        /**
+         * POST: Update support ticket status
+         */
+        public function updateTicketStatus() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            $id = $_POST['id'] ?? null;
+            $status = $_POST['status'] ?? null;
+            $allowed = ['open', 'in_progress', 'resolved', 'closed'];
+
+            if (!$id || !in_array($status, $allowed, true)) {
+                SessionManager::setFlash('error', 'Invalid ticket or status.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            if ($this->adminModel->updateSupportTicketStatus($id, $status)) {
+                SessionManager::setFlash('success', 'Ticket #' . $id . ' status updated to ' . str_replace('_', ' ', $status) . '.');
+            } else {
+                SessionManager::setFlash('error', 'Failed to update ticket status.');
+            }
+            $this->redirect('/admin/support');
+        }
+
+        /**
+         * POST: Admin reply to a support ticket
+         */
+        public function replyTicket() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            $id = $_POST['id'] ?? null;
+            $reply = trim($_POST['reply'] ?? '');
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if (!$id || empty($reply)) {
+                SessionManager::setFlash('error', 'Ticket ID and reply are required.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            $ticket = $this->adminModel->getSupportTicketById($id);
+            if (!$ticket) {
+                SessionManager::setFlash('error', 'Support ticket not found.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            if ($this->adminModel->replySupportTicket($id, $reply)) {
+                $delivered = $this->sendSupportReplyAsMessage((int)$ticket->user_id, $reply, 'support ticket', (int)$id, $adminId);
+                if ($delivered) {
+                    SessionManager::setFlash('success', 'Reply sent to ticket #' . $id . ' and delivered as a chat message.');
+                } else {
+                    SessionManager::setFlash('warning', 'Reply saved for ticket #' . $id . ', but chat delivery failed.');
+                }
+            } else {
+                SessionManager::setFlash('error', 'Failed to send reply.');
+            }
+            $this->redirect('/admin/support');
+        }
+
+        /**
+         * POST: Update problem report status
+         */
+        public function updateReportStatus() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            $id = $_POST['id'] ?? null;
+            $status = $_POST['status'] ?? null;
+            $allowed = ['pending', 'triaged', 'resolved', 'rejected'];
+
+            if (!$id || !in_array($status, $allowed, true)) {
+                SessionManager::setFlash('error', 'Invalid report or status.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            if ($this->adminModel->updateProblemReportStatus($id, $status)) {
+                SessionManager::setFlash('success', 'Report #' . $id . ' status updated.');
+            } else {
+                SessionManager::setFlash('error', 'Failed to update report status.');
+            }
+            $this->redirect('/admin/support');
+        }
+
+        /**
+         * POST: Admin reply to a problem report
+         */
+        public function replyReport() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            $id = $_POST['id'] ?? null;
+            $reply = trim($_POST['reply'] ?? '');
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if (!$id || empty($reply)) {
+                SessionManager::setFlash('error', 'Report ID and reply are required.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            $report = $this->adminModel->getProblemReportById($id);
+            if (!$report) {
+                SessionManager::setFlash('error', 'Problem report not found.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            if ($this->adminModel->replyProblemReport($id, $reply)) {
+                $delivered = $this->sendSupportReplyAsMessage((int)$report->user_id, $reply, 'problem report', (int)$id, $adminId);
+                if ($delivered) {
+                    SessionManager::setFlash('success', 'Reply sent to report #' . $id . ' and delivered as a chat message.');
+                } else {
+                    SessionManager::setFlash('warning', 'Reply saved for report #' . $id . ', but chat delivery failed.');
+                }
+            } else {
+                SessionManager::setFlash('error', 'Failed to send reply.');
+            }
+            $this->redirect('/admin/support');
+        }
+
+        private function sendSupportReplyAsMessage(int $recipientId, string $reply, string $sourceType, int $sourceId, int $adminId): bool {
+            if ($recipientId <= 0 || $adminId <= 0 || $recipientId === $adminId) {
+                return false;
+            }
+
+            $messageModel = $this->model('M_message');
+            if (!$messageModel || !method_exists($messageModel, 'sendMessage')) {
+                return false;
+            }
+
+            $text = "Admin Support Reply (" . ucfirst($sourceType) . " #" . $sourceId . "):\n" . $reply;
+            $messageId = $messageModel->sendMessage($adminId, $recipientId, $text);
+            if (!$messageId) {
+                return false;
+            }
+
+            try {
+                if ($this->notificationModel && method_exists($this->notificationModel, 'hasUnreadMessageNotification')) {
+                    $hasUnread = $this->notificationModel->hasUnreadMessageNotification($recipientId, $adminId);
+                    if ($hasUnread && method_exists($this->notificationModel, 'updateMessageNotificationTime')) {
+                        $this->notificationModel->updateMessageNotificationTime($recipientId, $adminId);
+                    } else {
+                        $this->notify(
+                            $recipientId,
+                            'new_message',
+                            $adminId,
+                            ['text' => 'Admin support sent you a message']
+                        );
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('Failed to create support reply notification: ' . $e->getMessage());
+            }
+
+            return true;
+        }
+
+        /**
+         * POST: Delete a feedback entry
+         */
+        public function deleteFeedbackEntry() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            $id = $_POST['id'] ?? null;
+
+            if (!$id) {
+                SessionManager::setFlash('error', 'Invalid feedback ID.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
+            if ($this->adminModel->deleteSupportFeedback($id)) {
+                SessionManager::setFlash('success', 'Feedback #' . $id . ' deleted.');
+            } else {
+                SessionManager::setFlash('error', 'Failed to delete feedback.');
+            }
+            $this->redirect('/admin/support');
         }
     }
 ?>

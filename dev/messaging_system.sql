@@ -30,3 +30,5 @@ CREATE TABLE IF NOT EXISTS `followers` (
     CONSTRAINT `fk_follower_user` FOREIGN KEY (`follower_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
     CONSTRAINT `fk_followed_user` FOREIGN KEY (`followed_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+

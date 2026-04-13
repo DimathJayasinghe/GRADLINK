@@ -145,8 +145,7 @@ class PostCard extends HTMLElement {
         } else if(act === 'suspend') {
           // Only admin can suspend (not themselves)
           if(!isAdmin || isOwner) return;
-          // Backend API: POST /api/users/{postUserId}/suspend
-          console.log('Suspend user placeholder for', postUserId);
+          this._openSuspendUserPopup(postUserId, userName);
         } else if(act === 'delete-post') {
           // Owner OR admin can delete
           if(!isOwner && !isAdmin) return;
@@ -416,82 +415,49 @@ class PostCard extends HTMLElement {
       };
       
       // Add visual indicators for edit mode
-      postContent.style.border = '2px dotted var(--link)';
-      postContent.style.padding = '10px';
-      postContent.style.borderRadius = '5px';
+      postContent.classList.add('post-content-editing');
       
       if (postMedia) {
-        postMedia.style.border = '2px dotted var(--link)';
-        postMedia.style.padding = '10px';
-        postMedia.style.borderRadius = '5px';
-        postMedia.style.marginTop = '10px';
+        postMedia.classList.add('post-media-editing');
       }
       
       // Make text editable - use a textarea for better editing
       const fullText = originalPostText || '';
       postTextEl.innerHTML = '';
       const textarea = document.createElement('textarea');
-      textarea.className = 'edit-textarea';
+      textarea.className = 'post-edit-textarea';
       textarea.value = fullText;
-      textarea.style.width = '100%';
-      textarea.style.minHeight = '80px';
-      textarea.style.padding = '8px';
-      textarea.style.background = 'transparent';
-      textarea.style.color = 'var(--text)';
-      textarea.style.border = '1px solid var(--border)';
-      textarea.style.borderRadius = '4px';
-      textarea.style.resize = 'vertical';
       postTextEl.appendChild(textarea);
       
       // Create image edit controls
       const editControls = document.createElement('div');
       editControls.className = 'edit-controls';
-      editControls.style.marginTop = '10px';
-      editControls.style.display = 'flex';
-      editControls.style.justifyContent = 'space-between';
-      editControls.style.alignItems = 'center';
       
       // Add image button
       const imageInput = document.createElement('input');
       imageInput.type = 'file';
       imageInput.accept = 'image/*';
       imageInput.id = `file-${postId}`;
-      imageInput.style.display = 'none';
+      imageInput.className = 'post-edit-file-input';
       
       const imageLabel = document.createElement('label');
       imageLabel.htmlFor = `file-${postId}`;
       imageLabel.innerHTML = '<i class="fas fa-image"></i> Change Image';
-      imageLabel.className = 'edit-image-btn';
-      imageLabel.style.cursor = 'pointer';
-      imageLabel.style.padding = '5px 10px';
-      imageLabel.style.background = 'var(--secondary)';
-      imageLabel.style.color = 'var(--text)';
-      imageLabel.style.borderRadius = '5px';
+      imageLabel.className = 'post-edit-image-btn';
       
       // Add action buttons
       const actionButtons = document.createElement('div');
-      actionButtons.style.display = 'flex';
-      actionButtons.style.gap = '10px';
+      actionButtons.className = 'post-edit-actions';
       
       const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
       saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
-      saveBtn.className = 'save-btn';
-      saveBtn.style.padding = '5px 10px';
-      saveBtn.style.background = 'var(--link)';
-      saveBtn.style.color = 'var(--text)';
-      saveBtn.style.border = 'none';
-      saveBtn.style.borderRadius = '5px';
-      saveBtn.style.cursor = 'pointer';
+      saveBtn.className = 'post-edit-btn post-edit-btn-save';
       
       const cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
       cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel';
-      cancelBtn.className = 'cancel-btn';
-      cancelBtn.style.padding = '5px 10px';
-      cancelBtn.style.background = 'var(--secondary)';
-      cancelBtn.style.color = 'var(--text)';
-      cancelBtn.style.border = 'none';
-      cancelBtn.style.borderRadius = '5px';
-      cancelBtn.style.cursor = 'pointer';
+      cancelBtn.className = 'post-edit-btn post-edit-btn-cancel';
       
       actionButtons.appendChild(saveBtn);
       actionButtons.appendChild(cancelBtn);
@@ -515,16 +481,11 @@ class PostCard extends HTMLElement {
             if (!postMedia) {
               // Create new media container if none exists
               const newMedia = document.createElement('div');
-              newMedia.className = 'post-media';
-              newMedia.style.border = '2px dotted var(--link)';
-              newMedia.style.padding = '10px';
-              newMedia.style.borderRadius = '5px';
-              newMedia.style.marginTop = '10px';
+              newMedia.className = 'post-media post-media-editing';
               
               const img = document.createElement('img');
               img.src = event.target.result;
               img.alt = 'Post image';
-              img.style.maxWidth = '100%';
               
               newMedia.appendChild(img);
               postContent.parentNode.insertBefore(newMedia, postContent.nextSibling);
@@ -545,8 +506,14 @@ class PostCard extends HTMLElement {
       });
       
       // Cancel button action
-      cancelBtn.addEventListener('click', () => {
-        if (confirm('Discard your changes?')) {
+      cancelBtn.addEventListener('click', async () => {
+        const shouldDiscard = await this._openConfirmPopup({
+          title: 'Discard Changes',
+          message: 'Discard your changes to this post?',
+          confirmText: 'Discard',
+          confirmVariant: 'danger'
+        });
+        if (shouldDiscard) {
           this.cancelPostEdit();
         }
       });
@@ -560,7 +527,13 @@ class PostCard extends HTMLElement {
    */
   async savePostEdit(postId, newText, imageFile) {
     try {
-      if (!confirm('Save changes to this post?')) {
+      const shouldSave = await this._openConfirmPopup({
+        title: 'Save Changes',
+        message: 'Save changes to this post?',
+        confirmText: 'Save',
+        confirmVariant: 'primary'
+      });
+      if (!shouldSave) {
         return;
       }
       
@@ -572,10 +545,12 @@ class PostCard extends HTMLElement {
       }
       
       // Show loading state
-      const saveBtn = this.querySelector('.save-btn');
-      const originalText = saveBtn.innerHTML;
-      saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-      saveBtn.disabled = true;
+      const saveBtn = this.querySelector('.post-edit-btn-save');
+      const originalText = saveBtn ? saveBtn.innerHTML : '';
+      if (saveBtn) {
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        saveBtn.disabled = true;
+      }
       
       const response = await fetch(`${window.URLROOT}/post/edit/${postId}`, {
         method: 'POST',
@@ -617,10 +592,19 @@ class PostCard extends HTMLElement {
         }
       } else {
         show_popup('Error: ' + (result.message || 'Failed to update post'));
+        if (saveBtn && saveBtn.isConnected) {
+          saveBtn.innerHTML = originalText;
+          saveBtn.disabled = false;
+        }
       }
     } catch (error) {
       console.error('Edit error:', error);
       show_popup('Error saving changes. Please try again.');
+      const saveBtn = this.querySelector('.post-edit-btn-save');
+      if (saveBtn) {
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+        saveBtn.disabled = false;
+      }
     }
   }
   
@@ -657,16 +641,11 @@ class PostCard extends HTMLElement {
     const postMedia = this.querySelector('.post-media');
     
     if (postContent) {
-      postContent.style.border = '';
-      postContent.style.padding = '';
-      postContent.style.borderRadius = '';
+      postContent.classList.remove('post-content-editing');
     }
     
     if (postMedia) {
-      postMedia.style.border = '';
-      postMedia.style.padding = '';
-      postMedia.style.borderRadius = '';
-      postMedia.style.marginTop = '';
+      postMedia.classList.remove('post-media-editing');
     }
     
     // Remove edit controls
@@ -701,6 +680,56 @@ class PostCard extends HTMLElement {
       el.addEventListener('click', (e)=>{ if (e.target === el) el.style.display = 'none'; });
     }
     return el;
+  }
+
+  _openConfirmPopup({
+    title = 'Confirm Action',
+    message = 'Are you sure you want to continue?',
+    confirmText = 'Confirm',
+    cancelText = 'Cancel',
+    confirmVariant = 'primary'
+  } = {}) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'certificate-add-popup';
+      overlay.style.display = 'flex';
+
+      const safeTitle = this._esc(title);
+      const safeMessage = this._esc(message).replace(/\n/g, '<br>');
+      const safeConfirmText = this._esc(confirmText);
+      const safeCancelText = this._esc(cancelText);
+      const confirmClass = confirmVariant === 'danger' ? 'post-confirm-btn-danger' : 'post-confirm-btn-primary';
+
+      overlay.innerHTML = `
+        <div class="certificate-add post-confirm-modal">
+          <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+          <div class="form-title">${safeTitle}</div>
+          <div class="post-confirm-body">
+            <p>${safeMessage}</p>
+          </div>
+          <div class="post-confirm-actions">
+            <button type="button" class="save-btn post-confirm-btn post-confirm-btn-cancel" data-action="cancel">${safeCancelText}</button>
+            <button type="button" class="save-btn post-confirm-btn ${confirmClass}" data-action="confirm">${safeConfirmText}</button>
+          </div>
+        </div>`;
+
+      const cleanup = (result) => {
+        overlay.remove();
+        resolve(result);
+      };
+
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          cleanup(false);
+        }
+      });
+
+      overlay.querySelector('.close-popup')?.addEventListener('click', () => cleanup(false));
+      overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', () => cleanup(false));
+      overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', () => cleanup(true));
+
+      document.body.appendChild(overlay);
+    });
   }
 
   _openEditCommentPopup(commentId, initialContent, list){
@@ -849,6 +878,79 @@ class PostCard extends HTMLElement {
     overlay.style.display = 'flex';
   }
 
+  _openSuspendUserPopup(targetUserId, targetUserName){
+    const uid = Number(targetUserId || 0);
+    if (!uid) {
+      show_popup('Invalid user selected for suspension');
+      return;
+    }
+
+    const overlay = this._ensureOverlay(`user-suspend-popup-${uid}`);
+    const safeName = this._esc(targetUserName || 'this user');
+    overlay.innerHTML = `
+      <div class="certificate-add" style="max-width:560px;">
+        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+        <div class="form-title">Suspend User</div>
+        <form class="certificate-form" id="suspendUserForm-${uid}" novalidate>
+          <div style="color:var(--text); padding:10px 0 6px;">
+            <p>Are you sure you want to suspend <strong>${safeName}</strong>?</p>
+            <p style="color:var(--muted); font-size:0.92em; margin-top:8px;">Suspended users cannot login or create content until admins restore access.</p>
+          </div>
+          <div class="form-group">
+            <label for="suspendReason-${uid}">Reason (optional)</label>
+            <textarea id="suspendReason-${uid}" rows="4" placeholder="Describe why this account is being suspended..." style="padding:10px;border-radius: var(--radius-lg);border:1px solid var(--border);background:var(--input);color:var(--text);"></textarea>
+          </div>
+          <div style="display:flex; gap:12px; justify-content:flex-end;">
+            <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+            <button type="submit" class="save-btn" style="background:var(--danger);color:#fff;">Suspend User</button>
+          </div>
+        </form>
+      </div>`;
+
+    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
+    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+
+    const form = overlay.querySelector(`#suspendUserForm-${uid}`);
+    const reasonEl = overlay.querySelector(`#suspendReason-${uid}`);
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const previousText = submitBtn?.textContent || 'Suspend User';
+      const reason = (reasonEl?.value || '').trim();
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Suspending...';
+      }
+
+      try {
+        const response = await fetch(`${window.URLROOT}/admin/suspendUser`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify({ user_id: uid, reason })
+        });
+
+        const data = await response.json().catch(() => null);
+        if (response.ok && data && data.ok) {
+          overlay.style.display = 'none';
+          show_popup(data.message || 'User suspended successfully');
+        } else {
+          show_popup((data && data.error) ? data.error : 'Failed to suspend user');
+        }
+      } catch (err) {
+        show_popup('Network error while suspending user');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = previousText;
+        }
+      }
+    });
+
+    overlay.style.display = 'flex';
+  }
+
   _openBookmarkPopup(postId){
     const overlay = this._ensureOverlay(`post-bookmark-popup-${postId}`);
     overlay.innerHTML = `
@@ -947,6 +1049,33 @@ class PostCard extends HTMLElement {
         show_popup('Please select a category');
         return;
       }
+      // const details = overlay.querySelector(`#reportDetails-${postId}`)?.value || '';
+      // const link = overlay.querySelector(`#reportLink-${postId}`)?.value || '';
+      // try {
+      //   const response = await fetch(`${window.URLROOT}/post/report`, {
+      //     method: 'POST',
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //       'X-Requested-With': 'XMLHttpRequest'
+      //     },
+      //     body: JSON.stringify({
+      //       post_id: postId,
+      //       category: cat.value,
+      //       details,
+      //       link,
+      //     }),
+      //   });
+      //   const result = await response.json().catch(() => null);
+      //   if (!response.ok || !result || result.status !== 'success') {
+      //     alert((result && result.message) ? result.message : 'Failed to submit report');
+      //     return;
+      //   }
+      //   overlay.style.display = 'none';
+      //   alert('Thanks for your report');
+      // } catch (error) {
+      //   console.error('Report submit error:', error);
+      //   alert('Network error while submitting report');
+      // }
       const details = (overlay.querySelector(`#reportDetails-${postId}`)?.value || '').trim();
       const link = (overlay.querySelector(`#reportLink-${postId}`)?.value || '').trim();
       // Emit an event; backend integration can be added later

@@ -1,6 +1,62 @@
 <?php
 class SessionManager
 {
+    private static function hasActiveSuspension(int $userId): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        try {
+            $db = new Database();
+            $db->query("CREATE TABLE IF NOT EXISTS suspended_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                suspended_by INT NOT NULL,
+                reason TEXT NULL,
+                status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+                suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                lifted_at DATETIME NULL,
+                lifted_by INT NULL,
+                removed_at DATETIME NULL,
+                removed_by INT NULL,
+                snapshot_name VARCHAR(255) NULL,
+                snapshot_email VARCHAR(255) NULL,
+                snapshot_role VARCHAR(50) NULL,
+                INDEX idx_suspended_users_user (user_id),
+                INDEX idx_suspended_users_status (status),
+                INDEX idx_suspended_users_suspended_at (suspended_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $db->execute();
+
+            $db->query("SELECT 1 FROM suspended_users WHERE user_id = :user_id AND status = 'active' LIMIT 1");
+            $db->bind(':user_id', $userId);
+            return (bool)$db->single();
+        } catch (Exception $e) {
+            // If the table does not exist yet, do not block access.
+            return false;
+        }
+    }
+
+    private static function clearUserAuthData(): void
+    {
+        unset($_SESSION['user_id']);
+        unset($_SESSION['user_name']);
+        unset($_SESSION['user_email']);
+        unset($_SESSION['user_role']);
+        unset($_SESSION['special_alumni']);
+        unset($_SESSION['profile_image']);
+        unset($_SESSION['login_time']);
+    }
+
+    private static function redirectSuspendedToAuth(): void
+    {
+        self::ensureStarted();
+        self::clearUserAuthData();
+        header('Location: ' . URLROOT . '/auth?account=suspended');
+        exit();
+    }
+
     /**
      * Ensure session is started - call this everywhere
      */
@@ -49,6 +105,10 @@ class SessionManager
     public static function redirectIfLoggedIn(string $to): void
     {
         if (self::isLoggedIn()) {
+            $userId = (int)($_SESSION['user_id'] ?? 0);
+            if (self::hasActiveSuspension($userId)) {
+                self::redirectSuspendedToAuth();
+            }
             header('Location: '.URLROOT . $to);
             exit();
         }
@@ -62,17 +122,27 @@ class SessionManager
             header('Location: '.URLROOT . '/auth');
             exit();
         }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        if (self::hasActiveSuspension($userId)) {
+            self::redirectSuspendedToAuth();
+        }
     }
 
     /**
      * Require login - use in any protected controller/page
      */
-    public static function requireAuth(string $redirectTo = null): void
+    public static function requireAuth(?string $redirectTo = null): void
     {
         if (!self::isLoggedIn()) {
             $redirectTo = $redirectTo ?? (URLROOT . '/auth/login');
             header('Location: ' . $redirectTo);
             exit();
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        if (self::hasActiveSuspension($userId)) {
+            self::redirectSuspendedToAuth();
         }
     }
 
@@ -134,7 +204,7 @@ class SessionManager
     /**
      * Require a specific role; redirect if not authorized
      */
-    public static function requireRole(string $role, string $redirectTo = null): void
+    public static function requireRole(string $role, ?string $redirectTo = null): void
     {
         self::ensureStarted();
         if (!self::isLoggedIn() || !self::hasRole($role)) {
