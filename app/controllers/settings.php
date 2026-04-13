@@ -20,10 +20,7 @@ class settings extends Controller{
     }
 
     public function privacyandsafety(){
-        $data = [
-            'section' => 'privacyandsafety'
-        ];
-        $this->view('settings/v_settings', $data);
+        $this->redirect('/settings/account');
     }
     public function notifications(){
         $data = [

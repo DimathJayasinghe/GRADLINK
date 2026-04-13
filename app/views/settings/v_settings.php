@@ -54,7 +54,6 @@
     <?php 
         $settings_categories = [
             ['icon' => 'user', 'label' => 'Account', 'link' => URLROOT . '/settings/account', 'active' => $data['section'] === 'account'? true : false],
-            ['icon' => 'shield-alt', 'label' => 'Privacy', 'link' => URLROOT . '/settings/privacyandsafety','active' => $data['section'] === 'privacyandsafety'? true : false],
             ['icon' => 'bell', 'label' => 'Notifications', 'link' => URLROOT . '/settings/notifications','active' => $data['section'] === 'notifications'? true : false],
             ['icon' => 'bookmark', 'label' => 'Bookmarks', 'link' => URLROOT . '/settings/bookmarks','active' => $data['section'] === 'bookmark'? true : false],
             // ['icon' => 'paint-brush', 'label' => 'Appearance', 'link' => URLROOT . '/settings/appearance','active' => $data['section'] === 'appearance'? true : false],
