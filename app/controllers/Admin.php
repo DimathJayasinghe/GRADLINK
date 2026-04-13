@@ -745,6 +745,7 @@
 
             $id = $_POST['id'] ?? null;
             $reply = trim($_POST['reply'] ?? '');
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
 
             if (!$id || empty($reply)) {
                 SessionManager::setFlash('error', 'Ticket ID and reply are required.');
@@ -752,8 +753,20 @@
                 return;
             }
 
+            $ticket = $this->adminModel->getSupportTicketById($id);
+            if (!$ticket) {
+                SessionManager::setFlash('error', 'Support ticket not found.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
             if ($this->adminModel->replySupportTicket($id, $reply)) {
-                SessionManager::setFlash('success', 'Reply sent to ticket #' . $id . '.');
+                $delivered = $this->sendSupportReplyAsMessage((int)$ticket->user_id, $reply, 'support ticket', (int)$id, $adminId);
+                if ($delivered) {
+                    SessionManager::setFlash('success', 'Reply sent to ticket #' . $id . ' and delivered as a chat message.');
+                } else {
+                    SessionManager::setFlash('warning', 'Reply saved for ticket #' . $id . ', but chat delivery failed.');
+                }
             } else {
                 SessionManager::setFlash('error', 'Failed to send reply.');
             }
@@ -798,6 +811,7 @@
 
             $id = $_POST['id'] ?? null;
             $reply = trim($_POST['reply'] ?? '');
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
 
             if (!$id || empty($reply)) {
                 SessionManager::setFlash('error', 'Report ID and reply are required.');
@@ -805,12 +819,61 @@
                 return;
             }
 
+            $report = $this->adminModel->getProblemReportById($id);
+            if (!$report) {
+                SessionManager::setFlash('error', 'Problem report not found.');
+                $this->redirect('/admin/support');
+                return;
+            }
+
             if ($this->adminModel->replyProblemReport($id, $reply)) {
-                SessionManager::setFlash('success', 'Reply sent to report #' . $id . '.');
+                $delivered = $this->sendSupportReplyAsMessage((int)$report->user_id, $reply, 'problem report', (int)$id, $adminId);
+                if ($delivered) {
+                    SessionManager::setFlash('success', 'Reply sent to report #' . $id . ' and delivered as a chat message.');
+                } else {
+                    SessionManager::setFlash('warning', 'Reply saved for report #' . $id . ', but chat delivery failed.');
+                }
             } else {
                 SessionManager::setFlash('error', 'Failed to send reply.');
             }
             $this->redirect('/admin/support');
+        }
+
+        private function sendSupportReplyAsMessage(int $recipientId, string $reply, string $sourceType, int $sourceId, int $adminId): bool {
+            if ($recipientId <= 0 || $adminId <= 0 || $recipientId === $adminId) {
+                return false;
+            }
+
+            $messageModel = $this->model('M_message');
+            if (!$messageModel || !method_exists($messageModel, 'sendMessage')) {
+                return false;
+            }
+
+            $text = "Admin Support Reply (" . ucfirst($sourceType) . " #" . $sourceId . "):\n" . $reply;
+            $messageId = $messageModel->sendMessage($adminId, $recipientId, $text);
+            if (!$messageId) {
+                return false;
+            }
+
+            try {
+                if ($this->notificationModel && method_exists($this->notificationModel, 'hasUnreadMessageNotification')) {
+                    $hasUnread = $this->notificationModel->hasUnreadMessageNotification($recipientId, $adminId);
+                    if ($hasUnread && method_exists($this->notificationModel, 'updateMessageNotificationTime')) {
+                        $this->notificationModel->updateMessageNotificationTime($recipientId, $adminId);
+                    } else {
+                        $this->notify(
+                            $recipientId,
+                            'new_message',
+                            $adminId,
+                            ['text' => 'Admin support sent you a message']
+                        );
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('Failed to create support reply notification: ' . $e->getMessage());
+            }
+
+            return true;
         }
 
         /**

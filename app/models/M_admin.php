@@ -1140,6 +1140,31 @@ class M_admin {
     }
 
     /**
+     * Get a single problem report by ID
+     */
+    public function getProblemReportById($id) {
+        try {
+            $this->db->query(" 
+                SELECT 
+                    spr.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_problem_reports spr
+                JOIN users u ON spr.user_id = u.id
+                WHERE spr.id = :id
+                LIMIT 1
+            ");
+            $this->db->bind(':id', $id);
+            return $this->db->single();
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
      * Update problem report status
      */
     public function updateProblemReportStatus($id, $status) {
