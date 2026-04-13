@@ -162,17 +162,21 @@ CREATE TABLE user_notification_settings (
   dnd_start TIME NULL,
   dnd_end TIME NULL,
   dnd_days ENUM('weekdays','weekends','everyday') NULL,
+  in_app_disabled_types TEXT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE user_blocks (
-  user_id INT NOT NULL,
-  blocked_user_id INT NOT NULL,
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  blocker_id INT NOT NULL,
+  blocked_id INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id, blocked_user_id),
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (blocked_user_id) REFERENCES users(id) ON DELETE CASCADE
+
+  FOREIGN KEY (blocker_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (blocked_id) REFERENCES users(id) ON DELETE CASCADE,
+
+  UNIQUE (blocker_id, blocked_id)
 );
 
 CREATE TABLE user_security_settings (

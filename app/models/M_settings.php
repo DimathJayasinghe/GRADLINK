@@ -115,53 +115,119 @@ class M_settings extends Database {
      * Upsert notification preferences for current user.
      */
     public function upsertNotificationSettings($userId, $settings) {
-        $sql = "INSERT INTO user_notification_settings (
-                    user_id,
-                    email_enabled,
-                    sound_enabled,
-                    mentions_enabled,
-                    followers_enabled,
-                    engagement_enabled,
-                    dnd_enabled,
-                    dnd_start,
-                    dnd_end,
-                    dnd_days
-                ) VALUES (
-                    :user_id,
-                    :email_enabled,
-                    :sound_enabled,
-                    :mentions_enabled,
-                    :followers_enabled,
-                    :engagement_enabled,
-                    :dnd_enabled,
-                    :dnd_start,
-                    :dnd_end,
-                    :dnd_days
-                )
-                ON DUPLICATE KEY UPDATE
-                    email_enabled = VALUES(email_enabled),
-                    sound_enabled = VALUES(sound_enabled),
-                    mentions_enabled = VALUES(mentions_enabled),
-                    followers_enabled = VALUES(followers_enabled),
-                    engagement_enabled = VALUES(engagement_enabled),
-                    dnd_enabled = VALUES(dnd_enabled),
-                    dnd_start = VALUES(dnd_start),
-                    dnd_end = VALUES(dnd_end),
-                    dnd_days = VALUES(dnd_days)";
+        $disabledTypes = $settings['in_app_disabled_types'] ?? [];
+        if (is_string($disabledTypes)) {
+            $decoded = json_decode($disabledTypes, true);
+            $disabledTypes = is_array($decoded) ? $decoded : [];
+        }
+        if (!is_array($disabledTypes)) {
+            $disabledTypes = [];
+        }
+        $disabledTypesJson = json_encode(array_values($disabledTypes), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        $this->query($sql);
-        $this->bind(':user_id', $userId);
-        $this->bind(':email_enabled', (int)($settings['email_enabled'] ?? 1));
-        $this->bind(':sound_enabled', (int)($settings['sound_enabled'] ?? 0));
-        $this->bind(':mentions_enabled', (int)($settings['mentions_enabled'] ?? 1));
-        $this->bind(':followers_enabled', (int)($settings['followers_enabled'] ?? 1));
-        $this->bind(':engagement_enabled', (int)($settings['engagement_enabled'] ?? 1));
-        $this->bind(':dnd_enabled', (int)($settings['dnd_enabled'] ?? 0));
-        $this->bind(':dnd_start', $settings['dnd_start'] ?? null);
-        $this->bind(':dnd_end', $settings['dnd_end'] ?? null);
-        $this->bind(':dnd_days', $settings['dnd_days'] ?? null);
+        // Prefer schema with in_app_disabled_types; if the column doesn't exist yet, fall back.
+        try {
+            $sql = "INSERT INTO user_notification_settings (
+                        user_id,
+                        email_enabled,
+                        sound_enabled,
+                        mentions_enabled,
+                        followers_enabled,
+                        engagement_enabled,
+                        dnd_enabled,
+                        dnd_start,
+                        dnd_end,
+                        dnd_days,
+                        in_app_disabled_types
+                    ) VALUES (
+                        :user_id,
+                        :email_enabled,
+                        :sound_enabled,
+                        :mentions_enabled,
+                        :followers_enabled,
+                        :engagement_enabled,
+                        :dnd_enabled,
+                        :dnd_start,
+                        :dnd_end,
+                        :dnd_days,
+                        :in_app_disabled_types
+                    )
+                    ON DUPLICATE KEY UPDATE
+                        email_enabled = VALUES(email_enabled),
+                        sound_enabled = VALUES(sound_enabled),
+                        mentions_enabled = VALUES(mentions_enabled),
+                        followers_enabled = VALUES(followers_enabled),
+                        engagement_enabled = VALUES(engagement_enabled),
+                        dnd_enabled = VALUES(dnd_enabled),
+                        dnd_start = VALUES(dnd_start),
+                        dnd_end = VALUES(dnd_end),
+                        dnd_days = VALUES(dnd_days),
+                        in_app_disabled_types = VALUES(in_app_disabled_types)";
 
-        return $this->execute();
+            $this->query($sql);
+            $this->bind(':user_id', $userId);
+            $this->bind(':email_enabled', (int)($settings['email_enabled'] ?? 1));
+            $this->bind(':sound_enabled', (int)($settings['sound_enabled'] ?? 0));
+            $this->bind(':mentions_enabled', (int)($settings['mentions_enabled'] ?? 1));
+            $this->bind(':followers_enabled', (int)($settings['followers_enabled'] ?? 1));
+            $this->bind(':engagement_enabled', (int)($settings['engagement_enabled'] ?? 1));
+            $this->bind(':dnd_enabled', (int)($settings['dnd_enabled'] ?? 0));
+            $this->bind(':dnd_start', $settings['dnd_start'] ?? null);
+            $this->bind(':dnd_end', $settings['dnd_end'] ?? null);
+            $this->bind(':dnd_days', $settings['dnd_days'] ?? null);
+            $this->bind(':in_app_disabled_types', $disabledTypesJson);
+
+            return $this->execute();
+        } catch (Throwable $e) {
+            // Fallback for older DB schema without in_app_disabled_types
+            $sql = "INSERT INTO user_notification_settings (
+                        user_id,
+                        email_enabled,
+                        sound_enabled,
+                        mentions_enabled,
+                        followers_enabled,
+                        engagement_enabled,
+                        dnd_enabled,
+                        dnd_start,
+                        dnd_end,
+                        dnd_days
+                    ) VALUES (
+                        :user_id,
+                        :email_enabled,
+                        :sound_enabled,
+                        :mentions_enabled,
+                        :followers_enabled,
+                        :engagement_enabled,
+                        :dnd_enabled,
+                        :dnd_start,
+                        :dnd_end,
+                        :dnd_days
+                    )
+                    ON DUPLICATE KEY UPDATE
+                        email_enabled = VALUES(email_enabled),
+                        sound_enabled = VALUES(sound_enabled),
+                        mentions_enabled = VALUES(mentions_enabled),
+                        followers_enabled = VALUES(followers_enabled),
+                        engagement_enabled = VALUES(engagement_enabled),
+                        dnd_enabled = VALUES(dnd_enabled),
+                        dnd_start = VALUES(dnd_start),
+                        dnd_end = VALUES(dnd_end),
+                        dnd_days = VALUES(dnd_days)";
+
+            $this->query($sql);
+            $this->bind(':user_id', $userId);
+            $this->bind(':email_enabled', (int)($settings['email_enabled'] ?? 1));
+            $this->bind(':sound_enabled', (int)($settings['sound_enabled'] ?? 0));
+            $this->bind(':mentions_enabled', (int)($settings['mentions_enabled'] ?? 1));
+            $this->bind(':followers_enabled', (int)($settings['followers_enabled'] ?? 1));
+            $this->bind(':engagement_enabled', (int)($settings['engagement_enabled'] ?? 1));
+            $this->bind(':dnd_enabled', (int)($settings['dnd_enabled'] ?? 0));
+            $this->bind(':dnd_start', $settings['dnd_start'] ?? null);
+            $this->bind(':dnd_end', $settings['dnd_end'] ?? null);
+            $this->bind(':dnd_days', $settings['dnd_days'] ?? null);
+
+            return $this->execute();
+        }
     }
 
     /**

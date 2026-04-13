@@ -417,7 +417,8 @@ class settings extends Controller{
                     'dnd_enabled' => 0,
                     'dnd_start' => null,
                     'dnd_end' => null,
-                    'dnd_days' => null
+                    'dnd_days' => null,
+                    'in_app_disabled_types' => []
                 ];
             } else {
                 // Ensure consistent scalar types for the frontend (PDO may return strings)
@@ -427,6 +428,22 @@ class settings extends Controller{
                 $settings->followers_enabled = (int)($settings->followers_enabled ?? 1);
                 $settings->engagement_enabled = (int)($settings->engagement_enabled ?? 1);
                 $settings->dnd_enabled = (int)($settings->dnd_enabled ?? 0);
+
+                // Per-type in-app toggles are stored as a JSON array of disabled types.
+                // If the column is missing (older schema), default to empty list.
+                if (property_exists($settings, 'in_app_disabled_types')) {
+                    $raw = $settings->in_app_disabled_types;
+                    if (is_string($raw) && $raw !== '') {
+                        $decoded = json_decode($raw, true);
+                        $settings->in_app_disabled_types = is_array($decoded) ? array_values($decoded) : [];
+                    } elseif (is_array($raw)) {
+                        $settings->in_app_disabled_types = array_values($raw);
+                    } else {
+                        $settings->in_app_disabled_types = [];
+                    }
+                } else {
+                    $settings->in_app_disabled_types = [];
+                }
             }
 
             $this->jsonResponse(['success' => true, 'settings' => $settings]);
@@ -457,8 +474,23 @@ class settings extends Controller{
                 'dnd_enabled' => !empty($input['dnd_enabled']) ? 1 : 0,
                 'dnd_start' => isset($input['dnd_start']) ? trim((string)$input['dnd_start']) : null,
                 'dnd_end' => isset($input['dnd_end']) ? trim((string)$input['dnd_end']) : null,
-                'dnd_days' => isset($input['dnd_days']) ? trim((string)$input['dnd_days']) : null
+                'dnd_days' => isset($input['dnd_days']) ? trim((string)$input['dnd_days']) : null,
+                'in_app_disabled_types' => $input['in_app_disabled_types'] ?? []
             ];
+
+            // Sanitize in_app_disabled_types
+            if (is_string($payload['in_app_disabled_types'])) {
+                $decoded = json_decode($payload['in_app_disabled_types'], true);
+                $payload['in_app_disabled_types'] = is_array($decoded) ? $decoded : [];
+            }
+            if (!is_array($payload['in_app_disabled_types'])) {
+                $payload['in_app_disabled_types'] = [];
+            }
+
+            // Only allow string types
+            $payload['in_app_disabled_types'] = array_values(array_filter($payload['in_app_disabled_types'], function ($t) {
+                return is_string($t) && $t !== '';
+            }));
 
             if ($payload['dnd_enabled']) {
                 if (empty($payload['dnd_start']) || empty($payload['dnd_end'])) {

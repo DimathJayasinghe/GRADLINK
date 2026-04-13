@@ -1,10 +1,10 @@
 <?php
 // Database Configuration - using environment variables
 define('DB_HOST', gl_env('DB_HOST', 'localhost'));
-define('DB_PORT', gl_env('DB_PORT', 3306));
+define('DB_PORT', gl_env('DB_PORT', 3308));
 define('DB_CHARSET', gl_env('DB_CHARSET', 'utf8mb4'));
 define('DB_USER', gl_env('DB_USER', 'root'));
-define('DB_PASSWORD', gl_env('DB_PASS', '1234'));
+define('DB_PASSWORD', gl_env('DB_PASS', ''));
 define('DB_NAME', gl_env('DB_NAME', 'gl_db'));
 
 // Email Configuration (for OTP and notifications)

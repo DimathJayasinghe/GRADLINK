@@ -8,25 +8,50 @@ class M_notification {
     }
 
     private function getNotificationSettingsForUser(int $userId): ?object {
+        $row = null;
+
         try {
-            $this->db->query('SELECT mentions_enabled, followers_enabled, engagement_enabled, dnd_enabled, dnd_start, dnd_end, dnd_days FROM user_notification_settings WHERE user_id = :user_id LIMIT 1');
+            $this->db->query('SELECT mentions_enabled, followers_enabled, engagement_enabled, dnd_enabled, dnd_start, dnd_end, dnd_days, in_app_disabled_types FROM user_notification_settings WHERE user_id = :user_id LIMIT 1');
             $this->db->bind(':user_id', $userId);
             $row = $this->db->single();
-            if (!$row) {
+        } catch (Throwable $e) {
+            // Backward-compat: older schema may not have in_app_disabled_types
+            try {
+                $this->db->query('SELECT mentions_enabled, followers_enabled, engagement_enabled, dnd_enabled, dnd_start, dnd_end, dnd_days FROM user_notification_settings WHERE user_id = :user_id LIMIT 1');
+                $this->db->bind(':user_id', $userId);
+                $row = $this->db->single();
+            } catch (Throwable $e2) {
+                // If settings lookup fails, fail open (do not block notifications)
+                error_log('[notifications] settings lookup failed: ' . $e2->getMessage());
                 return null;
             }
+        }
 
-            // Normalize to ints for consistent comparisons
-            $row->mentions_enabled = (int)($row->mentions_enabled ?? 1);
-            $row->followers_enabled = (int)($row->followers_enabled ?? 1);
-            $row->engagement_enabled = (int)($row->engagement_enabled ?? 1);
-            $row->dnd_enabled = (int)($row->dnd_enabled ?? 0);
-            return $row;
-        } catch (Throwable $e) {
-            // If settings lookup fails, fail open (do not block notifications)
-            error_log('[notifications] settings lookup failed: ' . $e->getMessage());
+        if (!$row) {
             return null;
         }
+
+        // Normalize to ints for consistent comparisons
+        $row->mentions_enabled = (int)($row->mentions_enabled ?? 1);
+        $row->followers_enabled = (int)($row->followers_enabled ?? 1);
+        $row->engagement_enabled = (int)($row->engagement_enabled ?? 1);
+        $row->dnd_enabled = (int)($row->dnd_enabled ?? 0);
+
+        // Normalize per-type disabled list (JSON array)
+        if (property_exists($row, 'in_app_disabled_types')) {
+            if (is_string($row->in_app_disabled_types) && $row->in_app_disabled_types !== '') {
+                $decoded = json_decode($row->in_app_disabled_types, true);
+                $row->in_app_disabled_types = is_array($decoded) ? array_values($decoded) : [];
+            } elseif (is_array($row->in_app_disabled_types)) {
+                $row->in_app_disabled_types = array_values($row->in_app_disabled_types);
+            } else {
+                $row->in_app_disabled_types = [];
+            }
+        } else {
+            $row->in_app_disabled_types = [];
+        }
+
+        return $row;
     }
 
     private function getSuppressedTypesForSettings(?object $settings): array {
@@ -35,6 +60,15 @@ class M_notification {
         }
 
         $suppressed = [];
+
+        // Per-type in-app toggles
+        if (isset($settings->in_app_disabled_types) && is_array($settings->in_app_disabled_types)) {
+            foreach ($settings->in_app_disabled_types as $t) {
+                if (is_string($t) && $t !== '') {
+                    $suppressed[] = $t;
+                }
+            }
+        }
 
         if ((int)($settings->followers_enabled ?? 1) === 0) {
             $suppressed[] = 'follow_request';
