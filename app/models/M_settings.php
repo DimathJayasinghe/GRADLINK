@@ -343,6 +343,100 @@ class M_settings extends Database {
     }
 
     /**
+     * Check column existence for compatibility across DB versions.
+     */
+    public function columnExists($tableName, $columnName) {
+        $sql = "SELECT 1 FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = :table_name
+                  AND COLUMN_NAME = :column_name
+                LIMIT 1";
+
+        $this->query($sql);
+        $this->bind(':table_name', $tableName);
+        $this->bind(':column_name', $columnName);
+
+        return $this->single() !== false;
+    }
+
+    /**
+     * List current user's support tickets.
+     */
+    public function getSupportTicketsByUser($userId, $limit = 10) {
+        $limit = (int)$limit;
+        if ($limit <= 0) {
+            $limit = 10;
+        }
+
+        $selectAdminReply = $this->columnExists('support_tickets', 'admin_reply') ? ', admin_reply, admin_replied_at' : '';
+        $sql = "SELECT id, user_id, email, topic, message, status, created_at, updated_at{$selectAdminReply}
+                FROM support_tickets
+                WHERE user_id = :user_id
+                ORDER BY created_at DESC
+                LIMIT {$limit}";
+
+        $this->query($sql);
+        $this->bind(':user_id', (int)$userId);
+
+        return $this->resultSet();
+    }
+
+    /**
+     * List current user's problem reports.
+     */
+    public function getProblemReportsByUser($userId, $limit = 10) {
+        $limit = (int)$limit;
+        if ($limit <= 0) {
+            $limit = 10;
+        }
+
+        $selectAdminReply = $this->columnExists('support_problem_reports', 'admin_reply') ? ', admin_reply, admin_replied_at' : '';
+        $sql = "SELECT id, user_id, report_type, details, status, created_at, updated_at{$selectAdminReply}
+                FROM support_problem_reports
+                WHERE user_id = :user_id
+                ORDER BY created_at DESC
+                LIMIT {$limit}";
+
+        $this->query($sql);
+        $this->bind(':user_id', (int)$userId);
+
+        return $this->resultSet();
+    }
+
+    /**
+     * Update a support ticket only while it's still editable.
+     * Editable means: owned by user, status is still 'open', and (if available) no admin_reply.
+     */
+    public function updateSupportTicket($userId, $ticketId, $email, $topic, $message) {
+        $hasAdminReply = $this->columnExists('support_tickets', 'admin_reply');
+
+        $sql = "UPDATE support_tickets
+                SET email = :email,
+                    topic = :topic,
+                    message = :message
+                WHERE id = :id
+                  AND user_id = :user_id
+                  AND status = 'open'";
+
+        if ($hasAdminReply) {
+            $sql .= " AND (admin_reply IS NULL OR admin_reply = '')";
+        }
+
+        $this->query($sql);
+        $this->bind(':id', (int)$ticketId);
+        $this->bind(':user_id', (int)$userId);
+        $this->bind(':email', $email);
+        $this->bind(':topic', $topic);
+        $this->bind(':message', $message);
+
+        if (!$this->execute()) {
+            return false;
+        }
+
+        return $this->rowCount() > 0;
+    }
+
+    /**
      * Store problem report.
      */
     public function createProblemReport($userId, $reportType, $details) {
@@ -359,6 +453,37 @@ class M_settings extends Database {
         }
 
         return $this->lastInsertId();
+    }
+
+    /**
+     * Update a problem report only while it's still editable.
+     * Editable means: owned by user, status is still 'pending', and (if available) no admin_reply.
+     */
+    public function updateProblemReport($userId, $reportId, $reportType, $details) {
+        $hasAdminReply = $this->columnExists('support_problem_reports', 'admin_reply');
+
+        $sql = "UPDATE support_problem_reports
+                SET report_type = :report_type,
+                    details = :details
+                WHERE id = :id
+                  AND user_id = :user_id
+                  AND status = 'pending'";
+
+        if ($hasAdminReply) {
+            $sql .= " AND (admin_reply IS NULL OR admin_reply = '')";
+        }
+
+        $this->query($sql);
+        $this->bind(':id', (int)$reportId);
+        $this->bind(':user_id', (int)$userId);
+        $this->bind(':report_type', $reportType);
+        $this->bind(':details', $details);
+
+        if (!$this->execute()) {
+            return false;
+        }
+
+        return $this->rowCount() > 0;
     }
 
     /**

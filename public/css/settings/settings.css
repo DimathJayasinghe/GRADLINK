@@ -267,12 +267,14 @@
     width: 18px;
     height: 18px;
     border: 2px solid var(--border);
-    border-radius: 4px;
+    border-radius: 999px;
     background: transparent;
     margin: 0;
     flex: 0 0 18px;
     display: grid;
     place-content: center;
+    box-sizing: border-box;
+    align-self: center;
 }
 
 .account-action-option input::before {
@@ -281,12 +283,12 @@
     height: 10px;
     transform: scale(0);
     transition: transform 0.12s ease-in-out;
-    background: var(--accent);
-    border-radius: 2px;
+    background: var(--primary);
+    border-radius: 999px;
 }
 
 .account-action-option input:checked {
-    border-color: var(--accent);
+    border-color: var(--primary);
 }
 
 .account-action-option input:checked::before {

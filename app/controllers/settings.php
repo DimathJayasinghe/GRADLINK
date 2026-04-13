@@ -39,8 +39,11 @@ class settings extends Controller{
         $this->view('settings/v_settings', $data);
     }
     public function helpandsupport(){
+        $userId = (int)($_SESSION['user_id'] ?? 0);
         $data = [
-            'section' => 'helpandsupport'
+            'section' => 'helpandsupport',
+            'myTickets' => $userId ? $this->model->getSupportTicketsByUser($userId, 10) : [],
+            'myReports' => $userId ? $this->model->getProblemReportsByUser($userId, 10) : []
         ];
         $this->view('settings/v_settings', $data);
     }
@@ -711,6 +714,62 @@ class settings extends Controller{
     }
 
     /**
+     * API: Update support ticket (only while editable)
+     * POST /settings/updateSupportTicket
+     */
+    public function updateSupportTicket() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = (int)($_SESSION['user_id'] ?? 0);
+            if ($userId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+                return;
+            }
+
+            $input = $this->getJsonInput();
+
+            $ticketId = (int)($input['id'] ?? 0);
+            $email = trim($input['email'] ?? '');
+            $topic = trim($input['topic'] ?? 'technical');
+            $message = trim($input['message'] ?? '');
+
+            if ($ticketId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Valid ticket id is required'], 422);
+                return;
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Valid email is required'], 422);
+                return;
+            }
+
+            $allowedTopics = ['account', 'technical', 'billing', 'other'];
+            if (!in_array($topic, $allowedTopics, true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid topic'], 422);
+                return;
+            }
+
+            if ($message === '') {
+                $this->jsonResponse(['success' => false, 'error' => 'Support message is required'], 422);
+                return;
+            }
+
+            $updated = $this->model->updateSupportTicket($userId, $ticketId, $email, $topic, $message);
+            if (!$updated) {
+                $this->jsonResponse(['success' => false, 'error' => 'This ticket can no longer be edited'], 409);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Support ticket updated']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * API: Submit problem report
      * POST /settings/submitProblemReport
      */
@@ -744,6 +803,56 @@ class settings extends Controller{
             }
 
             $this->jsonResponse(['success' => true, 'message' => 'Problem report submitted', 'report_id' => $reportId]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Update problem report (only while editable)
+     * POST /settings/updateProblemReport
+     */
+    public function updateProblemReport() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = (int)($_SESSION['user_id'] ?? 0);
+            if ($userId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+                return;
+            }
+
+            $input = $this->getJsonInput();
+
+            $reportId = (int)($input['id'] ?? 0);
+            $reportType = trim($input['report_type'] ?? 'bug');
+            $details = trim($input['details'] ?? '');
+
+            if ($reportId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Valid report id is required'], 422);
+                return;
+            }
+
+            $allowed = ['bug', 'abuse', 'policy'];
+            if (!in_array($reportType, $allowed, true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid report type'], 422);
+                return;
+            }
+
+            if ($details === '') {
+                $this->jsonResponse(['success' => false, 'error' => 'Report details are required'], 422);
+                return;
+            }
+
+            $updated = $this->model->updateProblemReport($userId, $reportId, $reportType, $details);
+            if (!$updated) {
+                $this->jsonResponse(['success' => false, 'error' => 'This report can no longer be edited'], 409);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Problem report updated']);
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }

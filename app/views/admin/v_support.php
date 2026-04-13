@@ -7,7 +7,7 @@
 ?>
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/common.css">
     <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard-common.css">
-    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/support.css">
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/support.css?v=2">
 <?php $styles = ob_get_clean()?>
 
 <?php
@@ -20,14 +20,14 @@
         ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>false, 'icon' => 'pencil-alt'],
         ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
         ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>false, 'icon' => 'check-circle'],
-        ['label'=>'Help & Support', 'url'=>'/admin/support','active'=>true, 'icon' => 'life-ring']
+        ['label'=>'Help & Support', 'url'=>'/admin/support','active'=>true, 'icon' => 'circle-question']
     ]
 ?>
 
 <?php ob_start();?>
 
 <!-- ========== KPI Cards ========== -->
-<div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;">
+<div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;margin-bottom: 2rem;">
     <h1>Help & Support</h1>
 </div>
 

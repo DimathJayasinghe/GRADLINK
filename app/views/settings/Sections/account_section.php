@@ -200,7 +200,7 @@
     <div id="deleteAccountModal" class="settings-modal">
         <div class="settings-modal-content">
             <div class="settings-modal-header">
-                <h3>Deactivate / Delete Account</h3>
+                <h3>Manage Account</h3>
                 <span class="settings-close-modal">&times;</span>
             </div>
             <div class="settings-modal-body">
@@ -218,6 +218,7 @@
                         <label class="account-action-option">
                             <input type="radio" name="accountAction" value="deactivate_and_delete" required>
                             <span>Deactivate and Delete Account (30 days if you do not log in)</span>
+                        </label>
                     </div>
                     <div class="form-group">
                         <label for="deletionReason">Why are you deleting your account?</label>

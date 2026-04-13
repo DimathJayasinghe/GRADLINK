@@ -1,3 +1,8 @@
+<?php
+    $myTickets = $data['myTickets'] ?? [];
+    $myReports = $data['myReports'] ?? [];
+?>
+
 <div class="account_content">
 	<h2>Help & Support</h2>
 	<p class="settings-description">Find answers, report issues, or contact our support team.</p>
@@ -54,6 +59,59 @@
 				<p>Tell us about a bug or policy violation</p>
 			</div>
 			<button class="settings-btn settings-btn-danger" id="openReport">Report</button>
+		</div>
+	</div>
+
+	<div class="settings-section">
+		<h3>My Requests</h3>
+		<div class="section-divider"></div>
+
+		<div style="margin-bottom: 18px;">
+			<h4 style="margin: 0 0 10px; color: var(--text); font-weight: 600;">Support Tickets</h4>
+			<?php if (!empty($myTickets)): ?>
+				<ul class="simple-list">
+					<?php foreach ($myTickets as $t): ?>
+						<?php $canEditTicket = (($t->status ?? '') === 'open') && (($t->admin_reply ?? '') === '' || ($t->admin_reply ?? null) === null); ?>
+						<li>
+							<span>
+								Ticket #<?php echo htmlspecialchars($t->id); ?> — <?php echo htmlspecialchars($t->topic); ?>
+								(<?php echo str_replace('_', ' ', htmlspecialchars($t->status)); ?>)
+							</span>
+							<?php if ($canEditTicket): ?>
+								<a href="#" class="view-more-link edit-ticket-link" data-ticket-id="<?php echo (int)$t->id; ?>">Edit</a>
+							<?php else: ?>
+								<span style="color: var(--muted); font-size: 0.9rem;">Locked</span>
+							<?php endif; ?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php else: ?>
+				<p style="color: var(--muted); margin: 0;">No support tickets yet.</p>
+			<?php endif; ?>
+		</div>
+
+		<div>
+			<h4 style="margin: 0 0 10px; color: var(--text); font-weight: 600;">Problem Reports</h4>
+			<?php if (!empty($myReports)): ?>
+				<ul class="simple-list">
+					<?php foreach ($myReports as $r): ?>
+						<?php $canEditReport = (($r->status ?? '') === 'pending') && (($r->admin_reply ?? '') === '' || ($r->admin_reply ?? null) === null); ?>
+						<li>
+							<span>
+								Report #<?php echo htmlspecialchars($r->id); ?> — <?php echo htmlspecialchars($r->report_type); ?>
+								(<?php echo str_replace('_', ' ', htmlspecialchars($r->status)); ?>)
+							</span>
+							<?php if ($canEditReport): ?>
+								<a href="#" class="view-more-link edit-report-link" data-report-id="<?php echo (int)$r->id; ?>">Edit</a>
+							<?php else: ?>
+								<span style="color: var(--muted); font-size: 0.9rem;">Locked</span>
+							<?php endif; ?>
+						</li>
+					<?php endforeach; ?>
+				</ul>
+			<?php else: ?>
+				<p style="color: var(--muted); margin: 0;">No problem reports yet.</p>
+			<?php endif; ?>
 		</div>
 	</div>
 
@@ -148,6 +206,8 @@
 document.addEventListener('DOMContentLoaded', function(){
 	const URLROOT = '<?= URLROOT ?>';
 	const currentUserId = <?= (int)($_SESSION['user_id'] ?? 0) ?>;
+	const myTicketsData = <?php echo json_encode($myTickets, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+	const myReportsData = <?php echo json_encode($myReports, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 	const guideModal = document.getElementById('guideModal');
 	const guideTitle = document.getElementById('guideTitle');
 	const guideBody = document.getElementById('guideBody');
@@ -158,8 +218,14 @@ document.addEventListener('DOMContentLoaded', function(){
 	const openSupport = document.getElementById('openSupport');
 	const openReport = document.getElementById('openReport');
 
-	if (openSupport) openSupport.addEventListener('click', () => openModal(supportModal));
-	if (openReport) openReport.addEventListener('click', () => openModal(reportModal));
+	if (openSupport) openSupport.addEventListener('click', () => {
+		if (typeof window.__resetSupportEditMode === 'function') window.__resetSupportEditMode();
+		openModal(supportModal);
+	});
+	if (openReport) openReport.addEventListener('click', () => {
+		if (typeof window.__resetReportEditMode === 'function') window.__resetReportEditMode();
+		openModal(reportModal);
+	});
 
 	document.querySelectorAll('.settings-close-modal, .cancel-modal').forEach(el => {
 		el.addEventListener('click', function(){ closeModal(this.closest('.settings-modal')); });
@@ -180,14 +246,46 @@ document.addEventListener('DOMContentLoaded', function(){
 	// Support form
 	const supportForm = document.getElementById('supportForm');
 	if (supportForm) {
+		const supportSubmitBtn = supportForm.querySelector('button[type="submit"]');
+		const supportModalTitle = supportModal ? supportModal.querySelector('.settings-modal-header h3') : null;
+
+		function resetSupportEditMode() {
+			delete supportForm.dataset.editId;
+			supportForm.reset();
+			if (supportModalTitle) supportModalTitle.textContent = 'Contact Support';
+			if (supportSubmitBtn) supportSubmitBtn.textContent = 'Send';
+		}
+
+		function setSupportEditMode(ticket) {
+			supportForm.dataset.editId = String(ticket.id);
+			if (supportModalTitle) supportModalTitle.textContent = 'Edit Support Ticket #' + ticket.id;
+			if (supportSubmitBtn) supportSubmitBtn.textContent = 'Update';
+			const emailEl = document.getElementById('supportEmail');
+			const topicEl = document.getElementById('supportTopic');
+			const msgEl = document.getElementById('supportMessage');
+			if (emailEl) emailEl.value = ticket.email || '';
+			if (topicEl) topicEl.value = ticket.topic || 'technical';
+			if (msgEl) msgEl.value = ticket.message || '';
+		}
+
+		// Expose for click handlers
+		window.__setSupportEditMode = setSupportEditMode;
+		window.__resetSupportEditMode = resetSupportEditMode;
+
 		supportForm.addEventListener('submit', function(e){
 			e.preventDefault();
+			const editId = parseInt(supportForm.dataset.editId || '0', 10);
 			const payload = {
+				id: editId || undefined,
 				email: document.getElementById('supportEmail').value,
 				topic: document.getElementById('supportTopic').value,
 				message: document.getElementById('supportMessage').value
 			};
-			fetch(URLROOT + '/settings/submitSupportRequest', {
+			if (!payload.id) {
+				delete payload.id;
+			}
+
+			fetch(URLROOT + (editId ? '/settings/updateSupportTicket' : '/settings/submitSupportRequest'), {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
 				body: JSON.stringify(payload)
@@ -195,27 +293,61 @@ document.addEventListener('DOMContentLoaded', function(){
 			.then(r => r.json())
 			.then(res => {
 				if (res.success) {
-					alert('Support ticket submitted successfully! Ticket #' + res.ticket_id);
+					alert(editId ? 'Support ticket updated successfully!' : ('Support ticket submitted successfully! Ticket #' + res.ticket_id));
 					supportForm.reset();
+					resetSupportEditMode();
 					closeModal(supportModal);
+					window.location.reload();
 				} else {
 					alert(res.error || 'Failed to submit support request.');
 				}
 			})
 			.catch(() => alert('Network error. Please try again.'));
 		});
+
+		// Allow other handlers to call this within DOM scope
+		window.resetSupportEditMode = resetSupportEditMode;
 	}
 
 	// Report form
 	const reportForm = document.getElementById('reportForm');
 	if (reportForm) {
+		const reportSubmitBtn = reportForm.querySelector('button[type="submit"]');
+		const reportModalTitle = reportModal ? reportModal.querySelector('.settings-modal-header h3') : null;
+
+		function resetReportEditMode() {
+			delete reportForm.dataset.editId;
+			reportForm.reset();
+			if (reportModalTitle) reportModalTitle.textContent = 'Report a Problem';
+			if (reportSubmitBtn) reportSubmitBtn.textContent = 'Submit report';
+		}
+
+		function setReportEditMode(report) {
+			reportForm.dataset.editId = String(report.id);
+			if (reportModalTitle) reportModalTitle.textContent = 'Edit Problem Report #' + report.id;
+			if (reportSubmitBtn) reportSubmitBtn.textContent = 'Update';
+			const typeEl = document.getElementById('reportType');
+			const detailsEl = document.getElementById('reportDetails');
+			if (typeEl) typeEl.value = report.report_type || 'bug';
+			if (detailsEl) detailsEl.value = report.details || '';
+		}
+
+		window.__setReportEditMode = setReportEditMode;
+		window.__resetReportEditMode = resetReportEditMode;
+
 		reportForm.addEventListener('submit', function(e){
 			e.preventDefault();
+			const editId = parseInt(reportForm.dataset.editId || '0', 10);
 			const payload = {
+				id: editId || undefined,
 				report_type: document.getElementById('reportType').value,
 				details: document.getElementById('reportDetails').value
 			};
-			fetch(URLROOT + '/settings/submitProblemReport', {
+			if (!payload.id) {
+				delete payload.id;
+			}
+
+			fetch(URLROOT + (editId ? '/settings/updateProblemReport' : '/settings/submitProblemReport'), {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
 				body: JSON.stringify(payload)
@@ -223,16 +355,47 @@ document.addEventListener('DOMContentLoaded', function(){
 			.then(r => r.json())
 			.then(res => {
 				if (res.success) {
-					alert('Problem report submitted successfully! Report #' + res.report_id);
+					alert(editId ? 'Problem report updated successfully!' : ('Problem report submitted successfully! Report #' + res.report_id));
 					reportForm.reset();
+					resetReportEditMode();
 					closeModal(reportModal);
+					window.location.reload();
 				} else {
 					alert(res.error || 'Failed to submit report.');
 				}
 			})
 			.catch(() => alert('Network error. Please try again.'));
 		});
+
+		window.resetReportEditMode = resetReportEditMode;
 	}
+
+	// ---- Edit links ----
+	document.querySelectorAll('.edit-ticket-link[data-ticket-id]').forEach(link => {
+		link.addEventListener('click', function(e){
+			e.preventDefault();
+			const id = parseInt(this.getAttribute('data-ticket-id') || '0', 10);
+			const ticket = (myTicketsData || []).find(t => parseInt(t.id, 10) === id);
+			if (!ticket) return;
+			if (typeof window.__setSupportEditMode === 'function') {
+				window.__setSupportEditMode(ticket);
+				openModal(supportModal);
+			}
+		});
+	});
+
+	document.querySelectorAll('.edit-report-link[data-report-id]').forEach(link => {
+		link.addEventListener('click', function(e){
+			e.preventDefault();
+			const id = parseInt(this.getAttribute('data-report-id') || '0', 10);
+			const report = (myReportsData || []).find(r => parseInt(r.id, 10) === id);
+			if (!report) return;
+			if (typeof window.__setReportEditMode === 'function') {
+				window.__setReportEditMode(report);
+				openModal(reportModal);
+			}
+		});
+	});
 
 	// Feedback form
 	const feedbackForm = document.getElementById('feedbackForm');

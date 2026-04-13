@@ -47,7 +47,7 @@
 		<?php
 		$inAppTypes = [
 			// 'welcome' => 'Welcome',
-			'info' => 'Info',
+			// 'info' => 'Info',
 			'warning' => 'Warning',
 			'alert' => 'Alert',
 			'message' => 'Message',
