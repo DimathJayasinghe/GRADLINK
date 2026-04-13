@@ -1,6 +1,34 @@
 <?php
 class M_post {
 	private $db; public function __construct(){ $this->db=new Database; }
+
+	public function reportPost($postId, $reporterId, $category, $details = '', $referenceLink = '') {
+		try {
+			$post = $this->getPostById($postId);
+			if (!$post) {
+				return false;
+			}
+
+			$this->db->query('INSERT INTO post_reports (post_id, post_owner_id, reporter_id, category, details, reference_link, status) VALUES (:post_id, :post_owner_id, :reporter_id, :category, :details, :reference_link, :status)');
+			$this->db->bind(':post_id', (int)$postId);
+			$this->db->bind(':post_owner_id', (int)$post->user_id);
+			$this->db->bind(':reporter_id', (int)$reporterId);
+			$this->db->bind(':category', trim($category));
+			$this->db->bind(':details', trim((string)$details));
+			$this->db->bind(':reference_link', trim((string)$referenceLink));
+			$this->db->bind(':status', 'pending');
+			$inserted = $this->db->execute();
+			if (!$inserted) {
+				return false;
+			}
+
+			$id = $this->db->lastInsertId();
+			return $id ? (int)$id : true;
+		} catch (Throwable $e) {
+			error_log('[M_post::reportPost] ' . $e->getMessage());
+			return false;
+		}
+	}
 	/**
 	 * Create a post. If the image column does not exist yet, it will gracefully
 	 * fall back to inserting without the image instead of crashing.

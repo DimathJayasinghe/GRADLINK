@@ -1049,6 +1049,33 @@ class PostCard extends HTMLElement {
         show_popup('Please select a category');
         return;
       }
+      // const details = overlay.querySelector(`#reportDetails-${postId}`)?.value || '';
+      // const link = overlay.querySelector(`#reportLink-${postId}`)?.value || '';
+      // try {
+      //   const response = await fetch(`${window.URLROOT}/post/report`, {
+      //     method: 'POST',
+      //     headers: {
+      //       'Content-Type': 'application/json',
+      //       'X-Requested-With': 'XMLHttpRequest'
+      //     },
+      //     body: JSON.stringify({
+      //       post_id: postId,
+      //       category: cat.value,
+      //       details,
+      //       link,
+      //     }),
+      //   });
+      //   const result = await response.json().catch(() => null);
+      //   if (!response.ok || !result || result.status !== 'success') {
+      //     alert((result && result.message) ? result.message : 'Failed to submit report');
+      //     return;
+      //   }
+      //   overlay.style.display = 'none';
+      //   alert('Thanks for your report');
+      // } catch (error) {
+      //   console.error('Report submit error:', error);
+      //   alert('Network error while submitting report');
+      // }
       const details = (overlay.querySelector(`#reportDetails-${postId}`)?.value || '').trim();
       const link = (overlay.querySelector(`#reportLink-${postId}`)?.value || '').trim();
       // Emit an event; backend integration can be added later

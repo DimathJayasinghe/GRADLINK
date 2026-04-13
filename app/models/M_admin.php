@@ -183,6 +183,38 @@ class M_admin {
         ];
     }
 
+    public function getPostReports(): array {
+        try {
+            $this->db->query('
+                SELECT
+                    r.id,
+                    r.post_id,
+                    r.post_owner_id,
+                    r.reporter_id,
+                    r.category,
+                    r.details,
+                    r.reference_link,
+                    r.status,
+                    r.created_at,
+                    r.updated_at,
+                    p.content AS post_content,
+                    p.created_at AS post_created_at,
+                    reporter.name AS reporter_name,
+                    reporter.role AS reporter_role,
+                    owner.name AS owner_name,
+                    owner.role AS owner_role
+                FROM post_reports r
+                LEFT JOIN posts p ON p.id = r.post_id
+                LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                LEFT JOIN users owner ON owner.id = r.post_owner_id
+                ORDER BY r.created_at DESC
+            ');
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
     /**
      * Authenticate admin user
      */
@@ -992,6 +1024,230 @@ class M_admin {
         } catch (Exception $e) {
             return [];
         }
+    }
+
+    // ==================== SUPPORT MANAGEMENT METHODS ====================
+
+    /**
+     * Get all support tickets with user info
+     */
+    public function getSupportTickets() {
+        try {
+            $this->db->query("
+                SELECT 
+                    st.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_tickets st
+                JOIN users u ON st.user_id = u.id
+                ORDER BY st.created_at DESC
+            ");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting support tickets: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get a single support ticket by ID
+     */
+    public function getSupportTicketById($id) {
+        try {
+            $this->db->query("
+                SELECT 
+                    st.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_tickets st
+                JOIN users u ON st.user_id = u.id
+                WHERE st.id = :id
+            ");
+            $this->db->bind(':id', $id);
+            return $this->db->single();
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Update support ticket status
+     */
+    public function updateSupportTicketStatus($id, $status) {
+        try {
+            $this->db->query("
+                UPDATE support_tickets 
+                SET status = :status, updated_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':status', $status);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Admin reply to a support ticket
+     */
+    public function replySupportTicket($id, $reply) {
+        try {
+            $this->db->query("
+                UPDATE support_tickets 
+                SET admin_reply = :reply,
+                    admin_replied_at = NOW(),
+                    status = 'in_progress',
+                    updated_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':reply', $reply);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get all problem reports with user info
+     */
+    public function getProblemReports() {
+        try {
+            $this->db->query("
+                SELECT 
+                    spr.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_problem_reports spr
+                JOIN users u ON spr.user_id = u.id
+                ORDER BY spr.created_at DESC
+            ");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting problem reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Update problem report status
+     */
+    public function updateProblemReportStatus($id, $status) {
+        try {
+            $this->db->query("
+                UPDATE support_problem_reports 
+                SET status = :status, updated_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':status', $status);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Admin reply to a problem report
+     */
+    public function replyProblemReport($id, $reply) {
+        try {
+            $this->db->query("
+                UPDATE support_problem_reports 
+                SET admin_reply = :reply,
+                    admin_replied_at = NOW(),
+                    status = 'triaged',
+                    updated_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':reply', $reply);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get all feedback with user info
+     */
+    public function getSupportFeedback() {
+        try {
+            $this->db->query("
+                SELECT 
+                    sf.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_feedback sf
+                JOIN users u ON sf.user_id = u.id
+                ORDER BY sf.created_at DESC
+            ");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting feedback: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Delete feedback entry
+     */
+    public function deleteSupportFeedback($id) {
+        try {
+            $this->db->query("DELETE FROM support_feedback WHERE id = :id");
+            $this->db->bind(':id', $id);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get support overview stats for KPI cards
+     */
+    public function getSupportStats() {
+        $stats = [
+            'open_tickets' => 0,
+            'pending_reports' => 0,
+            'total_feedback' => 0,
+            'resolved_total' => 0
+        ];
+
+        try {
+            $this->db->query("SELECT COUNT(*) as c FROM support_tickets WHERE status IN ('open','in_progress')");
+            $stats['open_tickets'] = (int)($this->db->single()->c ?? 0);
+
+            $this->db->query("SELECT COUNT(*) as c FROM support_problem_reports WHERE status IN ('pending','triaged')");
+            $stats['pending_reports'] = (int)($this->db->single()->c ?? 0);
+
+            $this->db->query("SELECT COUNT(*) as c FROM support_feedback");
+            $stats['total_feedback'] = (int)($this->db->single()->c ?? 0);
+
+            $this->db->query("
+                SELECT 
+                    (SELECT COUNT(*) FROM support_tickets WHERE status IN ('resolved','closed')) +
+                    (SELECT COUNT(*) FROM support_problem_reports WHERE status IN ('resolved','rejected'))
+                AS c
+            ");
+            $stats['resolved_total'] = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            error_log("Error getting support stats: " . $e->getMessage());
+        }
+
+        return $stats;
     }
 }
 ?>

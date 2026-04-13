@@ -1,7 +1,7 @@
 <?php
 // Database Configuration - using environment variables
 define('DB_HOST', gl_env('DB_HOST', 'localhost'));
-define('DB_PORT', gl_env('DB_PORT', 3306));
+define('DB_PORT', gl_env('DB_PORT', 3306)); 
 define('DB_CHARSET', gl_env('DB_CHARSET', 'utf8mb4'));
 define('DB_USER', gl_env('DB_USER', 'root'));
 define('DB_PASSWORD', gl_env('DB_PASS', '1234'));

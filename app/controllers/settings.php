@@ -39,12 +39,38 @@ class settings extends Controller{
         $this->view('settings/v_settings', $data);
     }
     public function helpandsupport(){
+        $userId = (int)($_SESSION['user_id'] ?? 0);
         $data = [
-            'section' => 'helpandsupport'
+            'section' => 'helpandsupport',
+            'myTickets' => $userId ? $this->model->getSupportTicketsByUser($userId, 10) : [],
+            'myReports' => $userId ? $this->model->getProblemReportsByUser($userId, 10) : []
         ];
         $this->view('settings/v_settings', $data);
     }
 
+    private function jsonResponse($payload, $statusCode = 200) {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($payload);
+    }
+
+    private function getJsonInput() {
+        $raw = file_get_contents('php://input');
+        if (!$raw) {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function ensurePostMethod() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->jsonResponse(['success' => false, 'error' => 'Invalid request method'], 405);
+            return false;
+        }
+        return true;
+    }
     public function bookmarks(){
         $bookmarkModel = $this->model('M_bookmark');
         $data = [
@@ -60,22 +86,19 @@ class settings extends Controller{
      * Body: {"name": "Full Name", "display_name": "Display Name"}
      */
     public function updateName() {
-        header('Content-Type: application/json');
-        
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+        if (!$this->ensurePostMethod()) {
             return;
         }
 
         try {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = $this->getJsonInput();
             $userId = $_SESSION['user_id'];
             
             $name = trim($input['name'] ?? '');
             $displayName = trim($input['display_name'] ?? '');
             
             if (empty($name)) {
-                echo json_encode(['success' => false, 'error' => 'Name cannot be empty']);
+                $this->jsonResponse(['success' => false, 'error' => 'Name cannot be empty'], 422);
                 return;
             }
             
@@ -88,12 +111,12 @@ class settings extends Controller{
                     $_SESSION['display_name'] = $displayName;
                 }
                 
-                echo json_encode(['success' => true, 'message' => 'Name updated successfully']);
+                $this->jsonResponse(['success' => true, 'message' => 'Name updated successfully']);
             } else {
-                echo json_encode(['success' => false, 'error' => 'Failed to update name']);
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to update name'], 500);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -103,15 +126,12 @@ class settings extends Controller{
      * Body: {"bio": "User bio text"}
      */
     public function updateBio() {
-        header('Content-Type: application/json');
-        
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+        if (!$this->ensurePostMethod()) {
             return;
         }
 
         try {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = $this->getJsonInput();
             $userId = $_SESSION['user_id'];
             
             $bio = trim($input['bio'] ?? '');
@@ -119,12 +139,12 @@ class settings extends Controller{
             $result = $this->model->updateBio($userId, $bio);
             
             if ($result) {
-                echo json_encode(['success' => true, 'message' => 'Bio updated successfully']);
+                $this->jsonResponse(['success' => true, 'message' => 'Bio updated successfully']);
             } else {
-                echo json_encode(['success' => false, 'error' => 'Failed to update bio']);
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to update bio'], 500);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -134,15 +154,12 @@ class settings extends Controller{
      * Body: {"current_email": "current@email.com", "new_email": "new@email.com", "password": "password"}
      */
     public function updateEmail() {
-        header('Content-Type: application/json');
-        
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+        if (!$this->ensurePostMethod()) {
             return;
         }
 
         try {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = $this->getJsonInput();
             $userId = $_SESSION['user_id'];
             
             $currentEmail = trim($input['current_email'] ?? '');
@@ -151,37 +168,47 @@ class settings extends Controller{
             
             // Validate inputs
             if (empty($newEmail) || empty($password)) {
-                echo json_encode(['success' => false, 'error' => 'New email and password are required']);
+                $this->jsonResponse(['success' => false, 'error' => 'New email and password are required'], 422);
                 return;
             }
             
             if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-                echo json_encode(['success' => false, 'error' => 'Invalid email format']);
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid email format'], 422);
                 return;
             }
             
             // Verify password
             $user = $this->model->getUserById($userId);
-            if (!$user || !password_verify($password, $user->password)) {
-                echo json_encode(['success' => false, 'error' => 'Incorrect password']);
+            if (!$user) {
+                $this->jsonResponse(['success' => false, 'error' => 'User not found'], 404);
+                return;
+            }
+
+            $passwordValid = (strpos($user->password, '$2y$') === 0)
+                ? password_verify($password, $user->password)
+                : ($password === $user->password);
+
+            if (!$passwordValid) {
+                $this->jsonResponse(['success' => false, 'error' => 'Incorrect password'], 401);
                 return;
             }
             
             // Check if email already exists
             if ($this->model->emailExists($newEmail, $userId)) {
-                echo json_encode(['success' => false, 'error' => 'Email already in use']);
+                $this->jsonResponse(['success' => false, 'error' => 'Email already in use'], 409);
                 return;
             }
             
             $result = $this->model->updateEmail($userId, $newEmail);
             
             if ($result) {
-                echo json_encode(['success' => true, 'message' => 'Email updated successfully']);
+                $_SESSION['user_email'] = $newEmail;
+                $this->jsonResponse(['success' => true, 'message' => 'Email updated successfully']);
             } else {
-                echo json_encode(['success' => false, 'error' => 'Failed to update email']);
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to update email'], 500);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -191,15 +218,12 @@ class settings extends Controller{
      * Body: {"current_password": "old", "new_password": "new", "confirm_password": "new"}
      */
     public function changePassword() {
-        header('Content-Type: application/json');
-        
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+        if (!$this->ensurePostMethod()) {
             return;
         }
 
         try {
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = $this->getJsonInput();
             $userId = $_SESSION['user_id'];
             
             $currentPassword = $input['current_password'] ?? '';
@@ -208,24 +232,33 @@ class settings extends Controller{
             
             // Validate inputs
             if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
-                echo json_encode(['success' => false, 'error' => 'All fields are required']);
+                $this->jsonResponse(['success' => false, 'error' => 'All fields are required'], 422);
                 return;
             }
             
             if ($newPassword !== $confirmPassword) {
-                echo json_encode(['success' => false, 'error' => 'New passwords do not match']);
+                $this->jsonResponse(['success' => false, 'error' => 'New passwords do not match'], 422);
                 return;
             }
             
-            if (strlen($newPassword) < 6) {
-                echo json_encode(['success' => false, 'error' => 'New password must be at least 6 characters']);
+            if (strlen($newPassword) < 8) {
+                $this->jsonResponse(['success' => false, 'error' => 'New password must be at least 8 characters'], 422);
                 return;
             }
             
             // Verify current password
             $user = $this->model->getUserById($userId);
-            if (!$user || !password_verify($currentPassword, $user->password)) {
-                echo json_encode(['success' => false, 'error' => 'Current password is incorrect']);
+            if (!$user) {
+                $this->jsonResponse(['success' => false, 'error' => 'User not found'], 404);
+                return;
+            }
+
+            $passwordValid = (strpos($user->password, '$2y$') === 0)
+                ? password_verify($currentPassword, $user->password)
+                : ($currentPassword === $user->password);
+
+            if (!$passwordValid) {
+                $this->jsonResponse(['success' => false, 'error' => 'Current password is incorrect'], 401);
                 return;
             }
             
@@ -235,49 +268,60 @@ class settings extends Controller{
             $result = $this->model->updatePassword($userId, $hashedPassword);
             
             if ($result) {
-                echo json_encode(['success' => true, 'message' => 'Password changed successfully']);
+                $this->jsonResponse(['success' => true, 'message' => 'Password changed successfully']);
             } else {
-                echo json_encode(['success' => false, 'error' => 'Failed to change password']);
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to change password'], 500);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * API: Delete user account permanently
+     * API: Schedule account lifecycle action
      * POST /settings/deleteAccount
-     * Body: {"password": "password", "confirmation": "DELETE"}
+     * Body: {
+     *   "password": "password",
+     *   "confirmation": "CONFIRM",
+     *   "action_type": "deactivate_only|deactivate_and_delete",
+     *   "deletion_reason": "...",
+     *   "other_deletion_reason": "..."
+     * }
      */
     public function deleteAccount() {
-        header('Content-Type: application/json');
-        
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+        if (!$this->ensurePostMethod()) {
             return;
         }
 
         try {
             SessionManager::ensureStarted();
-            $input = json_decode(file_get_contents('php://input'), true);
+            $input = $this->getJsonInput();
             
             if (!isset($_SESSION['user_id'])) {
-                echo json_encode(['success' => false, 'error' => 'User not logged in']);
+                $this->jsonResponse(['success' => false, 'error' => 'User not logged in'], 401);
                 return;
             }
             
             $userId = $_SESSION['user_id'];
             $password = $input['password'] ?? '';
-            $confirmation = trim($input['confirmation'] ?? '');
+            $confirmation = strtoupper(trim($input['confirmation'] ?? ''));
+            $actionType = trim($input['action_type'] ?? '');
+            $deletionReason = trim($input['deletion_reason'] ?? '');
+            $otherDeletionReason = trim($input['other_deletion_reason'] ?? '');
             
             // Validate inputs
             if (empty($password)) {
-                echo json_encode(['success' => false, 'error' => 'Password is required']);
+                $this->jsonResponse(['success' => false, 'error' => 'Password is required'], 422);
                 return;
             }
             
-            if ($confirmation !== 'DELETE') {
-                echo json_encode(['success' => false, 'error' => 'Please type DELETE to confirm']);
+            if (!in_array($actionType, [M_settings::ACTION_DEACTIVATE_ONLY, M_settings::ACTION_DEACTIVATE_AND_DELETE], true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Please select an account action'], 422);
+                return;
+            }
+
+            if ($confirmation !== 'CONFIRM') {
+                $this->jsonResponse(['success' => false, 'error' => 'Please type CONFIRM to proceed'], 422);
                 return;
             }
             
@@ -285,7 +329,7 @@ class settings extends Controller{
             $user = $this->model->getUserById($userId);
             
             if (!$user) {
-                echo json_encode(['success' => false, 'error' => 'User not found']);
+                $this->jsonResponse(['success' => false, 'error' => 'User not found'], 404);
                 return;
             }
             
@@ -300,23 +344,38 @@ class settings extends Controller{
             }
             
             if (!$passwordValid) {
-                echo json_encode(['success' => false, 'error' => 'Incorrect password']);
+                $this->jsonResponse(['success' => false, 'error' => 'Incorrect password'], 401);
                 return;
             }
             
-            // Delete account
-            $result = $this->model->deleteAccount($userId);
+            // Schedule lifecycle action and immediately log out.
+            $result = $this->model->scheduleAccountLifecycleAction(
+                $userId,
+                $actionType,
+                $deletionReason,
+                $otherDeletionReason
+            );
             
             if ($result) {
                 // Destroy session and logout
                 SessionManager::destroySession();
-                
-                echo json_encode(['success' => true, 'message' => 'Account deleted successfully']);
+
+                $days = 30;
+                $actionMessage = $actionType === M_settings::ACTION_DEACTIVATE_ONLY
+                    ? 'Account deactivated for 30 days. Log in again to reactivate your account.'
+                    : 'Account deactivated for 30 days. If you do not log in within this period, your account will be permanently deleted.';
+
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => $actionMessage,
+                    'action_type' => $actionType,
+                    'deactivated_days' => $days
+                ]);
             } else {
-                echo json_encode(['success' => false, 'error' => 'Failed to delete account']);
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to schedule account action'], 500);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -325,8 +384,6 @@ class settings extends Controller{
      * GET /settings/getUserData
      */
     public function getUserData() {
-        header('Content-Type: application/json');
-        
         try {
             $userId = $_SESSION['user_id'];
             $user = $this->model->getUserById($userId);
@@ -335,12 +392,508 @@ class settings extends Controller{
                 // Remove sensitive data
                 unset($user->password);
                 
-                echo json_encode(['success' => true, 'user' => $user]);
+                $this->jsonResponse(['success' => true, 'user' => $user]);
             } else {
-                echo json_encode(['success' => false, 'error' => 'User not found']);
+                $this->jsonResponse(['success' => false, 'error' => 'User not found'], 404);
             }
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Get notification settings
+     * GET /settings/getNotificationSettings
+     */
+    public function getNotificationSettings() {
+        try {
+            $userId = $_SESSION['user_id'];
+            $settings = $this->model->getNotificationSettings($userId);
+
+            if (!$settings) {
+                $settings = (object)[
+                    'email_enabled' => 1,
+                    'sound_enabled' => 0,
+                    'mentions_enabled' => 1,
+                    'followers_enabled' => 1,
+                    'engagement_enabled' => 1,
+                    'dnd_enabled' => 0,
+                    'dnd_start' => null,
+                    'dnd_end' => null,
+                    'dnd_days' => null,
+                    'in_app_disabled_types' => []
+                ];
+            } else {
+                // Ensure consistent scalar types for the frontend (PDO may return strings)
+                $settings->email_enabled = (int)($settings->email_enabled ?? 0);
+                $settings->sound_enabled = (int)($settings->sound_enabled ?? 0);
+                $settings->mentions_enabled = (int)($settings->mentions_enabled ?? 1);
+                $settings->followers_enabled = (int)($settings->followers_enabled ?? 1);
+                $settings->engagement_enabled = (int)($settings->engagement_enabled ?? 1);
+                $settings->dnd_enabled = (int)($settings->dnd_enabled ?? 0);
+
+                // Per-type in-app toggles are stored as a JSON array of disabled types.
+                // If the column is missing (older schema), default to empty list.
+                if (property_exists($settings, 'in_app_disabled_types')) {
+                    $raw = $settings->in_app_disabled_types;
+                    if (is_string($raw) && $raw !== '') {
+                        $decoded = json_decode($raw, true);
+                        $settings->in_app_disabled_types = is_array($decoded) ? array_values($decoded) : [];
+                    } elseif (is_array($raw)) {
+                        $settings->in_app_disabled_types = array_values($raw);
+                    } else {
+                        $settings->in_app_disabled_types = [];
+                    }
+                } else {
+                    $settings->in_app_disabled_types = [];
+                }
+            }
+
+            $this->jsonResponse(['success' => true, 'settings' => $settings]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Update notification settings
+     * POST /settings/updateNotificationSettings
+     */
+    public function updateNotificationSettings() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $input = $this->getJsonInput();
+
+            $payload = [
+                'email_enabled' => !empty($input['email_enabled']) ? 1 : 0,
+                'sound_enabled' => !empty($input['sound_enabled']) ? 1 : 0,
+                'mentions_enabled' => !empty($input['mentions_enabled']) ? 1 : 0,
+                'followers_enabled' => !empty($input['followers_enabled']) ? 1 : 0,
+                'engagement_enabled' => !empty($input['engagement_enabled']) ? 1 : 0,
+                'dnd_enabled' => !empty($input['dnd_enabled']) ? 1 : 0,
+                'dnd_start' => isset($input['dnd_start']) ? trim((string)$input['dnd_start']) : null,
+                'dnd_end' => isset($input['dnd_end']) ? trim((string)$input['dnd_end']) : null,
+                'dnd_days' => isset($input['dnd_days']) ? trim((string)$input['dnd_days']) : null,
+                'in_app_disabled_types' => $input['in_app_disabled_types'] ?? []
+            ];
+
+            // Sanitize in_app_disabled_types
+            if (is_string($payload['in_app_disabled_types'])) {
+                $decoded = json_decode($payload['in_app_disabled_types'], true);
+                $payload['in_app_disabled_types'] = is_array($decoded) ? $decoded : [];
+            }
+            if (!is_array($payload['in_app_disabled_types'])) {
+                $payload['in_app_disabled_types'] = [];
+            }
+
+            // Only allow string types
+            $payload['in_app_disabled_types'] = array_values(array_filter($payload['in_app_disabled_types'], function ($t) {
+                return is_string($t) && $t !== '';
+            }));
+
+            if ($payload['dnd_enabled']) {
+                if (empty($payload['dnd_start']) || empty($payload['dnd_end'])) {
+                    $this->jsonResponse(['success' => false, 'error' => 'DND start and end times are required when DND is enabled'], 422);
+                    return;
+                }
+            }
+
+            $saved = $this->model->upsertNotificationSettings($userId, $payload);
+
+            if (!$saved) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to save notification settings'], 500);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Notification settings saved']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Get blocked users list
+     * GET /settings/getBlockedUsers
+     */
+    public function getBlockedUsers() {
+        try {
+            $userId = $_SESSION['user_id'];
+            $blockedUsers = $this->model->getBlockedUsers($userId);
+
+            $this->jsonResponse(['success' => true, 'blocked_users' => $blockedUsers]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Block a user
+     * POST /settings/blockUser
+     */
+    public function blockUser() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $input = $this->getJsonInput();
+            $blockedUserId = (int)($input['blocked_user_id'] ?? 0);
+
+            if ($blockedUserId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid target user id'], 422);
+                return;
+            }
+
+            if ($blockedUserId === (int)$userId) {
+                $this->jsonResponse(['success' => false, 'error' => 'You cannot block yourself'], 422);
+                return;
+            }
+
+            $targetUser = $this->model->getUserById($blockedUserId);
+            if (!$targetUser) {
+                $this->jsonResponse(['success' => false, 'error' => 'Target user not found'], 404);
+                return;
+            }
+
+            $ok = $this->model->blockUser($userId, $blockedUserId);
+            if (!$ok) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to block user'], 500);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'User blocked successfully']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Unblock a user
+     * POST /settings/unblockUser
+     */
+    public function unblockUser() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $input = $this->getJsonInput();
+            $blockedUserId = (int)($input['blocked_user_id'] ?? 0);
+
+            if ($blockedUserId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid blocked user id'], 422);
+                return;
+            }
+
+            $ok = $this->model->unblockUser($userId, $blockedUserId);
+            if (!$ok) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to unblock user'], 500);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'User unblocked successfully']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Get privacy/security settings
+     * GET /settings/getPrivacySettings
+     */
+    public function getPrivacySettings() {
+        try {
+            $userId = $_SESSION['user_id'];
+            $settings = $this->model->getPrivacySettings($userId);
+
+            if (!$settings) {
+                $settings = (object)[
+                    'is_public' => 1,
+                    'two_factor_enabled' => 0,
+                    'two_factor_method' => null,
+                    'two_factor_phone' => null,
+                    'login_alerts_enabled' => 1
+                ];
+            }
+
+            $this->jsonResponse(['success' => true, 'settings' => $settings]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Update privacy/security settings
+     * POST /settings/updatePrivacySettings
+     */
+    public function updatePrivacySettings() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $input = $this->getJsonInput();
+
+            $payload = [
+                'is_public' => !empty($input['is_public']) ? 1 : 0,
+                'two_factor_enabled' => !empty($input['two_factor_enabled']) ? 1 : 0,
+                'two_factor_method' => isset($input['two_factor_method']) ? trim((string)$input['two_factor_method']) : null,
+                'two_factor_phone' => isset($input['two_factor_phone']) ? trim((string)$input['two_factor_phone']) : null,
+                'login_alerts_enabled' => !empty($input['login_alerts_enabled']) ? 1 : 0
+            ];
+
+            if ($payload['two_factor_enabled'] === 1) {
+                $validMethod = in_array($payload['two_factor_method'], ['app', 'sms'], true);
+                if (!$validMethod) {
+                    $this->jsonResponse(['success' => false, 'error' => 'Invalid two-factor method'], 422);
+                    return;
+                }
+
+                if ($payload['two_factor_method'] === 'sms' && empty($payload['two_factor_phone'])) {
+                    $this->jsonResponse(['success' => false, 'error' => 'Phone number is required for SMS 2FA'], 422);
+                    return;
+                }
+            }
+
+            $saved = $this->model->upsertPrivacySettings($userId, $payload);
+            if (!$saved) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to save privacy settings'], 500);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Privacy settings saved']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Submit support request
+     * POST /settings/submitSupportRequest
+     */
+    public function submitSupportRequest() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $input = $this->getJsonInput();
+
+            $email = trim($input['email'] ?? '');
+            $topic = trim($input['topic'] ?? 'technical');
+            $message = trim($input['message'] ?? '');
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Valid email is required'], 422);
+                return;
+            }
+
+            if ($message === '') {
+                $this->jsonResponse(['success' => false, 'error' => 'Support message is required'], 422);
+                return;
+            }
+
+            $ticketId = $this->model->createSupportTicket($userId, $email, $topic, $message);
+            if (!$ticketId) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to create support ticket'], 500);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Support request submitted', 'ticket_id' => $ticketId]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Update support ticket (only while editable)
+     * POST /settings/updateSupportTicket
+     */
+    public function updateSupportTicket() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = (int)($_SESSION['user_id'] ?? 0);
+            if ($userId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+                return;
+            }
+
+            $input = $this->getJsonInput();
+
+            $ticketId = (int)($input['id'] ?? 0);
+            $email = trim($input['email'] ?? '');
+            $topic = trim($input['topic'] ?? 'technical');
+            $message = trim($input['message'] ?? '');
+
+            if ($ticketId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Valid ticket id is required'], 422);
+                return;
+            }
+
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Valid email is required'], 422);
+                return;
+            }
+
+            $allowedTopics = ['account', 'technical', 'billing', 'other'];
+            if (!in_array($topic, $allowedTopics, true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid topic'], 422);
+                return;
+            }
+
+            if ($message === '') {
+                $this->jsonResponse(['success' => false, 'error' => 'Support message is required'], 422);
+                return;
+            }
+
+            $updated = $this->model->updateSupportTicket($userId, $ticketId, $email, $topic, $message);
+            if (!$updated) {
+                $this->jsonResponse(['success' => false, 'error' => 'This ticket can no longer be edited'], 409);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Support ticket updated']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Submit problem report
+     * POST /settings/submitProblemReport
+     */
+    public function submitProblemReport() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $input = $this->getJsonInput();
+
+            $reportType = trim($input['report_type'] ?? 'bug');
+            $details = trim($input['details'] ?? '');
+
+            if ($details === '') {
+                $this->jsonResponse(['success' => false, 'error' => 'Report details are required'], 422);
+                return;
+            }
+
+            $allowed = ['bug', 'abuse', 'policy'];
+            if (!in_array($reportType, $allowed, true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid report type'], 422);
+                return;
+            }
+
+            $reportId = $this->model->createProblemReport($userId, $reportType, $details);
+            if (!$reportId) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to submit problem report'], 500);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Problem report submitted', 'report_id' => $reportId]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Update problem report (only while editable)
+     * POST /settings/updateProblemReport
+     */
+    public function updateProblemReport() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = (int)($_SESSION['user_id'] ?? 0);
+            if ($userId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+                return;
+            }
+
+            $input = $this->getJsonInput();
+
+            $reportId = (int)($input['id'] ?? 0);
+            $reportType = trim($input['report_type'] ?? 'bug');
+            $details = trim($input['details'] ?? '');
+
+            if ($reportId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Valid report id is required'], 422);
+                return;
+            }
+
+            $allowed = ['bug', 'abuse', 'policy'];
+            if (!in_array($reportType, $allowed, true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid report type'], 422);
+                return;
+            }
+
+            if ($details === '') {
+                $this->jsonResponse(['success' => false, 'error' => 'Report details are required'], 422);
+                return;
+            }
+
+            $updated = $this->model->updateProblemReport($userId, $reportId, $reportType, $details);
+            if (!$updated) {
+                $this->jsonResponse(['success' => false, 'error' => 'This report can no longer be edited'], 409);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Problem report updated']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Submit product feedback
+     * POST /settings/submitFeedback
+     */
+    public function submitFeedback() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $userId = $_SESSION['user_id'];
+            $input = $this->getJsonInput();
+
+            $feedbackType = trim($input['feedback_type'] ?? 'other');
+            $message = trim($input['message'] ?? '');
+
+            if ($message === '') {
+                $this->jsonResponse(['success' => false, 'error' => 'Feedback message is required'], 422);
+                return;
+            }
+
+            $allowed = ['feature', 'ux', 'other'];
+            if (!in_array($feedbackType, $allowed, true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Invalid feedback type'], 422);
+                return;
+            }
+
+            $feedbackId = $this->model->createFeedback($userId, $feedbackType, $message);
+            if (!$feedbackId) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to submit feedback'], 500);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'Feedback submitted', 'feedback_id' => $feedbackId]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 }

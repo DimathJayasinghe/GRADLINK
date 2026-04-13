@@ -38,7 +38,7 @@
         </div>
     </div>
     
-    <div class="settings-section">
+    <!-- <div class="settings-section">
         <h3>Profile Analytics</h3>
         <div class="section-divider"></div>
         <div class="analytics-dashboard">
@@ -60,27 +60,27 @@
                 <div class="analytics-trend">0% <span class="trend-icon">→</span></div>
             </div>
             
-            <!-- <div class="analytics-card">
+            <div class="analytics-card">
                 <div class="analytics-value"><?= isset($userAnalytics) ? $userAnalytics['avg_response_time'] : '0' ?>h</div>
                 <div class="analytics-label">Avg. Response Time</div>
                 <div class="analytics-trend down">-8% <span class="trend-icon">↓</span></div>
-            </div> -->
-        </div>
+            </div>
+        </div> -->
         
-        <div class="view-more-analytics">
+        <!-- <div class="view-more-analytics">
             <a href="#" class="view-more-link">View Detailed Analytics</a>
         </div>
-    </div>
+    </div> -->
     
     <div class="settings-section">
         <h3>Account Management</h3>
         <div class="section-divider"></div>
         <div class="settings-option">
             <div class="settings-option-details">
-                <h4>Delete Account</h4>
-                <p>Permanently delete your GRADLINK account and all data</p>
+                <h4>Deactivate or Delete Account</h4>
+                <p>Temporarily deactivate your account or deactivate and <br> auto-delete later</p>
             </div>
-            <button class="settings-btn settings-btn-danger delete-account-btn">Delete</button>
+            <button class="settings-btn settings-btn-danger delete-account-btn">Manage</button>
         </div>
     </div>
     
@@ -200,15 +200,26 @@
     <div id="deleteAccountModal" class="settings-modal">
         <div class="settings-modal-content">
             <div class="settings-modal-header">
-                <h3>Delete Account</h3>
+                <h3>Manage Account</h3>
                 <span class="settings-close-modal">&times;</span>
             </div>
             <div class="settings-modal-body">
                 <div class="danger-message">
                     <div class="danger-icon">⚠️</div>
-                    <p>This action <strong>cannot be undone</strong>. Your account and all associated data will be permanently deleted.</p>
+                    <p>Select what should happen to your account. Logging in again will reactivate your account before auto-deletion.</p>
                 </div>
                 <form id="deleteAccountForm">
+                    <div class="form-group account-action-group">
+                        <label>Choose account action</label>
+                        <label class="account-action-option">
+                            <input type="radio" name="accountAction" value="deactivate_only" required>
+                            <span>Deactivate Account (30 days)</span>
+                        </label>
+                        <label class="account-action-option">
+                            <input type="radio" name="accountAction" value="deactivate_and_delete" required>
+                            <span>Deactivate and Delete Account (30 days if you do not log in)</span>
+                        </label>
+                    </div>
                     <div class="form-group">
                         <label for="deletionReason">Why are you deleting your account?</label>
                         <select id="deletionReason" name="deletionReason" required>
@@ -225,7 +236,7 @@
                         <textarea id="otherDeletionReason" name="otherDeletionReason" rows="3"></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="deleteConfirmation">Type "DELETE" to confirm</label>
+                        <label for="deleteConfirmation">Type "CONFIRM" to proceed</label>
                         <input type="text" id="deleteConfirmation" name="deleteConfirmation" required>
                     </div>
                     <div class="form-group">
@@ -234,7 +245,7 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="settings-btn-secondary cancel-modal">Cancel</button>
-                        <button type="submit" class="settings-btn-danger">Permanently Delete Account</button>
+                        <button type="submit" class="settings-btn-danger">Proceed</button>
                     </div>
                 </form>
             </div>
@@ -486,14 +497,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     password: document.getElementById('deletePassword').value,
-                    confirmation: document.getElementById('deleteConfirmation').value
+                    confirmation: document.getElementById('deleteConfirmation').value,
+                    action_type: (document.querySelector('input[name="accountAction"]:checked') || {}).value || '',
+                    deletion_reason: document.getElementById('deletionReason').value,
+                    other_deletion_reason: document.getElementById('otherDeletionReason').value
                 })
             });
             
             const data = await response.json();
             
             if (data.success) {
-                showNotification('Account deleted successfully. Redirecting...', 'success');
+                showNotification(data.message || 'Account action scheduled. Redirecting...', 'success');
                 setTimeout(() => {
                     window.location.href = `${URLROOT}/auth`;
                 }, 2000);
