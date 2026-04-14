@@ -4,6 +4,7 @@ class M_message extends Database {
     public function __construct() {
         parent::__construct();
         $this->ensureSuspendedUsersTable();
+        $this->ensureUnreadTrackerTable();
     }
 
     private function ensureSuspendedUsersTable(): void {
@@ -28,6 +29,67 @@ class M_message extends Database {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
             $this->execute();
         } catch (Exception $e) {
+        }
+    }
+
+    private function ensureUnreadTrackerTable(): void {
+        try {
+            $this->query("CREATE TABLE IF NOT EXISTS message_unread_tracker (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                sender_id INT NOT NULL,
+                receiver_id INT NOT NULL,
+                unread_count INT DEFAULT 0,
+                last_message_id INT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_conversation (sender_id, receiver_id),
+                INDEX idx_receiver_unread (receiver_id, unread_count)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->execute();
+        } catch (Throwable $e) {
+        }
+    }
+
+    private function tableExists(string $tableName): bool {
+        try {
+            $this->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name LIMIT 1");
+            $this->bind(':table_name', $tableName);
+            return $this->single() !== false;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function columnExists(string $tableName, string $columnName): bool {
+        try {
+            $this->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name LIMIT 1");
+            $this->bind(':table_name', $tableName);
+            $this->bind(':column_name', $columnName);
+            return $this->single() !== false;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function incrementUnreadTracker($senderId, $receiverId, $messageId): void {
+        try {
+            if (!$this->tableExists('message_unread_tracker')) {
+                return;
+            }
+
+            $sql = "INSERT INTO message_unread_tracker (sender_id, receiver_id, unread_count, last_message_id)
+                    VALUES (:sender_id, :receiver_id, 1, :last_message_id)
+                    ON DUPLICATE KEY UPDATE
+                        unread_count = unread_count + 1,
+                        last_message_id = VALUES(last_message_id),
+                        updated_at = CURRENT_TIMESTAMP";
+
+            $this->query($sql);
+            $this->bind(':sender_id', (int)$senderId);
+            $this->bind(':receiver_id', (int)$receiverId);
+            $this->bind(':last_message_id', (int)$messageId);
+            $this->execute();
+        } catch (Throwable $e) {
+            // Unread tracking must not break messaging flow.
         }
     }
     
@@ -145,9 +207,81 @@ class M_message extends Database {
         $this->bind(':message_text', $messageText);
         
         if ($this->execute()) {
-            return $this->lastInsertId();
+            $messageId = (int)$this->lastInsertId();
+            $this->incrementUnreadTracker($senderId, $receiverId, $messageId);
+            return $messageId;
         }
         return false;
+    }
+
+    public function markConversationAsRead($currentUserId, $otherUserId) {
+        $currentUserId = (int)$currentUserId;
+        $otherUserId = (int)$otherUserId;
+
+        try {
+            if ($this->tableExists('message_unread_tracker')) {
+                $this->query("UPDATE message_unread_tracker
+                            SET unread_count = 0,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE sender_id = :sender_id
+                              AND receiver_id = :receiver_id");
+                $this->bind(':sender_id', $otherUserId);
+                $this->bind(':receiver_id', $currentUserId);
+                $this->execute();
+            }
+        } catch (Throwable $e) {
+            // Ignore tracker failures and try fallback.
+        }
+
+        try {
+            if ($this->columnExists('messages', 'is_read')) {
+                $this->query("UPDATE messages
+                            SET is_read = 1
+                            WHERE sender_id = :sender_id
+                              AND receiver_id = :receiver_id
+                              AND is_read = 0");
+                $this->bind(':sender_id', $otherUserId);
+                $this->bind(':receiver_id', $currentUserId);
+                $this->execute();
+            }
+        } catch (Throwable $e) {
+            // Swallow to preserve API stability.
+        }
+
+        return true;
+    }
+
+    public function getTotalUnreadCount($currentUserId) {
+        $currentUserId = (int)$currentUserId;
+
+        try {
+            if ($this->tableExists('message_unread_tracker')) {
+                $this->query("SELECT COALESCE(SUM(unread_count), 0) AS total
+                            FROM message_unread_tracker
+                            WHERE receiver_id = :receiver_id");
+                $this->bind(':receiver_id', $currentUserId);
+                $row = $this->single();
+                return $row ? (int)($row->total ?? 0) : 0;
+            }
+        } catch (Throwable $e) {
+            // Fall back to messages table if tracker unavailable.
+        }
+
+        try {
+            if ($this->columnExists('messages', 'is_read')) {
+                $this->query("SELECT COUNT(*) AS total
+                            FROM messages
+                            WHERE receiver_id = :receiver_id
+                              AND is_read = 0");
+                $this->bind(':receiver_id', $currentUserId);
+                $row = $this->single();
+                return $row ? (int)($row->total ?? 0) : 0;
+            }
+        } catch (Throwable $e) {
+            return 0;
+        }
+
+        return 0;
     }
     
     /**

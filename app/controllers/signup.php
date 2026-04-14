@@ -1,9 +1,5 @@
 <?php
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-use PHPMailer\PHPMailer\SMTP;
-
 class Signup extends Controller
 {
     protected $signupModel;
@@ -455,32 +451,6 @@ class Signup extends Controller
 
     private function sendOTPEmail($email, $purpose, $otp)
     {
-        $mail = new PHPMailer(true);
-        try {
-            $mail->isSMTP();
-            $mail->Host = MAIL_HOST;
-            $mail->SMTPAuth = true;
-            $mail->Username = MAIL_USERNAME;
-            $mail->Password = MAIL_PASSWORD;
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port = MAIL_PORT;
-
-            $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
-            $mail->addAddress($email);
-
-
-            $mail->isHTML(true);
-            $mail->Subject = 'Your Gradlink OTP';
-            $mail->Body = "
-                <h2>Email Verification</h2>
-                <p>Your OTP is:</p>
-                <h1>$otp</h1>
-                <p>This code expires in 5 minutes.</p>
-            ";
-
-            return $mail->send();
-        } catch (Exception $e) {
-            return false;
-        }
+        return EmailHandler::sendOtpEmail((string)$email, (string)$purpose, (int)$otp);
     }
 }

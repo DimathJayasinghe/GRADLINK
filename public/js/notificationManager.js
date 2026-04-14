@@ -301,7 +301,7 @@ class NotificationManager {
                         if (indicator) indicator.remove();
                     });
                 }
-                this.updateBadge(0);
+                this.fetchCount();
             }
         } catch (error) {
             console.error('Failed to mark all as read:', error);

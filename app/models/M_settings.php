@@ -3,6 +3,63 @@ class M_settings extends Database {
 
     const ACTION_DEACTIVATE_ONLY = 'deactivate_only';
     const ACTION_DEACTIVATE_AND_DELETE = 'deactivate_and_delete';
+
+    /**
+     * Ensure notification settings table exists.
+     * This keeps notification settings APIs resilient on fresh/local DBs.
+     */
+    private function ensureNotificationSettingsTable() {
+        try {
+            if (!$this->tableExists('user_notification_settings')) {
+                $sql = "CREATE TABLE user_notification_settings (
+                            user_id INT PRIMARY KEY,
+                            email_enabled TINYINT(1) DEFAULT 1,
+                            sound_enabled TINYINT(1) DEFAULT 0,
+                            mentions_enabled TINYINT(1) DEFAULT 1,
+                            followers_enabled TINYINT(1) DEFAULT 1,
+                            engagement_enabled TINYINT(1) DEFAULT 1,
+                            dnd_enabled TINYINT(1) DEFAULT 0,
+                            dnd_start TIME NULL,
+                            dnd_end TIME NULL,
+                            dnd_days VARCHAR(50) NULL,
+                            in_app_disabled_types TEXT NULL,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
+
+                $this->query($sql);
+                if (!$this->execute()) {
+                    return false;
+                }
+            }
+
+            $columnsToEnsure = [
+                'email_enabled' => 'TINYINT(1) DEFAULT 1',
+                'sound_enabled' => 'TINYINT(1) DEFAULT 0',
+                'mentions_enabled' => 'TINYINT(1) DEFAULT 1',
+                'followers_enabled' => 'TINYINT(1) DEFAULT 1',
+                'engagement_enabled' => 'TINYINT(1) DEFAULT 1',
+                'dnd_enabled' => 'TINYINT(1) DEFAULT 0',
+                'dnd_start' => 'TIME NULL',
+                'dnd_end' => 'TIME NULL',
+                'dnd_days' => 'VARCHAR(50) NULL',
+                'in_app_disabled_types' => 'TEXT NULL',
+            ];
+
+            foreach ($columnsToEnsure as $column => $definition) {
+                if (!$this->columnExists('user_notification_settings', $column)) {
+                    $this->query("ALTER TABLE user_notification_settings ADD COLUMN {$column} {$definition}");
+                    if (!$this->execute()) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        } catch (Throwable $e) {
+            error_log('[settings] ensureNotificationSettingsTable failed: ' . $e->getMessage());
+            return false;
+        }
+    }
     
     /**
      * Get user by ID
@@ -62,6 +119,24 @@ class M_settings extends Database {
         
         return $this->execute();
     }
+
+    /**
+     * Convert undergrad account to alumni.
+     */
+    public function convertUndergradToAlumni($userId) {
+        $sql = "UPDATE users
+                SET role = 'alumni'
+                WHERE id = :user_id AND role = 'undergrad'";
+
+        $this->query($sql);
+        $this->bind(':user_id', (int)$userId);
+
+        if (!$this->execute()) {
+            return false;
+        }
+
+        return $this->rowCount() > 0;
+    }
     
     /**
      * Update user password
@@ -104,129 +179,75 @@ class M_settings extends Database {
      * Fetch notification preferences for current user.
      */
     public function getNotificationSettings($userId) {
-        $sql = "SELECT * FROM user_notification_settings WHERE user_id = :user_id LIMIT 1";
-        $this->query($sql);
-        $this->bind(':user_id', $userId);
+        if (!$this->ensureNotificationSettingsTable()) {
+            return false;
+        }
 
-        return $this->single();
+        try {
+            $sql = "SELECT * FROM user_notification_settings WHERE user_id = :user_id LIMIT 1";
+            $this->query($sql);
+            $this->bind(':user_id', $userId);
+
+            return $this->single();
+        } catch (Throwable $e) {
+            error_log('[settings] getNotificationSettings failed: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**
      * Upsert notification preferences for current user.
      */
     public function upsertNotificationSettings($userId, $settings) {
-        $disabledTypes = $settings['in_app_disabled_types'] ?? [];
-        if (is_string($disabledTypes)) {
-            $decoded = json_decode($disabledTypes, true);
-            $disabledTypes = is_array($decoded) ? $decoded : [];
+        if (!$this->ensureNotificationSettingsTable()) {
+            return false;
         }
-        if (!is_array($disabledTypes)) {
-            $disabledTypes = [];
-        }
-        $disabledTypesJson = json_encode(array_values($disabledTypes), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        // Prefer schema with in_app_disabled_types; if the column doesn't exist yet, fall back.
+        $columnValueMap = [
+            'email_enabled' => (int)($settings['email_enabled'] ?? 1),
+            'sound_enabled' => (int)($settings['sound_enabled'] ?? 0),
+            'mentions_enabled' => (int)($settings['mentions_enabled'] ?? 1),
+            'followers_enabled' => (int)($settings['followers_enabled'] ?? 1),
+            'engagement_enabled' => (int)($settings['engagement_enabled'] ?? 1),
+            'dnd_enabled' => (int)($settings['dnd_enabled'] ?? 0),
+            'dnd_start' => $settings['dnd_start'] ?? null,
+            'dnd_end' => $settings['dnd_end'] ?? null,
+            'dnd_days' => $settings['dnd_days'] ?? null,
+        ];
+
         try {
-            $sql = "INSERT INTO user_notification_settings (
-                        user_id,
-                        email_enabled,
-                        sound_enabled,
-                        mentions_enabled,
-                        followers_enabled,
-                        engagement_enabled,
-                        dnd_enabled,
-                        dnd_start,
-                        dnd_end,
-                        dnd_days,
-                        in_app_disabled_types
-                    ) VALUES (
-                        :user_id,
-                        :email_enabled,
-                        :sound_enabled,
-                        :mentions_enabled,
-                        :followers_enabled,
-                        :engagement_enabled,
-                        :dnd_enabled,
-                        :dnd_start,
-                        :dnd_end,
-                        :dnd_days,
-                        :in_app_disabled_types
-                    )
-                    ON DUPLICATE KEY UPDATE
-                        email_enabled = VALUES(email_enabled),
-                        sound_enabled = VALUES(sound_enabled),
-                        mentions_enabled = VALUES(mentions_enabled),
-                        followers_enabled = VALUES(followers_enabled),
-                        engagement_enabled = VALUES(engagement_enabled),
-                        dnd_enabled = VALUES(dnd_enabled),
-                        dnd_start = VALUES(dnd_start),
-                        dnd_end = VALUES(dnd_end),
-                        dnd_days = VALUES(dnd_days),
-                        in_app_disabled_types = VALUES(in_app_disabled_types)";
+            $insertColumns = ['user_id'];
+            $insertPlaceholders = [':user_id'];
+            $updateAssignments = [];
+
+            foreach ($columnValueMap as $column => $value) {
+                if ($this->columnExists('user_notification_settings', $column)) {
+                    $insertColumns[] = $column;
+                    $insertPlaceholders[] = ':' . $column;
+                    $updateAssignments[] = "{$column} = VALUES({$column})";
+                }
+            }
+
+            if (empty($updateAssignments)) {
+                return false;
+            }
+
+            $sql = "INSERT INTO user_notification_settings (" . implode(', ', $insertColumns) . ")
+                    VALUES (" . implode(', ', $insertPlaceholders) . ")
+                    ON DUPLICATE KEY UPDATE " . implode(', ', $updateAssignments);
 
             $this->query($sql);
-            $this->bind(':user_id', $userId);
-            $this->bind(':email_enabled', (int)($settings['email_enabled'] ?? 1));
-            $this->bind(':sound_enabled', (int)($settings['sound_enabled'] ?? 0));
-            $this->bind(':mentions_enabled', (int)($settings['mentions_enabled'] ?? 1));
-            $this->bind(':followers_enabled', (int)($settings['followers_enabled'] ?? 1));
-            $this->bind(':engagement_enabled', (int)($settings['engagement_enabled'] ?? 1));
-            $this->bind(':dnd_enabled', (int)($settings['dnd_enabled'] ?? 0));
-            $this->bind(':dnd_start', $settings['dnd_start'] ?? null);
-            $this->bind(':dnd_end', $settings['dnd_end'] ?? null);
-            $this->bind(':dnd_days', $settings['dnd_days'] ?? null);
-            $this->bind(':in_app_disabled_types', $disabledTypesJson);
+            $this->bind(':user_id', (int)$userId);
+            foreach ($columnValueMap as $column => $value) {
+                if (in_array($column, $insertColumns, true)) {
+                    $this->bind(':' . $column, $value);
+                }
+            }
 
             return $this->execute();
         } catch (Throwable $e) {
-            // Fallback for older DB schema without in_app_disabled_types
-            $sql = "INSERT INTO user_notification_settings (
-                        user_id,
-                        email_enabled,
-                        sound_enabled,
-                        mentions_enabled,
-                        followers_enabled,
-                        engagement_enabled,
-                        dnd_enabled,
-                        dnd_start,
-                        dnd_end,
-                        dnd_days
-                    ) VALUES (
-                        :user_id,
-                        :email_enabled,
-                        :sound_enabled,
-                        :mentions_enabled,
-                        :followers_enabled,
-                        :engagement_enabled,
-                        :dnd_enabled,
-                        :dnd_start,
-                        :dnd_end,
-                        :dnd_days
-                    )
-                    ON DUPLICATE KEY UPDATE
-                        email_enabled = VALUES(email_enabled),
-                        sound_enabled = VALUES(sound_enabled),
-                        mentions_enabled = VALUES(mentions_enabled),
-                        followers_enabled = VALUES(followers_enabled),
-                        engagement_enabled = VALUES(engagement_enabled),
-                        dnd_enabled = VALUES(dnd_enabled),
-                        dnd_start = VALUES(dnd_start),
-                        dnd_end = VALUES(dnd_end),
-                        dnd_days = VALUES(dnd_days)";
-
-            $this->query($sql);
-            $this->bind(':user_id', $userId);
-            $this->bind(':email_enabled', (int)($settings['email_enabled'] ?? 1));
-            $this->bind(':sound_enabled', (int)($settings['sound_enabled'] ?? 0));
-            $this->bind(':mentions_enabled', (int)($settings['mentions_enabled'] ?? 1));
-            $this->bind(':followers_enabled', (int)($settings['followers_enabled'] ?? 1));
-            $this->bind(':engagement_enabled', (int)($settings['engagement_enabled'] ?? 1));
-            $this->bind(':dnd_enabled', (int)($settings['dnd_enabled'] ?? 0));
-            $this->bind(':dnd_start', $settings['dnd_start'] ?? null);
-            $this->bind(':dnd_end', $settings['dnd_end'] ?? null);
-            $this->bind(':dnd_days', $settings['dnd_days'] ?? null);
-
-            return $this->execute();
+            error_log('[settings] upsertNotificationSettings failed: ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -646,164 +667,112 @@ class M_settings extends Database {
      * Delete user account and all related data
      */
     public function deleteAccount($userId) {
+        $userId = (int)$userId;
+        if ($userId <= 0) {
+            return false;
+        }
+
         try {
-            // Start transaction
             $this->beginTransaction();
-            
-            // Delete related data in order (delete child records first to avoid foreign key issues)
-            
-            // Delete certificates
+            $userEmail = null;
             try {
-                $this->query("DELETE FROM certificates WHERE user_id = :user_id");
+                $this->query("SELECT email FROM users WHERE id = :user_id LIMIT 1");
                 $this->bind(':user_id', $userId);
-                $this->execute();
-            } catch (Exception $e) {
-                error_log("Error deleting certificates: " . $e->getMessage());
-                throw new Exception("Failed to delete certificates: " . $e->getMessage());
+                $userRow = $this->single();
+                $userEmail = isset($userRow->email) ? (string)$userRow->email : null;
+            } catch (Throwable $ignored) {
             }
-            
-            // Delete comments
-            $this->query("DELETE FROM comments WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete post likes
-            $this->query("DELETE FROM post_likes WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete posts
-            $this->query("DELETE FROM posts WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete notifications (both sent and received)
-            $this->query("DELETE FROM notifications WHERE receiver_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete follow requests (both sent and received)
-            $this->query("DELETE FROM follow_requests WHERE requester_id = :user_id OR target_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete followers (both follower and followed)
-            $this->query("DELETE FROM followers WHERE follower_id = :user_id OR followed_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
 
-            // Delete user blocks
-            $this->query("DELETE FROM user_blocks WHERE user_id = :user_id OR blocked_user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
+            $cleanupQueries = [
+                "DELETE FROM certificates WHERE user_id = :user_id",
+                "DELETE FROM comments WHERE user_id = :user_id",
+                "DELETE FROM post_likes WHERE user_id = :user_id",
+                "DELETE FROM post_reports WHERE reporter_id = :user_id OR post_owner_id = :user_id",
+                "UPDATE reports SET reviewed_by = NULL WHERE reviewed_by = :user_id",
+                "DELETE FROM reports WHERE reporter_id = :user_id",
+                "DELETE FROM posts WHERE user_id = :user_id",
+                "DELETE FROM notifications WHERE receiver_id = :user_id",
+                "DELETE FROM notifications WHERE receiver_id = :user_id OR sender_id = :user_id",
+                "DELETE FROM follow_requests WHERE requester_id = :user_id OR target_id = :user_id",
+                "DELETE FROM followers WHERE follower_id = :user_id OR followed_id = :user_id",
+                "DELETE FROM user_blocks WHERE user_id = :user_id OR blocked_user_id = :user_id",
+                "DELETE FROM user_blocks WHERE blocker_id = :user_id OR blocked_id = :user_id",
+                "DELETE FROM user_notification_settings WHERE user_id = :user_id",
+                "DELETE FROM user_security_settings WHERE user_id = :user_id",
+                "DELETE FROM support_tickets WHERE user_id = :user_id",
+                "DELETE FROM support_problem_reports WHERE user_id = :user_id",
+                "DELETE FROM support_feedback WHERE user_id = :user_id",
+                "DELETE FROM online_users WHERE user_id = :user_id",
+                "DELETE FROM access_logs WHERE user_id = :user_id",
+                "DELETE FROM message_unread_tracker WHERE sender_id = :user_id OR receiver_id = :user_id",
+                "DELETE FROM messages WHERE sender_id = :user_id OR receiver_id = :user_id",
+                "DELETE FROM event_attendees WHERE user_id = :user_id",
+                "DELETE FROM event_bookmarks WHERE user_id = :user_id",
+                "DELETE FROM bookmarks WHERE user_id = :user_id",
+                "DELETE FROM event_images WHERE event_id IN (SELECT id FROM events WHERE organizer_id = :user_id)",
+                "DELETE FROM event_requests WHERE user_id = :user_id",
+                "DELETE FROM events WHERE organizer_id = :user_id",
+                "DELETE FROM user_profiles_visibility WHERE user_id = :user_id",
+                "DELETE FROM fundraising_team_members WHERE user_id = :user_id",
+                "DELETE FROM fundraising_bank_details WHERE request_id IN (SELECT id FROM fundraising_requests WHERE user_id = :user_id)",
+                "DELETE FROM fundraising_donations WHERE donor_user_id = :user_id OR request_id IN (SELECT id FROM fundraising_requests WHERE user_id = :user_id)",
+                "DELETE FROM fundraising_requests WHERE user_id = :user_id OR advisor_id = :user_id",
+                "DELETE FROM projects WHERE user_id = :user_id",
+                "DELETE FROM work_experiences WHERE user_id = :user_id",
+                "DELETE FROM account_lifecycle_actions WHERE user_id = :user_id",
+                "DELETE FROM suspended_users WHERE user_id = :user_id",
+                "DELETE FROM suspended_users WHERE suspended_by = :user_id OR lifted_by = :user_id OR removed_by = :user_id"
+            ];
 
-            // Delete user notification settings
-            $this->query("DELETE FROM user_notification_settings WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-
-            // Delete user security settings
-            $this->query("DELETE FROM user_security_settings WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-
-            // Delete support records
-            $this->query("DELETE FROM support_tickets WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-
-            $this->query("DELETE FROM support_problem_reports WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-
-            $this->query("DELETE FROM support_feedback WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-
-            // Delete online user session tracking
-            $this->query("DELETE FROM online_users WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete message unread tracker (both sent and received)
-            if ($this->tableExists('message_unread_tracker')) {
-                $this->query("DELETE FROM message_unread_tracker WHERE sender_id = :user_id OR receiver_id = :user_id");
-                $this->bind(':user_id', $userId);
-                $this->execute();
+            foreach ($cleanupQueries as $sql) {
+                try {
+                    $this->query($sql);
+                    $this->bind(':user_id', $userId);
+                    $this->execute();
+                } catch (Throwable $ignored) {
+                    // Keep account deletion resilient across schema variants.
+                }
             }
-            
-            // Delete messages
-            $this->query("DELETE FROM messages WHERE sender_id = :user_id OR receiver_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete event attendees
-            $this->query("DELETE FROM event_attendees WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete event bookmarks
-            $this->query("DELETE FROM event_bookmarks WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete event images for events organized by this user
-            $this->query("DELETE FROM event_images WHERE event_id IN (SELECT id FROM events WHERE organizer_id = :user_id)");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete event requests
-            $this->query("DELETE FROM event_requests WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete events organized
-            $this->query("DELETE FROM events WHERE organizer_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Delete user profile visibility
-            $this->query("DELETE FROM user_profiles_visibility WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
 
-            // Delete fundraising team memberships
-            $this->query("DELETE FROM fundraising_team_members WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
+            if (!empty($userEmail)) {
+                try {
+                    $this->query("DELETE FROM email_otps WHERE email = :email");
+                    $this->bind(':email', $userEmail);
+                    $this->execute();
+                } catch (Throwable $ignored) {
+                }
 
-            // Delete donations made by the user
-            $this->query("DELETE FROM fundraising_donations WHERE donor_user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
+                try {
+                    $this->query("DELETE FROM unregisted_alumni WHERE email = :email");
+                    $this->bind(':email', $userEmail);
+                    $this->execute();
+                } catch (Throwable $ignored) {
+                }
+            }
 
-            // Delete requests created by the user
-            $this->query("DELETE FROM fundraising_requests WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-
-            // Delete projects and work experiences
-            $this->query("DELETE FROM projects WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-
-            $this->query("DELETE FROM work_experiences WHERE user_id = :user_id");
-            $this->bind(':user_id', $userId);
-            $this->execute();
-            
-            // Finally delete user
             $this->query("DELETE FROM users WHERE id = :user_id");
             $this->bind(':user_id', $userId);
-            $result = $this->execute();
-            
-            // Commit transaction
+            if (!$this->execute()) {
+                $this->rollBack();
+                return false;
+            }
+
+            if ($this->rowCount() < 1) {
+                $this->rollBack();
+                return false;
+            }
+
             $this->commit();
-            
-            return $result;
-        } catch (Exception $e) {
-            // Rollback on error
-            $this->rollBack();
-            throw $e;
+
+            return true;
+        } catch (Throwable $e) {
+            try {
+                $this->rollBack();
+            } catch (Throwable $ignored) {
+            }
+
+            error_log('[settings] deleteAccount failed: ' . $e->getMessage());
+            return false;
         }
     }
 }
