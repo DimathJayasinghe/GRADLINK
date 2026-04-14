@@ -1,9 +1,6 @@
 <!-- Posts Section - Using same structure as main feed -->
     <div class="feed" id="postsSection" style="display:block;">
-        <?php
-        $canViewPosts = ($data['public_profile'] ?? false) || $isOwner || ($data['isfollowed'] ?? false);
-        ?>
-        <?php if (!empty($data['posts']) && $canViewPosts): foreach ($data['posts'] as $p): ?>
+        <?php if (!empty($data['posts'])): foreach ($data['posts'] as $p): ?>
                 <post-card
                     profile-img="<?php echo htmlspecialchars($p->profile_image ?? ''); ?>"
                     user-role="<?php echo htmlspecialchars($p->role ?? ''); ?>"
@@ -21,14 +18,7 @@
                     current-user-role="<?php echo $_SESSION['user_role'] ?? ''; ?>">
                 </post-card>
             <?php endforeach;
-        elseif (!$canViewPosts): ?>
-            <div class="no-posts-message">
-                <!-- Private profile  -->
-                <div><i class="fas fa-lock" aria-hidden="true"></i>
-                    <p>This Profile is private. Follow to see the content.</p>
-                </div>
-            </div>
-        <?php else: ?>
+        else: ?>
             <div class="no-posts-message">No posts yet.</div>
         <?php endif; ?>
     </div>

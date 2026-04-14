@@ -40,7 +40,7 @@ class M_mainfeed{
         $offset = ($round - 1) * $limit;
 
         if ($feed_type === 'following'){
-            // Posts from accounts the current user follows (private or public allowed)
+            // Posts from users the current user follows.
             $this->db->query("SELECT 
                                 p.*, 
                                 u.name, 
