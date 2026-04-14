@@ -706,14 +706,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const payload = {
                     type: 'events',
                     reference_id: Number(eventId),
-                    bookmarked: !currentlyBookmarked,
-                    csrf_token: (window.GL_CSRF_TOKEN || null)
+                    bookmarked: !currentlyBookmarked
                 };
 
                 fetch(endpoint, {
                     method: 'POST',
                     credentials: 'same-origin',
-                    headers: Object.assign({ 'Content-Type': 'application/json' }, (window.GL_CSRF_TOKEN ? { 'X-CSRF-Token': window.GL_CSRF_TOKEN } : {})),
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 }).then(r => r.json()).then(data => {
                     if (data && data.ok) {

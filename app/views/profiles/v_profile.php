@@ -251,11 +251,9 @@
 
 <?php
 // Hidden form for POST-based navigation to Messages with target user id
-require_once APPROOT . '/helpers/Csrf.php';
 ?>
 <form id="profileMessageForm" method="post" action="<?= URLROOT; ?>/messages" style="display:none;">
     <input type="hidden" name="user" id="profileMessageUserId" value="">
-    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
 </form>
 
 <!-- Profile Popup -->

@@ -14,6 +14,7 @@ if (!function_exists('gl_bootstrap_env')) {
         
         // Default paths: check .env.local first, then .env
         $paths = $paths ?? [
+            $projectRoot . '/.env.example',
             $projectRoot . '/.env.local',
             $projectRoot . '/.env',
         ];

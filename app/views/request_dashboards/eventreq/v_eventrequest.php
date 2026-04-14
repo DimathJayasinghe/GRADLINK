@@ -107,9 +107,7 @@
             $isEdit = isset($data['event']) && $data['event'];
         ?>
         <h2><?php echo $isEdit ? 'Edit Event Request' : 'Create a New Event Request'; ?></h2>
-    <?php require_once APPROOT . '/helpers/Csrf.php'; ?>
     <form method="post" action="<?php echo URLROOT; ?><?php echo $isEdit ? '/eventrequest/update/'.$data['event']->req_id : '/eventrequest/create'; ?>" enctype="multipart/form-data" class="event-request-form">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
             <?php if($isEdit): ?>
                 <input type="hidden" name="req_id" value="<?php echo (int)$data['event']->req_id; ?>">
             <?php endif; ?>

@@ -139,10 +139,6 @@ if (!isset($scripts)) {
 
 // The $content variable from dashboard views becomes the $rightsidebar in three-column layout
 $rightsidebar = $content;
-// Expose CSRF token for client-side JS
-require_once APPROOT . '/helpers/Csrf.php';
-$__gl_csrf = Csrf::getToken();
-echo "<script>window.GL_CSRF_TOKEN = '" . htmlspecialchars($__gl_csrf, ENT_QUOTES) . "';</script>\n";
 // Expose current user id for client-side checks
 \SessionManager::ensureStarted();
 echo "<script>window.GL_CURRENT_USER_ID = " . (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 'null') . ";</script>\n";
@@ -166,7 +162,7 @@ echo "    if(e.target && e.target.id === 'rsvp-confirm'){\n";
 echo "      var statusEl = document.querySelector('input[name=/'rsvp-status/']:checked');\n";
 echo "      var status = statusEl ? statusEl.value : 'attending';\n";
 echo "      var ev = window.__GL_rsvp_current && window.__GL_rsvp_current.eventId; if(!ev){ alert('Missing event id'); return; }\n";
-echo "      fetch('" . URLROOT . "/calender/rsvp', { method: 'POST', credentials: 'same-origin', headers: Object.assign({'Content-Type':'application/json'}, (window.GL_CSRF_TOKEN?{'X-CSRF-Token':window.GL_CSRF_TOKEN}:{})), body: JSON.stringify({ event_id: Number(ev), status: status, guests: 0, csrf_token: (window.GL_CSRF_TOKEN||null) }) }).then(r=>r.json()).then(function(data){ if(data && data.ok){ document.getElementById('rsvp-modal').style.display='none'; if(window.__GL_onRsvpConfirmed) window.__GL_onRsvpConfirmed(ev); } else { alert('RSVP failed: ' + (data && data.error?data.error:'unknown')); } }).catch(function(err){ console.error('RSVP request failed', err); alert('Network error'); });\n";
+echo "      fetch('" . URLROOT . "/calender/rsvp', { method: 'POST', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ event_id: Number(ev), status: status, guests: 0 }) }).then(r=>r.json()).then(function(data){ if(data && data.ok){ document.getElementById('rsvp-modal').style.display='none'; if(window.__GL_onRsvpConfirmed) window.__GL_onRsvpConfirmed(ev); } else { alert('RSVP failed: ' + (data && data.error?data.error:'unknown')); } }).catch(function(err){ console.error('RSVP request failed', err); alert('Network error'); });\n";
 echo "    }\n";
 echo "  });\n";
 echo "})();\n";
