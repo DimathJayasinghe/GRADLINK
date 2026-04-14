@@ -29,6 +29,17 @@
                                 padding:5px;
                         " rows="3" placeholder="Tell others about you..."></textarea>
                 </div>
+                <div class="form-group">
+                    <label for="profileBatchNoInput">Batch Number</label>
+                    <input type="text" id="profileBatchNoInput" name="profileBatchNoInput" value="<?= isset($data['userDetails']->batch_no) ? htmlspecialchars($data['userDetails']->batch_no) : '' ?>" placeholder="Enter your batch number" style="
+                                max-width: 100%;
+                                background: rgba(255, 255, 255, 0.05);
+                                border: 1px solid var(--border);
+                                border-radius: 5px;
+                                color: var(--text);
+                                padding:5px;
+                        ">
+                </div>
                 <div style="margin-top:12px;">
                     <button type="submit" class="save-btn" id="saveProfileBtn">Save Changes</button>
                 </div>

@@ -123,6 +123,22 @@ a {
     color: var(--link-hover);
 }
 
+.suspension-notice {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(220, 53, 69, 0.18);
+    border: 1px solid rgba(220, 53, 69, 0.45);
+    color: #ffd5d8;
+    border-radius: 8px;
+    padding: 10px 14px;
+    z-index: 120;
+    max-width: 760px;
+    width: calc(100% - 40px);
+    text-align: center;
+}
+
 /* Hover effects
 .auth-section:hover .section-title {
     transform: translateY(-5px);
@@ -152,6 +168,11 @@ a {
     }
 }
 </style>
+<?php if (isset($_GET['account']) && $_GET['account'] === 'suspended'): ?>
+    <div class="suspension-notice" role="alert">
+        This account has been suspended. Contact an administrator to restore access.
+    </div>
+<?php endif; ?>
 <a href="<?php echo URLROOT; ?>" class="back-button" aria-label="Back to Gradlink home">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     Back

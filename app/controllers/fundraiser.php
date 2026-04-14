@@ -7,7 +7,7 @@ class fundraiser extends Controller
     {
         // Check if it's the search API endpoint, skip auth
         $uri = $_SERVER['REQUEST_URI'];
-        if (strpos($uri, '/fundraiser/search') === false) {
+        if (strpos($uri, '/fundraiser/search') === false && strpos($uri, '/fundraiser/getActiveCampaigns') === false) {
             SessionManager::redirectToAuthIfNotLoggedIn();
         }
         $this->model = $this->model('M_fundraiser');
@@ -554,15 +554,14 @@ class fundraiser extends Controller
         // Calculate additional data for each campaign
         $processedCampaigns = [];
         foreach ($campaigns as $campaign) {
-            $percentage = ($campaign->raised_amount / $campaign->target_amount) * 100;
+            $targetAmount = (float)($campaign->target_amount ?? 0);
+            $percentage = $targetAmount > 0 ? (((float)($campaign->raised_amount ?? 0) / $targetAmount) * 100) : 0;
             $daysLeft = null;
             
             // Calculate days left
-            $now = new DateTime();
-            $deadline = new DateTime($campaign->deadline);
-            if ($deadline > $now) {
-                $interval = $now->diff($deadline);
-                $daysLeft = $interval->days;
+            $deadlineTs = strtotime((string)($campaign->deadline ?? ''));
+            if ($deadlineTs !== false && $deadlineTs > time()) {
+                $daysLeft = (int)floor(($deadlineTs - time()) / 86400);
             }
             
             $processedCampaigns[] = [

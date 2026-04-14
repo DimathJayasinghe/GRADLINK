@@ -7,6 +7,7 @@
     require_once __DIR__ . '/config/config.php';
 
     // Load helpers / libraries needed before Controller (trait must precede usage)
+    require_once __DIR__ . '/helpers/EmailHandler.php';
     require_once __DIR__ . '/helpers/Notifiable.php';
     require_once __DIR__ . '/libraries/Database.php';
     require_once __DIR__ . '/libraries/Sanitizer.php';

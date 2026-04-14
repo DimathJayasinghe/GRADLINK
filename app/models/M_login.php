@@ -2,8 +2,54 @@
     class M_login{
         private $db;
 
+        private function ensureSuspendedUsersTable(): void {
+            try {
+                $this->db->query("CREATE TABLE IF NOT EXISTS suspended_users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    suspended_by INT NOT NULL,
+                    reason TEXT NULL,
+                    status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+                    suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    lifted_at DATETIME NULL,
+                    lifted_by INT NULL,
+                    removed_at DATETIME NULL,
+                    removed_by INT NULL,
+                    snapshot_name VARCHAR(255) NULL,
+                    snapshot_email VARCHAR(255) NULL,
+                    snapshot_role VARCHAR(50) NULL,
+                    INDEX idx_suspended_users_user (user_id),
+                    INDEX idx_suspended_users_status (status),
+                    INDEX idx_suspended_users_suspended_at (suspended_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                $this->db->execute();
+            } catch (Exception $e) {
+            }
+        }
+
         public function __construct() {
             $this->db = new Database();
+            $this->ensureSuspendedUsersTable();
+        }
+
+        public function getActiveSuspensionByEmail($email) {
+            try {
+                $this->db->query("SELECT
+                                    su.id,
+                                    su.reason,
+                                    su.suspended_at,
+                                    u.id AS user_id,
+                                    u.role
+                                  FROM users u
+                                  INNER JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
+                                  WHERE u.email = :email
+                                  ORDER BY su.suspended_at DESC
+                                  LIMIT 1");
+                $this->db->bind(':email', $email);
+                return $this->db->single();
+            } catch (Exception $e) {
+                return false;
+            }
         }
         
         public function loginUndergrad($email,$password){

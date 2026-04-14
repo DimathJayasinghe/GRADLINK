@@ -67,6 +67,14 @@ class messages extends Controller{
                 ]);
                 return;
             }
+
+            if ($this->message_model->isUserSuspended($userId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'This account is suspended. Chat is currently frozen.'
+                ]);
+                return;
+            }
             
             $partner = $this->message_model->getConversationPartner($userId);
             
@@ -105,6 +113,15 @@ class messages extends Controller{
                 echo json_encode([
                     'success' => false,
                     'error' => 'User ID is required'
+                ]);
+                return;
+            }
+
+            if ($this->message_model->isUserSuspended($otherUserId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'This conversation is unavailable because the account is suspended.',
+                    'messages' => []
                 ]);
                 return;
             }
@@ -151,6 +168,14 @@ class messages extends Controller{
                 echo json_encode([
                     'success' => false,
                     'error' => 'Message content cannot be empty'
+                ]);
+                return;
+            }
+
+            if ($this->message_model->isUserSuspended($currentUserId) || $this->message_model->isUserSuspended($recipientId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Messaging is unavailable because one of the accounts is suspended.'
                 ]);
                 return;
             }

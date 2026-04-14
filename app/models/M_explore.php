@@ -1,9 +1,35 @@
 <?php
 class M_explore {
     private $db;
+
+    private function ensureSuspendedUsersTable(): void {
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS suspended_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                suspended_by INT NOT NULL,
+                reason TEXT NULL,
+                status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+                suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                lifted_at DATETIME NULL,
+                lifted_by INT NULL,
+                removed_at DATETIME NULL,
+                removed_by INT NULL,
+                snapshot_name VARCHAR(255) NULL,
+                snapshot_email VARCHAR(255) NULL,
+                snapshot_role VARCHAR(50) NULL,
+                INDEX idx_suspended_users_user (user_id),
+                INDEX idx_suspended_users_status (status),
+                INDEX idx_suspended_users_suspended_at (suspended_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->db->execute();
+        } catch (Exception $e) {
+        }
+    }
     
     public function __construct() {
         $this->db = new Database();
+        $this->ensureSuspendedUsersTable();
     }
     
     /**
@@ -21,8 +47,10 @@ class M_explore {
                        (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) as comments
                 FROM posts p 
                 JOIN users u ON u.id = p.user_id 
-                WHERE p.content LIKE :search 
-                   OR u.name LIKE :search
+                                LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
+                                WHERE (p.content LIKE :search 
+                                     OR u.name LIKE :search)
+                                    AND su.id IS NULL
                 ORDER BY p.created_at DESC 
                 LIMIT :limit OFFSET :offset";
         
@@ -50,10 +78,12 @@ class M_explore {
                        (SELECT COUNT(*) FROM followers f WHERE f.followed_id = u.id) as follower_count,
                        (SELECT COUNT(*) FROM followers f WHERE f.follower_id = u.id) as following_count
                 FROM users u 
-                WHERE u.name LIKE :search 
+                                LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
+                                WHERE (u.name LIKE :search 
                    OR u.email LIKE :search 
                    OR u.skills LIKE :search
-                   OR u.bio LIKE :search
+                                     OR u.bio LIKE :search)
+                                    AND su.id IS NULL
                 ORDER BY u.name ASC 
                 LIMIT :limit OFFSET :offset";
         
@@ -81,7 +111,9 @@ class M_explore {
                        (SELECT COUNT(*) FROM followers f WHERE f.followed_id = u.id) as follower_count,
                        (SELECT COUNT(*) FROM followers f WHERE f.follower_id = u.id) as following_count
                 FROM users u 
+                                LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
                 WHERE u.role = 'alumni'
+                                    AND su.id IS NULL
                   AND (u.name LIKE :search 
                    OR u.email LIKE :search 
                    OR u.skills LIKE :search
@@ -113,7 +145,9 @@ class M_explore {
                        (SELECT COUNT(*) FROM followers f WHERE f.followed_id = u.id) as follower_count,
                        (SELECT COUNT(*) FROM followers f WHERE f.follower_id = u.id) as following_count
                 FROM users u 
+                                LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
                 WHERE u.role = 'undergrad'
+                                    AND su.id IS NULL
                   AND (u.name LIKE :search 
                    OR u.email LIKE :search 
                    OR u.skills LIKE :search
@@ -142,9 +176,11 @@ class M_explore {
                 FROM events e 
                 LEFT JOIN users u ON u.id = e.organizer_id 
                 LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1
+                                LEFT JOIN suspended_users su ON su.user_id = e.organizer_id AND su.status = 'active'
                 WHERE (e.title LIKE :search 
                    OR e.description LIKE :search 
                    OR e.venue LIKE :search)
+                                    AND su.id IS NULL
                   AND e.status = 'published'
                   AND e.visibility = 'public'
                 ORDER BY e.start_datetime DESC 
@@ -180,9 +216,11 @@ class M_explore {
                     u.profile_image
                 FROM fundraising_requests fr
                 JOIN users u ON u.id = fr.user_id
+                                LEFT JOIN suspended_users su ON su.user_id = fr.user_id AND su.status = 'active'
                 WHERE (fr.title LIKE :search
                    OR fr.description LIKE :search
                    OR fr.club_name LIKE :search)
+                                    AND su.id IS NULL
                   AND fr.status IN ('Approved', 'Active')
                 ORDER BY fr.created_at DESC
                 LIMIT :limit OFFSET :offset";
