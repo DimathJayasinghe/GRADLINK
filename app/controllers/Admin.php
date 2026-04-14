@@ -25,8 +25,9 @@
             $engagement = $this->adminModel->getEngagementMetrics();
             
             // Online users and activity monitoring
-            $onlineUsers = $this->adminModel->getOnlineUsers();
-            $onlineCount = count($onlineUsers);
+            $onlineData = $this->adminModel->getOnlineUsers();
+            $onlineUsers = $onlineData['users'] ?? [];
+            $onlineCount = (int)($onlineData['online_count'] ?? count($onlineUsers));
             $accessStats = $this->adminModel->getAccessLogStats();
             $recentLogs = $this->adminModel->getRecentAccessLogs(20);
             
