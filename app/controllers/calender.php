@@ -1,7 +1,10 @@
 <?php
 class calender extends Controller{
     public function __construct() {
-        SessionManager::redirectToAuthIfNotLoggedIn();
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        if (strpos($uri, '/calender/getUpcomingEvents') === false) {
+            SessionManager::redirectToAuthIfNotLoggedIn();
+        }
     }
     public function index() {
         // Load events for the current month to populate the calendar JS
@@ -77,14 +80,18 @@ class calender extends Controller{
 
         $payload = [];
         foreach ($events as $event) {
+            $startTs = strtotime((string)($event->start_datetime ?? ''));
+            if ($startTs === false) {
+                continue;
+            }
             $payload[] = [
                 'id' => (int)$event->id,
                 'title' => (string)$event->title,
                 'club_name' => (string)($event->organizer_name ?? 'Campus Event'),
-                'event_date' => date('Y-m-d', strtotime($event->start_datetime)),
-                'event_date_display' => date('d M', strtotime($event->start_datetime)),
-                'event_time' => date('H:i', strtotime($event->start_datetime)),
-                'event_time_display' => date('h:i A', strtotime($event->start_datetime)),
+                'event_date' => date('Y-m-d', $startTs),
+                'event_date_display' => date('d M', $startTs),
+                'event_time' => date('H:i', $startTs),
+                'event_time_display' => date('h:i A', $startTs),
                 'event_venue' => (string)($event->venue ?? 'TBA')
             ];
         }

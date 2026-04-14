@@ -74,7 +74,7 @@
         background: var(--link);
     }
 </style>
-<?php echo $styles; ?>
+<?php if (!empty($styles)) { echo $styles; } ?>
 <div class="three-column-layout">
     <div class="template-left">
         <?php echo $leftsidebar; ?>
@@ -97,5 +97,5 @@
             });
         }
     }
-    <?php echo $scripts; ?>
+    <?php if (!empty($scripts)) { echo $scripts; } ?>
 </script>

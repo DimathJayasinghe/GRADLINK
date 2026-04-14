@@ -26,17 +26,33 @@
                 $this->dbh = new PDO($dsn, $this->user, $this->password, $options);
             } catch (PDOException $e) {
                 $this->error = $e->getMessage();
-                echo 'Database connection error: ' . $this->error; 
+                // Avoid sending DB errors into HTTP responses (JSON/pages).
+                error_log('Database connection error: ' . $this->error);
             }
+        }
+
+        public function getError() {
+            return $this->error;
         }
 
         // Other methods for database operations can be added here...
         public function query($sql){
+            if (!$this->dbh) {
+                if (!$this->error) {
+                    $this->error = 'Database connection is not available.';
+                }
+                $this->stmt = null;
+                return false;
+            }
             $this->stmt = $this->dbh->prepare($sql);
+            return true;
         }
 
         // Bind values to the prepared statement
         public function bind($param, $value, $type = null) {
+            if (!$this->stmt) {
+                return false;
+            }
             if (is_null($type)) {
                 switch (true) {
                     case is_int($value):
@@ -53,40 +69,60 @@
                 }
             }
             $this->stmt->bindValue($param, $value, $type);
+            return true;
         }
 
         // Execute the prepared statement
         public function execute(){
+            if (!$this->stmt) {
+                return false;
+            }
             return $this->stmt->execute();
         }
 
         // Get multiple records as the result
         public function resultSet(){
-            $this->execute();
+            if (!$this->execute()) {
+                return [];
+            }
             return $this->stmt->fetchAll(PDO::FETCH_OBJ);
         }
 
         // Get a single record as the result
         public function single(){
-            $this->execute();
+            if (!$this->execute()) {
+                return false;
+            }
             return $this->stmt->fetch(PDO::FETCH_OBJ);
         }
 
         // Check record existence
         public function rowCount(){
+            if (!$this->stmt) {
+                return 0;
+            }
             return $this->stmt->rowCount();
         }
 
         // Transaction helpers
         public function beginTransaction() {
+            if (!$this->dbh) {
+                return false;
+            }
             return $this->dbh->beginTransaction();
         }
 
         public function commit() {
+            if (!$this->dbh) {
+                return false;
+            }
             return $this->dbh->commit();
         }
 
         public function rollBack() {
+            if (!$this->dbh) {
+                return false;
+            }
             return $this->dbh->rollBack();
         }
                 // Return last inserted ID from the PDO instance

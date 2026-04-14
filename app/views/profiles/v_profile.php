@@ -279,15 +279,9 @@
 
 <script>window.URLROOT = "<?= URLROOT; ?>";</script>
 <script defer src="<?php echo URLROOT ?>/js/component/postCard.js"></script>
-<script defer src="<?php echo URLROOT ?>/js/profile/index.js"></script>
 
 <?php ob_start() ?>
-
-<script>
     window.URLROOT = "<?php echo URLROOT; ?>";
-</script>
-<script src="<?php echo URLROOT ?>/js/component/postCard.js"></script>
-<script>
     // Function to switch between posts and info tabs
     function showTab(tab) {
         // Get the sections
@@ -496,8 +490,7 @@
             }
         });
     }
-</script>
-<script>
+
     // Certificate Preview Modal logic (uses explicit View button)
     (function() {
         const container = document.getElementById('certificatesContainer');
@@ -514,7 +507,7 @@
                 const nm = card.dataset.name || 'Certificate Preview';
                 titleEl.textContent = nm;
             }
-            iframe.src = <?php echo URLROOT?> + `/media/certificate/${encodeURIComponent(file)}`;
+            iframe.src = <?php echo json_encode(URLROOT); ?> + `/media/certificate/${encodeURIComponent(file)}`;
             modal.style.display = 'flex';
         }
 
@@ -1133,7 +1126,7 @@
             });
         });
     })();
-</script>
+
 <?php $scripts = ob_get_clean(); ?>
 
 <?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>

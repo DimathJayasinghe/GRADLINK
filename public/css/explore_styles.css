@@ -529,7 +529,7 @@
 .event-location {
     color: var(--muted);
     font-size: 13px;
-    margin-bottom: 8px;
+    /* margin-bottom: 8px; */
     display: flex;
     align-items: center;
     gap: 5px;
