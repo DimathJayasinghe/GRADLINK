@@ -47,14 +47,12 @@ class Profile extends Controller{
             $data['work_experiences'] = $this->Model->getWorkExperiences($user_id); 
             $data['certificates'] = $this->Model->getCertificates($user_id);
             $data['projects'] = $this->Model->getProjects($user_id);
-            $isPublic = $this->Model->isProfilePublic($user_id);
             $isFollwed = $this->Model->isFollowed($_SESSION['user_id'], $user_id);
             // Ensure boolean for view logic
-            $data['public_profile'] = (bool)$isPublic;
             $data['isfollowed'] = $isFollwed;
             $data['isBlocked'] = $isBlocked;
             
-            if ($data['public_profile'] || $_SESSION['user_id'] == $user_id || $isFollwed) {
+            if ($_SESSION['user_id'] == $user_id || $isFollwed) {
                 $data['posts'] = $this->Model->getPosts($user_id);
                 // Add liked status to posts - same as in mainfeed
                 $postModel = $this->model('M_post');
