@@ -65,7 +65,8 @@ class Post extends Controller
                     'commenter_name' => $_SESSION['user_name'] ?? '',
                     'commenter_id' => $_SESSION['user_id'] ?? null,
                     'comment_text' => $c,
-                    'text' => ($_SESSION['user_name'] ?? 'Someone') . ' commented on your post'
+                    'text' => ($_SESSION['user_name'] ?? 'Someone') . ' commented on your post',
+                    'link' => '/profile?userid=' . ($_SESSION['user_id'] ?? '')
                 ];
                 error_log('[Post::comment] About to call notify()');
                 $notifyResult = $this->notify($receiverId, $notification_type, $reference_id, $content);
@@ -88,6 +89,77 @@ class Post extends Controller
         header('Content-Type: application/json');
         echo json_encode($this->m->getComments($pid));
     }
+
+    public function editComment($cid)
+    {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        if (!is_numeric($cid) || (int)$cid <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid comment ID']);
+            return;
+        }
+
+        $comment = $this->m->getCommentById((int)$cid);
+        if (!$comment) {
+            echo json_encode(['ok' => false, 'error' => 'Comment not found']);
+            return;
+        }
+        if ((int)$comment->user_id !== (int)($_SESSION['user_id'] ?? 0)) {
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+
+        $content = trim($_POST['content'] ?? '');
+        if ($content === '') {
+            echo json_encode(['ok' => false, 'error' => 'Comment cannot be empty']);
+            return;
+        }
+
+        $ok = $this->m->updateComment((int)$cid, $content);
+        if (!$ok) {
+            echo json_encode(['ok' => false, 'error' => 'Failed to update comment']);
+            return;
+        }
+
+        echo json_encode(['ok' => true, 'comments' => $this->m->getComments((int)$comment->post_id)]);
+    }
+
+    public function deleteComment($cid)
+    {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        if (!is_numeric($cid) || (int)$cid <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid comment ID']);
+            return;
+        }
+
+        $comment = $this->m->getCommentById((int)$cid);
+        if (!$comment) {
+            echo json_encode(['ok' => false, 'error' => 'Comment not found']);
+            return;
+        }
+        if ((int)$comment->user_id !== (int)($_SESSION['user_id'] ?? 0)) {
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+
+        $ok = $this->m->deleteComment((int)$cid);
+        if (!$ok) {
+            echo json_encode(['ok' => false, 'error' => 'Failed to delete comment']);
+            return;
+        }
+
+        echo json_encode(['ok' => true, 'comments' => $this->m->getComments((int)$comment->post_id)]);
+    }
+
     public function like($pid)
     {
         if (!is_numeric($pid) || (int)$pid <= 0) {
@@ -125,7 +197,8 @@ class Post extends Controller
                     $content = [
                         'liker_name' => $_SESSION['user_name'] ?? '',
                         'liker_id' => $_SESSION['user_id'] ?? null,
-                        'text' => ($_SESSION['user_name'] ?? 'Someone') . ' liked your post'
+                        'text' => ($_SESSION['user_name'] ?? 'Someone') . ' liked your post',
+                        'link' => '/profile?userid=' . ($_SESSION['user_id'] ?? '')
                     ];
                     error_log('[Post::like] About to call notify() with content: ' . json_encode($content));
                     $notifyResult = $this->notify($receiverId, $notification_type, $reference_id, $content);

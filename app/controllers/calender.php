@@ -1,7 +1,10 @@
 <?php
 class calender extends Controller{
     public function __construct() {
-        SessionManager::redirectToAuthIfNotLoggedIn();
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        if (strpos($uri, '/calender/getUpcomingEvents') === false) {
+            SessionManager::redirectToAuthIfNotLoggedIn();
+        }
     }
     public function index() {
         // Load events for the current month to populate the calendar JS
@@ -52,6 +55,55 @@ class calender extends Controller{
         $data = ['events_payload' => $payload];
         $this->view("/calender/v_calender", $data);
     }
+
+    /**
+     * API endpoint to get upcoming public events for sidebar cards.
+     */
+    public function getUpcomingEvents()
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 3;
+        if ($limit < 1) {
+            $limit = 3;
+        }
+        if ($limit > 20) {
+            $limit = 20;
+        }
+
+        $eventModel = $this->model('M_event');
+        $events = $eventModel->findList([
+            'start' => date('Y-m-d H:i:s'),
+            'visibility' => 'public',
+            'limit' => $limit
+        ]);
+
+        $payload = [];
+        foreach ($events as $event) {
+            $startTs = strtotime((string)($event->start_datetime ?? ''));
+            if ($startTs === false) {
+                continue;
+            }
+            $payload[] = [
+                'id' => (int)$event->id,
+                'title' => (string)$event->title,
+                'club_name' => (string)($event->organizer_name ?? 'Campus Event'),
+                'event_date' => date('Y-m-d', $startTs),
+                'event_date_display' => date('d M', $startTs),
+                'event_time' => date('H:i', $startTs),
+                'event_time_display' => date('h:i A', $startTs),
+                'event_venue' => (string)($event->venue ?? 'TBA')
+            ];
+        }
+
+        echo json_encode([
+            'success' => true,
+            'events' => $payload,
+            'count' => count($payload)
+        ]);
+        return;
+    }
+
     public function show($id = null) {
         // If no id is provided, redirect to the all page
         if($id === null) {
@@ -154,13 +206,6 @@ class calender extends Controller{
                 exit();
             }
 
-            // Validate CSRF
-            require_once APPROOT . '/helpers/Csrf.php';
-            if(!Csrf::validateRequest()){
-                header('Location: ' . URLROOT . '/calender/bookmarks');
-                exit();
-            }
-
             if(!$userId || $eventId === null){
                 header('Location: ' . URLROOT . '/calender/bookmarks');
                 exit();
@@ -231,13 +276,6 @@ class calender extends Controller{
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
             return;
         }
-        // Validate CSRF token for AJAX POSTs
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
-            return;
-        }
-
         $input = json_decode(file_get_contents('php://input'), true);
         $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
         if(!$eventId){
@@ -258,11 +296,6 @@ class calender extends Controller{
         $userId = SessionManager::getUserId();
         if(!$userId){
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
-            return;
-        }
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
             return;
         }
         $input = json_decode(file_get_contents('php://input'), true);
@@ -291,11 +324,6 @@ class calender extends Controller{
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
             return;
         }
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
-            return;
-        }
         $input = json_decode(file_get_contents('php://input'), true);
         $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
         if(!$eventId){
@@ -321,13 +349,6 @@ class calender extends Controller{
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
             return;
         }
-        // Validate CSRF token for AJAX POSTs
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
-            return;
-        }
-
         $input = json_decode(file_get_contents('php://input'), true);
         $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
         $status = isset($input['status']) ? $input['status'] : 'attending';
@@ -340,7 +361,12 @@ class calender extends Controller{
         $attModel = $this->model('M_attendee');
         $attId = $attModel->rsvp($eventId, $userId, $status, $guests);
         if($attId){
-            echo json_encode(['ok'=>true,'attendee_id'=>$attId]);
+            // return updated attendees snapshot and computed total (attendees + guests)
+            $rows = $attModel->getAttendees($eventId);
+            $total = 0;
+            foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok'=>true,'attendee_id'=>$attId,'attendees'=>$rows,'attendees_count'=>$total]);
         } else {
             echo json_encode(['ok'=>false,'error'=>'Could not RSVP']);
         }
@@ -356,11 +382,6 @@ class calender extends Controller{
             echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
             return;
         }
-        require_once APPROOT . '/helpers/Csrf.php';
-        if(!Csrf::validateRequest()){
-            echo json_encode(['ok'=>false,'error'=>'Invalid CSRF token']);
-            return;
-        }
         $input = json_decode(file_get_contents('php://input'), true);
         $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
         if(!$eventId){
@@ -369,7 +390,11 @@ class calender extends Controller{
         }
         $attModel = $this->model('M_attendee');
         $count = $attModel->cancel($eventId, $userId);
-        echo json_encode(['ok'=>true,'removed' => (bool)$count]);
+        // return updated attendees list and count
+        $rows = $attModel->getAttendees($eventId);
+        $total = 0;
+        foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
+        echo json_encode(['ok'=>true,'removed' => (bool)$count,'attendees'=>$rows,'attendees_count'=>$total]);
         return;
     }
 
@@ -387,7 +412,10 @@ class calender extends Controller{
 
         $attModel = $this->model('M_attendee');
         $rows = $attModel->getAttendees($eventId);
-        echo json_encode(['ok'=>true,'attendees'=>$rows]);
+        // compute total attending (status == attending) including guests
+        $total = 0;
+        foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
+        echo json_encode(['ok'=>true,'attendees'=>$rows,'attendees_count'=>$total]);
         return;
     }
 }

@@ -99,6 +99,28 @@
     background-color: rgba(15, 21, 24, 0.3);
 }
 
+.right-sidebar .event.is-expired {
+    opacity: 0.6;
+    filter: grayscale(100%);
+}
+
+.right-sidebar .event.is-expired:hover {
+    background-color: rgba(15, 21, 24, 0.15);
+}
+
+.right-sidebar .event.is-expired .event-name,
+.right-sidebar .event.is-expired .event-category,
+.right-sidebar .event.is-expired .sidebar-event-date,
+.right-sidebar .event.is-expired .sidebar-expired-text {
+    color: var(--muted);
+}
+
+.right-sidebar .event.is-expired .event-category i,
+.right-sidebar .event.is-expired .sidebar-event-date i,
+.right-sidebar .event.is-expired .sidebar-expired-text i {
+    color: var(--muted);
+}
+
 .right-sidebar .event-category {
     font-size: 12px; /* Smaller font */
     color: var(--muted);
@@ -266,6 +288,14 @@
 .right-sidebar .sidebar-event-date i {
     font-size: 11px;
     color: var(--link);
+}
+
+.right-sidebar .sidebar-expired-text {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* Responsive styles for right sidebar */

@@ -1,0 +1,24 @@
+.gitignore
+
+/storage/certificates/
+/storage/posts/
+
+
+# Environment files
+.env
+.env.local
+
+vendor/
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

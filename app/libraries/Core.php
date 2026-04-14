@@ -10,6 +10,7 @@
 
             $url = $this->getUrl();
             
+            // Log activity before processing the request
             if ($url && isset($url[0])) {
                 $controllerSegment = $url[0];
                 $resolvedFile = $this->resolveControllerFile($controllerSegment);
@@ -65,6 +66,7 @@
             }
             return null; // Explicitly return null when no URL parameter
         }
+        
         private function show404() {
             // Set HTTP 404 status code
             http_response_code(404);

@@ -1,8 +1,104 @@
 <?php
 class M_message extends Database {
+
+    public function __construct() {
+        parent::__construct();
+        $this->ensureSuspendedUsersTable();
+        $this->ensureUnreadTrackerTable();
+    }
+
+    private function ensureSuspendedUsersTable(): void {
+        try {
+            $this->query("CREATE TABLE IF NOT EXISTS suspended_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                suspended_by INT NOT NULL,
+                reason TEXT NULL,
+                status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+                suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                lifted_at DATETIME NULL,
+                lifted_by INT NULL,
+                removed_at DATETIME NULL,
+                removed_by INT NULL,
+                snapshot_name VARCHAR(255) NULL,
+                snapshot_email VARCHAR(255) NULL,
+                snapshot_role VARCHAR(50) NULL,
+                INDEX idx_suspended_users_user (user_id),
+                INDEX idx_suspended_users_status (status),
+                INDEX idx_suspended_users_suspended_at (suspended_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->execute();
+        } catch (Exception $e) {
+        }
+    }
+
+    private function ensureUnreadTrackerTable(): void {
+        try {
+            $this->query("CREATE TABLE IF NOT EXISTS message_unread_tracker (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                sender_id INT NOT NULL,
+                receiver_id INT NOT NULL,
+                unread_count INT DEFAULT 0,
+                last_message_id INT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_conversation (sender_id, receiver_id),
+                INDEX idx_receiver_unread (receiver_id, unread_count)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->execute();
+        } catch (Throwable $e) {
+        }
+    }
+
+    private function tableExists(string $tableName): bool {
+        try {
+            $this->query("SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name LIMIT 1");
+            $this->bind(':table_name', $tableName);
+            return $this->single() !== false;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function columnExists(string $tableName, string $columnName): bool {
+        try {
+            $this->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table_name AND COLUMN_NAME = :column_name LIMIT 1");
+            $this->bind(':table_name', $tableName);
+            $this->bind(':column_name', $columnName);
+            return $this->single() !== false;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function incrementUnreadTracker($senderId, $receiverId, $messageId): void {
+        try {
+            if (!$this->tableExists('message_unread_tracker')) {
+                return;
+            }
+
+            $sql = "INSERT INTO message_unread_tracker (sender_id, receiver_id, unread_count, last_message_id)
+                    VALUES (:sender_id, :receiver_id, 1, :last_message_id)
+                    ON DUPLICATE KEY UPDATE
+                        unread_count = unread_count + 1,
+                        last_message_id = VALUES(last_message_id),
+                        updated_at = CURRENT_TIMESTAMP";
+
+            $this->query($sql);
+            $this->bind(':sender_id', (int)$senderId);
+            $this->bind(':receiver_id', (int)$receiverId);
+            $this->bind(':last_message_id', (int)$messageId);
+            $this->execute();
+        } catch (Throwable $e) {
+            // Unread tracking must not break messaging flow.
+        }
+    }
     
     /**
      * Get all available users (excluding current user) with optional search
+     * Shows users that:
+     * 1. Current user follows them, OR
+     * 2. They follow current user AND have sent at least one message, OR
+     * 3. Admin role AND there's a message history
      */
     public function getAvailableUsers($currentUserId, $searchTerm = null) {
         $sql = "SELECT 
@@ -10,10 +106,21 @@ class M_message extends Database {
                     u.name,
                     u.display_name,
                     u.email,
-                    u.profile_image as profile_picture
+                    u.profile_image as profile_picture,
+                    COALESCE(MAX(m.message_time), '1970-01-01') as last_activity
                 FROM users u
+                LEFT JOIN followers f_following ON f_following.followed_id = u.id AND f_following.follower_id = :current_user_id
+                LEFT JOIN followers f_follower ON f_follower.follower_id = u.id AND f_follower.followed_id = :current_user_id
+                LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
+                LEFT JOIN messages m_from_them ON m_from_them.sender_id = u.id AND m_from_them.receiver_id = :current_user_id
+                LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
                 WHERE u.id != :current_user_id
-                    AND u.role <> 'admin'";
+                    AND su.id IS NULL
+                    AND (
+                        f_following.follower_id IS NOT NULL 
+                        OR (f_follower.follower_id IS NOT NULL AND m_from_them.message_id IS NOT NULL)
+                        OR (u.role = 'admin' AND m.message_id IS NOT NULL)
+                    )";
         
         // Add search filter if provided
         if ($searchTerm) {
@@ -22,7 +129,8 @@ class M_message extends Database {
                       OR u.email LIKE :search)";
         }
         
-        $sql .= " ORDER BY u.name ASC";
+        $sql .= " GROUP BY u.id, u.name, u.display_name, u.email, u.profile_image
+                  ORDER BY last_activity DESC, u.name ASC";
         
         $this->query($sql);
         $this->bind(':current_user_id', $currentUserId);
@@ -38,14 +146,16 @@ class M_message extends Database {
      * Get conversation partner info
      */
     public function getConversationPartner($userId) {
-        $sql = "SELECT 
-                    id as user_id,
-                    name,
-                    display_name,
-                    email,
-                    profile_image as profile_picture
-                FROM users
-                WHERE id = :user_id
+                $sql = "SELECT 
+                                        u.id as user_id,
+                                        u.name,
+                                        u.display_name,
+                                        u.email,
+                                        u.profile_image as profile_picture
+                                FROM users u
+                                LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
+                                WHERE u.id = :user_id
+                                    AND su.id IS NULL
                 LIMIT 1";
         
         $this->query($sql);
@@ -84,6 +194,10 @@ class M_message extends Database {
      * Send a message
      */
     public function sendMessage($senderId, $receiverId, $messageText) {
+        if ($this->isUserSuspended($senderId) || $this->isUserSuspended($receiverId)) {
+            return false;
+        }
+
         $sql = "INSERT INTO messages (sender_id, receiver_id, message_text) 
                 VALUES (:sender_id, :receiver_id, :message_text)";
         
@@ -92,7 +206,82 @@ class M_message extends Database {
         $this->bind(':receiver_id', $receiverId);
         $this->bind(':message_text', $messageText);
         
-        return $this->execute();
+        if ($this->execute()) {
+            $messageId = (int)$this->lastInsertId();
+            $this->incrementUnreadTracker($senderId, $receiverId, $messageId);
+            return $messageId;
+        }
+        return false;
+    }
+
+    public function markConversationAsRead($currentUserId, $otherUserId) {
+        $currentUserId = (int)$currentUserId;
+        $otherUserId = (int)$otherUserId;
+
+        try {
+            if ($this->tableExists('message_unread_tracker')) {
+                $this->query("UPDATE message_unread_tracker
+                            SET unread_count = 0,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE sender_id = :sender_id
+                              AND receiver_id = :receiver_id");
+                $this->bind(':sender_id', $otherUserId);
+                $this->bind(':receiver_id', $currentUserId);
+                $this->execute();
+            }
+        } catch (Throwable $e) {
+            // Ignore tracker failures and try fallback.
+        }
+
+        try {
+            if ($this->columnExists('messages', 'is_read')) {
+                $this->query("UPDATE messages
+                            SET is_read = 1
+                            WHERE sender_id = :sender_id
+                              AND receiver_id = :receiver_id
+                              AND is_read = 0");
+                $this->bind(':sender_id', $otherUserId);
+                $this->bind(':receiver_id', $currentUserId);
+                $this->execute();
+            }
+        } catch (Throwable $e) {
+            // Swallow to preserve API stability.
+        }
+
+        return true;
+    }
+
+    public function getTotalUnreadCount($currentUserId) {
+        $currentUserId = (int)$currentUserId;
+
+        try {
+            if ($this->tableExists('message_unread_tracker')) {
+                $this->query("SELECT COALESCE(SUM(unread_count), 0) AS total
+                            FROM message_unread_tracker
+                            WHERE receiver_id = :receiver_id");
+                $this->bind(':receiver_id', $currentUserId);
+                $row = $this->single();
+                return $row ? (int)($row->total ?? 0) : 0;
+            }
+        } catch (Throwable $e) {
+            // Fall back to messages table if tracker unavailable.
+        }
+
+        try {
+            if ($this->columnExists('messages', 'is_read')) {
+                $this->query("SELECT COUNT(*) AS total
+                            FROM messages
+                            WHERE receiver_id = :receiver_id
+                              AND is_read = 0");
+                $this->bind(':receiver_id', $currentUserId);
+                $row = $this->single();
+                return $row ? (int)($row->total ?? 0) : 0;
+            }
+        } catch (Throwable $e) {
+            return 0;
+        }
+
+        return 0;
     }
     
     /**
@@ -142,5 +331,26 @@ class M_message extends Database {
 
         return $this->execute();
     }
+
+    public function isUserSuspended($userId) {
+        try {
+            $sql = "SELECT 1
+                    FROM suspended_users
+                    WHERE user_id = :user_id
+                      AND status = 'active'
+                    LIMIT 1";
+
+            $this->query($sql);
+            $this->bind(':user_id', (int)$userId);
+
+            return $this->single() !== false;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+
+
+
 }
 ?>

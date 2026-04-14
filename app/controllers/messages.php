@@ -2,6 +2,7 @@
 class messages extends Controller{
     protected $message_model;
     public function __construct() {
+        parent::__construct();
         SessionManager::redirectToAuthIfNotLoggedIn();
         $this->message_model = $this->model('M_message');
     }
@@ -25,7 +26,7 @@ class messages extends Controller{
     }
     
     /**
-     * API: Get available users for messaging
+     * API: Get available users for messaging (with unread counts)
      * GET /messages/getAvailableUsers?search=query
      */
     public function getAvailableUsers() {
@@ -63,6 +64,14 @@ class messages extends Controller{
                 echo json_encode([
                     'success' => false,
                     'error' => 'User ID is required'
+                ]);
+                return;
+            }
+
+            if ($this->message_model->isUserSuspended($userId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'This account is suspended. Chat is currently frozen.'
                 ]);
                 return;
             }
@@ -104,6 +113,15 @@ class messages extends Controller{
                 echo json_encode([
                     'success' => false,
                     'error' => 'User ID is required'
+                ]);
+                return;
+            }
+
+            if ($this->message_model->isUserSuspended($otherUserId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'This conversation is unavailable because the account is suspended.',
+                    'messages' => []
                 ]);
                 return;
             }
@@ -153,20 +171,130 @@ class messages extends Controller{
                 ]);
                 return;
             }
+
+            if ($this->message_model->isUserSuspended($currentUserId) || $this->message_model->isUserSuspended($recipientId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Messaging is unavailable because one of the accounts is suspended.'
+                ]);
+                return;
+            }
             
-            $result = $this->message_model->sendMessage($currentUserId, $recipientId, $content);
+            $messageId = $this->message_model->sendMessage($currentUserId, $recipientId, $content);
             
-            if ($result) {
+            if ($messageId) {
+                // Get sender name from session or use generic text
+                $senderName = $_SESSION['user_name'] ?? 'Someone';
+                
+                // Handle notifications without breaking message flow
+                try {
+                    if ($this->notificationModel && method_exists($this->notificationModel, 'hasUnreadMessageNotification')) {
+                        $hasUnreadNotification = $this->notificationModel->hasUnreadMessageNotification($recipientId, $currentUserId);
+                        
+                        if ($hasUnreadNotification) {
+                            // Just update the timestamp to bring it to top
+                            $this->notificationModel->updateMessageNotificationTime($recipientId, $currentUserId);
+                        } else {
+                            // Create new notification using notify method
+                            $this->notify(
+                                $recipientId,
+                                'new_message',
+                                $currentUserId,
+                                ['text' => $senderName . ' sent you a message']
+                            );
+                        }
+                    }
+                } catch (Exception $e) {
+                    error_log('Failed to create notification: ' . $e->getMessage());
+                }
+                
                 echo json_encode([
                     'success' => true,
                     'message' => 'Message sent successfully'
                 ]);
+                exit;
             } else {
                 echo json_encode([
                     'success' => false,
                     'error' => 'Failed to send message'
                 ]);
+                exit;
             }
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+    
+    /**
+     * API: Mark conversation as read
+     * POST /messages/markAsRead
+     * Body: {"userId": 123}
+     */
+    public function markAsRead() {
+        header('Content-Type: application/json');
+        
+        try {
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            $currentUserId = $_SESSION['user_id'];
+            $otherUserId = $input['userId'] ?? null;
+            
+            if (!$otherUserId) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'User ID is required'
+                ]);
+                return;
+            }
+            
+            // Clear unread count in tracker
+            $result = $this->message_model->markConversationAsRead($currentUserId, $otherUserId);
+            
+            // Delete all new_message notifications from this sender
+            try {
+                if ($this->notificationModel && method_exists($this->notificationModel, 'markMessagesAsRead')) {
+                    $this->notificationModel->markMessagesAsRead($currentUserId, $otherUserId);
+                }
+            } catch (Exception $e) {
+                error_log('Failed to delete message notifications: ' . $e->getMessage());
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Messages marked as read and notifications cleared'
+            ]);
+            exit;
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+    
+    /**
+     * API: Get unread counts for all conversations
+     * GET /messages/getUnreadCounts
+     */
+    public function getUnreadCounts() {
+        header('Content-Type: application/json');
+        
+        try {
+            $currentUserId = $_SESSION['user_id'];
+            
+            $totalUnread = $this->message_model->getTotalUnreadCount($currentUserId);
+            
+            echo json_encode([
+                'success' => true,
+                'total_unread' => $totalUnread
+            ]);
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,

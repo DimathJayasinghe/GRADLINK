@@ -305,22 +305,76 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
-    public function isProfilePublic($user_id){
-        $this->db->query('SELECT is_public FROM user_profiles_visibility WHERE user_id = :uid LIMIT 1');
-        $this->db->bind(':uid',$user_id);
-        $row = $this->db->single();
-        if ($row !== null && isset($row->is_public)) {
-            return (bool)$row->is_public;
-        }
-        // If no row exists, default to public (matches DB default TRUE in schema)
-        return true;
-    }
+
     public function isFollowed($current_user_id, $profile_user_id){
         $this->db->query('SELECT 1 FROM followers WHERE follower_id = :follower_id AND followed_id = :followed_id LIMIT 1');
         $this->db->bind(':follower_id',$current_user_id);
         $this->db->bind(':followed_id',$profile_user_id);
         $result = $this->db->single();
         return $result ? true : false;
+    }
+
+    public function hasPendingFollowRequest($requester_id, $target_id){
+        $this->db->query('SELECT 1 FROM follow_requests WHERE requester_id = :requester_id AND target_id = :target_id AND status = "pending" LIMIT 1');
+        $this->db->bind(':requester_id',$requester_id);
+        $this->db->bind(':target_id',$target_id);
+        $result = $this->db->single();
+        return $result ? true : false;
+    }
+
+    public function createFollowRequest($requester_id, $target_id){
+        $this->db->query('INSERT INTO follow_requests (requester_id, target_id, status) VALUES (:requester_id, :target_id, "pending")');
+        $this->db->bind(':requester_id',$requester_id);
+        $this->db->bind(':target_id',$target_id);
+        if ($this->db->execute()) {
+            return $this->db->lastInsertId();
+        }
+        return false;
+    }
+
+    public function cancelFollowRequest($requester_id, $target_id){
+        $this->db->query('DELETE FROM follow_requests WHERE requester_id = :requester_id AND target_id = :target_id');
+        $this->db->bind(':requester_id',$requester_id);
+        $this->db->bind(':target_id',$target_id);
+        return $this->db->execute();
+    }
+
+    public function approveFollowRequest($requester_id, $target_id){
+        // Get request details - use requester_id and target_id for lookup
+        $this->db->query('SELECT requester_id, target_id FROM follow_requests WHERE requester_id = :requester_id AND target_id = :target_id AND status = "pending" LIMIT 1');
+        $this->db->bind(':requester_id', $requester_id);
+        $this->db->bind(':target_id', $target_id);
+        $request = $this->db->single();
+        
+        if (!$request) {
+            return false;
+        }
+
+        // Start transaction
+        try {
+            // Insert into followers table
+            $this->db->query('INSERT IGNORE INTO followers (follower_id, followed_id) VALUES (:follower_id, :followed_id)');
+            $this->db->bind(':follower_id', $request->requester_id);
+            $this->db->bind(':followed_id', $request->target_id);
+            $this->db->execute();
+
+            // Delete from follow_requests
+            $this->db->query('DELETE FROM follow_requests WHERE requester_id = :requester_id AND target_id = :target_id');
+            $this->db->bind(':requester_id', $requester_id);
+            $this->db->bind(':target_id', $target_id);
+            $this->db->execute();
+
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function rejectFollowRequest($requester_id, $target_id){
+        $this->db->query('DELETE FROM follow_requests WHERE requester_id = :requester_id AND target_id = :target_id');
+        $this->db->bind(':requester_id', $requester_id);
+        $this->db->bind(':target_id', $target_id);
+        return $this->db->execute();
     }
 
     public function followUser($current_user_id, $profile_user_id){

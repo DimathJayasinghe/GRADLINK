@@ -207,7 +207,12 @@
                 <?php
                     $isBookmarked = !empty($request->bookmarked);
                 ?>
-                <button id="bookmark-btn" style="background-color:<?php echo $isBookmarked ? '#ec2424ff' : '#4caf50'; ?>" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
+                <button
+                    id="bookmark-btn"
+                    style="background-color:<?php echo $isBookmarked ? '#ec2424ff' : '#4caf50'; ?>; margin:0;"
+                    data-bookmarked="<?php echo $isBookmarked ? '1' : '0'; ?>"
+                    data-event-id="<?php echo htmlspecialchars($request->event_id); ?>"
+                >
                     <span class="btn" style="color: ffffff;" id="bookmark-label"><?php echo $isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'; ?></span>
                 </button>
             </div>
@@ -282,8 +287,7 @@ document.addEventListener('DOMContentLoaded', function(){
             method: 'POST',
             credentials: 'same-origin',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': window.GL_CSRF_TOKEN || ''
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(body)
         }).then(function(resp){ return resp.json(); });
@@ -291,20 +295,18 @@ document.addEventListener('DOMContentLoaded', function(){
 
     btn.addEventListener('click', function(e){
         e.preventDefault();
-        var currently = btn.classList.contains('btn-primary');
-        var target = currently ? '/calender/removeBookmarkAjax' : '/calender/addBookmark';
-        postJson(target, { event_id: parseInt(eventId), csrf_token: window.GL_CSRF_TOKEN })
+        var currently = String(btn.getAttribute('data-bookmarked') || '0') === '1';
+        postJson('/bookmark/update', {
+            type: 'events',
+            reference_id: parseInt(eventId, 10),
+            bookmarked: !currently
+        })
             .then(function(data){
                 if(data && data.ok){
-                    if(currently){
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-danger');
-                        label.textContent = 'Add Bookmark';
-                    } else {
-                        btn.classList.remove('btn-danger');
-                        btn.classList.add('btn-primary');
-                        label.textContent = 'Bookmarked';
-                    }
+                    var nextState = !!data.bookmarked;
+                    btn.setAttribute('data-bookmarked', nextState ? '1' : '0');
+                    btn.style.backgroundColor = nextState ? '#ec2424ff' : '#4caf50';
+                    label.textContent = nextState ? 'Remove Bookmark' : 'Add Bookmark';
                 } else {
                     console.error('Bookmark action failed', data);
                     alert('Could not update bookmark: ' + (data && data.error ? data.error : 'Unknown error'));
@@ -342,7 +344,8 @@ document.addEventListener('DOMContentLoaded', function(){
                     var html = '<h3 style="margin-top:0;">Attendees</h3><ul style="list-style:none;padding:0;margin:0;">';
                     data.attendees.forEach(function(a){
                         var name = a.name || a.email || 'User';
-                        html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+name+'</strong>' + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>';
+                        var batch = a.batch_no ? (' • Batch ' + a.batch_no) : '';
+                        html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+name+'</strong>' + batch + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>';
                     });
                     html += '</ul>';
                     container.innerHTML = html;
@@ -353,6 +356,13 @@ document.addEventListener('DOMContentLoaded', function(){
                     var me = data.attendees.find(function(a){ return Number(a.user_id) === Number(uid); });
                     if(me){ detailCancel.style.display = 'inline-flex'; } else { detailCancel.style.display = 'none'; }
                 }).catch(()=>{});
+                // update detail RSVP button label to include count (if present)
+                var detailBtn = document.getElementById('detail-rsvp-btn');
+                if(detailBtn){
+                    var cnt = (typeof data.attendees_count !== 'undefined') ? data.attendees_count : (data.attendees? data.attendees.length : 0);
+                    var span = detailBtn.querySelector('span.btn');
+                    if(span) span.textContent = 'RSVP' + (cnt?(' ( '+cnt+' )') : '');
+                }
             }
         }).catch(err=>console.error('attendees fetch failed',err));
     };
@@ -361,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if(detailCancel){
         detailCancel.addEventListener('click', function(){
             if(!confirm('Cancel your RSVP?')) return;
-            fetch('<?php echo URLROOT; ?>/calender/cancelRsvp', { method: 'POST', credentials: 'same-origin', headers: Object.assign({'Content-Type':'application/json'}, (window.GL_CSRF_TOKEN?{'X-CSRF-Token':window.GL_CSRF_TOKEN}:{})), body: JSON.stringify({ event_id: Number(evtId), csrf_token: (window.GL_CSRF_TOKEN||null) }) }).then(r=>r.json()).then(function(data){
+            fetch('<?php echo URLROOT; ?>/calender/cancelRsvp', { method: 'POST', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ event_id: Number(evtId) }) }).then(r=>r.json()).then(function(data){
                 if(data && data.ok){
                     // refresh attendees UI
                     window.__GL_onRsvpConfirmed && window.__GL_onRsvpConfirmed(evtId);
@@ -376,10 +386,10 @@ document.addEventListener('DOMContentLoaded', function(){
             // render initial attendees into the list container
             var container = document.querySelector('.event-info + .event-info');
             if(container){
-                if(data.attendees.length === 0){ container.innerHTML = '<p class="no-events">No attendees yet.</p>'; }
+                if(!data.attendees || data.attendees.length === 0){ container.innerHTML = '<p class="no-events">No attendees yet.</p>'; }
                 else {
                     var html = '<h3 style="margin-top:0;">Attendees</h3><ul style="list-style:none;padding:0;margin:0;">';
-                    data.attendees.forEach(function(a){ html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+ (a.name||a.email||'User') +'</strong>' + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>'; });
+                    data.attendees.forEach(function(a){ var batch = a.batch_no ? (' • Batch ' + a.batch_no) : ''; html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+ (a.name||a.email||'User') +'</strong>' + batch + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>'; });
                     html += '</ul>';
                     container.innerHTML = html;
                 }
@@ -390,6 +400,13 @@ document.addEventListener('DOMContentLoaded', function(){
                 var me = data.attendees.find(function(a){ return Number(a.user_id) === Number(uid); });
                 if(me){ detailCancel.style.display = 'inline-flex'; } else { detailCancel.style.display = 'none'; }
             }).catch(()=>{});
+            // update button label with count
+            var detailBtn = document.getElementById('detail-rsvp-btn');
+            if(detailBtn){
+                var cnt = (typeof data.attendees_count !== 'undefined') ? data.attendees_count : (data.attendees? data.attendees.length : 0);
+                var span = detailBtn.querySelector('span.btn');
+                if(span) span.textContent = 'RSVP' + (cnt?(' ( '+cnt+' )') : '');
+            }
         }
     }).catch(()=>{});
 

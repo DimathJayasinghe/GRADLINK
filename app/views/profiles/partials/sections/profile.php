@@ -48,7 +48,7 @@
                                 <span>Message</span>
                             </button>
                         <?php endif; ?>
-                        <?php $isBlocked = $data['isBlocked'] ?>
+                        <!-- <?php $isBlocked = $data['isBlocked'] ?> -->
                         <button
                             class="action-btn block-btn <?= $isBlocked ? 'active' : '' ?>"
                             id="blockBtn"

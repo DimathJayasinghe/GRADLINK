@@ -38,7 +38,7 @@ body {
 
 .template-left .sidebar-menu li i {
     font-size: 22px !important;
-    margin-right: 15px !important;
+    /* margin-right: 15px !important; */
 }
 
 .template-left .logo-name {

@@ -20,6 +20,10 @@
 .admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.3); }
 .admin-modal-content { background: #0e1b28; margin: 5% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
 .admin-modal-close { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
+.flash-message.success { background: rgba(40, 167, 69, 0.15); color: #28a745; border-left: 4px solid #28a745; }
+.flash-message.error { background: rgba(220, 53, 69, 0.15); color: #dc3545; border-left: 4px solid #dc3545; }
+.flash-message.warning { background: rgba(255, 193, 7, 0.15); color: #ffc107; border-left: 4px solid #ffc107; }
+.flash-message.info { background: rgba(23, 162, 184, 0.15); color: #17a2b8; border-left: 4px solid #17a2b8; }
 </style>
 <?php $styles = ob_get_clean()?>
 
@@ -32,11 +36,29 @@
         ['label'=>'Event Moderation', 'url'=>'/admin/eventrequests','active'=>false, 'icon' => 'clipboard-list'],
         ['label'=>'Content Management', 'url'=>'/admin/posts','active'=>false, 'icon' => 'pencil-alt'],
         ['label'=>'Fundraisers', 'url'=>'/admin/fundraisers','active'=>false, 'icon' => 'donate'],
-        ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>true, 'icon' => 'check-circle']
-    ]
+        ['label'=>'Alumni Verifications', 'url'=>'/admin/verifications','active'=>true, 'icon' => 'check-circle'],
+        ['label'=>'Suspended Users', 'url'=>'/admin/suspendedUsers','active'=>false, 'icon' => 'user-slash'],
+        ['label'=>'Help & Support', 'url'=>'/admin/support','active'=>false, 'icon' => 'circle-question']
+    ];
+
+    $requests = $data['requests'] ?? [];
 ?>
 
 <?php ob_start();?>
+
+<!-- Flash Messages -->
+<?php 
+$flashMessages = SessionManager::getFlash();
+if (!empty($flashMessages)): ?>
+    <div class="flash-messages" style="margin-bottom: 1.5rem;">
+        <?php foreach ($flashMessages as $message): ?>
+            <div class="flash-message <?php echo htmlspecialchars($message['type']); ?>" style="padding: 12px 16px; border-radius: 4px; margin-bottom: 8px; font-weight: 500;">
+                <?php echo htmlspecialchars($message['message']); ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
 <div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;">
     <h1>Alumni Verifications</h1>
     <div class="admin-actions">
@@ -57,6 +79,7 @@
         </div>
     </div>
     <div class="admin-table-wrapper">
+        <?php if (!empty($requests)): ?>
         <table class="admin-table" id="alumniTable">
             <thead>
                 <tr>
@@ -71,43 +94,26 @@
             </thead>
             <tbody>
                 <!-- Alumni will be loaded here by JS or backend -->
-                <tr>
+                <?php foreach ($requests as $alumni): ?>
+                <tr data-req-id="<?= htmlspecialchars($alumni->req_id ?? '') ?>">
                     <td><input type="checkbox" class="selectAlumni"></td>
-                    <td>Alumni 01</td>
-                    <td>alu1@email.com</td>
-                    <td>2018</td>
-                    <td>991234567V</td>
-                    <td><span class="status-badge status-pending">Pending</span></td>
+                    <td><?= htmlspecialchars($alumni->Name ?? '') ?></td>
+                    <td><?= htmlspecialchars($alumni->email ?? '') ?></td>
+                    <td><?= htmlspecialchars($alumni->Batch ?? '') ?></td>
+                    <td><?= htmlspecialchars($alumni->nic ?? '') ?></td>
+                    <td><span class="status-badge status-<?= strtolower($alumni->status ?? 'pending') ?>"><?= htmlspecialchars($alumni->status ?? 'Pending') ?></span></td>
                     <td>
                         <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
                         <button class="admin-btn verify-alumni">Verify</button>
                         <button class="admin-btn admin-btn-danger reject-alumni">Reject</button>
                     </td>
                 </tr>
-                <tr>
-                    <td><input type="checkbox" class="selectAlumni"></td>
-                    <td>Alumni 02</td>
-                    <td>alu2@email.com</td>
-                    <td>2017</td>
-                    <td>9823456782221</td>
-                    <td><span class="status-badge status-verified">Verified</span></td>
-                    <td>
-                        <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td><input type="checkbox" class="selectAlumni"></td>
-                    <td>Kaveen alumni</td>
-                    <td>kaveen.alumni@email.com</td>
-                    <td>2019</td>
-                    <td>993456789V</td>
-                    <td><span class="status-badge status-rejected">Rejected</span></td>
-                    <td>
-                        <button class="admin-btn view-alumni" style="background-color: #525253ff; color: white;">View</button>
-                    </td>
-                </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
+        <?php else: ?>
+            <div class="empty-state">No pending requests.</div>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -125,14 +131,21 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Select all alumni
-    document.getElementById('selectAllAlumni').addEventListener('change', function() {
-        document.querySelectorAll('.selectAlumni').forEach(cb => cb.checked = this.checked);
-    });
+    const selectAll = document.getElementById('selectAllAlumni');
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            document.querySelectorAll('.selectAlumni').forEach(cb => cb.checked = this.checked);
+        });
+    }
+
     // Modal logic
     const modal = document.getElementById('alumniModal');
     const modalClose = document.querySelector('.admin-modal-close');
-    modalClose.onclick = () => modal.style.display = 'none';
+    if (modalClose) {
+        modalClose.onclick = () => modal.style.display = 'none';
+    }
     window.onclick = (e) => { if (e.target == modal) modal.style.display = 'none'; };
+
     // View alumni
     document.querySelectorAll('.view-alumni').forEach(btn => {
         btn.onclick = function() {
@@ -151,19 +164,127 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.style.display = 'block';
         };
     });
-    // Verify, Reject (placeholders)
+
+    const goTo = (url) => { window.location.href = url; };
+
+    // Verify
     document.querySelectorAll('.verify-alumni').forEach(btn => {
-        btn.onclick = function() { alert('Verify alumni (AJAX needed)'); };
+        btn.onclick = function() {
+            const row = this.closest('tr');
+            const id = row ? row.getAttribute('data-req-id') : null;
+            if (!id) return alert('Missing request ID');
+            goTo(`${"<?php echo URLROOT; ?>"}/signup/alumni?id=${encodeURIComponent(id)}`);
+        };
     });
+
+    // Reject
     document.querySelectorAll('.reject-alumni').forEach(btn => {
-        btn.onclick = function() { alert('Reject alumni (AJAX needed)'); };
+        btn.onclick = function() {
+            const row = this.closest('tr');
+            const id = row ? row.getAttribute('data-req-id') : null;
+            if (!id) return alert('Missing request ID');
+            if (!confirm('Are you sure you want to reject this request?')) {
+                return;
+            }
+            goTo(`${"<?php echo URLROOT; ?>"}/signup/alumni?reject_id=${encodeURIComponent(id)}`);
+        };
     });
-    // Bulk actions (placeholders)
-    document.getElementById('bulk-verify').onclick = function() { alert('Bulk verify (AJAX needed)'); };
-    document.getElementById('bulk-reject').onclick = function() { alert('Bulk reject (AJAX needed)'); };
-    // Search/filter (placeholders)
-    document.getElementById('alumniSearch').oninput = function() { /* AJAX search/filter */ };
-    document.getElementById('alumniStatusFilter').onchange = function() { /* AJAX filter */ };
+
+    // Bulk actions
+    const bulkVerify = document.getElementById('bulk-verify');
+    if (bulkVerify) {
+        bulkVerify.onclick = function() {
+            const checked = document.querySelectorAll('.selectAlumni:checked');
+            if (checked.length === 0) {
+                alert('Please select at least one alumni.');
+                return;
+            }
+            if (!confirm(`Verify ${checked.length} alumni?`)) {
+                return;
+            }
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `${"<?php echo URLROOT; ?>"}/admin/bulkVerifyAlumni`;
+            checked.forEach((cb, i) => {
+                const id = cb.closest('tr').getAttribute('data-req-id');
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `ids[${i}]`;
+                input.value = id;
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        };
+    }
+
+    const bulkReject = document.getElementById('bulk-reject');
+    if (bulkReject) {
+        bulkReject.onclick = function() {
+            const checked = document.querySelectorAll('.selectAlumni:checked');
+            if (checked.length === 0) {
+                alert('Please select at least one alumni.');
+                return;
+            }
+            if (!confirm(`Reject ${checked.length} alumni?`)) {
+                return;
+            }
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `${"<?php echo URLROOT; ?>"}/admin/bulkRejectAlumni`;
+            checked.forEach((cb, i) => {
+                const id = cb.closest('tr').getAttribute('data-req-id');
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `ids[${i}]`;
+                input.value = id;
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        };
+    }
+
+    // Search/filter functionality
+    const searchInput = document.getElementById('alumniSearch');
+    const statusFilter = document.getElementById('alumniStatusFilter');
+    const alumniTable = document.getElementById('alumniTable');
+
+    const filterTable = () => {
+        if (!alumniTable) return;
+
+        const searchTerm = (searchInput?.value || '').toLowerCase();
+        const selectedStatus = (statusFilter?.value || 'pending').toLowerCase();
+        const rows = alumniTable.querySelectorAll('tbody tr');
+
+        rows.forEach(row => {
+            const name = row.children[1].textContent.toLowerCase();
+            const email = row.children[2].textContent.toLowerCase();
+            const batch = row.children[3].textContent.toLowerCase();
+            const nic = row.children[4].textContent.toLowerCase();
+            const statusCell = row.children[5].textContent.toLowerCase();
+
+            // Check if row matches search term
+            const matchesSearch = !searchTerm || 
+                name.includes(searchTerm) || 
+                email.includes(searchTerm) || 
+                batch.includes(searchTerm) || 
+                nic.includes(searchTerm);
+
+            // Check if row matches status filter
+            const matchesStatus = statusCell.includes(selectedStatus);
+
+            // Show row if it matches both criteria
+            row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+        });
+    };
+
+    if (searchInput) {
+        searchInput.oninput = filterTable;
+    }
+    if (statusFilter) {
+        statusFilter.onchange = filterTable;
+    }
 });
 </script>
 
