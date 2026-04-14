@@ -3,9 +3,9 @@
 define('DB_HOST', gl_env('DB_HOST', 'localhost'));
 define('DB_PORT', gl_env('DB_PORT', 3306)); 
 define('DB_CHARSET', gl_env('DB_CHARSET', 'utf8mb4'));
-define('DB_USER', gl_env('DB_USER', '446251'));
-define('DB_PASSWORD', gl_env('DB_PASSWORD', '#gradlink2025'));
-define('DB_NAME', gl_env('DB_NAME', 'gradlink-kaveen_main'));
+define('DB_USER', gl_env('DB_USER', 'root'));
+define('DB_PASSWORD', gl_env('DB_PASS', '1234'));
+define('DB_NAME', gl_env('DB_NAME', 'gl_db'));
 
 // Email Configuration (for OTP and notifications)
 define('MAIL_MAILER', gl_env('MAIL_MAILER', 'smtp'));
