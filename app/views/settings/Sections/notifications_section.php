@@ -40,49 +40,6 @@
 		</div> -->
 	</div>
 
-	<div class="settings-section">
-		<h3>In-App Notification Types</h3>
-		<div class="section-divider"></div>
-
-		<?php
-		$inAppTypes = [
-			// 'welcome' => 'Welcome',
-			// 'info' => 'Info',
-			'warning' => 'Warning',
-			'alert' => 'Alert',
-			'message' => 'Message',
-			'follow_request' => 'Follow request',
-			'started_following' => 'Started following',
-			'new_message' => 'New message',
-			'like' => 'Like',
-			'comment' => 'Comment',
-			'event_update' => 'Event update',
-			'post_approval' => 'Post approval',
-			'fundraiser_update' => 'Fundraiser update',
-			'system_announcement' => 'System announcement',
-			'admin_message' => 'Admin message'
-		];
-		?>
-
-		<?php foreach ($inAppTypes as $typeKey => $typeLabel) : ?>
-			<div class="settings-option">
-				<div class="settings-option-details">
-					<h4><?= htmlspecialchars($typeLabel) ?></h4>
-				</div>
-				<label class="toggle">
-					<input
-						type="checkbox"
-						class="inapp-type-toggle"
-						id="inAppType_<?= htmlspecialchars($typeKey) ?>"
-						data-inapp-type="<?= htmlspecialchars($typeKey) ?>"
-						checked
-					>
-					<span class="slider"></span>
-				</label>
-			</div>
-		<?php endforeach; ?>
-	</div>
-
 	<!-- <div class="settings-section">
 		<h3>Frequency</h3>
 		<div class="section-divider"></div>
@@ -183,24 +140,6 @@ document.addEventListener('DOMContentLoaded', function(){
 	const openDND = document.getElementById('openDND');
 	const dndForm = document.getElementById('dndForm');
 
-	const IN_APP_TYPES = [
-		'welcome',
-		'info',
-		'warning',
-		'alert',
-		'message',
-		'follow_request',
-		'started_following',
-		'new_message',
-		'like',
-		'comment',
-		'event_update',
-		'post_approval',
-		'fundraiser_update',
-		'system_announcement',
-		'admin_message'
-	];
-
 	// Keep a local cache so missing UI controls don't accidentally overwrite saved values.
 	let settingsCache = {
 		email_enabled: 1,
@@ -211,8 +150,7 @@ document.addEventListener('DOMContentLoaded', function(){
 		dnd_enabled: 0,
 		dnd_start: null,
 		dnd_end: null,
-		dnd_days: null,
-		in_app_disabled_types: []
+		dnd_days: null
 	};
 
 	// Load initial settings from backend
@@ -235,10 +173,6 @@ document.addEventListener('DOMContentLoaded', function(){
 		if (checkbox) checkbox.addEventListener('change', handleToggleChange);
 	});
 
-	document.querySelectorAll('.inapp-type-toggle').forEach(checkbox => {
-		checkbox.addEventListener('change', handleToggleChange);
-	});
-
 	// DND form submission
 	if (dndForm) {
 		dndForm.addEventListener('submit', handleDNDFormSubmit);
@@ -248,16 +182,15 @@ document.addEventListener('DOMContentLoaded', function(){
 	async function loadNotificationSettings() {
 		try {
 			const response = await fetch(`${URLROOT}/settings/getNotificationSettings`);
-			const data = await response.json();
+			const data = await parseJsonResponse(response);
+
+			if (!response.ok || !data.success) {
+				throw new Error(data.error || `Failed to load settings (${response.status})`);
+			}
 
 			if (data.success && data.settings) {
 				const settings = data.settings;
 				settingsCache = { ...settingsCache, ...settings };
-
-				// Normalize in_app_disabled_types
-				if (!Array.isArray(settingsCache.in_app_disabled_types)) {
-					settingsCache.in_app_disabled_types = [];
-				}
 
 				// Set delivery channel toggles
 				safeSetCheckbox('emailNotif', settings.email_enabled);
@@ -267,13 +200,6 @@ document.addEventListener('DOMContentLoaded', function(){
 				safeSetCheckbox('catMentions', settings.mentions_enabled);
 				safeSetCheckbox('catFollowers', settings.followers_enabled);
 				safeSetCheckbox('catEngagement', settings.engagement_enabled);
-
-				// Set per-type in-app toggles
-				const disabled = new Set(settingsCache.in_app_disabled_types || []);
-				IN_APP_TYPES.forEach(type => {
-					const el = document.getElementById(`inAppType_${type}`);
-					if (el) el.checked = !disabled.has(type);
-				});
 
 				// Set DND fields (if present in UI)
 				const dndStartEl = document.getElementById('dndStart');
@@ -301,11 +227,16 @@ document.addEventListener('DOMContentLoaded', function(){
 				body: JSON.stringify(next)
 			});
 
-			const data = await response.json();
+			const data = await parseJsonResponse(response);
+
+			if (!response.ok && !data.success) {
+				throw new Error(data.error || `Failed to save settings (${response.status})`);
+			}
 
 			if (data.success) {
 				settingsCache = { ...settingsCache, ...next };
 				showNotification('Settings saved', 'success');
+				refreshNotificationBadge();
 			} else {
 				showNotification(data.error || 'Failed to save settings', 'error');
 				checkbox.checked = !checkbox.checked;
@@ -333,13 +264,6 @@ document.addEventListener('DOMContentLoaded', function(){
 
 		const engagementEl = document.getElementById('catEngagement');
 		if (engagementEl) out.engagement_enabled = engagementEl.checked ? 1 : 0;
-
-		const disabled = [];
-		IN_APP_TYPES.forEach(type => {
-			const el = document.getElementById(`inAppType_${type}`);
-			if (el && !el.checked) disabled.push(type);
-		});
-		out.in_app_disabled_types = disabled;
 
 		// Don't change DND values here; handled by DND form.
 		return out;
@@ -379,11 +303,16 @@ document.addEventListener('DOMContentLoaded', function(){
 				body: JSON.stringify(settings)
 			});
 
-			const data = await response.json();
+			const data = await parseJsonResponse(response);
+
+			if (!response.ok && !data.success) {
+				throw new Error(data.error || `Failed to save quiet hours (${response.status})`);
+			}
 
 			if (data.success) {
 				settingsCache = { ...settingsCache, ...settings };
 				showNotification('Quiet hours saved successfully', 'success');
+				refreshNotificationBadge();
 				closeModal(dndModal);
 			} else {
 				showNotification(data.error || 'Failed to save quiet hours', 'error');
@@ -410,6 +339,25 @@ document.addEventListener('DOMContentLoaded', function(){
 	// Helper: close modal
 	function closeModal(modal) {
 		if (modal) modal.style.display = 'none';
+	}
+
+	function refreshNotificationBadge() {
+		if (window.notificationManager && typeof window.notificationManager.fetchCount === 'function') {
+			window.notificationManager.fetchCount();
+		}
+	}
+
+	async function parseJsonResponse(response) {
+		const body = await response.text();
+		if (!body) {
+			return {};
+		}
+
+		try {
+			return JSON.parse(body);
+		} catch (error) {
+			throw new Error(`Server returned non-JSON response (${response.status})`);
+		}
 	}
 
 	// Helper: show notification

@@ -1,9 +1,11 @@
 <?php
 class settings extends Controller{
     private $model;
+    private $signupModel;
     public function __construct(){
         SessionManager:: redirectToAuthIfNotLoggedIn();
         $this->model = $this->model('M_settings');
+        $this->signupModel = $this->model('M_signup');
     }
 
     public function index(){
@@ -68,6 +70,10 @@ class settings extends Controller{
         }
         return true;
     }
+
+    private function isStudentEmail(string $email): bool {
+        return (bool)preg_match('/^[0-9]{4}(?:cs|is)[0-9]{3}@stu\.ucsc\.cmb\.ac\.lk$/i', $email);
+    }
     public function bookmarks(){
         $bookmarkModel = $this->model('M_bookmark');
         $data = [
@@ -112,7 +118,7 @@ class settings extends Controller{
             } else {
                 $this->jsonResponse(['success' => false, 'error' => 'Failed to update name'], 500);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -140,7 +146,73 @@ class settings extends Controller{
             } else {
                 $this->jsonResponse(['success' => false, 'error' => 'Failed to update bio'], 500);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Send OTP for email change
+     * POST /settings/sendEmailChangeOtp
+     * Body: {"email": "new@email.com"}
+     */
+    public function sendEmailChangeOtp() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $input = $this->getJsonInput();
+            $userId = (int)($_SESSION['user_id'] ?? 0);
+            $newEmail = trim((string)($input['email'] ?? ''));
+
+            if ($userId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+                return;
+            }
+
+            if (empty($newEmail) || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Please provide a valid email'], 422);
+                return;
+            }
+
+            $user = $this->model->getUserById($userId);
+            if (!$user) {
+                $this->jsonResponse(['success' => false, 'error' => 'User not found'], 404);
+                return;
+            }
+
+            $role = strtolower((string)($user->role ?? ''));
+            if ($role === 'undergrad' && !$this->isStudentEmail($newEmail)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Undergraduate accounts must use a student email (e.g. 20XXcsXXX@stu.ucsc.cmb.ac.lk)'], 422);
+                return;
+            }
+
+            if ($this->model->emailExists($newEmail, $userId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Email already in use'], 409);
+                return;
+            }
+
+            $otp = random_int(100000, 999999);
+            $sent = EmailHandler::sendOtpEmail($newEmail, 'email_change', $otp);
+            if (!$sent) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to send OTP'], 500);
+                return;
+            }
+
+            if (!$this->signupModel || !method_exists($this->signupModel, 'saveOTP')) {
+                $this->jsonResponse(['success' => false, 'error' => 'OTP service unavailable'], 500);
+                return;
+            }
+
+            $saved = $this->signupModel->saveOTP($newEmail, (string)$otp, 'email_change');
+            if (!$saved) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to store OTP'], 500);
+                return;
+            }
+
+            $this->jsonResponse(['success' => true, 'message' => 'OTP sent to your new email']);
+        } catch (Throwable $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -148,7 +220,7 @@ class settings extends Controller{
     /**
      * API: Update user email
      * POST /settings/updateEmail
-     * Body: {"current_email": "current@email.com", "new_email": "new@email.com", "password": "password"}
+     * Body: {"current_email": "current@email.com", "new_email": "new@email.com", "password": "password", "otp": "123456"}
      */
     public function updateEmail() {
         if (!$this->ensurePostMethod()) {
@@ -162,10 +234,16 @@ class settings extends Controller{
             $currentEmail = trim($input['current_email'] ?? '');
             $newEmail = trim($input['new_email'] ?? '');
             $password = $input['password'] ?? '';
+            $otp = trim((string)($input['otp'] ?? ''));
             
             // Validate inputs
-            if (empty($newEmail) || empty($password)) {
-                $this->jsonResponse(['success' => false, 'error' => 'New email and password are required'], 422);
+            if (empty($newEmail) || empty($password) || empty($otp)) {
+                $this->jsonResponse(['success' => false, 'error' => 'New email, password, and OTP are required'], 422);
+                return;
+            }
+
+            if (!preg_match('/^\d{6}$/', $otp)) {
+                $this->jsonResponse(['success' => false, 'error' => 'OTP must be a 6-digit code'], 422);
                 return;
             }
             
@@ -178,6 +256,22 @@ class settings extends Controller{
             $user = $this->model->getUserById($userId);
             if (!$user) {
                 $this->jsonResponse(['success' => false, 'error' => 'User not found'], 404);
+                return;
+            }
+
+            $role = strtolower((string)($user->role ?? ''));
+            if ($role === 'undergrad' && !$this->isStudentEmail($newEmail)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Undergraduate accounts must use a student email (e.g. 20XXcsXXX@stu.ucsc.cmb.ac.lk)'], 422);
+                return;
+            }
+
+            if (!empty($currentEmail) && strcasecmp($currentEmail, (string)$user->email) !== 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Current email does not match your account'], 422);
+                return;
+            }
+
+            if (strcasecmp($newEmail, (string)$user->email) === 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'New email must be different from current email'], 422);
                 return;
             }
 
@@ -195,6 +289,17 @@ class settings extends Controller{
                 $this->jsonResponse(['success' => false, 'error' => 'Email already in use'], 409);
                 return;
             }
+
+            if (!$this->signupModel || !method_exists($this->signupModel, 'verifyOTP')) {
+                $this->jsonResponse(['success' => false, 'error' => 'OTP service unavailable'], 500);
+                return;
+            }
+
+            $otpResult = $this->signupModel->verifyOTP($newEmail, $otp, 'email_change');
+            if (empty($otpResult['success'])) {
+                $this->jsonResponse(['success' => false, 'error' => $otpResult['message'] ?? 'Invalid OTP'], 422);
+                return;
+            }
             
             $result = $this->model->updateEmail($userId, $newEmail);
             
@@ -204,7 +309,66 @@ class settings extends Controller{
             } else {
                 $this->jsonResponse(['success' => false, 'error' => 'Failed to update email'], 500);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * API: Convert account role from undergrad to alumni
+     * POST /settings/convertToAlumni
+     * Body: {"password": "..."}
+     */
+    public function convertToAlumni() {
+        if (!$this->ensurePostMethod()) {
+            return;
+        }
+
+        try {
+            $input = $this->getJsonInput();
+            $userId = (int)($_SESSION['user_id'] ?? 0);
+            $password = (string)($input['password'] ?? '');
+
+            if ($userId <= 0) {
+                $this->jsonResponse(['success' => false, 'error' => 'Unauthorized'], 401);
+                return;
+            }
+
+            if (trim($password) === '') {
+                $this->jsonResponse(['success' => false, 'error' => 'Password is required'], 422);
+                return;
+            }
+
+            $user = $this->model->getUserById($userId);
+            if (!$user) {
+                $this->jsonResponse(['success' => false, 'error' => 'User not found'], 404);
+                return;
+            }
+
+            if (strtolower((string)($user->role ?? '')) !== 'undergrad') {
+                $this->jsonResponse(['success' => false, 'error' => 'Only undergraduate accounts can be converted'], 403);
+                return;
+            }
+
+            $passwordValid = (strpos((string)$user->password, '$2y$') === 0)
+                ? password_verify($password, (string)$user->password)
+                : ($password === (string)$user->password);
+
+            if (!$passwordValid) {
+                $this->jsonResponse(['success' => false, 'error' => 'Incorrect password'], 401);
+                return;
+            }
+
+            $converted = $this->model->convertUndergradToAlumni($userId);
+            if (!$converted) {
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to convert account type'], 500);
+                return;
+            }
+
+            $_SESSION['user_role'] = 'alumni';
+            $_SESSION['special_alumni'] = false;
+            $this->jsonResponse(['success' => true, 'message' => 'Account type updated to alumni']);
+        } catch (Throwable $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -275,14 +439,11 @@ class settings extends Controller{
     }
 
     /**
-     * API: Schedule account lifecycle action
+     * API: Permanently delete account and related user data.
      * POST /settings/deleteAccount
      * Body: {
      *   "password": "password",
-     *   "confirmation": "CONFIRM",
-     *   "action_type": "deactivate_only|deactivate_and_delete",
-     *   "deletion_reason": "...",
-     *   "other_deletion_reason": "..."
+     *   "confirmation": "CONFIRM"
      * }
      */
     public function deleteAccount() {
@@ -302,18 +463,10 @@ class settings extends Controller{
             $userId = $_SESSION['user_id'];
             $password = $input['password'] ?? '';
             $confirmation = strtoupper(trim($input['confirmation'] ?? ''));
-            $actionType = trim($input['action_type'] ?? '');
-            $deletionReason = trim($input['deletion_reason'] ?? '');
-            $otherDeletionReason = trim($input['other_deletion_reason'] ?? '');
             
             // Validate inputs
             if (empty($password)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Password is required'], 422);
-                return;
-            }
-            
-            if (!in_array($actionType, [M_settings::ACTION_DEACTIVATE_ONLY, M_settings::ACTION_DEACTIVATE_AND_DELETE], true)) {
-                $this->jsonResponse(['success' => false, 'error' => 'Please select an account action'], 422);
                 return;
             }
 
@@ -345,33 +498,21 @@ class settings extends Controller{
                 return;
             }
             
-            // Schedule lifecycle action and immediately log out.
-            $result = $this->model->scheduleAccountLifecycleAction(
-                $userId,
-                $actionType,
-                $deletionReason,
-                $otherDeletionReason
-            );
+            // Permanently remove user account and related records.
+            $result = $this->model->deleteAccount($userId);
             
             if ($result) {
                 // Destroy session and logout
                 SessionManager::destroySession();
 
-                $days = 30;
-                $actionMessage = $actionType === M_settings::ACTION_DEACTIVATE_ONLY
-                    ? 'Account deactivated for 30 days. Log in again to reactivate your account.'
-                    : 'Account deactivated for 30 days. If you do not log in within this period, your account will be permanently deleted.';
-
                 $this->jsonResponse([
                     'success' => true,
-                    'message' => $actionMessage,
-                    'action_type' => $actionType,
-                    'deactivated_days' => $days
+                    'message' => 'Account permanently deleted'
                 ]);
             } else {
-                $this->jsonResponse(['success' => false, 'error' => 'Failed to schedule account action'], 500);
+                $this->jsonResponse(['success' => false, 'error' => 'Failed to delete account'], 500);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -417,8 +558,7 @@ class settings extends Controller{
                     'dnd_enabled' => 0,
                     'dnd_start' => null,
                     'dnd_end' => null,
-                    'dnd_days' => null,
-                    'in_app_disabled_types' => []
+					'dnd_days' => null
                 ];
             } else {
                 // Ensure consistent scalar types for the frontend (PDO may return strings)
@@ -428,26 +568,10 @@ class settings extends Controller{
                 $settings->followers_enabled = (int)($settings->followers_enabled ?? 1);
                 $settings->engagement_enabled = (int)($settings->engagement_enabled ?? 1);
                 $settings->dnd_enabled = (int)($settings->dnd_enabled ?? 0);
-
-                // Per-type in-app toggles are stored as a JSON array of disabled types.
-                // If the column is missing (older schema), default to empty list.
-                if (property_exists($settings, 'in_app_disabled_types')) {
-                    $raw = $settings->in_app_disabled_types;
-                    if (is_string($raw) && $raw !== '') {
-                        $decoded = json_decode($raw, true);
-                        $settings->in_app_disabled_types = is_array($decoded) ? array_values($decoded) : [];
-                    } elseif (is_array($raw)) {
-                        $settings->in_app_disabled_types = array_values($raw);
-                    } else {
-                        $settings->in_app_disabled_types = [];
-                    }
-                } else {
-                    $settings->in_app_disabled_types = [];
-                }
             }
 
             $this->jsonResponse(['success' => true, 'settings' => $settings]);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -474,23 +598,8 @@ class settings extends Controller{
                 'dnd_enabled' => !empty($input['dnd_enabled']) ? 1 : 0,
                 'dnd_start' => isset($input['dnd_start']) ? trim((string)$input['dnd_start']) : null,
                 'dnd_end' => isset($input['dnd_end']) ? trim((string)$input['dnd_end']) : null,
-                'dnd_days' => isset($input['dnd_days']) ? trim((string)$input['dnd_days']) : null,
-                'in_app_disabled_types' => $input['in_app_disabled_types'] ?? []
+                'dnd_days' => isset($input['dnd_days']) ? trim((string)$input['dnd_days']) : null
             ];
-
-            // Sanitize in_app_disabled_types
-            if (is_string($payload['in_app_disabled_types'])) {
-                $decoded = json_decode($payload['in_app_disabled_types'], true);
-                $payload['in_app_disabled_types'] = is_array($decoded) ? $decoded : [];
-            }
-            if (!is_array($payload['in_app_disabled_types'])) {
-                $payload['in_app_disabled_types'] = [];
-            }
-
-            // Only allow string types
-            $payload['in_app_disabled_types'] = array_values(array_filter($payload['in_app_disabled_types'], function ($t) {
-                return is_string($t) && $t !== '';
-            }));
 
             if ($payload['dnd_enabled']) {
                 if (empty($payload['dnd_start']) || empty($payload['dnd_end'])) {
@@ -507,7 +616,7 @@ class settings extends Controller{
             }
 
             $this->jsonResponse(['success' => true, 'message' => 'Notification settings saved']);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }

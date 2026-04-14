@@ -9,6 +9,7 @@
             header('Location: ' . URLROOT . '/adminlogin');
             exit();
         }
+        parent::__construct();
         $this->adminModel = $this->model('M_admin');
     }
 
