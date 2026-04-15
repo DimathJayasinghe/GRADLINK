@@ -361,10 +361,10 @@
                         $profileImage = !empty($user->profile_image) ? basename($user->profile_image) : 'default.jpg';
                     ?>
                     <div class="online-user-chip" title="<?php echo htmlspecialchars($displayName); ?>">
-                        <img src="<?php echo URLROOT; ?>/media/profile/<?php echo htmlspecialchars($profileImage); ?>"
+                        <img src="<?php echo URLROOT; ?>/storage/profile_pic/<?php echo htmlspecialchars($profileImage); ?>"
                              alt="<?php echo htmlspecialchars($displayName); ?>"
                              class="online-user-avatar"
-                             onerror="this.src='<?php echo URLROOT; ?>/media/profile/default.jpg';">
+                             onerror="this.src='<?php echo URLROOT; ?>/storage/profile_pic/default.jpg';">
                         <span class="online-user-chip-name"><?php echo htmlspecialchars($displayName); ?></span>
                     </div>
                 <?php endforeach; ?>
@@ -478,10 +478,10 @@
                     ?>
                     <div class="online-user-modal-item">
                         <div style="display:flex;align-items:center;gap:0.75rem;min-width:0;">
-                            <img src="<?php echo URLROOT; ?>/media/profile/<?php echo htmlspecialchars($profileImage); ?>"
+                            <img src="<?php echo URLROOT; ?>/storage/profile_pic/<?php echo htmlspecialchars($profileImage); ?>"
                                  alt="<?php echo htmlspecialchars($displayName); ?>"
                                  class="online-user-avatar"
-                                 onerror="this.src='<?php echo URLROOT; ?>/media/profile/default.jpg';">
+                                 onerror="this.src='<?php echo URLROOT; ?>/storage/profile_pic/default.jpg';">
                             <div style="min-width:0;">
                                 <div class="online-user-chip-name"><?php echo htmlspecialchars($displayName); ?></div>
                                 <div class="online-user-modal-meta">Last activity: <?php echo htmlspecialchars($lastActivity); ?></div>
