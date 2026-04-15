@@ -887,26 +887,41 @@ class M_admin {
     public function getOnlineUsers() {
         try {
             $this->db->query("
-                SELECT 
-                    ou.user_id,
-                    ou.session_id,
-                    ou.ip_address,
-                    ou.current_url,
-                    ou.last_activity,
-                    u.name,
-                    u.display_name,
-                    u.email,
+                SELECT
+                    u.id,
+                    COALESCE(NULLIF(u.display_name, ''), u.name) AS display_name,
                     u.profile_image,
-                    u.role
-                FROM online_users ou
-                JOIN users u ON ou.user_id = u.id
-                WHERE ou.last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
-                ORDER BY ou.last_activity DESC
+                    a.last_activity,
+                    COUNT(*) OVER() AS online_count
+                FROM user_activity a
+                JOIN users u ON u.id = a.user_id
+                WHERE a.last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+                ORDER BY a.last_activity DESC
             ");
-            return $this->db->resultSet();
+
+            $rows = $this->db->resultSet();
+            $onlineCount = !empty($rows) ? (int)($rows[0]->online_count ?? count($rows)) : 0;
+            $users = [];
+
+            foreach ($rows as $row) {
+                $users[] = (object) [
+                    'id' => (int)($row->id ?? 0),
+                    'display_name' => (string)($row->display_name ?? ''),
+                    'profile_image' => $row->profile_image ?? null,
+                    'last_activity' => $row->last_activity ?? null,
+                ];
+            }
+
+            return [
+                'online_count' => $onlineCount,
+                'users' => $users,
+            ];
         } catch (Exception $e) {
             error_log("Error getting online users: " . $e->getMessage());
-            return [];
+            return [
+                'online_count' => 0,
+                'users' => [],
+            ];
         }
     }
 
@@ -916,8 +931,8 @@ class M_admin {
     public function getOnlineUsersCount() {
         try {
             $this->db->query("
-                SELECT COUNT(*) as count 
-                FROM online_users 
+                SELECT COUNT(*) as count
+                FROM user_activity
                 WHERE last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
             ");
             return (int)($this->db->single()->count ?? 0);
