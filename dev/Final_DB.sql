@@ -367,13 +367,11 @@ CREATE TABLE email_otps (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE online_users (
-  user_id INT PRIMARY KEY,
-  session_id VARCHAR(128),
-  ip_address VARCHAR(45),
-  user_agent VARCHAR(512),
-  last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  current_url VARCHAR(512)
+CREATE TABLE user_activity (
+  user_id INT NOT NULL,
+  last_activity DATETIME NOT NULL,
+  PRIMARY KEY (user_id),
+  CONSTRAINT fk_user_activity_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE support_tickets (

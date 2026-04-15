@@ -1,20 +1,14 @@
 -- User Activity Logging System
 -- This creates the tables needed for tracking online users and URL access logs
 
--- 1. Online Users Table
--- Tracks currently online users (cleaned every 5 minutes)
--- We use INSERT ... ON DUPLICATE KEY UPDATE to avoid duplicates
-CREATE TABLE IF NOT EXISTS `online_users` (
+-- 1. User Activity Table
+-- Tracks the last time an authenticated user touched the backend.
+-- One row per user keeps the write path extremely cheap.
+CREATE TABLE IF NOT EXISTS `user_activity` (
     `user_id` INT NOT NULL,
-    `session_id` VARCHAR(128) NOT NULL,
-    `ip_address` VARCHAR(45) DEFAULT NULL,
-    `user_agent` VARCHAR(512) DEFAULT NULL,
-    `last_activity` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `current_url` VARCHAR(512) DEFAULT NULL,
-    
+    `last_activity` DATETIME NOT NULL,
     PRIMARY KEY (`user_id`),
-    KEY `idx_last_activity` (`last_activity`),
-    CONSTRAINT `fk_online_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+    CONSTRAINT `fk_user_activity_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- 2. URL Access Logs Table
@@ -43,36 +37,17 @@ CREATE TABLE IF NOT EXISTS `access_logs` (
     CONSTRAINT `fk_access_log_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- 3. Cleanup Event (runs every 5 minutes to clean online_users)
--- Note: MySQL Event Scheduler must be enabled: SET GLOBAL event_scheduler = ON;
-DELIMITER //
-CREATE EVENT IF NOT EXISTS `cleanup_online_users`
-ON SCHEDULE EVERY 5 MINUTE
-DO
-BEGIN
-    DELETE FROM `online_users` WHERE `last_activity` < DATE_SUB(NOW(), INTERVAL 5 MINUTE);
-END//
-DELIMITER ;
-
--- Alternative: If you can't use MySQL events, use this stored procedure and call it via cron
-DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS `sp_cleanup_online_users`()
-BEGIN
-    DELETE FROM `online_users` WHERE `last_activity` < DATE_SUB(NOW(), INTERVAL 5 MINUTE);
-END//
-DELIMITER ;
-
--- Utility queries for admin dashboard:
+-- 3. Utility queries for admin dashboard:
 
 -- Get count of currently online users
--- SELECT COUNT(*) as online_count FROM online_users WHERE last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE);
+-- SELECT COUNT(*) as online_count FROM user_activity WHERE last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE);
 
 -- Get list of online users with details
--- SELECT ou.*, u.name, u.display_name, u.email 
--- FROM online_users ou 
--- JOIN users u ON ou.user_id = u.id 
--- WHERE ou.last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
--- ORDER BY ou.last_activity DESC;
+-- SELECT u.id, COALESCE(NULLIF(u.display_name, ''), u.name) AS display_name, u.profile_image, a.last_activity
+-- FROM user_activity a
+-- JOIN users u ON a.user_id = u.id
+-- WHERE a.last_activity > DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+-- ORDER BY a.last_activity DESC;
 
 -- Get access logs for today
 -- SELECT * FROM access_logs WHERE DATE(created_at) = CURDATE() ORDER BY created_at DESC LIMIT 100;

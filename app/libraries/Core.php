@@ -33,6 +33,8 @@
             // Instantiate the controller class
             $this->currentContoller = new $this->currentContoller;
 
+            $this->trackAuthenticatedActivity();
+
             // Check whether the method exists in the controller or not
             if ($url && isset($url[1])){
                 if (method_exists($this->currentContoller, $url[1])) {
@@ -96,6 +98,28 @@
                 }
             }
             return null;
+        }
+
+        private function trackAuthenticatedActivity(): void {
+            try {
+                if (!SessionManager::isLoggedIn()) {
+                    return;
+                }
+
+                $userId = SessionManager::getUserId();
+                if (!$userId) {
+                    return;
+                }
+
+                $db = new Database();
+                $db->query(
+                    'INSERT INTO user_activity (user_id, last_activity) VALUES (:user_id, NOW()) ON DUPLICATE KEY UPDATE last_activity = NOW()'
+                );
+                $db->bind(':user_id', $userId, PDO::PARAM_INT);
+                $db->execute();
+            } catch (Throwable $e) {
+                error_log('Failed to track authenticated activity: ' . $e->getMessage());
+            }
         }
     }
 ?>
