@@ -3,6 +3,9 @@ class Profile extends Controller{
     protected $Model;
    
     public function __construct() {
+        // Initialize parent constructor to set up notificationModel
+        parent::__construct();
+        
         // If it's an API/AJAX call to certificate endpoints, return JSON on unauthenticated
         $isApi = (
             (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
@@ -33,11 +36,11 @@ class Profile extends Controller{
         if (!$user_id){
             $user_id = $_SESSION['user_id'];
         }
-        $isBlocked = $this->Model->isBlocked($_SESSION['user_id'], $user_id);
-        if ($isBlocked){
-            header("Location: " . URLROOT . "/profile?userid=" . $_SESSION['user_id']);
-            exit;
-        }
+        // $isBlocked = $this->Model->isBlocked($_SESSION['user_id'], $user_id);
+        // if ($isBlocked){
+        //     header("Location: " . URLROOT . "/profile?userid=" . $_SESSION['user_id']);
+        //     exit;
+        // }
 
 
         // handle other user profile view
@@ -48,18 +51,18 @@ class Profile extends Controller{
             $data['certificates'] = $this->Model->getCertificates($user_id);
             $data['projects'] = $this->Model->getProjects($user_id);
             $isFollwed = $this->Model->isFollowed($_SESSION['user_id'], $user_id);
-            // Ensure boolean for view logic
+            $hasPending = $this->Model->hasPendingFollowRequest($_SESSION['user_id'], $user_id);
+            // Set for view logic
             $data['isfollowed'] = $isFollwed;
-            $data['isBlocked'] = $isBlocked;
+            $data['has_pending_request'] = $hasPending;
             
-            if ($_SESSION['user_id'] == $user_id || $isFollwed) {
-                $data['posts'] = $this->Model->getPosts($user_id);
-                // Add liked status to posts - same as in mainfeed
-                $postModel = $this->model('M_post');
-                $current_user_id = $_SESSION['user_id'];
-                foreach ($data['posts'] as $p) {
-                    $p->liked = $postModel->isLiked($p->id, $current_user_id);
-                }
+            // Always load posts for any profile
+            $data['posts'] = $this->Model->getPosts($user_id);
+            // Add liked status to posts - same as in mainfeed
+            $postModel = $this->model('M_post');
+            $current_user_id = $_SESSION['user_id'];
+            foreach ($data['posts'] as $p) {
+                $p->liked = $postModel->isLiked($p->id, $current_user_id);
             }
             
 
@@ -102,17 +105,58 @@ class Profile extends Controller{
 
             // Check current follow status
             $isFollowed = $this->Model->isFollowed($current_user_id, $profile_user_id);
+            $hasPending = $this->Model->hasPendingFollowRequest($current_user_id, $profile_user_id);
             $result = false;
+            $action = '';
+            
             if ($isFollowed) {
                 // Unfollow
                 $result = $this->Model->unfollowUser($current_user_id, $profile_user_id);
+                $action = 'unfollowed';
+            } elseif ($hasPending) {
+                // Cancel pending request
+                $result = $this->Model->cancelFollowRequest($current_user_id, $profile_user_id);
+                $action = 'cancelled';
             } else {
-                // Follow
-                $result = $this->Model->followUser($current_user_id, $profile_user_id);
+                // Create follow request
+                $requestId = $this->Model->createFollowRequest($current_user_id, $profile_user_id);
+                $result = $requestId ? true : false;
+                $action = 'requested';
+                
+                // Send notification to target user
+                if ($result) {
+                    try {
+                        error_log('[Profile::follow] Sending follow request notification to user: ' . $profile_user_id);
+                        
+                        if ($profile_user_id && (int)$profile_user_id > 0 && (int)$profile_user_id !== (int)$current_user_id) {
+                            $requester = $this->Model->getUserDetails($current_user_id);
+                            $notification_type = 'follow_request';
+                            // Use requester's user_id as reference_id for easy lookup
+                            $reference_id = $current_user_id;
+                            $content = [
+                                'requester_name' => $requester->display_name ?? $_SESSION['user_name'] ?? 'Someone',
+                                'requester_id' => $current_user_id,
+                                'requester_image' => $requester->profile_image ?? '',
+                                'text' => ($requester->display_name ?? $_SESSION['user_name'] ?? 'Someone') . ' wants to follow you',
+                                'link' => '/profile?userid=' . $current_user_id,
+                                'request_id' => $requestId
+                            ];
+                            error_log('[Profile::follow] Notification content: ' . json_encode($content));
+                            $notifyResult = $this->notify($profile_user_id, $notification_type, $reference_id, $content);
+                            error_log('[Profile::follow] notify() returned: ' . var_export($notifyResult, true));
+                        }
+                    } catch (Throwable $e) {
+                        error_log("[Profile::follow] EXCEPTION in notification: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+                    }
+                }
             }
-
+            
             if ($result) {
-                echo json_encode(['success' => true, 'connected' => !$isFollowed]);
+                echo json_encode([
+                    'success' => true, 
+                    'action' => $action,
+                    'connected' => $isFollowed ? false : ($action === 'requested' ? 'pending' : true)
+                ]);
             } else {
                 echo json_encode(['success' => false, 'error' => 'Failed to update follow status']);
             }
@@ -501,183 +545,70 @@ class Profile extends Controller{
         }
     }
 
-    public function addWorkExperience()
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Content-Type: application/json');
-            http_response_code(405);
-            echo json_encode(['success' => false , 'error' => 'Method not allowed']);
-            return;
-        }
-
-        header('Content-Type: application/json');
-
-        $position = trim($_POST['position'] ?? '');
-        $company = trim($_POST['company'] ?? '');
-        $period = trim($_POST['period'] ?? '');
-
-        // Basic form validation
-        if ($position === '' || $company === '' || $period === '') {
-            echo json_encode(['success' => false, 'error' => 'Please provide position, company and period']);
-            return;
-        }
-
-        // Persist DB record via model
-        if ($this->Model->createWorkExperience($_SESSION['user_id'], $position, $company, $period)){
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to save work experience record.']);
-            return;
-        }
-    }
-
-    public function updateWorkExperience()
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Content-Type: application/json');
-            http_response_code(405);
-            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
-            return;
-        } 
-
-        header('Content-Type: application/json');
-
-        $work_id = intval($_POST['work_id'] ?? 0);
-        $position = trim($_POST['position'] ?? '');
-        $company = trim($_POST['company'] ?? '');
-        $period = trim($_POST['period'] ?? '');
-
-        // Basic form validation
-        if ($work_id <= 0 || $position === '' || $company === '' || $period === '') {
-            echo json_encode(['success' => false, 'error' => 'Please provide valid work experience details']);
-            return;
-        }
-
-        // Update DB record via model
-        if($this->Model->updateWorkExperience($_SESSION['user_id'], $work_id, $position, $company, $period)){
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to update work experience record.']);
-            return;
-        }
-    }
-
-    public function deleteWorkExperience()
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE'){
+    public function approveFollowRequest(){
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST'){
             header('Content-Type: application/json');
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
             return;
         }
+
         header('Content-Type: application/json');
 
-        //Ensure user logged in
-        if (!isset($_SESSION['user_id'])){
-            echo json_encode(['success' => false, 'error' => 'Not authenticated']);
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
             return;
         }
 
-        $work_id = intval($this->getQueryParam('id', 0));
-        if ($work_id <= 0){
-            echo json_encode(['success' => false, 'error' => 'Invalid work experinece id']);
-            return;
-        }
-
-        // Fetch work experience record
-        $work = null;
-        if (method_exists($this->Model, 'getWorkExperienceById')) {
-            $work = $this->Model->getWorkExperienceById($work_id);
-        } else {
-            // fallback: search user's work experiences
-            $works = $this->Model->getWorkExperiences($_SESSION['user_id']);
-            if (is_array($works)) {
-                foreach ($works as $w) {
-                    $wid = isset($w->id) ? intval($w->id) : (isset($w->work_id) ? intval($w->work_id) : 0);
-                    if ($wid === $work_id) { $work = $w; break; }
-                }
+        $payload = null;
+        $ct = isset($_SERVER['CONTENT_TYPE']) ? strtolower($_SERVER['CONTENT_TYPE']) : '';
+        if (strpos($ct, 'application/json') !== false) {
+            $raw = file_get_contents('php://input');
+            if ($raw) {
+                $json = json_decode($raw, true);
+                if (is_array($json)) $payload = $json;
             }
         }
+        
+        $requester_id = 0;
+        if (is_array($payload)) {
+            $requester_id = intval($payload['requester_id'] ?? 0);
+        } else {
+            $requester_id = intval($_POST['requester_id'] ?? 0);
+        }
 
-        if (!$work){
-            echo json_encode(['success' => false, 'error' => 'Work experince not found']);
+        if ($requester_id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid requester id']);
             return;
         }
 
-        //Only owner can delete
-        $ownerId = $work->user_id ?? ($work->userId ?? null);
-        if ($ownerId == null || intval($ownerId) !== intval($_SESSION['user_id'])) {
-            echo json_encode(['success' => false, 'error' => 'Permission denied']);
-            return;
-        }
+        $result = $this->Model->approveFollowRequest($requester_id, $_SESSION['user_id']);
 
-        // Delete DB row via model. Expect model->deleteWorkExperience(user_id, work_id) or deleteWorkExperienceById(work_id)
-        $deleted = false;
-        if (method_exists($this->Model, 'deleteWorkExperience')) {
-            $deleted = $this->Model->deleteWorkExperience($_SESSION['user_id'], $work_id);
-        } elseif (method_exists($this->Model, 'deleteWorkExperienceById')){
-            $deleted = $this->Model->deleteWorkExperienceById($work_id);
+        if ($result) {
+            // Send "started_following" notification to the requester
+            try {
+                $approver = $this->Model->getUserDetails($_SESSION['user_id']);
+                $notification_type = 'started_following';
+                $reference_id = $_SESSION['user_id'];
+                $content = [
+                    'follower_name' => $approver->display_name ?? $_SESSION['user_name'] ?? 'Someone',
+                    'follower_id' => $_SESSION['user_id'],
+                    'text' => ($approver->display_name ?? $_SESSION['user_name'] ?? 'Someone') . ' accepted your follow request',
+                    'link' => '/profile?userid=' . $_SESSION['user_id']
+                ];
+                $this->notify($requester_id, $notification_type, $reference_id, $content);
+            } catch (Throwable $e) {
+                error_log("[Profile::approveFollowRequest] EXCEPTION in notification: " . $e->getMessage());
+            }
             
+            echo json_encode(['success' => true, 'message' => 'Follow request approved']);
         } else {
-            // No model method found
-            error_log("Profile::deleteWorkExperience - model method deleteWorkExperience not found");
-            echo json_encode(['success' => false, 'error' => 'Server not configured to delete work experience']);
-            return;
-        }
-
-        if ($deleted){
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to delete work experience']);
-        }
-        
-
-    }
-
-    public function addProjects()
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Content-Type: application/json');
-            http_response_code(405);
-            echo json_encode(['success' => false , 'error' => 'Method not allowed']);
-            return;
-        }
-
-        header('Content-Type: application/json');
-
-        $title = trim($_POST['project_title'] ?? '');
-        $description = trim($_POST['project_description'] ?? '');
-        $skills = trim($_POST['project_skills'] ?? ''); 
-        $start_date = trim($_POST['project_start_date'] ?? '');
-        $end_date = trim($_POST['project_end_date'] ?? '');
-
-        // Convert empty dates to null
-        if ($start_date === '') {
-            $start_date = null;
-        }
-        if ($end_date === '') {
-            $end_date = null;
-        }
-
-        // Basic form validation
-        if ($title === '' || $description === '' || $skills === '') {
-            echo json_encode(['success' => false, 'error' => 'Please provide title, description, and skills']);
-            return;
-        }
-
-        // Persist DB record via model
-        
-        if ($this->Model->createProject($_SESSION['user_id'], $title, $description, $skills, $start_date, $end_date)){
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to save project record.']);
-            return;
+            echo json_encode(['success' => false, 'error' => 'Failed to approve request']);
         }
     }
 
-    public function updateProjects()
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    public function rejectFollowRequest(){
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST'){
             header('Content-Type: application/json');
             http_response_code(405);
             echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -686,103 +617,39 @@ class Profile extends Controller{
 
         header('Content-Type: application/json');
 
-        $project_id = intval($_POST['project_id'] ?? 0);
-        $title = trim($_POST['project_title'] ?? '');
-        $description = trim($_POST['project_description'] ?? '');
-        $skills = trim($_POST['project_skills'] ?? '');
-        $start_date = trim($_POST['project_start_date'] ?? '');
-        $end_date = trim($_POST['project_end_date'] ?? '');
-        
-        // Convert empty dates to null
-        if ($start_date === '') {
-            $start_date = null;
-        }
-        if ($end_date === '') {
-            $end_date = null;
-        }
-
-        // Basic form validation
-        if ($project_id <= 0 || $title === '' || $description === '' || $skills === '') {
-            echo json_encode(['success' => false, 'error' => 'Please provide valid project details']);
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'error' => 'Unauthorized']);
             return;
         }
 
-        // Update DB record via model
-        if($this->Model->updateProject($_SESSION['user_id'], $project_id, $title, $description, $skills, $start_date, $end_date)) {
-            echo json_encode(['success' => true]);
-
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to update project record.']);
-            return;
-        }
-
-    
-    }
-
-    public function deleteProject()
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== 'DELETE'){
-            header('Content-Type: application/json');
-            http_response_code(405);
-            echo json_encode(['success' => false, 'error' => 'Method not allowed']);
-            return;
-        }
-        header('Content-Type: application/json');
-
-        //Ensure user logged in
-        if (!isset($_SESSION['user_id'])){
-            echo json_encode(['success' => false, 'error' => 'Not authenticated']);
-            return;
-        }
-
-        $project_id = intval($this->getQueryParam('id', 0));
-        if ($project_id <= 0){
-            echo json_encode(['success' => false, 'error' => 'Invalid project id']);
-            return;
-        }
-
-        // Fetch project record
-        $project = null;
-        if (method_exists($this->Model, 'getProjectById')) {
-            $project = $this->Model->getProjectById($project_id);
-        } else {
-            // fallback: search user's projects
-            $projects = $this->Model->getProjects($_SESSION['user_id']);
-            if (is_array($projects)) {
-                foreach ($projects as $p) {
-                    $pid = isset($p->id) ? intval($p->id) : (isset($p->project_id) ? intval($p->project_id) : 0);
-                    if ($pid === $project_id) { $project = $p; break; }
-                }
+        $payload = null;
+        $ct = isset($_SERVER['CONTENT_TYPE']) ? strtolower($_SERVER['CONTENT_TYPE']) : '';
+        if (strpos($ct, 'application/json') !== false) {
+            $raw = file_get_contents('php://input');
+            if ($raw) {
+                $json = json_decode($raw, true);
+                if (is_array($json)) $payload = $json;
             }
         }
-        if (!$project) {
-            echo json_encode(['success' => false, 'error' => 'Project not found']);
+        
+        $requester_id = 0;
+        if (is_array($payload)) {
+            $requester_id = intval($payload['requester_id'] ?? 0);
+        } else {
+            $requester_id = intval($_POST['requester_id'] ?? 0);
+        }
+
+        if ($requester_id <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid requester id']);
             return;
         }
 
-        // Only owner can delete
-        $owner_id = $project->user_id ?? ($project->userId ?? null);
-        if ($owner_id == null || intval($owner_id) !== intval($_SESSION['user_id'])) {
-            echo json_encode(['success' => false, 'error' => 'Permission denied']);
-            return;
-        }
+        $result = $this->Model->rejectFollowRequest($requester_id, $_SESSION['user_id']);
 
-        // Delete DB row via model. Expect model->deleteProject(user_id, project_id) or deleteProjectById(project_id)
-        $deleted = false;
-        if (method_exists($this->Model, 'deleteProject')) {
-            $deleted = $this->Model->deleteProject($_SESSION['user_id'], $project_id);
-        } elseif (method_exists($this->Model, 'deleteProjectById')){
-            $deleted = $this->Model->deleteProjectById($project_id);
+        if ($result) {
+            echo json_encode(['success' => true, 'message' => 'Follow request rejected']);
         } else {
-            // No model method found
-            error_log("Profile::deleteProject - model method deleteProject not found");
-            echo json_encode(['success' => false, 'error' => 'Server not configured to delete project']);
-            return;
-        }
-        if ($deleted) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Failed to delete project record.']);
+            echo json_encode(['success' => false, 'error' => 'Failed to reject request']);
         }
     }
 
