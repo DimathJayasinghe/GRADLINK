@@ -303,35 +303,27 @@ class Post extends Controller
 
 
     // --- ADMIN CONTENT MANAGEMENT ENDPOINTS ---
-    // Only allow access if user is admin (add your own admin check logic)
     public function admin_list()
     {
-        // DEBUG: Output session and query info
-        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
+        if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
-            echo 'Forbidden';
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Forbidden']);
             return;
         }
         $status = $_GET['status'] ?? 'all';
         $search = $_GET['search'] ?? '';
         $posts = $this->m->adminGetPosts($status, $search);
         header('Content-Type: application/json');
-        echo json_encode([
-            'debug' => [
-                'session' => $_SESSION,
-                'status' => $status,
-                'search' => $search,
-                'count' => is_array($posts) ? count($posts) : 0,
-            ],
-            'posts' => $posts
-        ]);
+        echo json_encode(['posts' => $posts]);
     }
 
     public function admin_approve($id)
     {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+        if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
-            echo 'Forbidden';
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
             return;
         }
         $ok = $this->m->adminApprovePost($id);
@@ -341,9 +333,10 @@ class Post extends Controller
 
     public function admin_reject($id)
     {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+        if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
-            echo 'Forbidden';
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
             return;
         }
         $ok = $this->m->adminRejectPost($id);
@@ -353,14 +346,50 @@ class Post extends Controller
 
     public function admin_delete($id)
     {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
+        if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
-            echo 'Forbidden';
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
             return;
         }
         $ok = $this->m->adminDeletePost($id);
         header('Content-Type: application/json');
         echo json_encode(['ok' => $ok]);
+    }
+
+    /**
+     * Serve post image from storage
+     */
+    public function image($filename = null)
+    {
+        if (!$filename) {
+            http_response_code(404);
+            return;
+        }
+
+        // Sanitize filename - only allow alphanumeric, underscore, dash, dot
+        $filename = preg_replace('/[^a-zA-Z0-9._-]/', '', $filename);
+        if (!$filename) {
+            http_response_code(404);
+            return;
+        }
+
+        $filepath = APPROOT . '/storage/posts/' . $filename;
+
+        if (!is_file($filepath)) {
+            http_response_code(404);
+            return;
+        }
+
+        $mime = mime_content_type($filepath);
+        if (!$mime) {
+            $mime = 'application/octet-stream';
+        }
+
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($filepath));
+        header('Cache-Control: public, max-age=86400');
+        readfile($filepath);
     }
 
     // Delete post by owner or admin
