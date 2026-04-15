@@ -49,7 +49,17 @@
                 endforeach;
             else:
                 ?>
-                <div id="noWorkExpMessage">No work experience added yet.</div>
+                <div class="info-empty-state" id="noWorkExpMessage">
+                    <div class="info-empty-icon"><i class="fas fa-briefcase"></i></div>
+                    <div class="info-empty-title">No Work Experience Yet</div>
+                    <div class="info-empty-text">
+                        <?php if ($isOwner): ?>
+                            Click the + icon to add your first work experience.
+                        <?php else: ?>
+                            This user has not added work experience yet.
+                        <?php endif; ?>
+                    </div>
+                </div>
             <?php endif; ?>
         </div>
 
@@ -106,7 +116,17 @@
                 endforeach;
             else:
                 ?>
-                <div>No certificates added yet.</div>
+                <div class="info-empty-state">
+                    <div class="info-empty-icon"><i class="fas fa-certificate"></i></div>
+                    <div class="info-empty-title">No Certificates Yet</div>
+                    <div class="info-empty-text">
+                        <?php if ($isOwner): ?>
+                            Click the + icon to add your first certificate.
+                        <?php else: ?>
+                            This user has not added certificates yet.
+                        <?php endif; ?>
+                    </div>
+                </div>
             <?php endif; ?>
         </div>
 
@@ -166,7 +186,17 @@
                     </div>
                 <?php endforeach;
             else: ?>
-                <div>No projects added yet.</div>
+                <div class="info-empty-state">
+                    <div class="info-empty-icon"><i class="fas fa-project-diagram"></i></div>
+                    <div class="info-empty-title">No Projects Yet</div>
+                    <div class="info-empty-text">
+                        <?php if ($isOwner): ?>
+                            Click the + icon to add your first project.
+                        <?php else: ?>
+                            This user has not added projects yet.
+                        <?php endif; ?>
+                    </div>
+                </div>
             <?php endif; ?>
         </div>
     </div>
