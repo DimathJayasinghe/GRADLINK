@@ -3,6 +3,12 @@ class fundraiser extends Controller
 {
     private $model = null;
     private $mediaHandler = null;
+
+    private function renderCreateRequestView(array $data = []): void
+    {
+        $this->view('/request_dashboards/fundraise/v_create_fundraise_req', $data);
+    }
+
     public function __construct()
     {
         // Check if it's the search API endpoint, skip auth
@@ -73,7 +79,7 @@ class fundraiser extends Controller
     }
     public function request()
     {
-        $this->view("/request_dashboards/fundraise/v_create_fundraise_req");
+        $this->renderCreateRequestView();
     }
     public function myrequests()
     {
@@ -283,9 +289,10 @@ class fundraiser extends Controller
             if(count($errors) > 0){
                 $data = [
                     'success' => false,
-                    'errors' => $errors
-                ];                
-                $this->view('fundraiser/request', $data);
+                    'errors' => $errors,
+                    'old' => $queryValues
+                ];
+                $this->renderCreateRequestView($data);
                 exit;
             }
             
@@ -306,6 +313,16 @@ class fundraiser extends Controller
             }
 
             $result = $this->model->createNewFundraiserRequest($queryValues);
+            if (!$result) {
+                $data = [
+                    'success' => false,
+                    'errors' => ['Unable to create fundraiser request right now. Please try again.'],
+                    'old' => $queryValues
+                ];
+                $this->renderCreateRequestView($data);
+                exit;
+            }
+
             $this->redirect('/fundraiser/myrequests');
             exit;
         } else {
