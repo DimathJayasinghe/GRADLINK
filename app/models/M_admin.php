@@ -265,6 +265,11 @@ class M_admin {
             ');
             return $this->db->resultSet();
         } catch (Throwable $e) {
+            error_log("Error fetching post reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
     private function safeCount(string $sql): int {
         try {
             $this->db->query($sql);
@@ -351,8 +356,6 @@ class M_admin {
         }
     }
 
-<<<<<<< HEAD
-=======
     private function getEventPipelineMetrics(): array {
         $requests = [];
         $events = [];
@@ -807,7 +810,6 @@ class M_admin {
         return ['roles' => [], 'batches' => [], 'skills' => [], 'genders' => [], 'event_status' => [], 'event_request_status' => []];
     }
 
->>>>>>> event-calendar-management
     /**
      * Authenticate admin user
      */
@@ -837,7 +839,6 @@ class M_admin {
         return $this->db->single();
     }
 
-<<<<<<< HEAD
     // ==================== USER SUSPENSION METHODS ====================
 
     private function ensureSuspendedUsersTable(): void {
@@ -890,7 +891,12 @@ class M_admin {
                 LEFT JOIN users sb ON sb.id = su.suspended_by
                 WHERE su.status = 'active'
                 ORDER BY su.suspended_at DESC");
-=======
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
     /**
      * Get user locations (countries) for map visualization
      * @param string|null $role - Filter by role (admin, alumni, undergrad)
@@ -933,14 +939,12 @@ class M_admin {
                 $this->db->bind($param, $value);
             }
             
->>>>>>> event-calendar-management
             return $this->db->resultSet();
         } catch (Exception $e) {
             return [];
         }
     }
 
-<<<<<<< HEAD
     public function getSuspensionHistory(int $limit = 100): array {
         try {
             $this->ensureSuspendedUsersTable();
@@ -1560,7 +1564,10 @@ class M_admin {
             return [
                 'online_count' => 0,
                 'users' => [],
-=======
+            ];
+        }
+    }
+
     /**
      * Get location distribution summary
      * @param string|null $role - Filter by role
@@ -1614,13 +1621,11 @@ class M_admin {
                 'total_countries' => 0,
                 'total_users_with_location' => 0,
                 'most_common_country' => 'N/A'
->>>>>>> event-calendar-management
             ];
         }
     }
 
     /**
-<<<<<<< HEAD
      * Get count of currently online users
      */
     public function getOnlineUsersCount() {
@@ -1730,7 +1735,14 @@ class M_admin {
                 GROUP BY hour
                 ORDER BY hour ASC
             ");
-=======
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting hourly activity: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Get countries list for filter dropdown
      * @return array - List of countries with user counts
      */
@@ -1742,14 +1754,12 @@ class M_admin {
                               FROM user_locations
                               GROUP BY country
                               ORDER BY user_count DESC");
->>>>>>> event-calendar-management
             return $this->db->resultSet();
         } catch (Exception $e) {
             return [];
         }
     }
 
-<<<<<<< HEAD
     // ==================== SUPPORT MANAGEMENT METHODS ====================
 
     /**
@@ -1772,7 +1782,10 @@ class M_admin {
             return $this->db->resultSet();
         } catch (Exception $e) {
             error_log("Error getting support tickets: " . $e->getMessage());
-=======
+            return [];
+        }
+    }
+
     /**
      * Get batches list for filter dropdown
      * @return array - List of batches
@@ -1785,13 +1798,11 @@ class M_admin {
                               ORDER BY batch_no DESC");
             return $this->db->resultSet();
         } catch (Exception $e) {
->>>>>>> event-calendar-management
             return [];
         }
     }
 
     /**
-<<<<<<< HEAD
      * Get a single support ticket by ID
      */
     public function getSupportTicketById($id) {
@@ -2012,7 +2023,9 @@ class M_admin {
         }
 
         return $stats;
-=======
+    }
+
+    /**
      * Get country-level data (for chart visualization)
      * @param string|null $role - Filter by role
      * @return array - Country data with user counts
@@ -2020,7 +2033,6 @@ class M_admin {
     public function getLocationHeatmapData(?string $role = null): array {
         // For simplified version, just return country counts
         return $this->getUserLocations($role, null, null);
->>>>>>> event-calendar-management
     }
 }
 ?>
