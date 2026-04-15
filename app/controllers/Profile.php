@@ -11,12 +11,12 @@ class Profile extends Controller{
             (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)
             || (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
         );
-        $isCertApiPath = isset($_SERVER['REQUEST_URI']) && preg_match('#/profile/(addCertificate|updateCertificate|deleteCertificate)#i', $_SERVER['REQUEST_URI']);
+        $isProfileApiPath = isset($_SERVER['REQUEST_URI']) && preg_match('#/profile/(addCertificate|updateCertificate|deleteCertificate|addWorkExperience|updateWorkExperience|deleteWorkExperience|addProjects|updateProjects|deleteProjects)#i', $_SERVER['REQUEST_URI']);
 
         if (!isset($_SESSION)) { @session_start(); }
 
         if (!isset($_SESSION['user_id'])) {
-            if ($isApi && $isCertApiPath) {
+            if ($isApi && $isProfileApiPath) {
                 header('Content-Type: application/json');
                 http_response_code(401);
                 echo json_encode(['success' => false, 'error' => 'Not authenticated']);
@@ -29,6 +29,23 @@ class Profile extends Controller{
         // json_decode() → JSON → PHP
         SessionManager:: redirectToAuthIfNotLoggedIn();
         $this->Model = $this->model('M_Profile');
+    }
+
+    private function respondJson(array $payload, int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($payload);
+    }
+
+    private function ensureJsonMethod(string $method): bool
+    {
+        if (strtoupper($_SERVER['REQUEST_METHOD'] ?? '') !== strtoupper($method)) {
+            $this->respondJson(['success' => false, 'error' => 'Method not allowed'], 405);
+            return false;
+        }
+
+        return true;
     }
 
     public function index(){
@@ -543,6 +560,213 @@ class Profile extends Controller{
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to delete certificate']);
         }
+    }
+
+    public function addWorkExperience()
+    {
+        if (!$this->ensureJsonMethod('POST')) {
+            return;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $position = trim((string)($_POST['position'] ?? ''));
+        $company = trim((string)($_POST['company'] ?? ''));
+        $period = trim((string)($_POST['period'] ?? ''));
+
+        if ($position === '' || $company === '' || $period === '') {
+            $this->respondJson(['success' => false, 'error' => 'Position, company, and period are required'], 422);
+            return;
+        }
+
+        $ok = $this->Model->createWorkExperience($userId, $position, $company, $period);
+        if (!$ok) {
+            $this->respondJson(['success' => false, 'error' => 'Failed to create work experience'], 500);
+            return;
+        }
+
+        $this->respondJson(['success' => true]);
+    }
+
+    public function updateWorkExperience()
+    {
+        if (!$this->ensureJsonMethod('POST')) {
+            return;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $workId = (int)($_POST['work_id'] ?? 0);
+        $position = trim((string)($_POST['position'] ?? ''));
+        $company = trim((string)($_POST['company'] ?? ''));
+        $period = trim((string)($_POST['period'] ?? ''));
+
+        if ($workId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Invalid work experience id'], 422);
+            return;
+        }
+
+        if ($position === '' || $company === '' || $period === '') {
+            $this->respondJson(['success' => false, 'error' => 'Position, company, and period are required'], 422);
+            return;
+        }
+
+        $ok = $this->Model->updateWorkExperience($userId, $workId, $position, $company, $period);
+        if (!$ok) {
+            $this->respondJson(['success' => false, 'error' => 'Failed to update work experience'], 500);
+            return;
+        }
+
+        $this->respondJson(['success' => true]);
+    }
+
+    public function deleteWorkExperience()
+    {
+        if (!$this->ensureJsonMethod('DELETE')) {
+            return;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $workId = (int)$this->getQueryParam('id', 0);
+        if ($workId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Invalid work experience id'], 422);
+            return;
+        }
+
+        $ok = $this->Model->deleteWorkExperience($userId, $workId);
+        if (!$ok) {
+            $this->respondJson(['success' => false, 'error' => 'Failed to delete work experience'], 500);
+            return;
+        }
+
+        $this->respondJson(['success' => true]);
+    }
+
+    public function addProjects()
+    {
+        if (!$this->ensureJsonMethod('POST')) {
+            return;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $title = trim((string)($_POST['project_title'] ?? ''));
+        $description = trim((string)($_POST['project_description'] ?? ''));
+        $skills = trim((string)($_POST['project_skills'] ?? ''));
+        $startDate = trim((string)($_POST['project_start_date'] ?? ''));
+        $endDate = trim((string)($_POST['project_end_date'] ?? ''));
+
+        if ($title === '') {
+            $this->respondJson(['success' => false, 'error' => 'Project title is required'], 422);
+            return;
+        }
+
+        $ok = $this->Model->createProject(
+            $userId,
+            $title,
+            $description !== '' ? $description : null,
+            $skills !== '' ? $skills : null,
+            $startDate !== '' ? $startDate : null,
+            $endDate !== '' ? $endDate : null
+        );
+
+        if (!$ok) {
+            $this->respondJson(['success' => false, 'error' => 'Failed to create project'], 500);
+            return;
+        }
+
+        $this->respondJson(['success' => true]);
+    }
+
+    public function updateProjects()
+    {
+        if (!$this->ensureJsonMethod('POST')) {
+            return;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $projectId = (int)($_POST['project_id'] ?? 0);
+        $title = trim((string)($_POST['project_title'] ?? ''));
+        $description = trim((string)($_POST['project_description'] ?? ''));
+        $skills = trim((string)($_POST['project_skills'] ?? ''));
+        $startDate = trim((string)($_POST['project_start_date'] ?? ''));
+        $endDate = trim((string)($_POST['project_end_date'] ?? ''));
+
+        if ($projectId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Invalid project id'], 422);
+            return;
+        }
+
+        if ($title === '') {
+            $this->respondJson(['success' => false, 'error' => 'Project title is required'], 422);
+            return;
+        }
+
+        $ok = $this->Model->updateProject(
+            $userId,
+            $projectId,
+            $title,
+            $description !== '' ? $description : null,
+            $skills !== '' ? $skills : null,
+            $startDate !== '' ? $startDate : null,
+            $endDate !== '' ? $endDate : null
+        );
+
+        if (!$ok) {
+            $this->respondJson(['success' => false, 'error' => 'Failed to update project'], 500);
+            return;
+        }
+
+        $this->respondJson(['success' => true]);
+    }
+
+    public function deleteProjects()
+    {
+        if (!$this->ensureJsonMethod('DELETE')) {
+            return;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        if ($userId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Not authenticated'], 401);
+            return;
+        }
+
+        $projectId = (int)$this->getQueryParam('id', 0);
+        if ($projectId <= 0) {
+            $this->respondJson(['success' => false, 'error' => 'Invalid project id'], 422);
+            return;
+        }
+
+        $ok = $this->Model->deleteProject($userId, $projectId);
+        if (!$ok) {
+            $this->respondJson(['success' => false, 'error' => 'Failed to delete project'], 500);
+            return;
+        }
+
+        $this->respondJson(['success' => true]);
     }
 
     public function approveFollowRequest(){

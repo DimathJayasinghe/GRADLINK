@@ -235,8 +235,7 @@ class M_Profile{
     }
 
     public function createProject($user_id, $title, $description, $skills, $start_date, $end_date){
-
-        try{
+        try {
             $this->db->query('INSERT INTO projects (user_id, title, description, skills_used, start_date, end_date) VALUES (:uid, :title, :description, :skills, :start_date, :end_date)');
             $this->db->bind(':uid', $user_id);
             $this->db->bind(':title', $title);
@@ -245,9 +244,8 @@ class M_Profile{
             $this->db->bind(':start_date', $start_date);
             $this->db->bind(':end_date', $end_date);
             return $this->db->execute();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log("Project Creation Error: " . $e->getMessage());
-            echo $e->getMessage();
             return false;
         }
     }
