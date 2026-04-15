@@ -12,7 +12,7 @@
 				<p>Receive updates via email</p>
 			</div>
 			<label class="toggle">
-				<input type="checkbox" id="emailNotif" checked>
+				<input type="checkbox" id="emailNotif">
 				<span class="slider"></span>
 			</label>
 		</div>
@@ -134,211 +134,59 @@
 </div> -->
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function() {
 	const URLROOT = '<?= URLROOT ?>';
-	const dndModal = document.getElementById('dndModal');
-	const openDND = document.getElementById('openDND');
-	const dndForm = document.getElementById('dndForm');
+	const emailToggle = document.getElementById('emailNotif');
 
-	// Keep a local cache so missing UI controls don't accidentally overwrite saved values.
-	let settingsCache = {
-		email_enabled: 1,
-		sound_enabled: 0,
-		mentions_enabled: 1,
-		followers_enabled: 1,
-		engagement_enabled: 1,
-		dnd_enabled: 0,
-		dnd_start: null,
-		dnd_end: null,
-		dnd_days: null
-	};
-
-	// Load initial settings from backend
-	loadNotificationSettings();
-
-	// Modal handlers
-	if (openDND) openDND.addEventListener('click', () => openModal(dndModal));
-
-	document.querySelectorAll('.settings-close-modal, .cancel-modal').forEach(el => {
-		el.addEventListener('click', function(){ closeModal(this.closest('.settings-modal')); });
-	});
-
-	window.addEventListener('click', function(event) {
-		if (event.target === dndModal) closeModal(dndModal);
-	});
-
-	// Auto-save handlers
-	['emailNotif', 'soundNotif', 'catMentions', 'catFollowers', 'catEngagement'].forEach(checkboxId => {
-		const checkbox = document.getElementById(checkboxId);
-		if (checkbox) checkbox.addEventListener('change', handleToggleChange);
-	});
-
-	// DND form submission
-	if (dndForm) {
-		dndForm.addEventListener('submit', handleDNDFormSubmit);
+	if (!emailToggle) {
+		return;
 	}
 
-	// Load settings from backend
+	loadNotificationSettings();
+	emailToggle.addEventListener('change', handleEmailToggleChange);
+
 	async function loadNotificationSettings() {
 		try {
 			const response = await fetch(`${URLROOT}/settings/getNotificationSettings`);
 			const data = await parseJsonResponse(response);
 
-			if (!response.ok || !data.success) {
+			if (!response.ok || !data.success || !data.settings) {
 				throw new Error(data.error || `Failed to load settings (${response.status})`);
 			}
 
-			if (data.success && data.settings) {
-				const settings = data.settings;
-				settingsCache = { ...settingsCache, ...settings };
-
-				// Set delivery channel toggles
-				safeSetCheckbox('emailNotif', settings.email_enabled);
-				safeSetCheckbox('soundNotif', settings.sound_enabled);
-
-				// Set category toggles (if present in UI)
-				safeSetCheckbox('catMentions', settings.mentions_enabled);
-				safeSetCheckbox('catFollowers', settings.followers_enabled);
-				safeSetCheckbox('catEngagement', settings.engagement_enabled);
-
-				// Set DND fields (if present in UI)
-				const dndStartEl = document.getElementById('dndStart');
-				const dndEndEl = document.getElementById('dndEnd');
-				const dndDaysEl = document.getElementById('dndDays');
-				if (dndStartEl && settings.dnd_start) dndStartEl.value = settings.dnd_start;
-				if (dndEndEl && settings.dnd_end) dndEndEl.value = settings.dnd_end;
-				if (dndDaysEl && settings.dnd_days) dndDaysEl.value = settings.dnd_days;
-			}
+			safeSetCheckbox(emailToggle, data.settings.email_enabled);
 		} catch (error) {
 			console.error('Failed to load notification settings:', error);
+			safeSetCheckbox(emailToggle, 0);
 		}
 	}
 
-	// Handle toggle checkbox changes
-	async function handleToggleChange(e) {
-		const checkbox = e.target;
-
-		const next = collectSettingsFromUI();
+	async function handleEmailToggleChange() {
+		const payload = { email_enabled: emailToggle.checked ? 1 : 0 };
 
 		try {
 			const response = await fetch(`${URLROOT}/settings/updateNotificationSettings`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(next)
+				body: JSON.stringify(payload)
 			});
 
 			const data = await parseJsonResponse(response);
 
-			if (!response.ok && !data.success) {
+			if (!response.ok || !data.success) {
 				throw new Error(data.error || `Failed to save settings (${response.status})`);
 			}
 
-			if (data.success) {
-				settingsCache = { ...settingsCache, ...next };
-				showNotification('Settings saved', 'success');
-				refreshNotificationBadge();
-			} else {
-				showNotification(data.error || 'Failed to save settings', 'error');
-				checkbox.checked = !checkbox.checked;
-			}
+			showNotification('Settings saved', 'success');
+			refreshNotificationBadge();
 		} catch (error) {
+			emailToggle.checked = !emailToggle.checked;
 			showNotification('Error saving settings', 'error');
-			checkbox.checked = !checkbox.checked;
 		}
 	}
 
-	function collectSettingsFromUI() {
-		const out = { ...settingsCache };
-
-		const emailEl = document.getElementById('emailNotif');
-		if (emailEl) out.email_enabled = emailEl.checked ? 1 : 0;
-
-		const soundEl = document.getElementById('soundNotif');
-		if (soundEl) out.sound_enabled = soundEl.checked ? 1 : 0;
-
-		const mentionsEl = document.getElementById('catMentions');
-		if (mentionsEl) out.mentions_enabled = mentionsEl.checked ? 1 : 0;
-
-		const followersEl = document.getElementById('catFollowers');
-		if (followersEl) out.followers_enabled = followersEl.checked ? 1 : 0;
-
-		const engagementEl = document.getElementById('catEngagement');
-		if (engagementEl) out.engagement_enabled = engagementEl.checked ? 1 : 0;
-
-		// Don't change DND values here; handled by DND form.
-		return out;
-	}
-
-	// Handle DND form submission
-	async function handleDNDFormSubmit(e) {
-		e.preventDefault();
-
-		const dndStartEl = document.getElementById('dndStart');
-		const dndEndEl = document.getElementById('dndEnd');
-		const dndDaysEl = document.getElementById('dndDays');
-		if (!dndStartEl || !dndEndEl || !dndDaysEl) {
-			showNotification('DND settings UI is not available', 'error');
-			return;
-		}
-
-		const dndStart = dndStartEl.value;
-		const dndEnd = dndEndEl.value;
-		const dndDays = dndDaysEl.value;
-
-		if (!dndStart || !dndEnd) {
-			showNotification('Please fill in all DND fields', 'error');
-			return;
-		}
-
-		const settings = collectSettingsFromUI();
-		settings.dnd_enabled = 1;
-		settings.dnd_start = dndStart;
-		settings.dnd_end = dndEnd;
-		settings.dnd_days = dndDays;
-
-		try {
-			const response = await fetch(`${URLROOT}/settings/updateNotificationSettings`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(settings)
-			});
-
-			const data = await parseJsonResponse(response);
-
-			if (!response.ok && !data.success) {
-				throw new Error(data.error || `Failed to save quiet hours (${response.status})`);
-			}
-
-			if (data.success) {
-				settingsCache = { ...settingsCache, ...settings };
-				showNotification('Quiet hours saved successfully', 'success');
-				refreshNotificationBadge();
-				closeModal(dndModal);
-			} else {
-				showNotification(data.error || 'Failed to save quiet hours', 'error');
-			}
-		} catch (error) {
-			showNotification('Error saving quiet hours', 'error');
-		}
-	}
-
-	// Helper: safely set checkbox state
-	function safeSetCheckbox(id, value) {
-		const checkbox = document.getElementById(id);
-		if (checkbox) {
-			// DB/API may return 0/1 as strings; treat only 1/true as enabled
-			checkbox.checked = (value === 1 || value === '1' || value === true);
-		}
-	}
-
-	// Helper: open modal
-	function openModal(modal) {
-		if (modal) modal.style.display = 'block';
-	}
-
-	// Helper: close modal
-	function closeModal(modal) {
-		if (modal) modal.style.display = 'none';
+	function safeSetCheckbox(checkbox, value) {
+		checkbox.checked = (value === 1 || value === '1' || value === true);
 	}
 
 	function refreshNotificationBadge() {
@@ -360,7 +208,6 @@ document.addEventListener('DOMContentLoaded', function(){
 		}
 	}
 
-	// Helper: show notification
 	function showNotification(message, type) {
 		const notification = document.createElement('div');
 		notification.className = `notification notification-${type}`;
