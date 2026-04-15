@@ -5,7 +5,14 @@
             <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
             <div class="form-title">Edit Profile</div>
 
-            <form id="editProfileForm" class="certificate-form" action="<?= URLROOT; ?>/profile/updateProfileBioImage" method="post" enctype="multipart/form-data">
+            <form
+                id="editProfileForm"
+                class="certificate-form"
+                action="<?= URLROOT; ?>/profile/updateProfileBioImage"
+                method="post"
+                enctype="multipart/form-data"
+                data-initial-bio="<?= htmlspecialchars($data['userDetails']->bio ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                data-initial-batch="<?= htmlspecialchars($data['userDetails']->batch_no ?? '', ENT_QUOTES, 'UTF-8') ?>">
                 <div class="form-group">
                     <label>Profile Picture</label>
                     <div class="file-upload-container">
@@ -27,7 +34,7 @@
                                 border-radius: 5px;
                                 color: var(--text);
                                 padding:5px;
-                        " rows="3" placeholder="Tell others about you..."></textarea>
+                        " rows="3" placeholder="Tell others about you..."><?= htmlspecialchars($data['userDetails']->bio ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
                 </div>
                 <div class="form-group">
                     <label for="profileBatchNoInput">Batch Number</label>

@@ -163,10 +163,18 @@
         if (profileEditBtn) {
             profileEditBtn.addEventListener('click', function() {
                 const popup = document.getElementById('editProfilePopup');
-                if (!popup) return;
-                const bioEl = document.getElementById('profileBioEl');
+                const form = document.getElementById('editProfileForm');
+                if (!popup || !form) return;
                 const bioInput = document.getElementById('profileBioInput');
-                if (bioEl && bioInput) bioInput.value = bioEl.textContent.trim();
+                const batchInput = document.getElementById('profileBatchNoInput');
+                if (bioInput) bioInput.value = form.dataset.initialBio || '';
+                if (batchInput) batchInput.value = form.dataset.initialBatch || '';
+
+                const fileInput = document.getElementById('profileImageInput');
+                const fileName = document.getElementById('profileImgFileName');
+                if (fileInput) fileInput.value = '';
+                if (fileName) fileName.textContent = 'No file chosen';
+
                 const preview = document.getElementById('profileImagePreview');
                 const img = document.getElementById('profileImageEl');
                 if (preview && img) preview.src = img.src;
@@ -666,45 +674,96 @@
         }
     })();
 
-    // Profile Edit Handlers (visual only)
+    // Profile Edit Handlers (API-backed)
     (function() {
         const popup = document.getElementById('editProfilePopup');
         if (!popup) return; // only for owner
+
         const form = document.getElementById('editProfileForm');
         const chooseBtn = document.getElementById('chooseProfileImgBtn');
         const fileInput = document.getElementById('profileImageInput');
         const fileName = document.getElementById('profileImgFileName');
         const preview = document.getElementById('profileImagePreview');
-        const pageImg = document.getElementById('profileImageEl');
-        const bioInput = document.getElementById('profileBioInput');
-        const bioEl = document.getElementById('profileBioEl');
+        const saveBtn = document.getElementById('saveProfileBtn');
+        const PROFILE_IMG_MAX_SIZE = 5 * 1024 * 1024;
+
+        async function parseJsonResponse(response) {
+            const body = await response.text();
+            if (!body) return {};
+            try {
+                return JSON.parse(body);
+            } catch (e) {
+                throw new Error('Invalid server response');
+            }
+        }
 
         if (chooseBtn && fileInput) {
             chooseBtn.addEventListener('click', () => fileInput.click());
         }
+
         if (fileInput) {
             fileInput.addEventListener('change', function() {
-                const f = this.files && this.files[0];
-                fileName.textContent = f ? f.name : 'No file chosen';
+                const f = this.files && this.files[0] ? this.files[0] : null;
+                if (fileName) fileName.textContent = f ? f.name : 'No file chosen';
+                if (!f) return;
+
+                if (!f.type || !f.type.startsWith('image/')) {
+                    alert('Please select a valid image file.');
+                    this.value = '';
+                    if (fileName) fileName.textContent = 'No file chosen';
+                    return;
+                }
+
+                if (f.size > PROFILE_IMG_MAX_SIZE) {
+                    alert('Profile image exceeds 5MB.');
+                    this.value = '';
+                    if (fileName) fileName.textContent = 'No file chosen';
+                    return;
+                }
+
                 if (f) {
                     const reader = new FileReader();
                     reader.onload = e => {
-                        preview.src = e.target.result;
+                        if (preview) preview.src = e.target.result;
                     };
                     reader.readAsDataURL(f);
                 }
             });
         }
+
         if (form) {
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                // visually update page image and bio
-                if (pageImg && preview) pageImg.src = preview.src;
-                if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
-                // close popup
-                const closeBtn = popup.querySelector('.close-popup');
-                if (closeBtn) closeBtn.click();
-                else popup.style.display = 'none';
+
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+                }
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const json = await parseJsonResponse(response);
+                    if (!response.ok || !json.success) {
+                        throw new Error(json.error || 'Failed to update profile');
+                    }
+
+                    window.location.reload();
+                } catch (err) {
+                    alert(err && err.message ? err.message : 'Failed to update profile');
+                } finally {
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                    }
+                }
             });
         }
     })();
