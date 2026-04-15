@@ -48,16 +48,6 @@
                                 <span>Message</span>
                             </button>
                         <?php endif; ?>
-                        <!-- <?php $isBlocked = $data['isBlocked'] ?> -->
-                        <button
-                            class="action-btn block-btn <?= $isBlocked ? 'active' : '' ?>"
-                            id="blockBtn"
-                            data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
-                            data-blocked="<?= $isBlocked ? '1' : '0'; ?>"
-                            title="<?= htmlspecialchars(($isBlocked ? 'Unblock ' : 'Block ') . ($data['userDetails']->name ?? 'user')) ?>">
-                            <i class="<?= $isBlocked ? 'fas fa-user-slash' : 'fas fa-ban' ?>" aria-hidden="true"></i>
-                            <span><?= $isBlocked ? 'Unblock' : 'Block' ?></span>
-                        </button>
                     </div>
                 <?php endif; ?>
             </div>
