@@ -124,31 +124,31 @@ class Profile extends Controller{
         }
     }
 
-    public function blockProfile()
-    {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            header('Content-Type: application/json');
+    // public function blockProfile()
+    // {
+    //     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    //         header('Content-Type: application/json');
 
-            $target_id = intval($_POST['target_id']);
-            $current_user_id = $_SESSION['user_id'];
+    //         $target_id = intval($_POST['target_id']);
+    //         $current_user_id = $_SESSION['user_id'];
 
-            if($target_id == $current_user_id) {
-                echo json_encode(['success' => false, 'error' => 'Cannot block yourself']);
-                return;
-            }
+    //         if($target_id == $current_user_id) {
+    //             echo json_encode(['success' => false, 'error' => 'Cannot block yourself']);
+    //             return;
+    //         }
 
-            $isBlocked = $this->Model->isBlocked($current_user_id, $target_id);
+    //         $isBlocked = $this->Model->isBlocked($current_user_id, $target_id);
 
-            if($isBlocked) {
-                $this->Model->unblockUser($current_user_id, $target_id);
-                echo json_encode(['success' => true, 'blocked' => false]);
-            }else{
-                $this->Model->blockUser($current_user_id, $target_id);
-                echo json_encode(['success' => true, 'blocked' => true]);
-            }
-        }   
+    //         if($isBlocked) {
+    //             $this->Model->unblockUser($current_user_id, $target_id);
+    //             echo json_encode(['success' => true, 'blocked' => false]);
+    //         }else{
+    //             $this->Model->blockUser($current_user_id, $target_id);
+    //             echo json_encode(['success' => true, 'blocked' => true]);
+    //         }
+    //     }   
 
-    }
+    // }
 
     public function updateProfileBioImage()
     {
