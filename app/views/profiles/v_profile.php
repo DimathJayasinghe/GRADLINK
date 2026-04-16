@@ -280,6 +280,134 @@
                 }
             });
         }
+
+        // Report profile behavior
+        const reportProfileBtn = document.getElementById('reportProfileBtn');
+        if (reportProfileBtn) {
+            reportProfileBtn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-user-id');
+                if (!targetId) return;
+
+                const overlayId = `profile-report-popup-${targetId}`;
+                let overlay = document.getElementById(overlayId);
+
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = overlayId;
+                    overlay.className = 'certificate-add-popup';
+                    overlay.style.display = 'none';
+                    overlay.innerHTML = `
+                        <div class="certificate-add" style="max-width:560px;">
+                            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+                            <div class="form-title">Report Profile</div>
+                            <form class="certificate-form" id="profileReportForm-${targetId}" novalidate>
+                                <div class="form-group">
+                                    <label for="profileReportCategory-${targetId}">Category</label>
+                                    <select id="profileReportCategory-${targetId}" required>
+                                        <option value="" disabled selected>Select a category</option>
+                                        <option>Fake account</option>
+                                        <option>Impersonation</option>
+                                        <option>Harassment or bullying</option>
+                                        <option>Hate or abusive content</option>
+                                        <option>Spam</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profileReportDetails-${targetId}">Details (optional)</label>
+                                    <textarea id="profileReportDetails-${targetId}" rows="4" placeholder="Add any details or context..." style="padding:10px;border-radius: var(--radius-lg);border:1px solid var(--border);background:var(--input);color:var(--text);"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profileReportLink-${targetId}">Reference link (optional)</label>
+                                    <input type="url" id="profileReportLink-${targetId}" placeholder="https://..." />
+                                </div>
+                                <div style="display:flex; gap:12px; justify-content:flex-end;">
+                                    <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+                                    <button type="submit" class="save-btn" style="background:var(--primary);color:#fff;">Submit Report</button>
+                                </div>
+                            </form>
+                        </div>`;
+                    document.body.appendChild(overlay);
+
+                    const closePopup = () => {
+                        overlay.style.display = 'none';
+                    };
+
+                    overlay.querySelector('.close-popup')?.addEventListener('click', closePopup);
+                    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', closePopup);
+                    overlay.addEventListener('click', function(e) {
+                        if (e.target === overlay) {
+                            closePopup();
+                        }
+                    });
+
+                    const notify = (message) => {
+                        if (typeof show_popup === 'function') {
+                            show_popup(message);
+                            return;
+                        }
+                        alert(message);
+                    };
+
+                    const form = overlay.querySelector(`#profileReportForm-${targetId}`);
+                    form?.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+
+                        const categoryEl = overlay.querySelector(`#profileReportCategory-${targetId}`);
+                        const detailsEl = overlay.querySelector(`#profileReportDetails-${targetId}`);
+                        const linkEl = overlay.querySelector(`#profileReportLink-${targetId}`);
+                        const submitBtn = form.querySelector('button[type="submit"]');
+
+                        const category = categoryEl ? categoryEl.value : '';
+                        const details = detailsEl ? detailsEl.value.trim() : '';
+                        const link = linkEl ? linkEl.value.trim() : '';
+
+                        if (!category) {
+                            notify('Please select a category');
+                            return;
+                        }
+
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Submitting...';
+                        }
+
+                        try {
+                            const fd = new FormData();
+                            fd.append('profile_id', targetId);
+                            fd.append('category', category);
+                            fd.append('details', details);
+                            if (link) {
+                                fd.append('link', link);
+                            }
+
+                            const res = await fetch(`${window.URLROOT}/report/submitReport/profile`, {
+                                method: 'POST',
+                                body: fd
+                            });
+
+                            const data = await res.json().catch(() => null);
+                            if (!res.ok || !data || (data.success !== true && data.status !== 'success')) {
+                                throw new Error((data && data.message) ? data.message : 'Failed to submit report');
+                            }
+
+                            notify('Thanks for your report. Our team will review it shortly.');
+                            closePopup();
+                        } catch (err) {
+                            console.error('Profile report submission error', err);
+                            notify(err && err.message ? err.message : 'Error submitting report. Please try again later.');
+                        } finally {
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit Report';
+                            }
+                        }
+                    });
+                }
+
+                overlay.style.display = 'flex';
+            });
+        }
     });
 
     // Updated function to set up edit mode only for specific sections

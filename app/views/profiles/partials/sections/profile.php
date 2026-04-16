@@ -38,6 +38,14 @@
                             <i class="<?= $isFollowing ? 'fas fa-user-check' : 'fas fa-user-plus' ?>" aria-hidden="true"></i>
                             <span><?= $isFollowing ? 'Following' : 'Follow' ?></span>
                         </button>
+                        <button
+                            class="action-btn report-btn"
+                            id="reportProfileBtn"
+                            data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
+                            title="Report <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
+                            <i class="fas fa-flag" aria-hidden="true"></i>
+                            <span>Report</span>
+                        </button>
                         <?php if ($isFollowing): ?>
                             <button
                                 class="action-btn message-btn"

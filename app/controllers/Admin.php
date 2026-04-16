@@ -127,10 +127,64 @@
         }
 
         public function reports() {
+            $postReports = $this->adminModel->getPostReports();
+            $profileReports = $this->adminModel->getProfileReports();
             $data = [
-                'reports' => $this->adminModel->getPostReports(),
+                'reports' => $postReports,
+                'postReports' => $postReports,
+                'profileReports' => $profileReports,
             ];
             $this->view('admin/v_reports', $data);
+        }
+
+        public function updateContentReportStatus() {
+            $accept = strtolower((string)($_SERVER['HTTP_ACCEPT'] ?? ''));
+            $requestedWith = strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+            $isJsonRequest = (strpos($accept, 'application/json') !== false) || ($requestedWith === 'xmlhttprequest');
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                if ($isJsonRequest) {
+                    $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                    return;
+                }
+                SessionManager::setFlash('error', 'Invalid request method.');
+                $this->redirect('/admin/reports');
+                return;
+            }
+
+            $reportId = (int)($_POST['report_id'] ?? 0);
+            $status = trim((string)($_POST['status'] ?? ''));
+            $source = trim((string)($_POST['source'] ?? 'reports'));
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            $allowed = ['pending', 'resolved', 'rejected'];
+            if ($reportId <= 0 || !in_array($status, $allowed, true)) {
+                if ($isJsonRequest) {
+                    $this->jsonResponse(['ok' => false, 'error' => 'Invalid report status update request.'], 422);
+                    return;
+                }
+                SessionManager::setFlash('error', 'Invalid report status update request.');
+                $this->redirect('/admin/reports');
+                return;
+            }
+
+            $ok = $this->adminModel->updateContentReportStatus($reportId, $status, $adminId, $source);
+            if ($isJsonRequest) {
+                if ($ok) {
+                    $this->jsonResponse(['ok' => true, 'message' => 'Report status updated successfully.', 'status' => $status]);
+                } else {
+                    $this->jsonResponse(['ok' => false, 'error' => 'Failed to update report status.'], 400);
+                }
+                return;
+            }
+
+            if ($ok) {
+                SessionManager::setFlash('success', 'Report status updated successfully.');
+            } else {
+                SessionManager::setFlash('error', 'Failed to update report status.');
+            }
+
+            $this->redirect('/admin/reports');
         }
         public function posts() {
             $data = [];

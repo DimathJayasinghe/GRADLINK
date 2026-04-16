@@ -254,35 +254,283 @@ class M_admin {
     }
 
     public function getPostReports(): array {
+        $all = [];
+
         try {
-            $this->db->query('
-                SELECT
-                    r.id,
-                    r.post_id,
-                    r.post_owner_id,
-                    r.reporter_id,
-                    r.category,
-                    r.details,
-                    r.reference_link,
-                    r.status,
-                    r.created_at,
-                    r.updated_at,
-                    p.content AS post_content,
-                    p.created_at AS post_created_at,
-                    reporter.name AS reporter_name,
-                    reporter.role AS reporter_role,
-                    owner.name AS owner_name,
-                    owner.role AS owner_role
-                FROM post_reports r
-                LEFT JOIN posts p ON p.id = r.post_id
-                LEFT JOIN users reporter ON reporter.id = r.reporter_id
-                LEFT JOIN users owner ON owner.id = r.post_owner_id
-                ORDER BY r.created_at DESC
-            ');
-            return $this->db->resultSet();
+            // Preferred source: generic reports table used by /report/submitReport/post.
+            if ($this->tableExists('reports') && $this->columnExists('reports', 'report_type') && $this->columnExists('reports', 'reported_item_id')) {
+                $idColumn = $this->columnExists('reports', 'report_id') ? 'report_id' : ($this->columnExists('reports', 'id') ? 'id' : null);
+                if ($idColumn !== null) {
+                    $this->db->query("SELECT
+                                        r.$idColumn AS id,
+                                        'reports' AS source,
+                                        r.reported_item_id AS post_id,
+                                        p.user_id AS post_owner_id,
+                                        r.reporter_id,
+                                        r.category,
+                                        r.details,
+                                        r.link AS reference_link,
+                                        r.status,
+                                        r.created_at,
+                                        r.updated_at,
+                                        p.content AS post_content,
+                                        p.created_at AS post_created_at,
+                                        reporter.name AS reporter_name,
+                                        reporter.role AS reporter_role,
+                                        owner.name AS owner_name,
+                                        owner.role AS owner_role
+                                    FROM reports r
+                                    LEFT JOIN posts p ON p.id = r.reported_item_id
+                                    LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                                    LEFT JOIN users owner ON owner.id = p.user_id
+                                    WHERE r.report_type = 'post'
+                                    ORDER BY r.created_at DESC");
+                    $rows = $this->db->resultSet();
+                    if (is_array($rows)) {
+                        $all = array_merge($all, $rows);
+                    }
+                }
+            }
+
+            // Legacy source: post_reports table.
+            if ($this->tableExists('post_reports')) {
+                $this->db->query("SELECT
+                                    r.id,
+                                    'post_reports' AS source,
+                                    r.post_id,
+                                    COALESCE(p.user_id, r.post_owner_id) AS post_owner_id,
+                                    r.reporter_id,
+                                    r.category,
+                                    r.details,
+                                    r.reference_link,
+                                    r.status,
+                                    r.created_at,
+                                    r.updated_at,
+                                    p.content AS post_content,
+                                    p.created_at AS post_created_at,
+                                    reporter.name AS reporter_name,
+                                    reporter.role AS reporter_role,
+                                    owner.name AS owner_name,
+                                    owner.role AS owner_role
+                                FROM post_reports r
+                                LEFT JOIN posts p ON p.id = r.post_id
+                                LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                                LEFT JOIN users owner ON owner.id = COALESCE(p.user_id, r.post_owner_id)
+                                ORDER BY r.created_at DESC");
+                $rows = $this->db->resultSet();
+                if (is_array($rows)) {
+                    $all = array_merge($all, $rows);
+                }
+            }
+
+            if (!empty($all)) {
+                usort($all, function ($a, $b) {
+                    $aTs = strtotime((string)($a->created_at ?? '')) ?: 0;
+                    $bTs = strtotime((string)($b->created_at ?? '')) ?: 0;
+                    return $bTs <=> $aTs;
+                });
+            }
+
+            return $all;
         } catch (Throwable $e) {
             error_log("Error fetching post reports: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function getProfileReports(): array {
+        try {
+            if (!$this->tableExists('reports') || !$this->columnExists('reports', 'report_type') || !$this->columnExists('reports', 'reported_item_id')) {
+                return [];
+            }
+
+            $idColumn = $this->columnExists('reports', 'report_id') ? 'report_id' : ($this->columnExists('reports', 'id') ? 'id' : null);
+            if ($idColumn === null) {
+                return [];
+            }
+
+            $this->db->query("SELECT
+                                r.$idColumn AS id,
+                                'reports' AS source,
+                                r.reported_item_id AS profile_id,
+                                r.reporter_id,
+                                r.category,
+                                r.details,
+                                r.link AS reference_link,
+                                r.status,
+                                r.created_at,
+                                r.updated_at,
+                                reporter.name AS reporter_name,
+                                reporter.role AS reporter_role,
+                                target.name AS target_name,
+                                target.role AS target_role,
+                                target.profile_image AS target_profile_image
+                            FROM reports r
+                            LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                            LEFT JOIN users target ON target.id = r.reported_item_id
+                            WHERE r.report_type = 'profile'
+                            ORDER BY r.created_at DESC");
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            error_log("Error fetching profile reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function updateContentReportStatus(int $reportId, string $status, int $adminId, string $source = 'reports'): bool {
+        try {
+            if ($reportId <= 0) {
+                return false;
+            }
+
+            if (!in_array($status, ['pending', 'resolved', 'rejected'], true)) {
+                return false;
+            }
+
+            $safeSource = strtolower(trim($source));
+
+            if ($safeSource === 'post_reports') {
+                if ($this->updatePostReportsStatus($reportId, $status)) {
+                    return true;
+                }
+                return $this->updateGenericReportsStatus($reportId, $status, $adminId);
+            }
+
+            if ($this->updateGenericReportsStatus($reportId, $status, $adminId)) {
+                return true;
+            }
+
+            return $this->updatePostReportsStatus($reportId, $status);
+        } catch (Throwable $e) {
+            error_log('Error updating content report status: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function updateGenericReportsStatus(int $reportId, string $status, int $adminId): bool {
+        if (!$this->tableExists('reports')) {
+            return false;
+        }
+
+        // Resolve schema flags once. Avoid schema helper calls after preparing UPDATE,
+        // because those helpers replace the active PDO statement in Database.
+        $hasUpdatedAt = $this->columnExists('reports', 'updated_at');
+        $hasReviewedBy = $this->columnExists('reports', 'reviewed_by');
+        $hasReviewedAt = $this->columnExists('reports', 'reviewed_at');
+
+        $pkCandidates = [];
+        if ($this->columnExists('reports', 'report_id')) {
+            $pkCandidates[] = 'report_id';
+        }
+        if ($this->columnExists('reports', 'id')) {
+            $pkCandidates[] = 'id';
+        }
+        if (empty($pkCandidates)) {
+            $pkCandidates = ['report_id', 'id'];
+        }
+
+        foreach (array_unique($pkCandidates) as $idColumn) {
+            try {
+                $setParts = ['status = :status'];
+                if ($hasUpdatedAt) {
+                    $setParts[] = 'updated_at = NOW()';
+                }
+                if ($hasReviewedBy) {
+                    $setParts[] = 'reviewed_by = :reviewed_by';
+                }
+                if ($hasReviewedAt) {
+                    $setParts[] = 'reviewed_at = NOW()';
+                }
+
+                $sql = 'UPDATE reports SET ' . implode(', ', $setParts) . " WHERE $idColumn = :id";
+                $this->db->query($sql);
+                $this->db->bind(':status', $status);
+                if ($hasReviewedBy) {
+                    $this->db->bind(':reviewed_by', $adminId > 0 ? $adminId : null);
+                }
+                $this->db->bind(':id', $reportId);
+
+                if (!$this->db->execute()) {
+                    continue;
+                }
+
+                if ($this->db->rowCount() > 0) {
+                    return true;
+                }
+
+                // If rowCount is 0, it may still be successful when status is unchanged.
+                $this->db->query("SELECT 1 AS found_row FROM reports WHERE $idColumn = :id LIMIT 1");
+                $this->db->bind(':id', $reportId);
+                if ($this->db->single()) {
+                    return true;
+                }
+            } catch (Throwable $e) {
+            }
+        }
+
+        return false;
+    }
+
+    private function updatePostReportsStatus(int $reportId, string $status): bool {
+        if (!$this->tableExists('post_reports')) {
+            return false;
+        }
+
+        try {
+            $setParts = ['status = :status'];
+            if ($this->columnExists('post_reports', 'updated_at')) {
+                $setParts[] = 'updated_at = NOW()';
+            }
+
+            $sql = 'UPDATE post_reports SET ' . implode(', ', $setParts) . ' WHERE id = :id';
+            $this->db->query($sql);
+            $this->db->bind(':status', $status);
+            $this->db->bind(':id', $reportId);
+            if (!$this->db->execute()) {
+                return false;
+            }
+
+            if ($this->db->rowCount() > 0) {
+                return true;
+            }
+
+            $this->db->query('SELECT 1 AS found_row FROM post_reports WHERE id = :id LIMIT 1');
+            $this->db->bind(':id', $reportId);
+            return $this->db->single() ? true : false;
+        } catch (Throwable $e) {
+            error_log('Error updating post_reports status: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function tableExists(string $table): bool {
+        try {
+            $safeTable = preg_replace('/[^A-Za-z0-9_]/', '', $table);
+            if ($safeTable === '') {
+                return false;
+            }
+
+            $this->db->query("SHOW TABLES LIKE '$safeTable'");
+            $row = $this->db->single();
+            return $row ? true : false;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function columnExists(string $table, string $column): bool {
+        try {
+            $safeTable = preg_replace('/[^A-Za-z0-9_]/', '', $table);
+            $safeColumn = preg_replace('/[^A-Za-z0-9_]/', '', $column);
+            if ($safeTable === '' || $safeColumn === '') {
+                return false;
+            }
+
+            $this->db->query("SHOW COLUMNS FROM `$safeTable` LIKE '$safeColumn'");
+            $row = $this->db->single();
+            return $row ? true : false;
+        } catch (Throwable $e) {
+            return false;
         }
     }
 
@@ -1017,8 +1265,8 @@ class M_admin {
                 return ['ok' => false, 'message' => 'User not found'];
             }
 
-            if (strtolower((string)($user->role ?? '')) === 'admin') {
-                return ['ok' => false, 'message' => 'Admin accounts cannot be suspended'];
+            if ($this->isProtectedAdminAccount($user)) {
+                return ['ok' => false, 'message' => 'System administrator accounts cannot be suspended'];
             }
 
             $this->db->query("SELECT id FROM suspended_users WHERE user_id = :user_id AND status = 'active' LIMIT 1");
@@ -1061,6 +1309,29 @@ class M_admin {
         } catch (Exception $e) {
             return ['ok' => false, 'message' => 'Failed to suspend user'];
         }
+    }
+
+    private function isProtectedAdminAccount(object $user): bool {
+        $role = strtolower(trim((string)($user->role ?? '')));
+        $name = strtolower(trim((string)($user->name ?? '')));
+        $email = strtolower(trim((string)($user->email ?? '')));
+
+        if (
+            $role === 'admin' ||
+            $role === 'administrator' ||
+            $role === 'system_admin' ||
+            $role === 'system-administrator' ||
+            $role === 'super_admin' ||
+            strpos($role, 'admin') !== false
+        ) {
+            return true;
+        }
+
+        if ($name === 'system administrator' || $email === 'admin@gradlink.com') {
+            return true;
+        }
+
+        return false;
     }
 
     public function liftSuspension(int $suspensionId, int $adminId): array {

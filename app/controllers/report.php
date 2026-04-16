@@ -82,6 +82,12 @@ class Report extends Controller
         $details = $_POST['details'] ?? null;
         $link = $_POST['link'] ?? null;
 
+        if (is_numeric($profileId) && (int)$profileId === (int)$userId) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'cannot_report_self', 'message' => 'You cannot report your own profile']);
+            return;
+        }
+
         $this->_submitGenericReport($userId, 'profile', $profileId, $category, $details, $link);
     }
 
