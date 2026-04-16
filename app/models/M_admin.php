@@ -203,7 +203,6 @@ class M_admin {
         $reactions = $this->safeCount('SELECT COUNT(*) AS c FROM post_likes');
         $messages = $this->safeCount('SELECT COUNT(*) AS c FROM messages');
         $events = $this->safeCount('SELECT COUNT(*) AS c FROM events');
-        $eventAttendees = $this->safeCount('SELECT COUNT(*) AS c FROM event_attendees');
         $eventBookmarks = $this->safeCount('SELECT COUNT(*) AS c FROM event_bookmarks');
         $followers = $this->safeCount('SELECT COUNT(*) AS c FROM followers');
         $notifications = $this->safeCount('SELECT COUNT(*) AS c FROM notifications');
@@ -231,7 +230,6 @@ class M_admin {
             'reactions' => (int)$reactions,
             'messages' => (int)$messages,
             'events' => (int)$events,
-            'event_attendees' => (int)$eventAttendees,
             'event_bookmarks' => (int)$eventBookmarks,
             'followers' => (int)$followers,
             'notifications' => (int)$notifications,
@@ -359,7 +357,6 @@ class M_admin {
             'reactions' => $this->safeTimeSeries('post_likes', 'created_at'),
             'messages' => $this->safeTimeSeries('messages', 'message_time'),
             'events' => $this->safeTimeSeries('events', 'created_at'),
-            'event_attendees' => $this->safeTimeSeries('event_attendees', 'created_at'),
         ];
     }
 
@@ -438,7 +435,6 @@ class M_admin {
                 $this->db->query('SELECT id FROM users');
             } else {
                 // Specific role
-                $this->db->query('SELECT id FROM users WHERE role = ?');
                 $this->db->query('SELECT id FROM users WHERE role = :role');
                 $this->db->bind(':role', $role);
             }
@@ -489,16 +485,11 @@ class M_admin {
         }
 
         $events = 0;
-        $eventAttendees = 0;
         try {
             $this->db->query("SELECT COUNT(*) AS c FROM events WHERE organizer_id IN ($idList)");
             $events = (int)($this->db->single()->c ?? 0);
-            
-            $this->db->query("SELECT COUNT(*) AS c FROM event_attendees WHERE user_id IN ($idList)");
-            $eventAttendees = (int)($this->db->single()->c ?? 0);
         } catch (Exception $e) {
             $events = 0;
-            $eventAttendees = 0;
         }
 
         $eventBookmarks = 0;
@@ -560,7 +551,6 @@ class M_admin {
             'reactions' => (int)$reactions,
             'messages' => (int)$messages,
             'events' => (int)$events,
-            'event_attendees' => (int)$eventAttendees,
             'event_bookmarks' => (int)$eventBookmarks,
             'followers' => (int)$followers,
             'notifications' => (int)$notifications,
@@ -575,6 +565,7 @@ class M_admin {
             'avg_reactions_per_post' => $avgReactionsPerPost,
             'avg_messages_per_user' => $avgMessagesPerUser,
             'engagement_rate' => $engagementRate,
+            'active_over_time' => $this->safeActiveUsersOverTimeForRole($userIds),
             'time_series' => $this->getTimeSeriesBundleForRole($userIds),
             'event_pipeline' => $this->getEventPipelineMetricsForRole($userIds),
             'profile_metrics' => $this->getProfileCompletionMetricsForRole($userIds),
@@ -734,8 +725,27 @@ class M_admin {
             'reactions' => $this->safeTimeSeriesForRole($idList, 'post_likes', 'created_at', 'user_id'),
             'messages' => $this->safeTimeSeriesForRole($idList, 'messages', 'message_time', 'sender_id'),
             'events' => $this->safeTimeSeriesForRole($idList, 'events', 'created_at', 'organizer_id'),
-            'event_attendees' => $this->safeTimeSeriesForRole($idList, 'event_attendees', 'created_at', 'user_id'),
         ];
+    }
+
+    private function safeActiveUsersOverTimeForRole(array $userIds): array {
+        if (empty($userIds)) {
+            return [];
+        }
+
+        $idList = implode(',', $userIds);
+        try {
+            $this->db->query("SELECT ym, COUNT(DISTINCT user_id) AS c FROM (
+                SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, user_id FROM posts WHERE user_id IN ($idList)
+                UNION ALL SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, user_id FROM comments WHERE user_id IN ($idList)
+                UNION ALL SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, user_id FROM post_likes WHERE user_id IN ($idList)
+                UNION ALL SELECT DATE_FORMAT(message_time, '%Y-%m') AS ym, sender_id AS user_id FROM messages WHERE sender_id IN ($idList)
+                UNION ALL SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, organizer_id AS user_id FROM events WHERE organizer_id IN ($idList)
+            ) t GROUP BY ym ORDER BY ym ASC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
     }
 
     private function safeTimeSeriesForRole(string $idList, string $table, string $dateColumn, ?string $userColumn = 'id'): array {
@@ -813,11 +823,11 @@ class M_admin {
     private function getEmptyEngagementMetrics(): array {
         return [
             'posts' => 0, 'comments' => 0, 'reactions' => 0, 'messages' => 0, 'events' => 0,
-            'event_attendees' => 0, 'event_bookmarks' => 0, 'followers' => 0, 'notifications' => 0,
+            'event_bookmarks' => 0, 'followers' => 0, 'notifications' => 0,
             'notifications_unread' => 0, 'pending_alumni' => 0, 'active_30_days' => 0,
             'dau' => 0, 'wau' => 0, 'mau' => 0, 'avg_posts_per_user' => 0, 'avg_comments_per_post' => 0,
             'avg_reactions_per_post' => 0, 'avg_messages_per_user' => 0, 'engagement_rate' => 0,
-            'time_series' => [], 'event_pipeline' => [], 'profile_metrics' => [],
+            'active_over_time' => [], 'time_series' => [], 'event_pipeline' => [], 'profile_metrics' => [],
             'role_filtered' => 'none',
         ];
     }
