@@ -122,17 +122,33 @@ class M_admin {
 
     public function getAllUsers() {
         try {
-            $this->db->query('SELECT id, name, email, role, batch_no, graduation_year, profile_image FROM users ORDER BY created_at DESC');
+            $this->db->query('SELECT id, name, email, role, batch_no, profile_image, special_alumni FROM users ORDER BY created_at DESC');
             return $this->db->resultSet();
         } catch (Exception $e) {
-            // Some columns might not exist, try with basic columns
-            try {
-                $this->db->query('SELECT id, name, email, role FROM users ORDER BY created_at DESC');
-                return $this->db->resultSet();
-            } catch (Exception $e2) {
-                // Return empty array if users table doesn't exist
-                return [];
+            return [];
+        }
+    }
+
+    public function setSpecialAlumniStatus(int $userId, bool $isSpecial): array {
+        if ($userId <= 0) {
+            return ['ok' => false, 'message' => 'Invalid user ID.'];
+        }
+
+        try {
+            $this->db->query('UPDATE users SET special_alumni = :special_alumni WHERE id = :id');
+            $this->db->bind(':special_alumni', $isSpecial ? 1 : 0);
+            $this->db->bind(':id', $userId);
+
+            if ($this->db->execute()) {
+                return [
+                    'ok' => true,
+                    'message' => $isSpecial ? 'User marked as special alumni.' : 'Special alumni status removed.',
+                ];
             }
+
+            return ['ok' => false, 'message' => 'Failed to update special alumni status.'];
+        } catch (Exception $e) {
+            return ['ok' => false, 'message' => 'Failed to update special alumni status.'];
         }
     }
 

@@ -55,6 +55,34 @@
             $this->view('admin/v_users', $data);
         }
 
+        public function toggleSpecialAlumni() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/users');
+                return;
+            }
+
+            $userId = (int)($_POST['user_id'] ?? 0);
+            $isSpecial = (int)($_POST['special_alumni'] ?? 0) === 1;
+
+            if ($userId <= 0) {
+                SessionManager::setFlash('error', 'Invalid user ID.');
+                $this->redirect('/admin/users');
+                return;
+            }
+
+            $result = $this->adminModel->setSpecialAlumniStatus($userId, $isSpecial);
+            if (!empty($result['ok'])) {
+                if ((int)($_SESSION['user_id'] ?? 0) === $userId) {
+                    $_SESSION['special_alumni'] = $isSpecial;
+                }
+                SessionManager::setFlash('success', $result['message'] ?? 'Special alumni status updated.');
+            } else {
+                SessionManager::setFlash('error', $result['message'] ?? 'Failed to update special alumni status.');
+            }
+
+            $this->redirect('/admin/users');
+        }
+
         public function engagement() {
                 // Get role filter from query string (null = all, 'admin', 'alumni', 'undergrad')
                 $roleFilter = $_GET['role'] ?? null;

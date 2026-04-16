@@ -6,6 +6,31 @@
     .admin-table-wrapper{
         border-color: #3a3a3a;
     } 
+    .special-toggle-form {
+        display: inline-flex;
+        justify-content: center;
+    }
+    .special-toggle-btn {
+        border: 0;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease;
+    }
+    .special-toggle-btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.95;
+    }
+    .special-toggle-btn.is-on {
+        background: #1f7a4d;
+        color: #fff;
+    }
+    .special-toggle-btn.is-off {
+        background: #444;
+        color: #fff;
+    }
 </style>
 <?php $styles = ob_get_clean()?>
 
@@ -93,7 +118,7 @@
                             <td data-label="Name"><?php echo htmlspecialchars($u->name ?? ''); ?></td>
                             <td data-label="Email"><?php echo htmlspecialchars($u->email ?? ''); ?></td>
                             <td data-label="Role"><?php echo htmlspecialchars($u->role ?? ''); ?></td>
-                            <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->graduation_year ?? '')); ?></td>
+                            <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->batch_no ?? '')); ?></td>
                             <td data-label="Actions">
                                 <button class="admin-btn view-user" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
                                 <button class="admin-btn admin-btn-danger delete-user">Delete</button>
@@ -112,7 +137,7 @@
                         <th class="uid">ID</th>
                         <th class="name">Name</th>
                         <th class="email">Email</th>
-                        <th class="role">Role</th>
+                        <!-- <th class="role">Role</th> -->
                         <th class="batch">Batch</th>
                         <th class="actions">Actions</th>
                         <th class="special-alumni">Special Alumni</th>
@@ -124,14 +149,21 @@
                             <td data-label="ID"><?php echo (int)$u->id; ?></td>
                             <td data-label="Name"><?php echo htmlspecialchars($u->name ?? ''); ?></td>
                             <td data-label="Email"><?php echo htmlspecialchars($u->email ?? ''); ?></td>
-                            <td data-label="Role"><?php echo htmlspecialchars($u->role ?? ''); ?></td>
-                            <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->graduation_year ?? '')); ?></td>
+                            <!-- <td data-label="Role"><?php echo htmlspecialchars($u->role ?? ''); ?></td> -->
+                            <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->batch_no ?? '01')); ?></td>
                             <td data-label="Actions">
                                 <button class="admin-btn view-user" style="margin: 3px;" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
                                 <button class="admin-btn admin-btn-danger delete-user">Delete</button>
                             </td>
                             <td style="text-align: center;">
-                                <input type="checkbox" name="yes_special_alumni[<?php echo (int)$u->id; ?>]" value="yes">
+                                <?php $isSpecial = !empty($u->special_alumni); ?>
+                                <form class="special-toggle-form" method="post" action="<?php echo URLROOT; ?>/admin/toggleSpecialAlumni">
+                                    <input type="hidden" name="user_id" value="<?php echo (int)$u->id; ?>">
+                                    <input type="hidden" name="special_alumni" value="<?php echo $isSpecial ? '0' : '1'; ?>">
+                                    <button type="submit" class="special-toggle-btn <?php echo $isSpecial ? 'is-on' : 'is-off'; ?>">
+                                        <?php echo $isSpecial ? 'Remove Special' : 'Make Special'; ?>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
