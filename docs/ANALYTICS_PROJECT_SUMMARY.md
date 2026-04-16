@@ -23,7 +23,7 @@ The GRADLINK Admin Analytics Dashboard has been completely enhanced to provide c
 ### 3. Comprehensive Analytics
 - **User Metrics**: Growth, activity windows (DAU/WAU/MAU), engagement rate
 - **Content Metrics**: Posts, comments, reactions with averages and trends
-- **Community Metrics**: Events, followers, attendance, notifications
+- **Community Metrics**: Events, followers, bookmarks, notifications
 - **Profile Metrics**: Completion rates, visibility settings
 - **Time Series Data**: Monthly trends across all features
 - **Event Pipeline**: Request and event status breakdown
@@ -49,7 +49,7 @@ The GRADLINK Admin Analytics Dashboard has been completely enhanced to provide c
 ✓ **Engagement Monitoring**: Identify declining engagement early
 ✓ **Content Health**: Understand which content resonates
 ✓ **Community Pulse**: Assess overall platform vitality
-✓ **Event Success**: Track event adoption and attendance
+✓ **Event Success**: Track event adoption and visibility
 
 ### For Users
 ✓ **Better Service**: Admin insights lead to improved platform features
@@ -71,7 +71,7 @@ The GRADLINK Admin Analytics Dashboard has been completely enhanced to provide c
 - Monthly creation trends
 
 ### Community Health
-- Events created and attended
+- Events created and published
 - Event bookmarks (interest indicator)
 - Follow relationships
 - Pending verifications

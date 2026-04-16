@@ -52,7 +52,6 @@ When you select a role, **ALL metrics and charts** are recalculated to show only
 - ✅ Total Reactions (from selected role only)
 - ✅ Messages Sent (from selected role only)
 - ✅ Events Created (from selected role only)
-- ✅ Event Attendances (by selected role only)
 - ✅ Event Bookmarks (by selected role only)
 - ✅ Followers (following from selected role)
 - ✅ Active Users (in selected role)
@@ -193,7 +192,7 @@ Responsive breakpoints:
    - Alumni post creation rate
    - Alumni profile completion
    - Alumni follower relationships
-   - Alumni event attendance
+    - Alumni event activity
 3. Compare to previous periods using date filters
 
 **Key Insights**:
@@ -218,7 +217,7 @@ Responsive breakpoints:
 - Posts per user
 - Comments per post
 - Message volume
-- Event attendance
+- Event activity
 - Profile completion %
 
 ### Use Case 3: Admin Activity Monitoring
@@ -272,7 +271,7 @@ Responsive breakpoints:
 |--------|-----------------|
 | Posts | Student engagement/participation |
 | Comments | Student interactions |
-| Event Attendance | Student interest in campus activities |
+| Event Activity | Student interest in campus activities |
 | Messages | Student-to-student/alumni communication |
 | Followers | Student network building |
 | Profile Completion | Student profile investment |

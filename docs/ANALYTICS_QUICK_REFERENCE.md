@@ -28,7 +28,6 @@
 | Metric | What It Shows | Good Target |
 |--------|---------------|------------|
 | Events | Total events | Growing |
-| Event Attendees | Total attendance | Growing |
 | Event Bookmarks | Saved events | Growing |
 | Followers | Follow relationships | Growing |
 | Pending Alumni | Verification queue | < 20 |

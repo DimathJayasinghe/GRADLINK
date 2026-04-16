@@ -109,7 +109,6 @@ CREATE INDEX IF NOT EXISTS idx_comments_user_id ON comments(user_id);
 CREATE INDEX IF NOT EXISTS idx_post_likes_user_id ON post_likes(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_events_organizer_id ON events(organizer_id);
-CREATE INDEX IF NOT EXISTS idx_event_attendees_user_id ON event_attendees(user_id);
 CREATE INDEX IF NOT EXISTS idx_followers_follower_id ON followers(follower_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 ```
@@ -210,7 +209,7 @@ Before going live:
 1. Click 📚 Students button
 2. Check new user signups trend
 3. Verify content engagement
-4. Monitor event attendance growth
+4. Monitor event activity growth
 ```
 
 ### Example 3: Admin Activity Check

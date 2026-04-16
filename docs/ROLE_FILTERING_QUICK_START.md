@@ -23,7 +23,6 @@
 - Reactions received
 - Messages sent
 - Events created
-- Event attendances
 - Followers gained
 - Active users (DAU/WAU/MAU)
 - Engagement rate
@@ -57,7 +56,7 @@
 ```
 1. Click 📚 Students button
 2. View student post/comment rates
-3. Check event attendance
+3. Check event activity
 4. Review student network growth
 ```
 
@@ -104,13 +103,13 @@
 ### For Alumni Filter
 - **High posts/comments** = Strong alumni engagement
 - **High followers** = Alumni network building
-- **High event attendance** = Alumni interested in events
+- **High event activity** = Alumni interested in events
 - **High profile completion** = Serious alumni profiles
 
 ### For Student Filter
 - **High posts/comments** = Active student community
 - **High messages** = Good peer communication
-- **High event attendance** = Event popularity with students
+- **High event activity** = Event popularity with students
 - **Growing numbers** = Student acquisition working
 
 ### For Admin Filter
@@ -193,7 +192,7 @@ Plan around peak times
 ### Student Metrics to Watch
 ```
 ✓ Engagement Rate > 50%
-✓ Event Attendance growing
+✓ Event activity growing
 ✓ Comment volume high
 ✓ New user signups
 ```

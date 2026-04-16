@@ -27,7 +27,6 @@ When a role is selected, ALL metrics are recalculated to show only activity from
 
 ✅ **Events**
 - Events created
-- Event attendances
 - Event bookmarks
 
 ✅ **Engagement Metrics**

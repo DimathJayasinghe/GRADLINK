@@ -27,7 +27,6 @@ The GRADLINK Admin Analytics Dashboard has been significantly expanded to provid
 #### Community Metrics
 - **Followers**: Total follow relationships
 - **Events**: Total events created
-- **Event Attendees**: Total event attendance records
 - **Event Bookmarks**: Total bookmarked events
 - **Pending Alumni**: Unverified alumni waiting approval
 - **Unread Notifications**: System notifications pending user read
@@ -42,7 +41,6 @@ The GRADLINK Admin Analytics Dashboard has been significantly expanded to provid
 #### Event Pipeline
 - **Event Requests Pipeline**: Status breakdown (Pending, Approved, Rejected)
 - **Events Status**: Status breakdown (Draft, Published, Cancelled)
-- **Event Attendee Distribution**: Shows event attendance trends
 
 ### 3. **Time Series Analytics**
 
@@ -188,7 +186,6 @@ Ensure the following tables exist:
 - `post_likes` (reactions)
 - `messages` (direct messaging)
 - `events` (event management)
-- `event_attendees` (attendance tracking)
 - `event_bookmarks` (saved events)
 - `followers` (follow relationships)
 - `notifications` (system notifications)
@@ -211,7 +208,6 @@ Navigate to: `/admin/engagement`
 - **DAU/MAU Ratio > 0.3**: High daily engagement
 - **Avg Comments/Post > 2**: Strong discussion activity
 - **Profile Completion > 70%**: Good profile adoption
-- **Event Attendance Rate**: Shows community event interest
 
 ## Performance Considerations
 

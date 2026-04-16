@@ -65,17 +65,6 @@ INSERT INTO event_tags (event_id, tag_id) VALUES
 (8, 2); -- Alumni Meetup -> Alumni
 
 -- -----------------------------
--- event_attendees
--- -----------------------------
-INSERT INTO event_attendees (event_id, user_id, status, guests, created_at) VALUES
-(1, 4, 'attending', 0, NOW()),
-(1, 5, 'maybe', 0, NOW()),
-(2, 6, 'attending', 2, NOW()),
-(3, 7, 'attending', 0, NOW()),
-(7, 8, 'attending', 0, NOW()),
-(8, 9, 'maybe', 0, NOW());
-
--- -----------------------------
 -- event_bookmarks
 -- -----------------------------
 INSERT INTO event_bookmarks (user_id, event_id, created_at) VALUES

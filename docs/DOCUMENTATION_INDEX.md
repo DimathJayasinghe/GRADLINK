@@ -116,7 +116,6 @@ Then read:
 
 ### Community Health (6 KPIs)
 - Events
-- Event Attendees
 - Event Bookmarks
 - Followers
 - Pending Alumni

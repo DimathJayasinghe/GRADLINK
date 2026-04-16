@@ -221,22 +221,6 @@ CREATE TABLE IF NOT EXISTS `event_tags` (
   CONSTRAINT `event_tags_fk_tag` FOREIGN KEY (`tag_id`) REFERENCES `tags` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE IF NOT EXISTS `event_attendees` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `event_id` INT NOT NULL,
-  `user_id` INT NOT NULL,
-  `status` ENUM('attending','maybe','not_attending') NOT NULL DEFAULT 'attending',
-  `guests` SMALLINT DEFAULT 0,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL  ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_event_user` (`event_id`,`user_id`),
-  KEY `idx_event` (`event_id`),
-  KEY `idx_user` (`user_id`),
-  CONSTRAINT `event_attendees_fk_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `event_attendees_fk_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 CREATE TABLE IF NOT EXISTS `event_bookmarks` (
   `user_id` INT NOT NULL,
   `event_id` INT NOT NULL,
