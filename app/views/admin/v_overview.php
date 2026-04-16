@@ -64,8 +64,8 @@
         gap: 0.55rem;
         padding: 0.38rem 0.6rem;
         border-radius: 999px;
-        border: 1px solid var(--border, #e9ecef);
-        background: var(--bg-secondary, #f8f9fa);
+        border: 1px solid var(--border);
+        background: #141414;
         min-width: 0;
         max-width: 100%;
     }
@@ -156,7 +156,7 @@
         justify-content: space-between;
         gap: 0.75rem;
         padding: 0.7rem 0.85rem;
-        border: 1px solid var(--border, #e9ecef);
+        border: 1px solid var(--border, var(--bg));
         border-radius: 14px;
         background: var(--bg-secondary, #f8f9fa);
     }
