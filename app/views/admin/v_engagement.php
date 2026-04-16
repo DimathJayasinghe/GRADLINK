@@ -43,10 +43,10 @@
                 $roleFilter = $data['roleFilter'] ?? null;
                 $usersByRole = $data['usersByRole'] ?? ['all' => 0, 'admin' => 0, 'alumni' => 0, 'undergrad' => 0];
                 $roles = [
-                    'all' => ['label' => 'All Users', 'color' => '#3a3a3a', 'icon' => '👥'],
-                    'admin' => ['label' => 'Admins', 'color' => '#ff6b6b', 'icon' => '🔐'],
-                    'alumni' => ['label' => 'Alumni', 'color' => '#4ecdc4', 'icon' => '🎓'],
-                    'undergrad' => ['label' => 'Students', 'color' => '#45b7d1', 'icon' => '📚'],
+                    'all' => ['label' => 'All Users', 'color' => '#3a3a3a', 'icon' => ''],
+                    'admin' => ['label' => 'Admins', 'color' => '#ff6b6b', 'icon' => ''],
+                    'alumni' => ['label' => 'Alumni', 'color' => '#4ecdc4', 'icon' => ''],
+                    'undergrad' => ['label' => 'Students', 'color' => '#45b7d1', 'icon' => ''],
                 ];
             ?>
             <?php foreach ($roles as $key => $role): ?>
@@ -67,7 +67,7 @@
         </div>
         <?php if ($roleFilter): ?>
             <p style="color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem;">
-                📊 Showing metrics for: <strong><?php echo ucfirst($roleFilter); ?></strong> users only
+                Showing metrics for: <strong><?php echo ucfirst($roleFilter); ?></strong> users only
             </p>
         <?php endif; ?>
     </section>
@@ -91,10 +91,6 @@
             <span class="kpi-label">Engagement Rate</span>
             <span id="metric-engagement-rate" class="kpi-value"><?php echo (float)($e['engagement_rate'] ?? 0); ?>%</span>
         </div>
-        <div class="kpi">
-            <span class="kpi-label">DAU / WAU / MAU</span>
-            <span id="metric-dau-wau" class="kpi-value"><?php echo (int)($e['dau'] ?? 0); ?> / <?php echo (int)($e['wau'] ?? 0); ?> / <?php echo (int)($e['mau'] ?? 0); ?></span>
-        </div>
     </section>
 
     <section class="charts">
@@ -114,20 +110,8 @@
 
     <section class="kpis">
         <div class="kpi"><span class="kpi-label">Total Posts</span><span id="metric-posts" class="kpi-value"><?php echo (int)$e['posts']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Total Comments</span><span id="metric-comments" class="kpi-value"><?php echo (int)$e['comments']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Total Reactions</span><span id="metric-reactions" class="kpi-value"><?php echo (int)$e['reactions']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Messages</span><span id="metric-messages" class="kpi-value"><?php echo (int)$e['messages']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Avg Posts/User</span><span id="metric-avg-posts" class="kpi-value"><?php echo (float)($e['avg_posts_per_user'] ?? 0); ?></span></div>
-        <div class="kpi"><span class="kpi-label">Avg Comments/Post</span><span id="metric-avg-comments" class="kpi-value"><?php echo (float)($e['avg_comments_per_post'] ?? 0); ?></span></div>
-    </section>
-
-    <section class="kpis">
         <div class="kpi"><span class="kpi-label">Events</span><span id="metric-events" class="kpi-value"><?php echo (int)$e['events']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Event Attendees</span><span id="metric-event-attendees" class="kpi-value"><?php echo (int)$e['event_attendees']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Event Bookmarks</span><span id="metric-event-bookmarks" class="kpi-value"><?php echo (int)$e['event_bookmarks']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Followers</span><span id="metric-followers" class="kpi-value"><?php echo (int)$e['followers']; ?></span></div>
         <div class="kpi"><span class="kpi-label">Pending Alumni</span><span id="metric-pending-alumni" class="kpi-value"><?php echo (int)$e['pending_alumni']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Unread Notifications</span><span id="metric-unread-notifications" class="kpi-value"><?php echo (int)$e['notifications_unread']; ?></span></div>
     </section>
 
     <?php $profile = $e['profile_metrics'] ?? ['completion_rate'=>0,'private_profiles'=>0,'completed'=>0,'total'=>0]; ?>
@@ -143,7 +127,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <h3 style="margin: 0;">User Locations</h3>
                 <button id="expandMapBtn" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
-                    🗺️ Expand Map
+                    Expand Map
                 </button>
             </div>
             <div id="smallMap" style="width: 100%; height: 300px; border-radius: 8px;"></div>
