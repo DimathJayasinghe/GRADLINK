@@ -175,8 +175,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     <dt>Status</dt><dd>${status}</dd>
                 </dl>
                 <div class="alumni-modal-media">
-                    <div class="alumni-modal-media-title">NIC Image</div>
-                    <img src="${"<?php echo URLROOT; ?>"}/media/profile/${encodeURIComponent(row.getAttribute('data-req-id') + '_nic.jpg')}" alt="NIC Image">
+                    <div class="alumni-modal-media-title">Profile Image</div>
+                    <img src="${"<?php echo URLROOT; ?>"}/media/profile/${encodeURIComponent(row.getAttribute('data-req-id') + '_nic.jpg')}" alt="Profile Image">
                 </div>`;
             modal.style.display = 'block';
         };

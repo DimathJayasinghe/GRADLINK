@@ -1,6 +1,20 @@
 <?php ob_start() ?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/common.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/posts.css">
+<style>
+.admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(6, 10, 16, 0.58); backdrop-filter: blur(2px); }
+.admin-modal-content { background: #0e1b28; margin: 5% auto; padding: 1.5rem 1.6rem; border-radius: 10px; width: 92%; max-width: 560px; position: relative; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35); color: #d9e3ee; }
+.admin-modal-content h2 { margin: 0 0 0.9rem; color: #ffffff; font-size: 1.25rem; }
+#modalReqContent { line-height: 1.55; }
+.req-modal-grid { display: grid; grid-template-columns: 92px 1fr; gap: 8px 12px; align-items: start; font-size: 0.95rem; }
+.req-modal-grid dt { margin: 0; color: #b9c7d6; font-weight: 600; }
+.req-modal-grid dd { margin: 0; color: #eef4fb; word-break: break-word; }
+.req-modal-description { margin-top: 0.9rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.req-modal-description-title { margin: 0 0 0.4rem; color: #b9c7d6; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.req-modal-description-box { white-space: pre-line; background: rgba(255, 255, 255, 0.04); padding: 0.85rem 0.95rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); color: #eef4fb; }
+.admin-modal-close { position: absolute; top: 0.75rem; right: 0.95rem; font-size: 1.45rem; color: #c9d5e2; cursor: pointer; line-height: 1; }
+.admin-modal-close:hover { color: #ffffff; }
+</style>
 <?php $styles = ob_get_clean() ?>
 
 <?php
@@ -62,7 +76,7 @@
 
 <!-- Modal -->
 <div id="reqModal" class="admin-modal" style="display:none;">
-    <div class="admin-modal-content" style="background-color:var(--surface-4);">
+    <div class="admin-modal-content">
         <span class="admin-modal-close">&times;</span>
         <h2>Request Details</h2>
         <div id="modalReqContent"></div>
@@ -114,13 +128,18 @@ document.addEventListener('DOMContentLoaded', function(){
             const id = this.closest('tr').getAttribute('data-req-id');
             const req = cache.find(x=>x.req_id==id);
             document.getElementById('modalReqContent').innerHTML = `
-                <b>Title:</b> ${escapeHtml(req.title)}<br>
-                <b>Club:</b> ${escapeHtml(req.club_name)}<br>
-                <b>Requester:</b> ${escapeHtml(req.user_name)}<br>
-                <b>Date:</b> ${escapeHtml(req.event_date||'')}<br>
-                <b>Time:</b> ${escapeHtml(req.event_time||'')}<br>
-                <b>Venue:</b> ${escapeHtml(req.event_venue||'')}<br>
-                <b>Description:</b><div style='white-space:pre-line;background:#f8f8f8;padding:0.5em;border-radius:4px; color: black'>${escapeHtml(req.description||'')}</div>
+                <dl class="req-modal-grid">
+                    <dt>Title</dt><dd>${escapeHtml(req.title)}</dd>
+                    <dt>Club</dt><dd>${escapeHtml(req.club_name)}</dd>
+                    <dt>Requester</dt><dd>${escapeHtml(req.user_name)}</dd>
+                    <dt>Date</dt><dd>${escapeHtml(req.event_date||'')}</dd>
+                    <dt>Time</dt><dd>${escapeHtml(req.event_time||'')}</dd>
+                    <dt>Venue</dt><dd>${escapeHtml(req.event_venue||'')}</dd>
+                </dl>
+                <div class="req-modal-description">
+                    <div class="req-modal-description-title">Description</div>
+                    <div class="req-modal-description-box">${escapeHtml(req.description||'')}</div>
+                </div>
             `;
             document.getElementById('reqModal').style.display='block';
         });
