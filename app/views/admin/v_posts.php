@@ -196,43 +196,55 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         // Approve, Reject, Delete
         document.querySelectorAll('.delete-post').forEach(btn => {
-            btn.onclick = function() {
+            btn.onclick = async function() {
                 const row = this.closest('tr');
                 const postId = row.getAttribute('data-post-id');
-                if(confirm('Delete this post? This action cannot be undone.')) {
-                    fetch(`<?php echo URLROOT; ?>/post/admin_delete/${postId}`, { method: 'GET' })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.ok) {
-                                fetchPosts();
-                            } else {
-                                alert('Failed to delete post');
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Delete error:', err);
-                            alert('Error deleting post');
-                        });
+                const confirmed = await AdminPopup.confirm(
+                    'Delete this post? This action cannot be undone.',
+                    { title: 'Delete Post', confirmText: 'Delete', danger: true }
+                );
+                if (!confirmed) {
+                    return;
                 }
+
+                fetch(`<?php echo URLROOT; ?>/post/admin_delete/${postId}`, { method: 'GET' })
+                    .then(r => r.json())
+                    .then(async data => {
+                        if (data.ok) {
+                            fetchPosts();
+                        } else {
+                            await AdminPopup.alert('Failed to delete post', { title: 'Delete Post', danger: true });
+                        }
+                    })
+                    .catch(async err => {
+                        console.error('Delete error:', err);
+                        await AdminPopup.alert('Error deleting post', { title: 'Delete Post', danger: true });
+                    });
             };
         });
     }
 
     // Bulk actions
-    document.getElementById('bulk-delete').onclick = function() {
+    document.getElementById('bulk-delete').onclick = async function() {
         const ids = getSelectedPostIds();
         if (!ids.length) {
-            alert('Please select at least one post.');
+            await AdminPopup.alert('Please select at least one post.', { title: 'Bulk Delete' });
             return;
         }
-        if(confirm(`Delete ${ids.length} selected post(s)? This action cannot be undone.`)) {
-            Promise.all(ids.map(id => fetch(`<?php echo URLROOT; ?>/post/admin_delete/${id}`, { method: 'GET' }).then(r => r.json())))
-                .then(() => fetchPosts())
-                .catch(err => {
-                    console.error('Bulk delete error:', err);
-                    alert('Error during bulk delete');
-                });
+        const confirmed = await AdminPopup.confirm(
+            `Delete ${ids.length} selected post(s)? This action cannot be undone.`,
+            { title: 'Bulk Delete', confirmText: 'Delete', danger: true }
+        );
+        if (!confirmed) {
+            return;
         }
+
+        Promise.all(ids.map(id => fetch(`<?php echo URLROOT; ?>/post/admin_delete/${id}`, { method: 'GET' }).then(r => r.json())))
+            .then(() => fetchPosts())
+            .catch(async err => {
+                console.error('Bulk delete error:', err);
+                await AdminPopup.alert('Error during bulk delete', { title: 'Bulk Delete', danger: true });
+            });
     };
 
     function getSelectedPostIds() {
@@ -258,23 +270,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function debounce(fn, ms) {
         let t; return function(...a) { clearTimeout(t); t = setTimeout(() => fn.apply(this, a), ms); };
     }
-    function deletePostFromModal(postId) {
-        if(confirm('Delete this post? This action cannot be undone.')) {
-            fetch(`<?php echo URLROOT; ?>/post/admin_delete/${postId}`, { method: 'GET' })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.ok) {
-                        modal.style.display = 'none';
-                        fetchPosts();
-                    } else {
-                        alert('Failed to delete post');
-                    }
-                })
-                .catch(err => {
-                    console.error('Delete error:', err);
-                    alert('Error deleting post');
-                });
+    async function deletePostFromModal(postId) {
+        const confirmed = await AdminPopup.confirm(
+            'Delete this post? This action cannot be undone.',
+            { title: 'Delete Post', confirmText: 'Delete', danger: true }
+        );
+        if (!confirmed) {
+            return;
         }
+
+        fetch(`<?php echo URLROOT; ?>/post/admin_delete/${postId}`, { method: 'GET' })
+            .then(r => r.json())
+            .then(async data => {
+                if (data.ok) {
+                    modal.style.display = 'none';
+                    fetchPosts();
+                } else {
+                    await AdminPopup.alert('Failed to delete post', { title: 'Delete Post', danger: true });
+                }
+            })
+            .catch(async err => {
+                console.error('Delete error:', err);
+                await AdminPopup.alert('Error deleting post', { title: 'Delete Post', danger: true });
+            });
     }
     
     // Make URLROOT and modal accessible to deletePostFromModal

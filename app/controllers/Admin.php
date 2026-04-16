@@ -238,6 +238,75 @@
             $this->jsonResponse(['ok' => false, 'error' => $result['message'] ?? 'Failed to suspend user'], 400);
         }
 
+        public function deleteUser() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $userId = (int)($input['user_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($userId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Invalid user ID'], 422);
+                return;
+            }
+
+            if ($adminId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Unauthenticated'], 401);
+                return;
+            }
+
+            if ($userId === $adminId) {
+                $this->jsonResponse(['ok' => false, 'error' => 'You cannot delete your own admin account from this screen'], 400);
+                return;
+            }
+
+            $settingsModel = $this->model('M_settings');
+            if (!$settingsModel || !method_exists($settingsModel, 'getUserById') || !method_exists($settingsModel, 'deleteAccount')) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Delete service unavailable'], 500);
+                return;
+            }
+
+            $targetUser = $settingsModel->getUserById($userId);
+            if (!$targetUser) {
+                $this->jsonResponse(['ok' => false, 'error' => 'User not found'], 404);
+                return;
+            }
+
+            $role = strtolower(trim((string)($targetUser->role ?? '')));
+            $name = strtolower(trim((string)($targetUser->name ?? '')));
+            $email = strtolower(trim((string)($targetUser->email ?? '')));
+            $isProtected = (
+                $role === 'admin' ||
+                $role === 'administrator' ||
+                $role === 'system_admin' ||
+                $role === 'system-administrator' ||
+                $role === 'super_admin' ||
+                strpos($role, 'admin') !== false ||
+                $name === 'system administrator' ||
+                $email === 'admin@gradlink.com'
+            );
+
+            if ($isProtected) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Admin accounts cannot be deleted from this screen'], 403);
+                return;
+            }
+
+            $deleted = $settingsModel->deleteAccount($userId);
+            if (!$deleted) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Failed to delete user'], 400);
+                return;
+            }
+
+            $this->jsonResponse(['ok' => true, 'message' => 'User deleted successfully']);
+        }
+
         public function liftSuspension() {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 $this->redirect('/admin/suspendedUsers');

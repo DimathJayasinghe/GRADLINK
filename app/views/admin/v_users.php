@@ -154,7 +154,12 @@
                                         data-user-id="<?php echo (int)$u->id; ?>"
                                         data-user-name="<?php echo htmlspecialchars($u->name ?? 'User', ENT_QUOTES, 'UTF-8'); ?>"
                                     >Suspend</button>
-                                    <button class="admin-btn admin-btn-danger delete-user" type="button">Delete</button>
+                                    <button
+                                        class="admin-btn admin-btn-danger delete-user"
+                                        type="button"
+                                        data-user-id="<?php echo (int)$u->id; ?>"
+                                        data-user-name="<?php echo htmlspecialchars($u->name ?? 'User', ENT_QUOTES, 'UTF-8'); ?>"
+                                    >Delete</button>
                                 </div>
                             </td>
                         </tr>
@@ -194,7 +199,12 @@
                                         data-user-id="<?php echo (int)$u->id; ?>"
                                         data-user-name="<?php echo htmlspecialchars($u->name ?? 'User', ENT_QUOTES, 'UTF-8'); ?>"
                                     >Suspend</button>
-                                    <button class="admin-btn admin-btn-danger delete-user" type="button">Delete</button>
+                                    <button
+                                        class="admin-btn admin-btn-danger delete-user"
+                                        type="button"
+                                        data-user-id="<?php echo (int)$u->id; ?>"
+                                        data-user-name="<?php echo htmlspecialchars($u->name ?? 'User', ENT_QUOTES, 'UTF-8'); ?>"
+                                    >Delete</button>
                                 </div>
                             </td>
                             <td style="text-align: center;">
@@ -296,11 +306,15 @@
                     const userName = this.dataset.userName || `User #${userId}`;
 
                     if (!userId) {
-                        alert('Invalid user id for suspension');
+                        await AdminPopup.alert('Invalid user id for suspension', { title: 'Suspend User' });
                         return;
                     }
 
-                    const reasonInput = prompt(`Suspend ${userName}?\nProvide a reason (optional):`, 'Suspended by admin from User Management');
+                    const reasonInput = await AdminPopup.prompt(
+                        `Suspend ${userName}?\nProvide a reason (optional):`,
+                        'Suspended by admin from User Management',
+                        { title: 'Suspend User', confirmText: 'Suspend', danger: true }
+                    );
                     if (reasonInput === null) {
                         return;
                     }
@@ -328,10 +342,84 @@
                             throw new Error((payload && payload.error) ? payload.error : 'Failed to suspend user');
                         }
 
-                        alert((payload && payload.message) ? payload.message : `${userName} suspended successfully`);
+                        await AdminPopup.alert(
+                            (payload && payload.message) ? payload.message : `${userName} suspended successfully`,
+                            { title: 'Suspend User' }
+                        );
                         this.textContent = 'Suspended';
                     } catch (err) {
-                        alert(err && err.message ? err.message : 'Failed to suspend user');
+                        await AdminPopup.alert(err && err.message ? err.message : 'Failed to suspend user', {
+                            title: 'Suspend User',
+                            danger: true
+                        });
+                        this.disabled = false;
+                        this.textContent = previousText;
+                    }
+                });
+            });
+        })();
+
+        (function() {
+            const deleteButtons = document.querySelectorAll('.delete-user');
+            if (!deleteButtons.length) return;
+
+            const apiBase = '<?php echo URLROOT; ?>';
+
+            deleteButtons.forEach((btn) => {
+                btn.addEventListener('click', async function() {
+                    const userId = Number(this.dataset.userId || 0);
+                    const userName = this.dataset.userName || `User #${userId}`;
+
+                    if (!userId) {
+                        await AdminPopup.alert('Invalid user id for deletion', { title: 'Delete User', danger: true });
+                        return;
+                    }
+
+                    const confirmed = await AdminPopup.confirm(
+                        `Permanently delete ${userName}? This action cannot be undone.`,
+                        { title: 'Delete User', confirmText: 'Delete User', danger: true }
+                    );
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    const previousText = this.textContent;
+                    const row = this.closest('tr');
+                    this.disabled = true;
+                    this.textContent = 'Deleting...';
+
+                    try {
+                        const response = await fetch(`${apiBase}/admin/deleteUser`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({
+                                user_id: userId
+                            })
+                        });
+
+                        const payload = await response.json().catch(() => null);
+                        if (!response.ok || !payload || !payload.ok) {
+                            throw new Error((payload && payload.error) ? payload.error : 'Failed to delete user');
+                        }
+
+                        if (row) {
+                            row.remove();
+                        }
+
+                        await AdminPopup.alert(
+                            (payload && payload.message) ? payload.message : `${userName} deleted successfully`,
+                            { title: 'Delete User' }
+                        );
+                    } catch (err) {
+                        await AdminPopup.alert(err && err.message ? err.message : 'Failed to delete user', {
+                            title: 'Delete User',
+                            danger: true
+                        });
                         this.disabled = false;
                         this.textContent = previousText;
                     }

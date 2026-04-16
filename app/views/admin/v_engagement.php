@@ -445,7 +445,7 @@
         markerClusterGroup.clearLayers();
         
         if (!locations || locations.length === 0) {
-            alert('No location data available.');
+            AdminPopup.alert('No location data available.', { title: 'Location Data' });
             return;
         }
         

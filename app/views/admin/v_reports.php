@@ -624,7 +624,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (err) {
                 console.error('Status update failed', err);
-                alert(err && err.message ? err.message : 'Failed to save report status');
+                await AdminPopup.alert(err && err.message ? err.message : 'Failed to save report status', {
+                    title: 'Report Status',
+                    danger: true
+                });
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -640,11 +643,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const userId = Number(this.dataset.userId || 0);
             const userName = this.dataset.userName || `User #${userId}`;
             if (!userId) {
-                alert('Invalid user id for suspension');
+                await AdminPopup.alert('Invalid user id for suspension', { title: 'Suspend User' });
                 return;
             }
 
-            const reasonInput = prompt(`Suspend ${userName}?\nProvide a reason (optional):`, 'Suspended due to repeated reports');
+            const reasonInput = await AdminPopup.prompt(
+                `Suspend ${userName}?\nProvide a reason (optional):`,
+                'Suspended due to repeated reports',
+                { title: 'Suspend User', confirmText: 'Suspend', danger: true }
+            );
             if (reasonInput === null) {
                 return;
             }
@@ -672,11 +679,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error((json && json.error) ? json.error : 'Failed to suspend user');
                 }
 
-                alert((json && json.message) ? json.message : `${userName} suspended successfully`);
+                await AdminPopup.alert((json && json.message) ? json.message : `${userName} suspended successfully`, {
+                    title: 'Suspend User'
+                });
                 this.textContent = 'Suspended';
             } catch (err) {
                 console.error('Suspension failed', err);
-                alert(err && err.message ? err.message : 'Failed to suspend user');
+                await AdminPopup.alert(err && err.message ? err.message : 'Failed to suspend user', {
+                    title: 'Suspend User',
+                    danger: true
+                });
                 this.disabled = false;
                 this.textContent = previousText;
             }

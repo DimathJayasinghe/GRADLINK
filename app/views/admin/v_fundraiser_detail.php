@@ -345,8 +345,12 @@ if (!empty($flashMessages)): ?>
 const URLROOT = '<?php echo URLROOT; ?>';
 const fundId = <?php echo $fund->id; ?>;
 
-function approveFund() {
-    if (!confirm('Are you sure you want to approve this fundraiser?')) return;
+async function approveFund() {
+    const confirmed = await AdminPopup.confirm('Are you sure you want to approve this fundraiser?', {
+        title: 'Approve Fundraiser',
+        confirmText: 'Approve'
+    });
+    if (!confirmed) return;
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = URLROOT + '/admin/approveFundraiser';
@@ -355,8 +359,13 @@ function approveFund() {
     form.submit();
 }
 
-function holdFund() {
-    if (!confirm('Are you sure you want to put this fundraiser on hold?')) return;
+async function holdFund() {
+    const confirmed = await AdminPopup.confirm('Are you sure you want to put this fundraiser on hold?', {
+        title: 'Hold Fundraiser',
+        confirmText: 'Hold',
+        danger: true
+    });
+    if (!confirmed) return;
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = URLROOT + '/admin/holdFundraiser';
@@ -365,8 +374,12 @@ function holdFund() {
     form.submit();
 }
 
-function completeFund() {
-    if (!confirm('Are you sure you want to mark this fundraiser as completed?')) return;
+async function completeFund() {
+    const confirmed = await AdminPopup.confirm('Are you sure you want to mark this fundraiser as completed?', {
+        title: 'Complete Fundraiser',
+        confirmText: 'Complete'
+    });
+    if (!confirmed) return;
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = URLROOT + '/admin/completeFundraiser';
@@ -375,9 +388,34 @@ function completeFund() {
     form.submit();
 }
 
-function removeFund() {
-    if (!confirm('WARNING: This will permanently delete this fundraiser and all associated data. Are you sure?')) return;
-    if (!confirm('This action cannot be undone. Type "DELETE" to confirm.')) return;
+async function removeFund() {
+    const confirmed = await AdminPopup.confirm(
+        'WARNING: This will permanently delete this fundraiser and all associated data. Are you sure?',
+        { title: 'Remove Fundraiser', confirmText: 'Continue', danger: true }
+    );
+    if (!confirmed) return;
+
+    const keyword = await AdminPopup.prompt(
+        'Type DELETE to permanently remove this fundraiser.',
+        '',
+        {
+            title: 'Confirm Remove',
+            confirmText: 'Remove',
+            cancelText: 'Cancel',
+            placeholder: 'DELETE',
+            required: true,
+            danger: true
+        }
+    );
+    if (keyword === null) return;
+    if (keyword.trim().toUpperCase() !== 'DELETE') {
+        await AdminPopup.alert('Confirmation keyword mismatch. Removal cancelled.', {
+            title: 'Remove Fundraiser',
+            danger: true
+        });
+        return;
+    }
+
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = URLROOT + '/admin/removeFundraiser';
