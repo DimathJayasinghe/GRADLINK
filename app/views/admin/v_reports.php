@@ -68,67 +68,12 @@
 
 <?php ob_start();?>
 <div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 15px;">
-    <h1>Reports & Exports</h1>
-    <!-- <div class="admin-actions">
-        <button class="admin-btn" id="export-users">Export User Reports</button>
-        <button class="admin-btn" id="export-content">Export Content Reports</button>
-    </div> -->
+    <h1>Content Reports</h1>
+
 </div>
 
-<div class="admin-card" style="margin-bottom:1.5rem;">
-    <div class="card-header">
-        <h3>User Reports</h3>
-    </div>
-    <div class="reports-table-wrapper">
-        <table class="admin-table" id="userReportsTable">
-            <thead>
-                <tr>
-                    <th class="report-id">Report ID</th>
-                    <th class="report-user">User</th>
-                    <th class="report-type">Type</th>
-                    <th class="report-status">Status</th>
-                    <th class="report-date">Date</th>
-                    <th class="report-actions">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>101</td>
-                    <td>Jane Smith</td>
-                    <td>Abuse</td>
-                    <td><span class="status-badge status-pending">Pending</span></td>
-                    <td>2025-09-01</td>
-                    <td style="display:flex; gap:0.5rem;">
-                        <button class="admin-btn view-report">View</button>
-                        <select class="admin-select">
-                            <option value="">Change Status</option>
-                            <option value="resolved">Mark as Resolved</option>
-                            <option value="rejected">Reject Report</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td>102</td>
-                    <td>Michael Lee</td>
-                    <td>Spam</td>
-                    <td><span class="status-badge status-resolved">Resolved</span></td>
-                    <td>2025-09-03</td>
-                    <td style="display:flex; gap:0.5rem;"><button class="admin-btn view-report">View</button>
-                        <select class="admin-select">
-                            <option value="">Change Status</option>
-                            <option value="pending">Mark as Pending</option>
-                            <option value="rejected">Reject Report</option>
-                        </select>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
 <div class="admin-card">
-    <div class="card-header">
-        <h3>Content Reports</h3>
-    </div>
+
     <div class="reports-table-wrapper">
         <table class="admin-table" id="contentReportsTable">
             <thead>

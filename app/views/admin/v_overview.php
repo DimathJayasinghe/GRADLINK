@@ -158,7 +158,7 @@
         padding: 0.7rem 0.85rem;
         border: 1px solid var(--border, var(--bg));
         border-radius: 14px;
-        background: var(--bg-secondary, #f8f9fa);
+        background:  #141414;
     }
     .online-user-modal-meta {
         font-size: 0.72rem;
@@ -332,7 +332,7 @@
     <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-pencil-alt"></i></div>
         <div class="stat-info">
-            <h3><?php echo number_format($data['detailed']['posts'] ?? 0); ?></h3>
+            <h3><?php echo number_format($data['engagement']['posts'] ?? 0); ?></h3>
             <p>Total Posts</p>
         </div>
     </div>
