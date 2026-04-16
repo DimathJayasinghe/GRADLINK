@@ -126,6 +126,77 @@
             $this->view('admin/v_engagement', $data);
         }
 
+        public function exportUsersCsv() {
+            $roleFilter = $this->resolveExportRoleFilter();
+            $rows = $this->adminModel->getUsersExportRows($roleFilter);
+
+            $csvRows = [];
+            foreach ($rows as $row) {
+                $csvRows[] = [
+                    (int)($row->id ?? 0),
+                    (string)($row->name ?? ''),
+                    (string)($row->email ?? ''),
+                    (string)($row->role ?? ''),
+                    (string)($row->batch ?? ''),
+                    (string)($row->gender ?? ''),
+                    !empty($row->special_alumni) ? 'yes' : 'no',
+                    (string)($row->created_at ?? ''),
+                ];
+            }
+
+            $suffix = $roleFilter ?: 'all';
+            $filename = 'users_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
+            $this->streamCsvDownload($filename, ['id', 'name', 'email', 'role', 'batch', 'gender', 'special_alumni', 'created_at'], $csvRows);
+        }
+
+        public function exportContentCsv() {
+            $roleFilter = $this->resolveExportRoleFilter();
+            $rows = $this->adminModel->getContentExportRows($roleFilter);
+
+            $csvRows = [];
+            foreach ($rows as $row) {
+                $csvRows[] = [
+                    (int)($row->content_id ?? 0),
+                    (string)($row->content_type ?? 'post'),
+                    (string)($row->title ?? ''),
+                    (string)($row->status ?? ''),
+                    (string)($row->author_name ?? ''),
+                    (string)($row->author_email ?? ''),
+                    (string)($row->author_role ?? ''),
+                    (string)($row->created_at ?? ''),
+                    (string)($row->body ?? ''),
+                ];
+            }
+
+            $suffix = $roleFilter ?: 'all';
+            $filename = 'content_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
+            $this->streamCsvDownload($filename, ['content_id', 'type', 'title', 'status', 'author_name', 'author_email', 'author_role', 'created_at', 'body'], $csvRows);
+        }
+
+        public function exportEventsCsv() {
+            $roleFilter = $this->resolveExportRoleFilter();
+            $rows = $this->adminModel->getEventsExportRows($roleFilter);
+
+            $csvRows = [];
+            foreach ($rows as $row) {
+                $csvRows[] = [
+                    (int)($row->event_id ?? 0),
+                    (string)($row->title ?? ''),
+                    (string)($row->status ?? ''),
+                    (string)($row->start_at ?? ''),
+                    (string)($row->venue ?? ''),
+                    (string)($row->organizer_name ?? ''),
+                    (string)($row->organizer_email ?? ''),
+                    (string)($row->organizer_role ?? ''),
+                    (string)($row->created_at ?? ''),
+                ];
+            }
+
+            $suffix = $roleFilter ?: 'all';
+            $filename = 'events_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
+            $this->streamCsvDownload($filename, ['event_id', 'title', 'status', 'start_at', 'venue', 'organizer_name', 'organizer_email', 'organizer_role', 'created_at'], $csvRows);
+        }
+
         public function reports() {
             $postReports = $this->adminModel->getPostReports();
             $profileReports = $this->adminModel->getProfileReports();
@@ -868,6 +939,45 @@
             http_response_code($status);
             header('Content-Type: application/json');
             echo json_encode($payload);
+        }
+
+        private function resolveExportRoleFilter(): ?string {
+            $role = strtolower(trim((string)($_GET['role'] ?? '')));
+            if ($role === '' || $role === 'all') {
+                return null;
+            }
+
+            if (!in_array($role, ['admin', 'alumni', 'undergrad'], true)) {
+                return null;
+            }
+
+            return $role;
+        }
+
+        private function streamCsvDownload(string $filename, array $headers, array $rows): void {
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            echo "\xEF\xBB\xBF";
+            $output = fopen('php://output', 'w');
+
+            if ($output === false) {
+                exit;
+            }
+
+            fputcsv($output, $headers);
+            foreach ($rows as $row) {
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+            exit;
         }
 
         private function getRecentSystemUpdates(int $limit = 20): array {

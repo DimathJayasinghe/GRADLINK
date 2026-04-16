@@ -129,6 +129,214 @@ class M_admin {
         }
     }
 
+    public function getUsersExportRows(?string $role = null): array {
+        try {
+            $batchExpr = $this->columnExists('users', 'batch_no')
+                ? 'u.batch_no'
+                : ($this->columnExists('users', 'graduation_year') ? 'u.graduation_year' : 'NULL');
+            $genderExpr = $this->columnExists('users', 'gender') ? 'u.gender' : 'NULL';
+            $specialExpr = $this->columnExists('users', 'special_alumni') ? 'u.special_alumni' : '0';
+            $createdExpr = $this->columnExists('users', 'created_at') ? 'u.created_at' : 'NULL';
+            $orderExpr = $this->columnExists('users', 'created_at') ? 'u.created_at DESC' : 'u.id DESC';
+
+            $sql = "SELECT
+                        u.id AS id,
+                        u.name AS name,
+                        u.email AS email,
+                        u.role AS role,
+                        {$batchExpr} AS batch,
+                        {$genderExpr} AS gender,
+                        {$specialExpr} AS special_alumni,
+                        {$createdExpr} AS created_at
+                    FROM users u";
+
+            $binds = [];
+            $sql = $this->appendRoleFilterClause($sql, $role, 'u.role', $binds);
+            $sql .= " ORDER BY {$orderExpr}";
+
+            $this->db->query($sql);
+            foreach ($binds as $key => $value) {
+                $this->db->bind($key, $value);
+            }
+
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    public function getContentExportRows(?string $role = null): array {
+        if (!$this->tableExists('posts')) {
+            return [];
+        }
+
+        try {
+            $titleExpr = $this->columnExists('posts', 'title') ? 'p.title' : 'NULL';
+            $bodyExpr = $this->columnExists('posts', 'content')
+                ? 'p.content'
+                : ($this->columnExists('posts', 'description') ? 'p.description' : 'NULL');
+            $statusExpr = $this->columnExists('posts', 'status') ? 'p.status' : "'published'";
+            $createdExpr = $this->columnExists('posts', 'created_at') ? 'p.created_at' : 'NULL';
+            $orderExpr = $this->columnExists('posts', 'created_at') ? 'p.created_at DESC' : 'p.id DESC';
+
+            $canJoinUsers = $this->columnExists('posts', 'user_id') && $this->tableExists('users');
+
+            $sql = "SELECT
+                        p.id AS content_id,
+                        'post' AS content_type,
+                        {$titleExpr} AS title,
+                        {$bodyExpr} AS body,
+                        {$statusExpr} AS status,
+                        {$createdExpr} AS created_at,";
+
+            if ($canJoinUsers) {
+                $sql .= " p.user_id AS author_id,
+                          u.name AS author_name,
+                          u.email AS author_email,
+                          u.role AS author_role
+                          FROM posts p
+                          LEFT JOIN users u ON u.id = p.user_id";
+            } else {
+                $authorExpr = $this->columnExists('posts', 'user_id') ? 'p.user_id' : 'NULL';
+                $sql .= " {$authorExpr} AS author_id,
+                          NULL AS author_name,
+                          NULL AS author_email,
+                          NULL AS author_role
+                          FROM posts p";
+            }
+
+            $binds = [];
+            if ($canJoinUsers) {
+                $sql = $this->appendRoleFilterClause($sql, $role, 'u.role', $binds);
+            }
+            $sql .= " ORDER BY {$orderExpr}";
+
+            $this->db->query($sql);
+            foreach ($binds as $key => $value) {
+                $this->db->bind($key, $value);
+            }
+
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    public function getEventsExportRows(?string $role = null): array {
+        if (!$this->tableExists('events')) {
+            return [];
+        }
+
+        try {
+            $titleCol = $this->firstExistingColumn('events', ['title', 'name', 'headline']);
+            $statusCol = $this->firstExistingColumn('events', ['status']);
+            $startCol = $this->firstExistingColumn('events', ['start_datetime', 'start_date', 'event_date', 'date']);
+            $venueCol = $this->firstExistingColumn('events', ['venue', 'location', 'place']);
+            $createdCol = $this->firstExistingColumn('events', ['created_at', 'updated_at']);
+            $organizerCol = $this->firstExistingColumn('events', ['organizer_id', 'user_id', 'created_by']);
+
+            $titleExpr = $titleCol ? "e.`{$titleCol}`" : 'NULL';
+            $statusExpr = $statusCol ? "e.`{$statusCol}`" : "'unknown'";
+            $startExpr = $startCol ? "e.`{$startCol}`" : 'NULL';
+            $venueExpr = $venueCol ? "e.`{$venueCol}`" : 'NULL';
+            $createdExpr = $createdCol ? "e.`{$createdCol}`" : 'NULL';
+            $organizerExpr = $organizerCol ? "e.`{$organizerCol}`" : 'NULL';
+
+            $sql = "SELECT
+                        e.id AS event_id,
+                        {$titleExpr} AS title,
+                        {$statusExpr} AS status,
+                        {$startExpr} AS start_at,
+                        {$venueExpr} AS venue,
+                        {$organizerExpr} AS organizer_id,
+                        {$createdExpr} AS created_at";
+
+            $canJoinUsers = $organizerCol !== null && $this->tableExists('users');
+            if ($canJoinUsers) {
+                $sql .= ", u.name AS organizer_name,
+                          u.email AS organizer_email,
+                          u.role AS organizer_role
+                          FROM events e
+                          LEFT JOIN users u ON u.id = e.`{$organizerCol}`";
+            } else {
+                $sql .= ", NULL AS organizer_name,
+                          NULL AS organizer_email,
+                          NULL AS organizer_role
+                          FROM events e";
+            }
+
+            $binds = [];
+            if ($canJoinUsers) {
+                $sql = $this->appendRoleFilterClause($sql, $role, 'u.role', $binds);
+            }
+
+            if ($createdCol) {
+                $sql .= " ORDER BY e.`{$createdCol}` DESC";
+            } else if ($startCol) {
+                $sql .= " ORDER BY e.`{$startCol}` DESC";
+            } else {
+                $sql .= " ORDER BY e.id DESC";
+            }
+
+            $this->db->query($sql);
+            foreach ($binds as $key => $value) {
+                $this->db->bind($key, $value);
+            }
+
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    private function firstExistingColumn(string $table, array $columns): ?string {
+        foreach ($columns as $column) {
+            if ($this->columnExists($table, $column)) {
+                return $column;
+            }
+        }
+
+        return null;
+    }
+
+    private function appendRoleFilterClause(string $sql, ?string $role, string $column, array &$binds): string {
+        $roleValues = $this->getRoleFilterValues($role);
+        if (empty($roleValues)) {
+            return $sql;
+        }
+
+        $placeholders = [];
+        foreach ($roleValues as $idx => $value) {
+            $placeholder = ':role_' . $idx;
+            $placeholders[] = $placeholder;
+            $binds[$placeholder] = $value;
+        }
+
+        $joiner = (stripos($sql, ' where ') !== false) ? ' AND ' : ' WHERE ';
+        return $sql . $joiner . $column . ' IN (' . implode(', ', $placeholders) . ')';
+    }
+
+    private function getRoleFilterValues(?string $role): array {
+        $normalized = strtolower(trim((string)$role));
+        if ($normalized === '' || $normalized === 'all') {
+            return [];
+        }
+
+        if ($normalized === 'undergrad') {
+            return ['undergrad', 'student', 'undergraduate'];
+        }
+
+        if ($normalized === 'alumni') {
+            return ['alumni', 'alumnus'];
+        }
+
+        if ($normalized === 'admin') {
+            return ['admin', 'administrator', 'system_admin', 'system-administrator', 'super_admin'];
+        }
+
+        return [];
+    }
+
     public function setSpecialAlumniStatus(int $userId, bool $isSpecial): array {
         if ($userId <= 0) {
             return ['ok' => false, 'message' => 'Invalid user ID.'];

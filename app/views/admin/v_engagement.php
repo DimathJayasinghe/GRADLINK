@@ -717,19 +717,21 @@
             downloadCSV('analytics_summary.csv', rows);
         });
 
+        const roleParam = new URLSearchParams(window.location.search).get('role');
+        const roleQuery = roleParam ? `?role=${encodeURIComponent(roleParam)}` : '';
+
         document.getElementById('export-users').addEventListener('click', function(){
-            // Placeholder: in real app, this should call server for a full export. Here export empty header.
-            downloadCSV('users_export.csv', [['id','name','email','role','batch']]);
+            window.location.href = `<?php echo URLROOT; ?>/admin/exportUsersCsv${roleQuery}`;
         });
 
         document.getElementById('export-content').addEventListener('click', function(){
-            downloadCSV('content_export.csv', [['id','title','type','status','date']]);
+            window.location.href = `<?php echo URLROOT; ?>/admin/exportContentCsv${roleQuery}`;
         });
 
         const exportEventsBtn = document.getElementById('export-events');
         if(exportEventsBtn){
             exportEventsBtn.addEventListener('click', function(){
-                downloadCSV('events_export.csv', [['id','title','status','start_datetime','venue']]);
+                window.location.href = `<?php echo URLROOT; ?>/admin/exportEventsCsv${roleQuery}`;
             });
         }
     });
