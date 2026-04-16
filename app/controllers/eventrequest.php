@@ -255,6 +255,13 @@ class eventrequest extends Controller{
      */
     protected function createEventFromRequest($req){
         if(!$req) return false;
+
+        // Avoid duplicate event creation if this request was already converted.
+        if(!empty($req->event_id)){
+            $this->model->setStatus((int)$req->id, 'Approved');
+            return (int)$req->event_id;
+        }
+
         $eventModel = $this->model('M_event');
         $startDatetime = null;
         if(!empty($req->event_date)){
@@ -351,9 +358,64 @@ class eventrequest extends Controller{
         if($id === null){ http_response_code(400); echo json_encode(['ok'=>false,'error'=>'missing id']); return; }
         $req = $this->model->getById((int)$id);
         if(!$req){ http_response_code(404); echo json_encode(['ok'=>false,'error'=>'not found']); return; }
+
+        if(!empty($req->event_id)){
+            $this->model->setStatus((int)$id, 'Approved');
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true, 'new_event_id' => (int)$req->event_id, 'already_converted' => true]);
+            return;
+        }
+
         $newId = $this->createEventFromRequest($req);
         header('Content-Type: application/json');
         echo json_encode(['ok' => $newId ? true : false, 'new_event_id' => $newId]);
+    }
+
+    // ADMIN: JSON listing for ongoing events from events table
+    public function admin_events_list(){
+        SessionManager::ensureStarted();
+        if(!SessionManager::hasRole('admin')){ http_response_code(403); echo 'Forbidden'; return; }
+
+        $search = trim($_GET['search'] ?? '');
+        $eventModel = $this->model('M_event');
+        $rows = $eventModel->getOngoingForAdmin($search);
+
+        header('Content-Type: application/json');
+        echo json_encode(['events' => $rows]);
+    }
+
+    // ADMIN: delete an event from ongoing events table and sync linked request
+    public function admin_delete_event_ajax($id = null){
+        SessionManager::ensureStarted();
+        if(!SessionManager::hasRole('admin')){ http_response_code(403); echo json_encode(['ok'=>false,'error'=>'forbidden']); return; }
+        if($id === null){ http_response_code(400); echo json_encode(['ok'=>false,'error'=>'missing id']); return; }
+
+        $eventId = (int)$id;
+        if($eventId <= 0){ http_response_code(400); echo json_encode(['ok'=>false,'error'=>'invalid id']); return; }
+
+        $req = $this->model->getByEventId($eventId);
+
+        $eventModel = $this->model('M_event');
+        $deleted = $eventModel->delete($eventId);
+        if(!$deleted){
+            http_response_code(500);
+            header('Content-Type: application/json');
+            echo json_encode(['ok'=>false,'error'=>'failed to delete event']);
+            return;
+        }
+
+        if($req){
+            $this->model->setEventId((int)$req->id, null);
+            $this->model->setStatus((int)$req->id, 'Rejected');
+            if((int)($req->add_to_calendar ?? 0) === 1 && !empty($req->post_id)){
+                $postModel = $this->model('M_post');
+                $postModel->adminDeletePost((int)$req->post_id);
+                $this->model->setPostId((int)$req->id, null);
+            }
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['ok' => true]);
     }
 
     // ADMIN: mark request as rejected via AJAX

@@ -155,6 +155,33 @@ class M_event {
         $this->db->bind(':offset',$offset);
         return $this->db->resultSet();
     }
+
+    public function getOngoingForAdmin(string $search = ''): array {
+        $sql = "SELECT e.*, u.name AS organizer_name, ei.file_path AS attachment_image
+                FROM events e
+                LEFT JOIN users u ON u.id = e.organizer_id
+                LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1
+                WHERE e.status = 'published'
+                    AND e.visibility = 'public'";
+
+        if ($search !== '') {
+            $sql .= " AND (
+                LOWER(COALESCE(e.title, '')) LIKE :search
+                OR LOWER(COALESCE(e.description, '')) LIKE :search
+                OR LOWER(COALESCE(e.venue, '')) LIKE :search
+                OR LOWER(COALESCE(u.name, '')) LIKE :search
+            )";
+        }
+
+        $sql .= " ORDER BY e.start_datetime DESC";
+
+        $this->db->query($sql);
+        if ($search !== '') {
+            $this->db->bind(':search', '%' . strtolower($search) . '%');
+        }
+
+        return $this->db->resultSet();
+    }
 }
 
 ?>
