@@ -216,11 +216,6 @@
                     <span class="btn" style="color: ffffff;" id="bookmark-label"><?php echo $isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'; ?></span>
                 </button>
             </div>
-            <div class="details-info-item" style="padding: 0px;display: flex; align-items: center; justify-content: center;">
-                <button id="detail-rsvp-btn" style="background-color:#455663; padding: 13px 60px" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
-                    <span class="btn" style="color:#ffffff">RSVP</span>
-                </button>
-            </div>
         </div>
         
         <div class="event-info">
@@ -236,32 +231,8 @@
             <?php endif; ?>
         </div>
 
-        <!-- Attendees list -->
-        <div class="event-info" style="margin-top:12px;">
-            <h3 style="margin-top:0;">Attendees</h3>
-            <?php
-                $attendees = isset($data['attendees']) ? $data['attendees'] : [];
-                if(!$attendees) {
-                    echo '<p class="no-events">No attendees yet.</p>';
-                } else {
-                    echo '<ul style="list-style:none;padding:0;margin:0;">';
-                    foreach($attendees as $a){
-                        $name = htmlspecialchars($a->name ?? ($a->email ?? 'User'));
-                        $guests = (int)($a->guests ?? 0);
-                        echo '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);">';
-                        echo '<strong>' . $name . '</strong>';
-                        if($guests > 0) echo ' <span style="color:var(--muted);">(' . $guests . ' guests)</span>';
-                        echo '</li>';
-                    }
-                    echo '</ul>';
-                }
-            ?>
-        </div>
-
-
         <div class="action-buttons">
             <a href="<?php echo URLROOT; ?>/calender/" class="btn btn-back">Back to All Event Requests</a>
-            <!-- <button id="detail-cancel-rsvp-btn" class="btn btn-danger" style="display:none;">Cancel My RSVP</button> -->
         </div>
         
     <?php else: ?>
@@ -321,94 +292,3 @@ JS;
 
 require APPROOT . '/views/calender/v_layout_adapter.php';
 ?>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-    var detailRsvp = document.getElementById('detail-rsvp-btn');
-    var detailCancel = document.getElementById('detail-cancel-rsvp-btn');
-    var evtId = detailRsvp ? detailRsvp.getAttribute('data-event-id') : null;
-    if(detailRsvp){
-        detailRsvp.addEventListener('click', function(e){
-            // open global modal
-            window.__GL_openRsvpModal && window.__GL_openRsvpModal(Number(evtId), '<?php echo addslashes(htmlspecialchars($request->title)); ?>');
-        });
-    }
-
-    // Expose handler to update attendees after RSVP completes
-    window.__GL_onRsvpConfirmed = function(ev){
-        // refresh attendees list via AJAX
-        fetch('<?php echo URLROOT; ?>/calender/attendees?event_id=' + encodeURIComponent(ev), { credentials: 'same-origin' }).then(r=>r.json()).then(function(data){
-            if(data && data.ok){
-                // update attendees list in DOM
-                var container = document.querySelector('.event-info + .event-info');
-                if(container){
-                    var html = '<h3 style="margin-top:0;">Attendees</h3><ul style="list-style:none;padding:0;margin:0;">';
-                    data.attendees.forEach(function(a){
-                        var name = a.name || a.email || 'User';
-                        var batch = a.batch_no ? (' • Batch ' + a.batch_no) : '';
-                        html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+name+'</strong>' + batch + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>';
-                    });
-                    html += '</ul>';
-                    container.innerHTML = html;
-                }
-                // show/hide cancel button if current user is in the list
-                fetch('<?php echo URLROOT; ?>/auth/current_user_id.json', { credentials: 'same-origin' }).then(r=>r.json()).then(function(j){
-                    var uid = j && j.user_id;
-                    var me = data.attendees.find(function(a){ return Number(a.user_id) === Number(uid); });
-                    if(me){ detailCancel.style.display = 'inline-flex'; } else { detailCancel.style.display = 'none'; }
-                }).catch(()=>{});
-                // update detail RSVP button label to include count (if present)
-                var detailBtn = document.getElementById('detail-rsvp-btn');
-                if(detailBtn){
-                    var cnt = (typeof data.attendees_count !== 'undefined') ? data.attendees_count : (data.attendees? data.attendees.length : 0);
-                    var span = detailBtn.querySelector('span.btn');
-                    if(span) span.textContent = 'RSVP' + (cnt?(' ( '+cnt+' )') : '');
-                }
-            }
-        }).catch(err=>console.error('attendees fetch failed',err));
-    };
-
-    // Wire cancel button to call cancel endpoint
-    if(detailCancel){
-        detailCancel.addEventListener('click', function(){
-            if(!confirm('Cancel your RSVP?')) return;
-            fetch('<?php echo URLROOT; ?>/calender/cancelRsvp', { method: 'POST', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ event_id: Number(evtId) }) }).then(r=>r.json()).then(function(data){
-                if(data && data.ok){
-                    // refresh attendees UI
-                    window.__GL_onRsvpConfirmed && window.__GL_onRsvpConfirmed(evtId);
-                } else { alert('Cancel failed'); }
-            }).catch(err=>{ console.error(err); alert('Cancel failed'); });
-        });
-    }
-
-    // Initial check: show cancel button if current user already RSVP'd
-    fetch('<?php echo URLROOT; ?>/calender/attendees?event_id=' + encodeURIComponent(evtId), { credentials: 'same-origin' }).then(r=>r.json()).then(function(data){
-        if(data && data.ok){
-            // render initial attendees into the list container
-            var container = document.querySelector('.event-info + .event-info');
-            if(container){
-                if(!data.attendees || data.attendees.length === 0){ container.innerHTML = '<p class="no-events">No attendees yet.</p>'; }
-                else {
-                    var html = '<h3 style="margin-top:0;">Attendees</h3><ul style="list-style:none;padding:0;margin:0;">';
-                    data.attendees.forEach(function(a){ var batch = a.batch_no ? (' • Batch ' + a.batch_no) : ''; html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+ (a.name||a.email||'User') +'</strong>' + batch + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>'; });
-                    html += '</ul>';
-                    container.innerHTML = html;
-                }
-            }
-            // show cancel button if current user is present
-            fetch('<?php echo URLROOT; ?>/auth/current_user_id.json', { credentials: 'same-origin' }).then(r=>r.json()).then(function(j){
-                var uid = j && j.user_id;
-                var me = data.attendees.find(function(a){ return Number(a.user_id) === Number(uid); });
-                if(me){ detailCancel.style.display = 'inline-flex'; } else { detailCancel.style.display = 'none'; }
-            }).catch(()=>{});
-            // update button label with count
-            var detailBtn = document.getElementById('detail-rsvp-btn');
-            if(detailBtn){
-                var cnt = (typeof data.attendees_count !== 'undefined') ? data.attendees_count : (data.attendees? data.attendees.length : 0);
-                var span = detailBtn.querySelector('span.btn');
-                if(span) span.textContent = 'RSVP' + (cnt?(' ( '+cnt+' )') : '');
-            }
-        }
-    }).catch(()=>{});
-
-});
-</script>
