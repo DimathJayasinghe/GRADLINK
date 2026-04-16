@@ -43,6 +43,19 @@
             </div>
         <?php endif; ?>
 
+        <?php if (!empty($data['suspended_status'])): ?>
+            <div class="status-popup" role="dialog" aria-live="assertive">
+                <div class="popup-card">
+                    <h3>Account Suspended</h3>
+                    <p>Your account has been suspended and cannot be used right now.</p>
+                    <?php if (!empty($data['suspended_reason'])): ?>
+                        <p><strong>Reason:</strong> <?php echo htmlspecialchars($data['suspended_reason']); ?></p>
+                    <?php endif; ?>
+                    <a href="<?php echo URLROOT; ?>/auth" class="popup-btn">Back to Auth</a>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <form class="form" method="post" action="<?php echo URLROOT; ?>/login/alumni">
             <label class="field">
                 <span class="sr-only">Email</span>

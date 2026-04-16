@@ -2,8 +2,34 @@
 class M_event {
     private $db;
 
+    private function ensureSuspendedUsersTable(): void {
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS suspended_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                suspended_by INT NOT NULL,
+                reason TEXT NULL,
+                status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+                suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                lifted_at DATETIME NULL,
+                lifted_by INT NULL,
+                removed_at DATETIME NULL,
+                removed_by INT NULL,
+                snapshot_name VARCHAR(255) NULL,
+                snapshot_email VARCHAR(255) NULL,
+                snapshot_role VARCHAR(50) NULL,
+                INDEX idx_suspended_users_user (user_id),
+                INDEX idx_suspended_users_status (status),
+                INDEX idx_suspended_users_suspended_at (suspended_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->db->execute();
+        } catch (Exception $e) {
+        }
+    }
+
     public function __construct(){
         $this->db = new Database();
+        $this->ensureSuspendedUsersTable();
     }
 
     /** Create event
@@ -74,7 +100,15 @@ class M_event {
 
     public function findById(int $id){
         // include primary image (if any) as attachment_image
-        $this->db->query('SELECT e.*, u.name AS organizer_name, u.email AS organizer_email, ei.file_path AS attachment_image FROM events e LEFT JOIN users u ON u.id = e.organizer_id LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1 WHERE e.id = :id LIMIT 1');
+                $this->db->query("SELECT e.*, u.name AS organizer_name, u.email AS organizer_email, ei.file_path AS attachment_image
+                                                    FROM events e
+                                                    LEFT JOIN users u ON u.id = e.organizer_id
+                                                    LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1
+                                                    LEFT JOIN suspended_users su ON su.user_id = e.organizer_id AND su.status = 'active'
+                                                    WHERE e.id = :id
+                                                        AND su.id IS NULL
+                                                        AND (e.status IS NULL OR LOWER(e.status) <> 'cancelled')
+                                                    LIMIT 1");
         $this->db->bind(':id', $id);
         return $this->db->single();
     }
@@ -85,11 +119,17 @@ class M_event {
     public function findList(array $filters = []){
         $where = [];
         $params = [];
+        $where[] = 'su.id IS NULL';
+        $where[] = "(e.status IS NULL OR LOWER(e.status) <> 'cancelled')";
         if(!empty($filters['start'])){ $where[] = 'e.start_datetime >= :start'; $params[':start'] = $filters['start']; }
         if(!empty($filters['end'])){ $where[] = 'e.start_datetime <= :end'; $params[':end'] = $filters['end']; }
         if(!empty($filters['visibility'])){ $where[] = 'e.visibility = :visibility'; $params[':visibility'] = $filters['visibility']; }
     // include primary image (attachment_image) via left join to event_images
-        $sql = 'SELECT e.*, u.name AS organizer_name, ei.file_path AS attachment_image FROM events e LEFT JOIN users u ON u.id = e.organizer_id LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1';
+        $sql = "SELECT e.*, u.name AS organizer_name, ei.file_path AS attachment_image
+                FROM events e
+                LEFT JOIN users u ON u.id = e.organizer_id
+                LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1
+                LEFT JOIN suspended_users su ON su.user_id = e.organizer_id AND su.status = 'active'";
         if($where) $sql .= ' WHERE ' . implode(' AND ', $where);
         $sql .= ' ORDER BY e.start_datetime ASC';
         if(!empty($filters['limit'])){ $sql .= ' LIMIT ' . (int)$filters['limit']; }
@@ -100,7 +140,15 @@ class M_event {
     }
 
     public function search(string $q, int $limit = 20, int $offset = 0){
-    $sql = "SELECT e.*, u.name AS organizer_name, ei.file_path AS attachment_image FROM events e LEFT JOIN users u ON u.id = e.organizer_id LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1 WHERE MATCH(e.title,e.description) AGAINST(:q IN NATURAL LANGUAGE MODE) LIMIT :limit OFFSET :offset";
+        $sql = "SELECT e.*, u.name AS organizer_name, ei.file_path AS attachment_image
+                        FROM events e
+                        LEFT JOIN users u ON u.id = e.organizer_id
+                        LEFT JOIN event_images ei ON ei.event_id = e.id AND ei.is_primary = 1
+                        LEFT JOIN suspended_users su ON su.user_id = e.organizer_id AND su.status = 'active'
+                        WHERE MATCH(e.title,e.description) AGAINST(:q IN NATURAL LANGUAGE MODE)
+                            AND su.id IS NULL
+                            AND (e.status IS NULL OR LOWER(e.status) <> 'cancelled')
+                        LIMIT :limit OFFSET :offset";
         $this->db->query($sql);
         $this->db->bind(':q',$q);
         $this->db->bind(':limit',$limit);

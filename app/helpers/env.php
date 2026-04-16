@@ -9,12 +9,12 @@ if (!function_exists('gl_bootstrap_env')) {
      * Bootstrap environment variables from .env files
      * @param array|null $paths Custom paths to .env files (optional)
      */
-    function gl_bootstrap_env(array $paths = null): void {
+    function gl_bootstrap_env(?array $paths = null): void {
         $projectRoot = dirname(__DIR__, 2);
         
-        // Default paths: check .env.local first, then .env
+        // Default paths: load only runtime env files.
+        // Never load .env.example in production/runtime.
         $paths = $paths ?? [
-            $projectRoot . '/.env.example',
             $projectRoot . '/.env.local',
             $projectRoot . '/.env',
         ];

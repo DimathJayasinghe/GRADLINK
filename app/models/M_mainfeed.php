@@ -2,8 +2,34 @@
 class M_mainfeed{
     private $db;
 
+    private function ensureSuspendedUsersTable(): void {
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS suspended_users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                suspended_by INT NOT NULL,
+                reason TEXT NULL,
+                status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+                suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                lifted_at DATETIME NULL,
+                lifted_by INT NULL,
+                removed_at DATETIME NULL,
+                removed_by INT NULL,
+                snapshot_name VARCHAR(255) NULL,
+                snapshot_email VARCHAR(255) NULL,
+                snapshot_role VARCHAR(50) NULL,
+                INDEX idx_suspended_users_user (user_id),
+                INDEX idx_suspended_users_status (status),
+                INDEX idx_suspended_users_suspended_at (suspended_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->db->execute();
+        } catch (Exception $e) {
+        }
+    }
+
     public function __construct() {
         $this->db = new Database();
+        $this->ensureSuspendedUsersTable();
     }
 
     // Method to fetch posts for the main feed
@@ -25,6 +51,8 @@ class M_mainfeed{
                               FROM posts p
                               INNER JOIN followers f ON p.user_id = f.followed_id AND f.follower_id = :current_user_id
                               INNER JOIN users u ON u.id = p.user_id
+                                                            LEFT JOIN suspended_users su ON su.user_id = p.user_id AND su.status = 'active'
+                                                            WHERE su.id IS NULL
                               ORDER BY p.created_at DESC
                               LIMIT :limit OFFSET :offset");
             $this->db->bind(':current_user_id', $_SESSION['user_id']);
@@ -42,6 +70,8 @@ class M_mainfeed{
                                 (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes
                               FROM posts p
                               INNER JOIN users u ON u.id = p.user_id
+                                                            LEFT JOIN suspended_users su ON su.user_id = p.user_id AND su.status = 'active'
+                                                            WHERE su.id IS NULL
                               ORDER BY p.created_at DESC
                               LIMIT :limit OFFSET :offset");
             $this->db->bind(':limit', (int)$limit, PDO::PARAM_INT);
@@ -60,7 +90,9 @@ class M_mainfeed{
                                 (SELECT COUNT(*) FROM post_likes l WHERE l.post_id = p.id) AS likes
                           FROM posts p
                           INNER JOIN users u ON u.id = p.user_id
+                                                    LEFT JOIN suspended_users su ON su.user_id = p.user_id AND su.status = 'active'
                           WHERE p.id = :id
+                                                        AND su.id IS NULL
                           LIMIT 1");
         $this->db->bind(':id', (int)$id, PDO::PARAM_INT);
         return $this->db->single();

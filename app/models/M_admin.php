@@ -83,10 +83,40 @@ class M_admin {
             $skillCounts = [];
         }
 
+        // Gender distribution
+        $genders = [];
+        try {
+            $this->db->query('SELECT gender, COUNT(*) AS count FROM users GROUP BY gender');
+            $genders = $this->db->resultSet();
+        } catch (Exception $e) {
+            $genders = [];
+        }
+
+        // Event status distribution
+        $eventStatus = [];
+        try {
+            $this->db->query('SELECT status, COUNT(*) AS count FROM events GROUP BY status');
+            $eventStatus = $this->db->resultSet();
+        } catch (Exception $e) {
+            $eventStatus = [];
+        }
+
+        // Event request status distribution
+        $eventRequestStatus = [];
+        try {
+            $this->db->query('SELECT status, COUNT(*) AS count FROM event_requests GROUP BY status');
+            $eventRequestStatus = $this->db->resultSet();
+        } catch (Exception $e) {
+            $eventRequestStatus = [];
+        }
+
         return [
             'roles' => $roles,
             'batches' => $batches,
             'skills' => $skillCounts,
+            'genders' => $genders,
+            'event_status' => $eventStatus,
+            'event_request_status' => $eventRequestStatus,
         ];
     }
 
@@ -152,35 +182,632 @@ class M_admin {
 
     public function getEngagementMetrics(): array {
         // Posts, comments, reactions — comments/reactions tables may not exist yet; compute what exists
-        $posts = 0;
-        try {
-            $this->db->query('SELECT COUNT(*) AS c FROM Posts');
-            $posts = $this->db->single()->c ?? 0;
-        } catch (Exception $e) {
-            // Posts table doesn't exist, set to 0
-            $posts = 0;
-        }
+        $posts = $this->safeCount('SELECT COUNT(*) AS c FROM posts');
+        $comments = $this->safeCount('SELECT COUNT(*) AS c FROM comments');
+        $reactions = $this->safeCount('SELECT COUNT(*) AS c FROM post_likes');
+        $messages = $this->safeCount('SELECT COUNT(*) AS c FROM messages');
+        $events = $this->safeCount('SELECT COUNT(*) AS c FROM events');
+        $eventAttendees = $this->safeCount('SELECT COUNT(*) AS c FROM event_attendees');
+        $eventBookmarks = $this->safeCount('SELECT COUNT(*) AS c FROM event_bookmarks');
+        $followers = $this->safeCount('SELECT COUNT(*) AS c FROM followers');
+        $notifications = $this->safeCount('SELECT COUNT(*) AS c FROM notifications');
+        $notificationsUnread = $this->safeCount("SELECT COUNT(*) AS c FROM notifications WHERE is_read = 0");
+        $pendingAlumni = $this->safeCount("SELECT COUNT(*) AS c FROM unregisted_alumni WHERE status = 'pending'");
+        $totalUsers = $this->safeCount('SELECT COUNT(*) AS c FROM users');
 
-        // Placeholders for comments/reactions
-        $comments = 0;
-        $reactions = 0;
+        // Activity over time (active users per month based on any activity)
+        $overTime = $this->safeActiveUsersOverTime();
 
-        // Activity over time (active users per month based on created_at for now)
-        $overTime = [];
-        try {
-            $this->db->query("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS c FROM users GROUP BY ym ORDER BY ym ASC");
-            $overTime = $this->db->resultSet();
-        } catch (Exception $e) {
-            // created_at column might not exist
-            $overTime = [];
-        }
+        $active30 = $this->safeActiveUsersWindow(30);
+        $dau = $this->safeActiveUsersWindow(1);
+        $wau = $this->safeActiveUsersWindow(7);
+        $mau = $this->safeActiveUsersWindow(30);
+
+        $avgPostsPerUser = $totalUsers > 0 ? round($posts / $totalUsers, 2) : 0;
+        $avgCommentsPerPost = $posts > 0 ? round($comments / $posts, 2) : 0;
+        $avgReactionsPerPost = $posts > 0 ? round($reactions / $posts, 2) : 0;
+        $avgMessagesPerUser = $totalUsers > 0 ? round($messages / $totalUsers, 2) : 0;
+        $engagementRate = $totalUsers > 0 ? round(($active30 / $totalUsers) * 100, 1) : 0;
 
         return [
             'posts' => (int)$posts,
             'comments' => (int)$comments,
             'reactions' => (int)$reactions,
+            'messages' => (int)$messages,
+            'events' => (int)$events,
+            'event_attendees' => (int)$eventAttendees,
+            'event_bookmarks' => (int)$eventBookmarks,
+            'followers' => (int)$followers,
+            'notifications' => (int)$notifications,
+            'notifications_unread' => (int)$notificationsUnread,
+            'pending_alumni' => (int)$pendingAlumni,
+            'active_30_days' => (int)$active30,
+            'dau' => (int)$dau,
+            'wau' => (int)$wau,
+            'mau' => (int)$mau,
+            'avg_posts_per_user' => $avgPostsPerUser,
+            'avg_comments_per_post' => $avgCommentsPerPost,
+            'avg_reactions_per_post' => $avgReactionsPerPost,
+            'avg_messages_per_user' => $avgMessagesPerUser,
+            'engagement_rate' => $engagementRate,
             'active_over_time' => $overTime,
+            'time_series' => $this->getTimeSeriesBundle(),
+            'event_pipeline' => $this->getEventPipelineMetrics(),
+            'profile_metrics' => $this->getProfileCompletionMetrics(),
         ];
+    }
+
+    public function getPostReports(): array {
+        try {
+            $this->db->query('
+                SELECT
+                    r.id,
+                    r.post_id,
+                    r.post_owner_id,
+                    r.reporter_id,
+                    r.category,
+                    r.details,
+                    r.reference_link,
+                    r.status,
+                    r.created_at,
+                    r.updated_at,
+                    p.content AS post_content,
+                    p.created_at AS post_created_at,
+                    reporter.name AS reporter_name,
+                    reporter.role AS reporter_role,
+                    owner.name AS owner_name,
+                    owner.role AS owner_role
+                FROM post_reports r
+                LEFT JOIN posts p ON p.id = r.post_id
+                LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                LEFT JOIN users owner ON owner.id = r.post_owner_id
+                ORDER BY r.created_at DESC
+            ');
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            error_log("Error fetching post reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function safeCount(string $sql): int {
+        try {
+            $this->db->query($sql);
+            $row = $this->db->single();
+            return (int)($row->c ?? 0);
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    public function countUsersByRole(?string $role = null): int {
+        try {
+            if ($role === null) {
+                $this->db->query('SELECT COUNT(*) AS c FROM users');
+            } else {
+                $this->db->query('SELECT COUNT(*) AS c FROM users WHERE role = :role');
+                $this->db->bind(':role', $role);
+            }
+            return (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    private function safeActiveUsersWindow(int $days): int {
+        try {
+            $this->db->query("SELECT COUNT(DISTINCT user_id) AS c FROM (
+                SELECT user_id FROM posts WHERE created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
+                UNION ALL SELECT user_id FROM comments WHERE created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
+                UNION ALL SELECT user_id FROM post_likes WHERE created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
+                UNION ALL SELECT sender_id AS user_id FROM messages WHERE message_time >= DATE_SUB(NOW(), INTERVAL $days DAY)
+                UNION ALL SELECT organizer_id AS user_id FROM events WHERE created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
+            ) t");
+            $row = $this->db->single();
+            return (int)($row->c ?? 0);
+        } catch (Exception $e) {
+            try {
+                $this->db->query("SELECT COUNT(*) AS c FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)");
+                $row = $this->db->single();
+                return (int)($row->c ?? 0);
+            } catch (Exception $e2) {
+                return 0;
+            }
+        }
+    }
+
+    private function safeActiveUsersOverTime(): array {
+        try {
+            $this->db->query("SELECT ym, COUNT(DISTINCT user_id) AS c FROM (
+                SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, user_id FROM posts
+                UNION ALL SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, user_id FROM comments
+                UNION ALL SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, user_id FROM post_likes
+                UNION ALL SELECT DATE_FORMAT(message_time, '%Y-%m') AS ym, sender_id AS user_id FROM messages
+            ) t GROUP BY ym ORDER BY ym ASC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            try {
+                $this->db->query("SELECT DATE_FORMAT(created_at, '%Y-%m') AS ym, COUNT(*) AS c FROM users GROUP BY ym ORDER BY ym ASC");
+                return $this->db->resultSet();
+            } catch (Exception $e2) {
+                return [];
+            }
+        }
+    }
+
+    private function getTimeSeriesBundle(): array {
+        return [
+            'signups' => $this->safeTimeSeries('users', 'created_at'),
+            'posts' => $this->safeTimeSeries('posts', 'created_at'),
+            'comments' => $this->safeTimeSeries('comments', 'created_at'),
+            'reactions' => $this->safeTimeSeries('post_likes', 'created_at'),
+            'messages' => $this->safeTimeSeries('messages', 'message_time'),
+            'events' => $this->safeTimeSeries('events', 'created_at'),
+            'event_attendees' => $this->safeTimeSeries('event_attendees', 'created_at'),
+        ];
+    }
+
+    private function safeTimeSeries(string $table, string $dateColumn): array {
+        try {
+            $this->db->query("SELECT DATE_FORMAT($dateColumn, '%Y-%m') AS ym, COUNT(*) AS c FROM $table GROUP BY ym ORDER BY ym ASC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    private function getEventPipelineMetrics(): array {
+        $requests = [];
+        $events = [];
+        try {
+            $this->db->query('SELECT status, COUNT(*) AS c FROM event_requests GROUP BY status');
+            $requests = $this->db->resultSet();
+        } catch (Exception $e) {
+            $requests = [];
+        }
+        try {
+            $this->db->query('SELECT status, COUNT(*) AS c FROM events GROUP BY status');
+            $events = $this->db->resultSet();
+        } catch (Exception $e) {
+            $events = [];
+        }
+        return [
+            'requests' => $requests,
+            'events' => $events,
+        ];
+    }
+
+    private function getProfileCompletionMetrics(): array {
+        $completed = 0;
+        $total = 0;
+        $privateProfiles = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM users");
+            $total = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $total = 0;
+        }
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM users WHERE (bio IS NOT NULL AND bio != '') OR (skills IS NOT NULL AND skills != '') OR (profile_image IS NOT NULL AND profile_image != 'default.jpg') OR (display_name IS NOT NULL AND display_name != '')");
+            $completed = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $completed = 0;
+        }
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM user_profiles_visibility WHERE is_public = 0");
+            $privateProfiles = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $privateProfiles = 0;
+        }
+
+        $completionRate = $total > 0 ? round(($completed / $total) * 100, 1) : 0;
+        return [
+            'completed' => $completed,
+            'total' => $total,
+            'completion_rate' => $completionRate,
+            'private_profiles' => $privateProfiles,
+        ];
+    }
+
+    /**
+     * Get engagement metrics filtered by user role
+     * @param string|null $role - 'admin', 'alumni', 'undergrad', or null for all
+     */
+    public function getEngagementMetricsByRole(?string $role = null): array {
+        // Get user IDs for the specified role (or all if null)
+        $userIds = [];
+        try {
+            if ($role === null) {
+                // All users
+                $this->db->query('SELECT id FROM users');
+            } else {
+                // Specific role
+                $this->db->query('SELECT id FROM users WHERE role = ?');
+                $this->db->query('SELECT id FROM users WHERE role = :role');
+                $this->db->bind(':role', $role);
+            }
+            $users = $this->db->resultSet();
+            $userIds = array_map(function($u) { return $u->id; }, $users);
+        } catch (Exception $e) {
+            $userIds = [];
+        }
+
+        if (empty($userIds)) {
+            return $this->getEmptyEngagementMetrics();
+        }
+
+        $idList = implode(',', $userIds);
+        $totalUsers = count($userIds);
+
+        // Count metrics from these users
+        $posts = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM posts WHERE user_id IN ($idList)");
+            $posts = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $posts = 0;
+        }
+
+        $comments = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM comments WHERE user_id IN ($idList)");
+            $comments = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $comments = 0;
+        }
+
+        $reactions = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM post_likes WHERE user_id IN ($idList)");
+            $reactions = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $reactions = 0;
+        }
+
+        $messages = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM messages WHERE sender_id IN ($idList)");
+            $messages = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $messages = 0;
+        }
+
+        $events = 0;
+        $eventAttendees = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM events WHERE organizer_id IN ($idList)");
+            $events = (int)($this->db->single()->c ?? 0);
+            
+            $this->db->query("SELECT COUNT(*) AS c FROM event_attendees WHERE user_id IN ($idList)");
+            $eventAttendees = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $events = 0;
+            $eventAttendees = 0;
+        }
+
+        $eventBookmarks = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM event_bookmarks WHERE user_id IN ($idList)");
+            $eventBookmarks = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $eventBookmarks = 0;
+        }
+
+        $followers = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM followers WHERE follower_id IN ($idList)");
+            $followers = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $followers = 0;
+        }
+
+        $notifications = 0;
+        $notificationsUnread = 0;
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM notifications WHERE user_id IN ($idList)");
+            $notifications = (int)($this->db->single()->c ?? 0);
+
+            $this->db->query("SELECT COUNT(*) AS c FROM notifications WHERE user_id IN ($idList) AND is_read = 0");
+            $notificationsUnread = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $notifications = 0;
+            $notificationsUnread = 0;
+        }
+
+        // Pending alumni (only if filtering by alumni)
+        $pendingAlumni = 0;
+        if ($role === 'alumni') {
+            try {
+                $this->db->query("SELECT COUNT(*) AS c FROM unregisted_alumni WHERE status = 'pending'");
+                $pendingAlumni = (int)($this->db->single()->c ?? 0);
+            } catch (Exception $e) {
+                $pendingAlumni = 0;
+            }
+        }
+
+        // Active users window (using user list)
+        $active30 = $this->safeActiveUsersWindowForRole($userIds, 30);
+        $dau = $this->safeActiveUsersWindowForRole($userIds, 1);
+        $wau = $this->safeActiveUsersWindowForRole($userIds, 7);
+        $mau = $this->safeActiveUsersWindowForRole($userIds, 30);
+
+        // Calculate averages
+        $avgPostsPerUser = $totalUsers > 0 ? round($posts / $totalUsers, 2) : 0;
+        $avgCommentsPerPost = $posts > 0 ? round($comments / $posts, 2) : 0;
+        $avgReactionsPerPost = $posts > 0 ? round($reactions / $posts, 2) : 0;
+        $avgMessagesPerUser = $totalUsers > 0 ? round($messages / $totalUsers, 2) : 0;
+        $engagementRate = $totalUsers > 0 ? round(($active30 / $totalUsers) * 100, 1) : 0;
+
+        return [
+            'posts' => (int)$posts,
+            'comments' => (int)$comments,
+            'reactions' => (int)$reactions,
+            'messages' => (int)$messages,
+            'events' => (int)$events,
+            'event_attendees' => (int)$eventAttendees,
+            'event_bookmarks' => (int)$eventBookmarks,
+            'followers' => (int)$followers,
+            'notifications' => (int)$notifications,
+            'notifications_unread' => (int)$notificationsUnread,
+            'pending_alumni' => (int)$pendingAlumni,
+            'active_30_days' => (int)$active30,
+            'dau' => (int)$dau,
+            'wau' => (int)$wau,
+            'mau' => (int)$mau,
+            'avg_posts_per_user' => $avgPostsPerUser,
+            'avg_comments_per_post' => $avgCommentsPerPost,
+            'avg_reactions_per_post' => $avgReactionsPerPost,
+            'avg_messages_per_user' => $avgMessagesPerUser,
+            'engagement_rate' => $engagementRate,
+            'time_series' => $this->getTimeSeriesBundleForRole($userIds),
+            'event_pipeline' => $this->getEventPipelineMetricsForRole($userIds),
+            'profile_metrics' => $this->getProfileCompletionMetricsForRole($userIds),
+            'role_filtered' => $role,
+        ];
+    }
+
+    /**
+     * Get chart data filtered by user role
+     */
+    public function getChartDataByRole(?string $role = null): array {
+        $userIds = [];
+        try {
+            if ($role === null) {
+                $this->db->query('SELECT id FROM users');
+            } else {
+                $this->db->query('SELECT id FROM users WHERE role = :role');
+                $this->db->bind(':role', $role);
+            }
+            $users = $this->db->resultSet();
+            $userIds = array_map(function($u) { return $u->id; }, $users);
+        } catch (Exception $e) {
+            $userIds = [];
+        }
+
+        if (empty($userIds)) {
+            return $this->getEmptyChartData();
+        }
+
+        $idList = implode(',', $userIds);
+
+        // Distribution by role (only if not filtering by role)
+        $roles = [];
+        if ($role === null) {
+            try {
+                $this->db->query('SELECT role, COUNT(*) AS count FROM users GROUP BY role');
+                $roles = $this->db->resultSet();
+            } catch (Exception $e) {
+                $roles = [];
+            }
+        }
+
+        // Distribution by batch (filtered by user role if specified)
+        $batches = [];
+        try {
+            if ($role === null) {
+                $this->db->query('SELECT batch_no AS batch, COUNT(*) AS count FROM users WHERE batch_no IS NOT NULL GROUP BY batch_no ORDER BY batch_no');
+            } else {
+                $this->db->query("SELECT batch_no AS batch, COUNT(*) AS count FROM users WHERE role = :role AND batch_no IS NOT NULL GROUP BY batch_no ORDER BY batch_no");
+                $this->db->bind(':role', $role);
+            }
+            $batches = $this->db->resultSet();
+        } catch (Exception $e) {
+            $batches = [];
+        }
+
+        // Gender distribution (filtered by user role if specified)
+        $genders = [];
+        try {
+            if ($role === null) {
+                $this->db->query('SELECT gender, COUNT(*) AS count FROM users GROUP BY gender');
+            } else {
+                $this->db->query("SELECT gender, COUNT(*) AS count FROM users WHERE role = :role GROUP BY gender");
+                $this->db->bind(':role', $role);
+            }
+            $genders = $this->db->resultSet();
+        } catch (Exception $e) {
+            $genders = [];
+        }
+
+        // Skills distribution (filtered)
+        $skillCounts = [];
+        try {
+            if ($role === null) {
+                $this->db->query('SELECT skills FROM users WHERE skills IS NOT NULL');
+            } else {
+                $this->db->query('SELECT skills FROM users WHERE role = :role AND skills IS NOT NULL');
+                $this->db->bind(':role', $role);
+            }
+            $rows = $this->db->resultSet();
+            foreach ($rows as $row) {
+                $val = $row->skills;
+                $list = [];
+                $decoded = json_decode($val, true);
+                if (is_array($decoded)) {
+                    $list = $decoded;
+                } else {
+                    $list = array_filter(array_map('trim', explode(',', (string)$val)));
+                }
+                foreach ($list as $skill) {
+                    $key = (string)$skill;
+                    $skillCounts[$key] = ($skillCounts[$key] ?? 0) + 1;
+                }
+            }
+        } catch (Exception $e) {
+            $skillCounts = [];
+        }
+
+        // Event status distribution
+        $eventStatus = [];
+        try {
+            $this->db->query('SELECT status, COUNT(*) AS count FROM events GROUP BY status');
+            $eventStatus = $this->db->resultSet();
+        } catch (Exception $e) {
+            $eventStatus = [];
+        }
+
+        // Event request status distribution
+        $eventRequestStatus = [];
+        try {
+            $this->db->query('SELECT status, COUNT(*) AS count FROM event_requests GROUP BY status');
+            $eventRequestStatus = $this->db->resultSet();
+        } catch (Exception $e) {
+            $eventRequestStatus = [];
+        }
+
+        return [
+            'roles' => $roles,
+            'batches' => $batches,
+            'skills' => $skillCounts,
+            'genders' => $genders,
+            'event_status' => $eventStatus,
+            'event_request_status' => $eventRequestStatus,
+        ];
+    }
+
+    /**
+     * Private helper methods for role-based filtering
+     */
+    private function safeActiveUsersWindowForRole(array $userIds, int $days): int {
+        if (empty($userIds)) return 0;
+        
+        $idList = implode(',', $userIds);
+        try {
+            $this->db->query("SELECT COUNT(DISTINCT user_id) AS c FROM (
+                SELECT user_id FROM posts WHERE user_id IN ($idList) AND created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
+                UNION ALL SELECT user_id FROM comments WHERE user_id IN ($idList) AND created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
+                UNION ALL SELECT user_id FROM post_likes WHERE user_id IN ($idList) AND created_at >= DATE_SUB(NOW(), INTERVAL $days DAY)
+                UNION ALL SELECT sender_id AS user_id FROM messages WHERE sender_id IN ($idList) AND message_time >= DATE_SUB(NOW(), INTERVAL $days DAY)
+            ) t");
+            $row = $this->db->single();
+            return (int)($row->c ?? 0);
+        } catch (Exception $e) {
+            return 0;
+        }
+    }
+
+    private function getTimeSeriesBundleForRole(array $userIds): array {
+        if (empty($userIds)) return [];
+        
+        $idList = implode(',', $userIds);
+        
+        return [
+            'signups' => $this->safeTimeSeriesForRole($idList, 'users', 'created_at'),
+            'posts' => $this->safeTimeSeriesForRole($idList, 'posts', 'created_at', 'user_id'),
+            'comments' => $this->safeTimeSeriesForRole($idList, 'comments', 'created_at', 'user_id'),
+            'reactions' => $this->safeTimeSeriesForRole($idList, 'post_likes', 'created_at', 'user_id'),
+            'messages' => $this->safeTimeSeriesForRole($idList, 'messages', 'message_time', 'sender_id'),
+            'events' => $this->safeTimeSeriesForRole($idList, 'events', 'created_at', 'organizer_id'),
+            'event_attendees' => $this->safeTimeSeriesForRole($idList, 'event_attendees', 'created_at', 'user_id'),
+        ];
+    }
+
+    private function safeTimeSeriesForRole(string $idList, string $table, string $dateColumn, ?string $userColumn = 'id'): array {
+        try {
+            if ($userColumn === 'id') {
+                // For users table
+                $this->db->query("SELECT DATE_FORMAT($dateColumn, '%Y-%m') AS ym, COUNT(*) AS c FROM $table WHERE id IN ($idList) GROUP BY ym ORDER BY ym ASC");
+            } else {
+                // For other tables with user_id or sender_id
+                $this->db->query("SELECT DATE_FORMAT($dateColumn, '%Y-%m') AS ym, COUNT(*) AS c FROM $table WHERE $userColumn IN ($idList) GROUP BY ym ORDER BY ym ASC");
+            }
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    private function getEventPipelineMetricsForRole(array $userIds): array {
+        if (empty($userIds)) return ['requests' => [], 'events' => []];
+        
+        $idList = implode(',', $userIds);
+        $requests = [];
+        $events = [];
+        
+        try {
+            $this->db->query("SELECT status, COUNT(*) AS c FROM event_requests WHERE organizer_id IN ($idList) GROUP BY status");
+            $requests = $this->db->resultSet();
+        } catch (Exception $e) {
+            $requests = [];
+        }
+        
+        try {
+            $this->db->query("SELECT status, COUNT(*) AS c FROM events WHERE organizer_id IN ($idList) GROUP BY status");
+            $events = $this->db->resultSet();
+        } catch (Exception $e) {
+            $events = [];
+        }
+        
+        return ['requests' => $requests, 'events' => $events];
+    }
+
+    private function getProfileCompletionMetricsForRole(array $userIds): array {
+        if (empty($userIds)) {
+            return ['completed' => 0, 'total' => 0, 'completion_rate' => 0, 'private_profiles' => 0];
+        }
+        
+        $idList = implode(',', $userIds);
+        $completed = 0;
+        $total = count($userIds);
+        $privateProfiles = 0;
+        
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM users WHERE id IN ($idList) AND ((bio IS NOT NULL AND bio != '') OR (skills IS NOT NULL AND skills != '') OR (profile_image IS NOT NULL AND profile_image != 'default.jpg') OR (display_name IS NOT NULL AND display_name != ''))");
+            $completed = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $completed = 0;
+        }
+        
+        try {
+            $this->db->query("SELECT COUNT(*) AS c FROM user_profiles_visibility WHERE user_id IN ($idList) AND is_public = 0");
+            $privateProfiles = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            $privateProfiles = 0;
+        }
+
+        $completionRate = $total > 0 ? round(($completed / $total) * 100, 1) : 0;
+        return [
+            'completed' => $completed,
+            'total' => $total,
+            'completion_rate' => $completionRate,
+            'private_profiles' => $privateProfiles,
+        ];
+    }
+
+    private function getEmptyEngagementMetrics(): array {
+        return [
+            'posts' => 0, 'comments' => 0, 'reactions' => 0, 'messages' => 0, 'events' => 0,
+            'event_attendees' => 0, 'event_bookmarks' => 0, 'followers' => 0, 'notifications' => 0,
+            'notifications_unread' => 0, 'pending_alumni' => 0, 'active_30_days' => 0,
+            'dau' => 0, 'wau' => 0, 'mau' => 0, 'avg_posts_per_user' => 0, 'avg_comments_per_post' => 0,
+            'avg_reactions_per_post' => 0, 'avg_messages_per_user' => 0, 'engagement_rate' => 0,
+            'time_series' => [], 'event_pipeline' => [], 'profile_metrics' => [],
+            'role_filtered' => 'none',
+        ];
+    }
+
+    private function getEmptyChartData(): array {
+        return ['roles' => [], 'batches' => [], 'skills' => [], 'genders' => [], 'event_status' => [], 'event_request_status' => []];
     }
 
     /**
@@ -210,6 +837,328 @@ class M_admin {
         $this->db->query('SELECT * FROM users WHERE id = :id AND role = "admin" LIMIT 1');
         $this->db->bind(':id', $id);
         return $this->db->single();
+    }
+
+    // ==================== USER SUSPENSION METHODS ====================
+
+    private function ensureSuspendedUsersTable(): void {
+        $this->db->query("CREATE TABLE IF NOT EXISTS suspended_users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            suspended_by INT NOT NULL,
+            reason TEXT NULL,
+            status ENUM('active','lifted','removed') NOT NULL DEFAULT 'active',
+            suspended_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            lifted_at DATETIME NULL,
+            lifted_by INT NULL,
+            removed_at DATETIME NULL,
+            removed_by INT NULL,
+            snapshot_name VARCHAR(255) NULL,
+            snapshot_email VARCHAR(255) NULL,
+            snapshot_role VARCHAR(50) NULL,
+            INDEX idx_suspended_users_user (user_id),
+            INDEX idx_suspended_users_status (status),
+            INDEX idx_suspended_users_suspended_at (suspended_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $this->db->execute();
+    }
+
+    public function isUserActivelySuspended(int $userId): bool {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT 1 FROM suspended_users WHERE user_id = :user_id AND status = 'active' LIMIT 1");
+            $this->db->bind(':user_id', $userId);
+            return (bool)$this->db->single();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function getActiveSuspendedUsers(): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT
+                    su.id AS suspension_id,
+                    su.user_id,
+                    COALESCE(u.name, su.snapshot_name, 'Unknown User') AS name,
+                    COALESCE(u.email, su.snapshot_email, '-') AS email,
+                    COALESCE(u.role, su.snapshot_role, '-') AS role,
+                    su.reason,
+                    su.suspended_at,
+                    sb.name AS suspended_by_name
+                FROM suspended_users su
+                LEFT JOIN users u ON u.id = su.user_id
+                LEFT JOIN users sb ON sb.id = su.suspended_by
+                WHERE su.status = 'active'
+                ORDER BY su.suspended_at DESC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get user locations (countries) for map visualization
+     * @param string|null $role - Filter by role (admin, alumni, undergrad)
+     * @param string|null $batch - Filter by batch number
+     * @param string|null $country - Filter by country
+     * @return array - Array of location data with user counts
+     */
+    public function getUserLocations(?string $role = null, ?string $batch = null, ?string $country = null): array {
+        try {
+            // Build dynamic query
+            $sql = "SELECT 
+                        ul.country,
+                        COUNT(DISTINCT ul.user_id) AS user_count,
+                        GROUP_CONCAT(DISTINCT u.role ORDER BY u.role SEPARATOR ', ') AS roles,
+                        GROUP_CONCAT(DISTINCT u.batch_no ORDER BY u.batch_no SEPARATOR ', ') AS batches
+                    FROM user_locations ul
+                    INNER JOIN users u ON ul.user_id = u.id
+                    WHERE 1=1";
+            
+            // Add filters
+            $params = [];
+            if ($role !== null && $role !== '') {
+                $sql .= " AND u.role = :role";
+                $params[':role'] = $role;
+            }
+            if ($batch !== null && $batch !== '') {
+                $sql .= " AND u.batch_no = :batch";
+                $params[':batch'] = $batch;
+            }
+            if ($country !== null && $country !== '') {
+                $sql .= " AND ul.country = :country";
+                $params[':country'] = $country;
+            }
+            
+            $sql .= " GROUP BY ul.country
+                      ORDER BY user_count DESC";
+            
+            $this->db->query($sql);
+            foreach ($params as $param => $value) {
+                $this->db->bind($param, $value);
+            }
+            
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public function getSuspensionHistory(int $limit = 100): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT
+                    su.id AS suspension_id,
+                    su.user_id,
+                    COALESCE(u.name, su.snapshot_name, 'Removed User') AS name,
+                    COALESCE(u.email, su.snapshot_email, '-') AS email,
+                    COALESCE(u.role, su.snapshot_role, '-') AS role,
+                    su.reason,
+                    su.status,
+                    su.suspended_at,
+                    su.lifted_at,
+                    su.removed_at,
+                    sb.name AS suspended_by_name,
+                    lb.name AS lifted_by_name,
+                    rb.name AS removed_by_name
+                FROM suspended_users su
+                LEFT JOIN users u ON u.id = su.user_id
+                LEFT JOIN users sb ON sb.id = su.suspended_by
+                LEFT JOIN users lb ON lb.id = su.lifted_by
+                LEFT JOIN users rb ON rb.id = su.removed_by
+                WHERE su.status IN ('lifted', 'removed')
+                ORDER BY su.suspended_at DESC
+                LIMIT :limit");
+            $this->db->bind(':limit', max(1, (int)$limit), PDO::PARAM_INT);
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    public function getSuspensionById(int $suspensionId): ?object {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT * FROM suspended_users WHERE id = :id LIMIT 1");
+            $this->db->bind(':id', $suspensionId);
+            $row = $this->db->single();
+            return $row ?: null;
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    public function suspendUser(int $userId, int $adminId, string $reason = ''): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+
+            $this->db->query("SELECT id, name, email, role FROM users WHERE id = :id LIMIT 1");
+            $this->db->bind(':id', $userId);
+            $user = $this->db->single();
+
+            if (!$user) {
+                return ['ok' => false, 'message' => 'User not found'];
+            }
+
+            if (strtolower((string)($user->role ?? '')) === 'admin') {
+                return ['ok' => false, 'message' => 'Admin accounts cannot be suspended'];
+            }
+
+            $this->db->query("SELECT id FROM suspended_users WHERE user_id = :user_id AND status = 'active' LIMIT 1");
+            $this->db->bind(':user_id', $userId);
+            $active = $this->db->single();
+
+            if ($active) {
+                $this->db->query("UPDATE suspended_users
+                                SET suspended_by = :admin_id,
+                                    reason = :reason,
+                                    suspended_at = NOW(),
+                                    snapshot_name = :snapshot_name,
+                                    snapshot_email = :snapshot_email,
+                                    snapshot_role = :snapshot_role
+                                WHERE id = :id");
+                $this->db->bind(':admin_id', $adminId);
+                $this->db->bind(':reason', $reason !== '' ? $reason : null);
+                $this->db->bind(':snapshot_name', $user->name ?? null);
+                $this->db->bind(':snapshot_email', $user->email ?? null);
+                $this->db->bind(':snapshot_role', $user->role ?? null);
+                $this->db->bind(':id', (int)$active->id);
+                $this->db->execute();
+
+                return ['ok' => true, 'message' => 'User suspension was refreshed'];
+            }
+
+            $this->db->query("INSERT INTO suspended_users
+                            (user_id, suspended_by, reason, status, suspended_at, snapshot_name, snapshot_email, snapshot_role)
+                            VALUES
+                            (:user_id, :suspended_by, :reason, 'active', NOW(), :snapshot_name, :snapshot_email, :snapshot_role)");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':suspended_by', $adminId);
+            $this->db->bind(':reason', $reason !== '' ? $reason : null);
+            $this->db->bind(':snapshot_name', $user->name ?? null);
+            $this->db->bind(':snapshot_email', $user->email ?? null);
+            $this->db->bind(':snapshot_role', $user->role ?? null);
+            $this->db->execute();
+
+            return ['ok' => true, 'message' => 'User suspended successfully'];
+        } catch (Exception $e) {
+            return ['ok' => false, 'message' => 'Failed to suspend user'];
+        }
+    }
+
+    public function liftSuspension(int $suspensionId, int $adminId): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("SELECT id FROM suspended_users WHERE id = :id AND status = 'active' LIMIT 1");
+            $this->db->bind(':id', $suspensionId);
+            $row = $this->db->single();
+
+            if (!$row) {
+                return ['ok' => false, 'message' => 'Active suspension not found'];
+            }
+
+            $this->db->query("UPDATE suspended_users
+                            SET status = 'lifted',
+                                lifted_at = NOW(),
+                                lifted_by = :lifted_by
+                            WHERE id = :id");
+            $this->db->bind(':lifted_by', $adminId);
+            $this->db->bind(':id', $suspensionId);
+            $this->db->execute();
+
+            return ['ok' => true, 'message' => 'Suspension removed'];
+        } catch (Exception $e) {
+            return ['ok' => false, 'message' => 'Failed to remove suspension'];
+        }
+    }
+
+    public function markSuspensionRemoved(int $suspensionId, int $adminId): array {
+        try {
+            $this->ensureSuspendedUsersTable();
+            $this->db->query("UPDATE suspended_users
+                            SET status = 'removed',
+                                removed_at = NOW(),
+                                removed_by = :removed_by,
+                                lifted_at = IFNULL(lifted_at, NOW()),
+                                lifted_by = IFNULL(lifted_by, :removed_by_2)
+                            WHERE id = :id");
+            $this->db->bind(':removed_by', $adminId);
+            $this->db->bind(':removed_by_2', $adminId);
+            $this->db->bind(':id', $suspensionId);
+            $this->db->execute();
+
+            if ($this->db->rowCount() < 1) {
+                return ['ok' => false, 'message' => 'Suspension record not found'];
+            }
+
+            return ['ok' => true, 'message' => 'Suspension updated as removed'];
+        } catch (Exception $e) {
+            return ['ok' => false, 'message' => 'Failed to update suspension status'];
+        }
+    }
+
+    public function deleteUserCompletely(int $userId): array {
+        if ($userId <= 0) {
+            return ['ok' => false, 'message' => 'Invalid user ID'];
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            $cleanupQueries = [
+                "DELETE FROM certificates WHERE user_id = :user_id",
+                "DELETE FROM comments WHERE user_id = :user_id",
+                "DELETE FROM post_likes WHERE user_id = :user_id",
+                "DELETE FROM posts WHERE user_id = :user_id",
+                "DELETE FROM notifications WHERE receiver_id = :user_id OR sender_id = :user_id",
+                "DELETE FROM follow_requests WHERE requester_id = :user_id OR target_id = :user_id",
+                "DELETE FROM followers WHERE follower_id = :user_id OR followed_id = :user_id",
+                "DELETE FROM message_unread_tracker WHERE sender_id = :user_id OR receiver_id = :user_id",
+                "DELETE FROM messages WHERE sender_id = :user_id OR receiver_id = :user_id",
+                "DELETE FROM event_attendees WHERE user_id = :user_id",
+                "DELETE FROM event_bookmarks WHERE user_id = :user_id",
+                "DELETE FROM bookmarks WHERE user_id = :user_id",
+                "DELETE FROM event_images WHERE event_id IN (SELECT id FROM events WHERE organizer_id = :user_id)",
+                "DELETE FROM event_requests WHERE user_id = :user_id",
+                "DELETE FROM events WHERE organizer_id = :user_id",
+                "DELETE FROM fundraising_team_members WHERE user_id = :user_id",
+                "DELETE FROM fundraising_bank_details WHERE request_id IN (SELECT id FROM fundraising_requests WHERE user_id = :user_id)",
+                "DELETE FROM fundraising_donations WHERE donor_user_id = :user_id OR request_id IN (SELECT id FROM fundraising_requests WHERE user_id = :user_id)",
+                "DELETE FROM fundraising_requests WHERE user_id = :user_id OR advisor_id = :user_id",
+                "DELETE FROM user_profiles_visibility WHERE user_id = :user_id",
+                "DELETE FROM online_users WHERE user_id = :user_id",
+                "DELETE FROM access_logs WHERE user_id = :user_id"
+            ];
+
+            foreach ($cleanupQueries as $sql) {
+                try {
+                    $this->db->query($sql);
+                    $this->db->bind(':user_id', $userId);
+                    $this->db->execute();
+                } catch (Exception $ignored) {
+                    // Tolerate missing optional tables to keep removal resilient.
+                }
+            }
+
+            $this->db->query("DELETE FROM users WHERE id = :user_id");
+            $this->db->bind(':user_id', $userId);
+            $this->db->execute();
+
+            if ($this->db->rowCount() < 1) {
+                $this->db->rollBack();
+                return ['ok' => false, 'message' => 'User was already removed or not found'];
+            }
+
+            $this->db->commit();
+            return ['ok' => true, 'message' => 'User removed from system'];
+        } catch (Exception $e) {
+            try {
+                $this->db->rollBack();
+            } catch (Exception $ignored) {
+            }
+            return ['ok' => false, 'message' => 'Failed to remove user from system'];
+        }
     }
 
     // ==================== FUNDRAISER ADMIN METHODS ====================
@@ -620,6 +1569,63 @@ class M_admin {
     }
 
     /**
+     * Get location distribution summary
+     * @param string|null $role - Filter by role
+     * @return array - Summary stats
+     */
+    public function getLocationSummary(?string $role = null): array {
+        try {
+            $sql = "SELECT 
+                        COUNT(DISTINCT ul.country) AS total_countries,
+                        COUNT(DISTINCT ul.user_id) AS total_users_with_location
+                    FROM user_locations ul
+                    INNER JOIN users u ON ul.user_id = u.id
+                    WHERE 1=1";
+            
+            if ($role !== null && $role !== '') {
+                $sql .= " AND u.role = :role";
+            }
+            
+            $this->db->query($sql);
+            if ($role !== null && $role !== '') {
+                $this->db->bind(':role', $role);
+            }
+            
+            $result = $this->db->single();
+            
+            // Get most common country separately
+            $mostCommonSql = "SELECT ul.country
+                              FROM user_locations ul
+                              INNER JOIN users u ON ul.user_id = u.id
+                              WHERE 1=1";
+            if ($role !== null && $role !== '') {
+                $mostCommonSql .= " AND u.role = :role";
+            }
+            $mostCommonSql .= " GROUP BY ul.country
+                                ORDER BY COUNT(*) DESC
+                                LIMIT 1";
+            
+            $this->db->query($mostCommonSql);
+            if ($role !== null && $role !== '') {
+                $this->db->bind(':role', $role);
+            }
+            $mostCommon = $this->db->single();
+            
+            return [
+                'total_countries' => $result->total_countries ?? 0,
+                'total_users_with_location' => $result->total_users_with_location ?? 0,
+                'most_common_country' => $mostCommon->country ?? 'N/A'
+            ];
+        } catch (Exception $e) {
+            return [
+                'total_countries' => 0,
+                'total_users_with_location' => 0,
+                'most_common_country' => 'N/A'
+            ];
+        }
+    }
+
+    /**
      * Get count of currently online users
      */
     public function getOnlineUsersCount() {
@@ -731,8 +1737,302 @@ class M_admin {
             ");
             return $this->db->resultSet();
         } catch (Exception $e) {
+            error_log("Error getting hourly activity: " . $e->getMessage());
             return [];
         }
+    }
+
+    /**
+     * Get countries list for filter dropdown
+     * @return array - List of countries with user counts
+     */
+    public function getCountriesWithUsers(): array {
+        try {
+            $this->db->query("SELECT 
+                                country,
+                                COUNT(DISTINCT user_id) AS user_count
+                              FROM user_locations
+                              GROUP BY country
+                              ORDER BY user_count DESC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    // ==================== SUPPORT MANAGEMENT METHODS ====================
+
+    /**
+     * Get all support tickets with user info
+     */
+    public function getSupportTickets() {
+        try {
+            $this->db->query("
+                SELECT 
+                    st.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_tickets st
+                JOIN users u ON st.user_id = u.id
+                ORDER BY st.created_at DESC
+            ");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting support tickets: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get batches list for filter dropdown
+     * @return array - List of batches
+     */
+    public function getBatches(): array {
+        try {
+            $this->db->query("SELECT DISTINCT batch_no 
+                              FROM users 
+                              WHERE batch_no IS NOT NULL 
+                              ORDER BY batch_no DESC");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get a single support ticket by ID
+     */
+    public function getSupportTicketById($id) {
+        try {
+            $this->db->query("
+                SELECT 
+                    st.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_tickets st
+                JOIN users u ON st.user_id = u.id
+                WHERE st.id = :id
+            ");
+            $this->db->bind(':id', $id);
+            return $this->db->single();
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Update support ticket status
+     */
+    public function updateSupportTicketStatus($id, $status) {
+        try {
+            $this->db->query("
+                UPDATE support_tickets 
+                SET status = :status, updated_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':status', $status);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Admin reply to a support ticket
+     */
+    public function replySupportTicket($id, $reply) {
+        try {
+            $this->db->query("
+                UPDATE support_tickets 
+                SET admin_reply = :reply,
+                    admin_replied_at = NOW(),
+                    status = 'in_progress',
+                    updated_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':reply', $reply);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get all problem reports with user info
+     */
+    public function getProblemReports() {
+        try {
+            $this->db->query("
+                SELECT 
+                    spr.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_problem_reports spr
+                JOIN users u ON spr.user_id = u.id
+                ORDER BY spr.created_at DESC
+            ");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting problem reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get a single problem report by ID
+     */
+    public function getProblemReportById($id) {
+        try {
+            $this->db->query(" 
+                SELECT 
+                    spr.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_problem_reports spr
+                JOIN users u ON spr.user_id = u.id
+                WHERE spr.id = :id
+                LIMIT 1
+            ");
+            $this->db->bind(':id', $id);
+            return $this->db->single();
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Update problem report status
+     */
+    public function updateProblemReportStatus($id, $status) {
+        try {
+            $this->db->query("
+                UPDATE support_problem_reports 
+                SET status = :status, updated_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':status', $status);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Admin reply to a problem report
+     */
+    public function replyProblemReport($id, $reply) {
+        try {
+            $this->db->query("
+                UPDATE support_problem_reports 
+                SET admin_reply = :reply,
+                    admin_replied_at = NOW(),
+                    status = 'triaged',
+                    updated_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $id);
+            $this->db->bind(':reply', $reply);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get all feedback with user info
+     */
+    public function getSupportFeedback() {
+        try {
+            $this->db->query("
+                SELECT 
+                    sf.*,
+                    u.name AS user_name,
+                    u.display_name,
+                    u.email AS user_email,
+                    u.profile_image,
+                    u.role AS user_role
+                FROM support_feedback sf
+                JOIN users u ON sf.user_id = u.id
+                ORDER BY sf.created_at DESC
+            ");
+            return $this->db->resultSet();
+        } catch (Exception $e) {
+            error_log("Error getting feedback: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Delete feedback entry
+     */
+    public function deleteSupportFeedback($id) {
+        try {
+            $this->db->query("DELETE FROM support_feedback WHERE id = :id");
+            $this->db->bind(':id', $id);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Get support overview stats for KPI cards
+     */
+    public function getSupportStats() {
+        $stats = [
+            'open_tickets' => 0,
+            'pending_reports' => 0,
+            'total_feedback' => 0,
+            'resolved_total' => 0
+        ];
+
+        try {
+            $this->db->query("SELECT COUNT(*) as c FROM support_tickets WHERE status IN ('open','in_progress')");
+            $stats['open_tickets'] = (int)($this->db->single()->c ?? 0);
+
+            $this->db->query("SELECT COUNT(*) as c FROM support_problem_reports WHERE status IN ('pending','triaged')");
+            $stats['pending_reports'] = (int)($this->db->single()->c ?? 0);
+
+            $this->db->query("SELECT COUNT(*) as c FROM support_feedback");
+            $stats['total_feedback'] = (int)($this->db->single()->c ?? 0);
+
+            $this->db->query("
+                SELECT 
+                    (SELECT COUNT(*) FROM support_tickets WHERE status IN ('resolved','closed')) +
+                    (SELECT COUNT(*) FROM support_problem_reports WHERE status IN ('resolved','rejected'))
+                AS c
+            ");
+            $stats['resolved_total'] = (int)($this->db->single()->c ?? 0);
+        } catch (Exception $e) {
+            error_log("Error getting support stats: " . $e->getMessage());
+        }
+
+        return $stats;
+    }
+
+    /**
+     * Get country-level data (for chart visualization)
+     * @param string|null $role - Filter by role
+     * @return array - Country data with user counts
+     */
+    public function getLocationHeatmapData(?string $role = null): array {
+        // For simplified version, just return country counts
+        return $this->getUserLocations($role, null, null);
     }
 }
 ?>

@@ -59,7 +59,10 @@
                 if (!popup) return;
                 const bioEl = document.getElementById('profileBioEl');
                 const bioInput = document.getElementById('profileBioInput');
+                const batchEl = document.querySelector('.batch-indicator');
+                const batchInput = document.getElementById('profileBatchNoInput');
                 if (bioEl && bioInput) bioInput.value = bioEl.textContent.trim();
+                if (batchEl && batchInput) batchInput.value = batchEl.textContent.trim();
                 const preview = document.getElementById('profileImagePreview');
                 const img = document.getElementById('profileImageEl');
                 if (preview && img) preview.src = img.src;
@@ -79,7 +82,7 @@
                 const originalText = this.querySelector('span').textContent;
                 this.querySelector('span').textContent = '...';
                 try {
-                    const res = await fetch(`<?php echo URLROOT ?>/profile/follow`, {
+                    const res = await fetch(`${window.URLROOT}/profile/follow`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -121,7 +124,7 @@
                     form.submit();
                 } else {
                     // Fallback to GET navigation if form is missing for any reason
-                    window.location.href = `<?php echo URLROOT ?>/messages?user=${encodeURIComponent(targetId)}`;
+                    window.location.href = `${window.URLROOT}/messages?user=${encodeURIComponent(targetId)}`;
                 }
             });
         }
@@ -575,7 +578,7 @@
             confirmDeleteBtn.addEventListener('click', async function() {
                 if (!pendingDeleteCertId) return;
                 try {
-                    const url = '<?php echo URLROOT; ?>/profile/deleteCertificate?id=' + encodeURIComponent(pendingDeleteCertId);
+                    const url = `${window.URLROOT}/profile/deleteCertificate?id=` + encodeURIComponent(pendingDeleteCertId);
                     const res = await fetch(url, {
                         method: 'DELETE',
                         credentials: 'same-origin',
@@ -750,7 +753,6 @@
 
         function bindWorkCardActions(card) {
             const editBtn = card.querySelector('.edit-btn');
-            const deleteBtn = card.querySelector('.delete-btn');
             if (editBtn) editBtn.addEventListener('click', function() {
                 const id = card.dataset.id || '';
                 document.getElementById('workIdEdit').value = id;
@@ -759,15 +761,6 @@
                 document.getElementById('workPeriodEdit').value = card.dataset.period || '';
                 editWorkPopup.style.display = 'flex';
             });
-
-            if (deleteBtn) deleteBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete this work experience?')) card.remove();
-            });
-
-
-
-
-
         }
         // bind existing
         document.querySelectorAll('#workContainer .work-card').forEach(bindWorkCardActions);
@@ -1073,7 +1066,7 @@
 
                 try {
 
-                    const url = '<?php echo URLROOT; ?>/profile/deleteWorkExperience?id=' + encodeURIComponent(id);
+                    const url = `${window.URLROOT}/profile/deleteWorkExperience?id=`+ encodeURIComponent(id);
                     const res = await fetch(url, {
                         method: 'DELETE',
                         credentials: 'same-origin',
@@ -1135,7 +1128,7 @@
                 const id = pendingProjectCard.dataset.id || '';
 
                 try {
-                    const url = '<?php echo URLROOT; ?>/profile/deleteProject?id=' + encodeURIComponent(id);
+                    const url = `${window.URLROOT}/profile/deleteProject?id=` + encodeURIComponent(id);
                     const res = await fetch(url, {
                         method: 'DELETE',
                         credentials: 'same-origin',

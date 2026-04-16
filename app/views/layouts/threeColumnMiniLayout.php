@@ -103,7 +103,7 @@
         background: var(--link);
     }
 </style>
-<?php echo $styles;?>
+<?php if (!empty($styles)) { echo $styles; } ?>
 <div class="three-column-layout">
     <div class="template-left">
         <?php echo $leftsidebar; ?>
@@ -116,6 +116,8 @@
         <?php echo $rightsidebar; ?>
     </div>
 </div>
+<?php if (!empty($scripts)) : ?>
 <script>
     <?php echo $scripts; ?>
 </script>
+<?php endif; ?>
