@@ -217,6 +217,31 @@
     height: 100% !important;
 }
 
+.location-pin-wrapper {
+    background: transparent;
+    border: none;
+}
+
+.location-pin {
+    width: var(--pin-size, 36px);
+    height: var(--pin-size, 36px);
+    border-radius: 999px;
+    background: var(--pin-color, #60a5fa);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.location-pin-value {
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
 #smallMap {
     border: 1px solid var(--kpi-border);
     overflow: hidden;
@@ -317,9 +342,10 @@
     width: 100%;
     max-width: 95vw;
     max-height: 95vh;
-    background: var(--surface-2, #ffffff);
+    background: #121a27;
+    border: 1px solid #314155;
     border-radius: 12px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -343,26 +369,23 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.5rem;
-    border-bottom: 2px solid var(--border);
-    background: var(--surface);
+    border-bottom: 1px solid #314155;
+    background: #121a27;
 }
 
 .map-modal-header h2 {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    color: #edf4fd;
 }
 
 .close-modal-btn {
     font-size: 2rem;
     line-height: 1;
-    color: var(--text-muted, #666);
-    background: none;
-    border: none;
+    color: #b8c8d9;
+    background: #1a2534;
+    border: 1px solid #314155;
     cursor: pointer;
     padding: 0;
     width: 32px;
@@ -375,19 +398,18 @@
 }
 
 .close-modal-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: var(--text);
-    transform: rotate(90deg);
+    background: #253245;
+    color: #ffffff;
 }
 
 /* Modal Filters Section */
 .map-modal-filters {
     padding: 1.25rem;
-    background: var(--surface-2, #f9fafb);
-    border-bottom: 1px solid var(--border);
+    background: #0f1724;
+    border-bottom: 1px solid #314155;
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 0.85rem;
     align-items: flex-end;
 }
 
@@ -402,15 +424,15 @@
 .filter-group label {
     font-size: 0.85rem;
     font-weight: 500;
-    color: var(--text-muted, #666);
+    color: #b8c8d9;
 }
 
 .filter-select {
     padding: 0.65rem 0.85rem;
-    border: 2px solid var(--border);
+    border: 1px solid #314155;
     border-radius: 8px;
-    background: var(--surface);
-    color: var(--text);
+    background: #162235;
+    color: #edf4fd;
     font-size: 0.9rem;
     font-family: inherit;
     cursor: pointer;
@@ -418,26 +440,31 @@
     min-width: 150px;
 }
 
+.filter-select option {
+    background: #162235;
+    color: #edf4fd;
+}
+
 .filter-select:hover {
-    border-color: var(--primary, #007bff);
+    border-color: #5c7da8;
 }
 
 .filter-select:focus {
     outline: none;
-    border-color: var(--primary, #007bff);
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    border-color: #7ea5cf;
+    box-shadow: 0 0 0 3px rgba(126, 165, 207, 0.15);
 }
 
 /* Filter Buttons */
 .filter-buttons {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.65rem;
     align-items: flex-end;
 }
 
 .filter-buttons button {
     padding: 0.65rem 1.2rem;
-    border: 2px solid transparent;
+    border: 1px solid transparent;
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 500;
@@ -447,25 +474,23 @@
 }
 
 #applyMapFilters {
-    background: var(--primary, #007bff);
-    color: white;
+    background: #2f6ff5;
+    color: #ffffff;
 }
 
 #applyMapFilters:hover {
-    background: var(--primary-dark, #0056b3);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    background: #245ddd;
 }
 
 #resetMapFilters {
-    background: var(--surface);
-    color: var(--text);
-    border-color: var(--border);
+    background: #1a2534;
+    color: #edf4fd;
+    border-color: #314155;
 }
 
 #resetMapFilters:hover {
-    background: var(--surface-2, #f0f0f0);
-    border-color: var(--text);
+    background: #223144;
+    border-color: #5c7da8;
 }
 
 /* Expanded Map Container */
@@ -487,8 +512,8 @@
 .map-modal-stats {
     display: flex;
     padding: 1rem 1.5rem;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    background: #121a27;
+    border-top: 1px solid #314155;
     gap: 1.5rem;
 }
 
@@ -501,7 +526,7 @@
 .stat-label {
     display: block;
     font-size: 0.8rem;
-    color: var(--text-muted, #666);
+    color: #b8c8d9;
     margin-bottom: 0.25rem;
     font-weight: 500;
 }
@@ -510,7 +535,7 @@
     display: block;
     font-size: 1.3rem;
     font-weight: 700;
-    color: var(--text);
+    color: #edf4fd;
 }
 
 /* Expand Map Button in Small Card */
@@ -519,9 +544,9 @@
     top: 10px;
     right: 10px;
     padding: 0.5rem 1rem;
-    background: var(--primary, #007bff);
-    color: white;
-    border: none;
+    background: #2b3646;
+    color: #edf4fd;
+    border: 1px solid #3f4e64;
     border-radius: 6px;
     font-size: 0.85rem;
     font-weight: 500;
@@ -535,23 +560,21 @@
 }
 
 .expand-map-btn:hover {
-    background: var(--primary-dark, #0056b3);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+    background: #364355;
 }
 
 /* Location Summary under Small Map */
 .location-summary {
     padding: 0.75rem;
-    background: var(--surface-2, #f9fafb);
-    border-top: 1px solid var(--border);
+    background: #0f1724;
+    border-top: 1px solid #314155;
     text-align: center;
     font-size: 0.85rem;
-    color: var(--text-muted, #666);
+    color: #b8c8d9;
 }
 
 .location-summary strong {
-    color: var(--text);
+    color: #edf4fd;
     font-weight: 600;
 }
 
@@ -564,33 +587,33 @@
 .location-table table {
     width: 100%;
     border-collapse: collapse;
-    background: var(--surface);
+    background: #121a27;
 }
 
 .location-table thead tr {
-    background: var(--surface-2, #f9fafb);
-    border-bottom: 2px solid var(--border);
+    background: #172132;
+    border-bottom: 1px solid #314155;
 }
 
 .location-table th {
     padding: 0.75rem;
     text-align: left;
     font-weight: 600;
-    color: var(--text);
+    color: #edf4fd;
 }
 
 .location-table tbody tr {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid #314155;
     transition: background 0.2s ease;
 }
 
 .location-table tbody tr:hover {
-    background: var(--surface-2, #f9fafb);
+    background: #172132;
 }
 
 .location-table td {
     padding: 0.75rem;
-    color: var(--text);
+    color: #d6e1ee;
 }
 
 /* Marker Cluster Customization */
@@ -636,10 +659,12 @@
 
     .filter-buttons {
         width: 100%;
+        flex-direction: column;
     }
 
     .filter-buttons button {
         flex: 1;
+        width: 100%;
     }
 
     #expandedMapContainer {
@@ -673,6 +698,7 @@
 
     .map-modal-header {
         padding: 0.75rem;
+        gap: 0.75rem;
     }
 
     .map-modal-header h2 {
@@ -697,6 +723,10 @@
     .filter-select {
         padding: 0.5rem 0.65rem;
         font-size: 0.85rem;
+    }
+
+    .filter-buttons {
+        gap: 0.5rem;
     }
 
     .filter-buttons button {

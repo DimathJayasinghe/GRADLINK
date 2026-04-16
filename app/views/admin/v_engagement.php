@@ -144,7 +144,7 @@
                 <?php 
                     $summary = $data['locationSummary'] ?? ['total_users_with_location' => 0, 'total_countries' => 0];
                 ?>
-                📍 <strong><?php echo number_format($summary['total_users_with_location'] ?? 0); ?></strong> users across 
+                <strong><?php echo number_format($summary['total_users_with_location'] ?? 0); ?></strong> users across 
                 <strong><?php echo ($summary['total_countries'] ?? 0); ?></strong> countries
             </div>
         </div>
@@ -192,7 +192,7 @@
     <div class="map-modal-content">
         <div class="map-modal-header">
             <div>
-                <h2 style="margin: 0; font-size: 1.5rem;">🌍 Geographic Distribution</h2>
+                <h2 style="margin: 0; font-size: 1.5rem;">Geographic Distribution</h2>
                 <p style="color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0 0 0;">Interactive world map with country markers</p>
             </div>
             <button id="closeMapModal" class="close-modal-btn" title="Close">&times;</button>
@@ -225,9 +225,9 @@
                 <label>Role:</label>
                 <select id="filterRole" class="filter-select">
                     <option value="">All Roles</option>
-                    <option value="admin">🔐 Admins</option>
-                    <option value="alumni">🎓 Alumni</option>
-                    <option value="undergrad">📚 Students</option>
+                    <option value="admin">Admins</option>
+                    <option value="alumni">Alumni</option>
+                    <option value="undergrad">Students</option>
                 </select>
             </div>
             <button id="applyMapFilters" class="btn" style="padding: 0.5rem 1rem;">Apply Filters</button>
@@ -236,7 +236,7 @@
         
         <div style="position: relative;">
             <div id="expandedMap" style="width: 100%; height: calc(100vh - 280px); min-height: 500px;"></div>
-            <button id="toggleView" class="btn" style="position: absolute; top: 10px; right: 10px; z-index: 1000; padding: 0.5rem 1rem;">📊 Show Chart</button>
+            <button id="toggleView" class="btn" style="position: absolute; top: 10px; right: 10px; z-index: 1000; padding: 0.5rem 1rem;">Show Chart</button>
         </div>
         
         <div id="chartView" style="display: none; padding: 2rem; height: calc(100vh - 280px); overflow-y: auto;">
@@ -336,19 +336,13 @@
                 allLocations.forEach(location => {
                     const coords = countryCoordinates[location.country];
                     if (coords) {
-                        const color = getRoleColor(location.roles);
-                        const marker = L.circleMarker(coords, {
-                            radius: Math.min(Math.sqrt(location.user_count) * 2, 15),
-                            fillColor: color,
-                            color: '#fff',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.7
+                        const marker = L.marker(coords, {
+                            icon: buildLocationIcon(location, false)
                         }).addTo(smallMapInstance);
                         
                         marker.bindPopup(`
                             <div style="min-width: 180px;">
-                                <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">📍 ${location.country}</h4>
+                                <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">${location.country}</h4>
                                 <p style="margin: 0.25rem 0;"><strong>Users:</strong> ${location.user_count}</p>
                                 ${location.roles ? `<p style="margin: 0.25rem 0;"><strong>Roles:</strong> ${location.roles}</p>` : ''}
                                 ${location.batches ? `<p style="margin: 0.25rem 0;"><strong>Batches:</strong> ${location.batches}</p>` : ''}
@@ -367,6 +361,25 @@
         if (roles.includes('alumni')) return '#4ecdc4';
         if (roles.includes('undergrad')) return '#45b7d1';
         return '#60a5fa';
+    }
+
+    function buildLocationIcon(location, isExpanded = false) {
+        const count = Math.max(0, parseInt(location.user_count || 0));
+        const color = getRoleColor(location.roles);
+        const size = isExpanded ? 44 : 36;
+        const displayCount = count > 999 ? '999+' : String(count);
+
+        return L.divIcon({
+            className: 'location-pin-wrapper',
+            html: `
+                <div class="location-pin" style="--pin-color: ${color}; --pin-size: ${size}px;">
+                    <span class="location-pin-value">${displayCount}</span>
+                </div>
+            `,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+            popupAnchor: [0, -size / 2]
+        });
     }
 
     // Expanded Map Modal
@@ -416,13 +429,13 @@
         if (currentView === 'map') {
             mapView.style.display = 'none';
             chartView.style.display = 'block';
-            toggleBtn.textContent = '🗺️ Show Map';
+            toggleBtn.textContent = 'Show Map';
             modeLabel.textContent = 'Chart';
             currentView = 'chart';
         } else {
             mapView.style.display = 'block';
             chartView.style.display = 'none';
-            toggleBtn.textContent = '📊 Show Chart';
+            toggleBtn.textContent = 'Show Chart';
             modeLabel.textContent = 'Map';
             currentView = 'map';
             if (expandedMapInstance) {
@@ -445,17 +458,11 @@
         locations.forEach(location => {
             const coords = countryCoordinates[location.country];
             if (coords) {
-                const color = getRoleColor(location.roles);
-                const marker = L.circleMarker(coords, {
-                    radius: Math.min(Math.sqrt(location.user_count) * 3, 20),
-                    fillColor: color,
-                    color: '#ffffff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.7
+                const marker = L.marker(coords, {
+                    icon: buildLocationIcon(location, true)
                 }).bindPopup(`
                     <div style=\"min-width: 200px;\">
-                        <h4 style=\"margin: 0 0 0.5rem 0; color: #2563eb;\">📍 ${location.country}</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">${location.country}</h4>
                         <p style=\"margin: 0.25rem 0;\"><strong>Users:</strong> ${location.user_count}</p>
                         ${location.roles ? `<p style=\"margin: 0.25rem 0;\"><strong>Roles:</strong> ${location.roles}</p>` : ''}
                         ${location.batches ? `<p style=\"margin: 0.25rem 0;\"><strong>Batches:</strong> ${location.batches}</p>` : ''}
@@ -559,7 +566,7 @@
         locations.forEach((loc, i) => {
             html += `
                 <tr style="border-bottom: 1px solid var(--border); ${i % 2 === 0 ? 'background: var(--surface-2);' : ''}">
-                    <td style="padding: 0.75rem;">🌍 ${loc.country}</td>
+                    <td style="padding: 0.75rem;">${loc.country}</td>
                     <td style="padding: 0.75rem; text-align: right; font-weight: 600;">${loc.user_count}</td>
                     <td style="padding: 0.75rem; font-size: 0.85rem;">${loc.roles || '-'}</td>
                     <td style="padding: 0.75rem; font-size: 0.85rem;">${loc.batches || '-'}</td>
