@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS `user_activity` (
     `last_activity` DATETIME NOT NULL,
     PRIMARY KEY (`user_id`),
     CONSTRAINT `fk_user_activity_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ;
 
 -- 2. URL Access Logs Table
 -- Logs all URL access with user, URL, time, request type
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS `access_logs` (
     KEY `idx_url` (`url`(255)),
     KEY `idx_method` (`method`),
     CONSTRAINT `fk_access_log_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+);
 
 -- 3. Utility queries for admin dashboard:
 

@@ -25,12 +25,11 @@
             $users = $this->adminModel->getAllUsers();
             $engagement = $this->adminModel->getEngagementMetrics();
             
-            // Online users and activity monitoring
+            // Online users and system update monitoring
             $onlineData = $this->adminModel->getOnlineUsers();
             $onlineUsers = $onlineData['users'] ?? [];
             $onlineCount = (int)($onlineData['online_count'] ?? count($onlineUsers));
-            $accessStats = $this->adminModel->getAccessLogStats();
-            $recentLogs = $this->adminModel->getRecentAccessLogs(20);
+            $systemUpdatesData = $this->getRecentSystemUpdates(20);
             
             $data = [
                 'metrics' => $metrics,
@@ -40,8 +39,9 @@
                 'engagement' => $engagement,
                 'online_users' => $onlineUsers,
                 'online_count' => $onlineCount,
-                'access_stats' => $accessStats,
-                'recent_logs' => $recentLogs,
+                'system_updates' => $systemUpdatesData['updates'],
+                'system_updates_ref' => $systemUpdatesData['source_ref'],
+                'system_updates_error' => $systemUpdatesData['error'],
             ];
             $this->view('admin/v_overview', $data);
         }
@@ -55,15 +55,73 @@
             $this->view('admin/v_users', $data);
         }
 
+        public function toggleSpecialAlumni() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->redirect('/admin/users');
+                return;
+            }
+
+            $userId = (int)($_POST['user_id'] ?? 0);
+            $isSpecial = (int)($_POST['special_alumni'] ?? 0) === 1;
+
+            if ($userId <= 0) {
+                SessionManager::setFlash('error', 'Invalid user ID.');
+                $this->redirect('/admin/users');
+                return;
+            }
+
+            $result = $this->adminModel->setSpecialAlumniStatus($userId, $isSpecial);
+            if (!empty($result['ok'])) {
+                if ((int)($_SESSION['user_id'] ?? 0) === $userId) {
+                    $_SESSION['special_alumni'] = $isSpecial;
+                }
+                SessionManager::setFlash('success', $result['message'] ?? 'Special alumni status updated.');
+            } else {
+                SessionManager::setFlash('error', $result['message'] ?? 'Failed to update special alumni status.');
+            }
+
+            $this->redirect('/admin/users');
+        }
+
         public function engagement() {
-                $engagement = $this->adminModel->getEngagementMetrics();
+                // Get role filter from query string (null = all, 'admin', 'alumni', 'undergrad')
+                $roleFilter = $_GET['role'] ?? null;
+                if ($roleFilter && !in_array($roleFilter, ['admin', 'alumni', 'undergrad'])) {
+                    $roleFilter = null;
+                }
+
+                // Get metrics and charts based on role filter
+                $engagement = $this->adminModel->getEngagementMetricsByRole($roleFilter);
                 $metrics = $this->adminModel->getOverviewMetrics();
-                $charts = $this->adminModel->getChartData();
+                $charts = $this->adminModel->getChartDataByRole($roleFilter);
+                
+                // Get user counts by role for filter display
+                $usersByRole = [
+                    'all' => $this->adminModel->countUsersByRole(null),
+                    'admin' => $this->adminModel->countUsersByRole('admin'),
+                    'alumni' => $this->adminModel->countUsersByRole('alumni'),
+                    'undergrad' => $this->adminModel->countUsersByRole('undergrad'),
+                ];
+
+                // Get location data for map
+                $locations = $this->adminModel->getUserLocations($roleFilter);
+                $locationSummary = $this->adminModel->getLocationSummary($roleFilter);
+                $countries = $this->adminModel->getCountriesWithUsers();
+                $batches = $this->adminModel->getBatches();
+                $heatmapData = $this->adminModel->getLocationHeatmapData($roleFilter);
+                
                 $data = [
                     'engagement' => $engagement,
                     'metrics' => $metrics,
                     'charts' => $charts,
                     'activeTab' => 'engagement',
+                    'roleFilter' => $roleFilter,
+                    'usersByRole' => $usersByRole,
+                    'locations' => $locations,
+                    'locationSummary' => $locationSummary,
+                    'countries' => $countries,
+                    'batches' => $batches,
+                    'heatmapData' => $heatmapData,
                 ];
             $this->view('admin/v_engagement', $data);
         }
@@ -687,6 +745,227 @@
             http_response_code($status);
             header('Content-Type: application/json');
             echo json_encode($payload);
+        }
+
+        private function getRecentSystemUpdates(int $limit = 20): array {
+            $safeLimit = max(1, min(30, $limit));
+
+            $apiResult = $this->getRecentSystemUpdatesFromGithub($safeLimit);
+            if (!empty($apiResult['updates'])) {
+                return $apiResult;
+            }
+
+            // Keep a safe fallback path to avoid breaking the dashboard if API config is missing.
+            $fallbackResult = $this->getRecentSystemUpdatesFromLocalGit($safeLimit);
+            if (!empty($fallbackResult['updates'])) {
+                return $fallbackResult;
+            }
+
+            return [
+                'updates' => [],
+                'source_ref' => $apiResult['source_ref'] ?? null,
+                'error' => $apiResult['error'] ?? ($fallbackResult['error'] ?? 'Unable to load system updates.'),
+            ];
+        }
+
+        private function getRecentSystemUpdatesFromGithub(int $limit): array {
+            // Get configuration from environment variables
+            $owner = trim((string)gl_env('ADMIN_UPDATES_REPO_OWNER', 'KaveenAmarasekara'));
+            $repo = trim((string)gl_env('ADMIN_UPDATES_REPO_NAME', 'v0-student-nic-collection'));
+            $branch = trim((string)gl_env('ADMIN_UPDATES_BRANCH', 'main'));
+            $token = trim((string)gl_env('GITHUB_TOKEN', gl_env('ADMIN_UPDATES_GITHUB_TOKEN', '')));
+
+            if ($owner === '' || $repo === '') {
+                return [
+                    'updates' => [],
+                    'source_ref' => null,
+                    'error' => 'GitHub repo owner/name is not configured.',
+                ];
+            }
+
+            if ($token === '') {
+                return [
+                    'updates' => [],
+                    'source_ref' => 'github:' . $owner . '/' . $repo . '@' . $branch,
+                    'error' => 'GitHub token is missing for private repository access.',
+                ];
+            }
+
+            $url = 'https://api.github.com/repos/'
+                . rawurlencode($owner)
+                . '/'
+                . rawurlencode($repo)
+                . '/commits?sha=' . rawurlencode($branch)
+                . '&per_page=' . $limit;
+
+            $headers = [
+                'Accept: application/vnd.github+json',
+                'Authorization: Bearer ' . $token,
+                'X-GitHub-Api-Version: 2022-11-28',
+                'User-Agent: GradlinkAdminDashboard/1.0',
+            ];
+
+            $responseBody = '';
+            $statusCode = 0;
+
+            if (function_exists('curl_init')) {
+                $ch = curl_init($url);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_TIMEOUT => 10,
+                    CURLOPT_HTTPHEADER => $headers,
+                ]);
+                $responseBody = (string)curl_exec($ch);
+                $statusCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+            } else {
+                $context = stream_context_create([
+                    'http' => [
+                        'method' => 'GET',
+                        'header' => implode("\r\n", $headers) . "\r\n",
+                        'timeout' => 10,
+                    ],
+                ]);
+                $responseBody = (string)@file_get_contents($url, false, $context);
+                $statusCode = 0;
+                if (!empty($http_response_header[0]) && preg_match('/\s(\d{3})\s/', $http_response_header[0], $m)) {
+                    $statusCode = (int)$m[1];
+                }
+            }
+
+            if ($statusCode !== 200) {
+                $errorText = 'GitHub API request failed.';
+                if ($statusCode === 401 || $statusCode === 403) {
+                    $errorText = 'GitHub token is invalid or lacks repo read permission.';
+                } elseif ($statusCode === 404) {
+                    $errorText = 'Repository or branch was not found on GitHub.';
+                }
+
+                return [
+                    'updates' => [],
+                    'source_ref' => 'github:' . $owner . '/' . $repo . '@' . $branch,
+                    'error' => $errorText,
+                ];
+            }
+
+            $json = json_decode($responseBody, true);
+            if (!is_array($json)) {
+                return [
+                    'updates' => [],
+                    'source_ref' => 'github:' . $owner . '/' . $repo . '@' . $branch,
+                    'error' => 'GitHub API returned invalid JSON.',
+                ];
+            }
+
+            $updates = [];
+            foreach ($json as $commit) {
+                $sha = (string)($commit['sha'] ?? '');
+                $fullMessage = (string)($commit['commit']['message'] ?? '');
+                $firstLineMessage = trim((string)strtok($fullMessage, "\n"));
+                $authorName = (string)($commit['commit']['author']['name'] ?? ($commit['author']['login'] ?? 'Unknown'));
+                $authorDate = (string)($commit['commit']['author']['date'] ?? '');
+                $date = $authorDate !== '' ? date('Y-m-d', strtotime($authorDate)) : '';
+
+                if ($sha === '') {
+                    continue;
+                }
+
+                $updates[] = [
+                    'hash' => substr($sha, 0, 7),
+                    'date' => $date,
+                    'author' => $authorName,
+                    'message' => $firstLineMessage,
+                ];
+            }
+
+            return [
+                'updates' => $updates,
+                'source_ref' => 'github:' . $owner . '/' . $repo . '@' . $branch,
+                'error' => empty($updates) ? 'No commits returned by GitHub API.' : null,
+            ];
+        }
+
+        private function getRecentSystemUpdatesFromLocalGit(int $limit): array {
+            $result = [
+                'updates' => [],
+                'source_ref' => null,
+                'error' => null,
+            ];
+
+            $repoRoot = realpath(APPROOT . '/..');
+            if ($repoRoot === false) {
+                $result['error'] = 'Repository path could not be resolved.';
+                return $result;
+            }
+
+            if (!is_dir($repoRoot . DIRECTORY_SEPARATOR . '.git')) {
+                $result['error'] = 'Git metadata (.git) was not found in deployment path.';
+                return $result;
+            }
+
+            if (!function_exists('shell_exec')) {
+                $result['error'] = 'Local git fallback is unavailable because shell execution is disabled.';
+                return $result;
+            }
+
+            $configuredBranch = trim((string)gl_env('ADMIN_UPDATES_BRANCH', 'dev'));
+            $refsToTry = array_values(array_unique(array_filter([
+                $configuredBranch,
+                'origin/' . $configuredBranch,
+                'HEAD',
+                'main',
+                'origin/main',
+            ])));
+
+            $selectedRef = null;
+            foreach ($refsToTry as $ref) {
+                $verifyCmd = 'git -C ' . escapeshellarg($repoRoot) . ' rev-parse --verify --quiet ' . escapeshellarg($ref) . ' 2>&1';
+                $verifyOutput = trim((string)@shell_exec($verifyCmd));
+                if ($verifyOutput !== '') {
+                    $selectedRef = $ref;
+                    break;
+                }
+            }
+
+            if ($selectedRef === null) {
+                $result['error'] = 'No usable local git ref found.';
+                return $result;
+            }
+
+            $logCmd = 'git -C ' . escapeshellarg($repoRoot)
+                . ' log ' . escapeshellarg($selectedRef)
+                . ' --date=short --pretty=format:%h%x09%ad%x09%an%x09%s -n ' . $limit
+                . ' 2>&1';
+
+            $rawOutput = (string)@shell_exec($logCmd);
+            if (trim($rawOutput) === '') {
+                $result['source_ref'] = 'local:' . $selectedRef;
+                $result['error'] = 'No commits could be read from local ref ' . $selectedRef . '.';
+                return $result;
+            }
+
+            $updates = [];
+            $lines = preg_split('/\r\n|\r|\n/', trim($rawOutput)) ?: [];
+            foreach ($lines as $line) {
+                $parts = explode("\t", $line, 4);
+                if (count($parts) < 4) {
+                    continue;
+                }
+                $updates[] = [
+                    'hash' => $parts[0],
+                    'date' => $parts[1],
+                    'author' => $parts[2],
+                    'message' => $parts[3],
+                ];
+            }
+
+            $result['updates'] = $updates;
+            $result['source_ref'] = 'local:' . $selectedRef;
+            if (empty($updates)) {
+                $result['error'] = 'Commit output could not be parsed for local ref ' . $selectedRef . '.';
+            }
+
+            return $result;
         }
          // ==================== HELP & SUPPORT ====================
 

@@ -7,6 +7,7 @@
 # Environment files
 .env
 .env.local
+.env.example
 
 vendor/
 # IDE and editor files

@@ -17,9 +17,20 @@
 .admin-actions { display: flex; gap: 0.5rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .card-tools { display: flex; gap: 0.5rem; }
-.admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(0,0,0,0.3); }
-.admin-modal-content { background: #0e1b28; margin: 5% auto; padding: 2rem; border-radius: 8px; width: 90%; max-width: 500px; position: relative; }
-.admin-modal-close { position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; }
+.admin-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background: rgba(6, 10, 16, 0.58); backdrop-filter: blur(2px); }
+.admin-modal-content { background: #0e1b28; margin: 5% auto; padding: 1.5rem 1.6rem; border-radius: 10px; width: 92%; max-width: 520px; position: relative; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35); color: #d9e3ee; }
+.admin-modal-content h2 { margin: 0 0 0.9rem; color: #ffffff; font-size: 1.25rem; }
+#modalAlumniContent { line-height: 1.55; }
+#modalAlumniContent b { color: #f2f7ff; }
+#modalAlumniContent img { margin-top: 0.45rem; max-width: 100%; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 8px; background: #0b1118; }
+.admin-modal-close { position: absolute; top: 0.75rem; right: 0.95rem; font-size: 1.45rem; color: #c9d5e2; cursor: pointer; line-height: 1; }
+.admin-modal-close:hover { color: #ffffff; }
+.alumni-modal-grid { display: grid; grid-template-columns: 92px 1fr; gap: 8px 12px; align-items: start; font-size: 0.95rem; }
+.alumni-modal-grid dt { margin: 0; color: #b9c7d6; font-weight: 600; }
+.alumni-modal-grid dd { margin: 0; color: #eef4fb; word-break: break-word; }
+.alumni-modal-media { margin-top: 0.9rem; padding-top: 0.75rem; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.alumni-modal-media-title { margin: 0 0 0.4rem; color: #b9c7d6; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.alumni-modal-media img { display: block; width: 100%; }
 .flash-message.success { background: rgba(40, 167, 69, 0.15); color: #28a745; border-left: 4px solid #28a745; }
 .flash-message.error { background: rgba(220, 53, 69, 0.15); color: #dc3545; border-left: 4px solid #dc3545; }
 .flash-message.warning { background: rgba(255, 193, 7, 0.15); color: #ffc107; border-left: 4px solid #ffc107; }
@@ -156,11 +167,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const nic = row.children[4].textContent;
             const status = row.children[5].textContent;
             document.getElementById('modalAlumniContent').innerHTML =
-                `<b>Name:</b> ${name}<br>
-                <b>Email:</b> ${email}<br>
-                <b>Batch:</b> ${batch}<br>
-                <b>NIC:</b> ${nic}<br>
-                <b>Status:</b> ${status}`;
+                `<dl class="alumni-modal-grid">
+                    <dt>Name</dt><dd>${name}</dd>
+                    <dt>Email</dt><dd>${email}</dd>
+                    <dt>Batch</dt><dd>${batch}</dd>
+                    <dt>NIC</dt><dd>${nic}</dd>
+                    <dt>Status</dt><dd>${status}</dd>
+                </dl>
+                <div class="alumni-modal-media">
+                    <div class="alumni-modal-media-title">Profile Image</div>
+                    <img src="${"<?php echo URLROOT; ?>"}/media/profile/${encodeURIComponent(row.getAttribute('data-req-id') + '_nic.jpg')}" alt="Profile Image">
+                </div>`;
             modal.style.display = 'block';
         };
     });
