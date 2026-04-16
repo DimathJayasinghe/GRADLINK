@@ -711,27 +711,66 @@
             URL.revokeObjectURL(url);
         }
 
-        document.getElementById('export-analytics').addEventListener('click', function(){
-            const rows = [
-                ['Metric','Value'],
-                ['Total Users', usersEl ? usersEl.textContent : '0'],
-                ['Active 30d', activeEl ? activeEl.textContent : '0'],
-                ['Growth 3mo', growthEl ? growthEl.textContent : '0'],
-                ['Posts', postsEl ? postsEl.textContent : '0'],
-                ['Comments', commentsEl ? commentsEl.textContent : '0'],
-                ['Reactions', reactionsEl ? reactionsEl.textContent : '0']
-            ];
-            downloadCSV('analytics_summary.csv', rows);
-        });
+        const exportAnalyticsBtn = document.getElementById('export-analytics');
+        if (exportAnalyticsBtn) {
+            exportAnalyticsBtn.addEventListener('click', function(){
+                const totalUsers = parseInt(contextTotalUsers || 0);
+                const adminCount = parseInt(usersByRole?.admin || 0);
+                const alumniCount = parseInt(usersByRole?.alumni || 0);
+                const undergradCount = parseInt(usersByRole?.undergrad || 0);
+                const otherUsers = Math.max(0, totalUsers - (adminCount + alumniCount + undergradCount));
 
-        document.getElementById('export-users').addEventListener('click', function(){
-            // Placeholder: in real app, this should call server for a full export. Here export empty header.
-            downloadCSV('users_export.csv', [['id','name','email','role','batch']]);
-        });
+                const rows = [
+                    ['Report', 'Admin Analytics Summary'],
+                    ['Generated At', new Date().toISOString()],
+                    ['Role Filter', roleFilterValue ? String(roleFilterValue) : 'all'],
+                    [],
+                    ['Section', 'Users'],
+                    ['Total Users', totalUsers],
+                    ['Admins', adminCount],
+                    ['Alumni', alumniCount],
+                    ['Undergrad', undergradCount],
+                    ['Other/Unknown Roles', otherUsers],
+                    ['Active Users (30d)', parseInt(engagement.active_30_days ?? 0)],
+                    ['User Growth (3mo %)', parseInt(<?php echo json_encode((int)($data['metrics']['growth_3_months_pct'] ?? 0)); ?>)],
+                    [],
+                    ['Section', 'Content & Community'],
+                    ['Total Posts', parseInt(engagement.posts ?? 0)],
+                    ['Total Comments', parseInt(engagement.comments ?? 0)],
+                    ['Total Reactions', parseInt(engagement.reactions ?? 0)],
+                    ['Total Messages', parseInt(engagement.messages ?? 0)],
+                    ['Total Events', parseInt(engagement.events ?? 0)],
+                    ['Event Bookmarks', parseInt(engagement.event_bookmarks ?? 0)],
+                    ['Followers', parseInt(engagement.followers ?? 0)],
+                    ['Pending Alumni', parseInt(engagement.pending_alumni ?? 0)],
+                    ['Unread Notifications', parseInt(engagement.notifications_unread ?? 0)],
+                    [],
+                    ['Section', 'Engagement Indicators'],
+                    ['Engagement Rate (%)', Number(engagement.engagement_rate ?? 0)],
+                    ['DAU', parseInt(engagement.dau ?? 0)],
+                    ['WAU', parseInt(engagement.wau ?? 0)],
+                    ['MAU', parseInt(engagement.mau ?? 0)],
+                    ['Avg Posts Per User', Number(engagement.avg_posts_per_user ?? 0)],
+                    ['Avg Comments Per Post', Number(engagement.avg_comments_per_post ?? 0)]
+                ];
 
-        document.getElementById('export-content').addEventListener('click', function(){
-            downloadCSV('content_export.csv', [['id','title','type','status','date']]);
-        });
+                downloadCSV('analytics_summary.csv', rows);
+            });
+        }
+
+        const exportUsersBtn = document.getElementById('export-users');
+        if (exportUsersBtn) {
+            exportUsersBtn.addEventListener('click', function(){
+                downloadCSV('users_export.csv', [['id','name','email','role','batch']]);
+            });
+        }
+
+        const exportContentBtn = document.getElementById('export-content');
+        if (exportContentBtn) {
+            exportContentBtn.addEventListener('click', function(){
+                downloadCSV('content_export.csv', [['id','title','type','status','date']]);
+            });
+        }
 
         const exportEventsBtn = document.getElementById('export-events');
         if(exportEventsBtn){
