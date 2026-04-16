@@ -136,6 +136,7 @@ class calender extends Controller{
 
         $normalized = (object)[
             'event_id' => $event->id,
+            'organizer_id' => $event->organizer_id,
             'title' => $event->title,
             'description' => $event->description,
             'attachment_image' => $event->attachment_image ?? null,

@@ -585,6 +585,93 @@ class M_admin {
         }
     }
 
+    public function getEventReports(): array {
+        try {
+            if (!$this->tableExists('reports') || !$this->columnExists('reports', 'report_type') || !$this->columnExists('reports', 'reported_item_id')) {
+                return [];
+            }
+
+            $idColumn = $this->columnExists('reports', 'report_id') ? 'report_id' : ($this->columnExists('reports', 'id') ? 'id' : null);
+            if ($idColumn === null) {
+                return [];
+            }
+
+            $this->db->query("SELECT
+                                r.$idColumn AS id,
+                                'reports' AS source,
+                                r.reported_item_id AS event_id,
+                                r.reporter_id,
+                                r.category,
+                                r.details,
+                                r.link AS reference_link,
+                                r.status,
+                                r.created_at,
+                                r.updated_at,
+                                e.title AS event_title,
+                                e.start_datetime AS event_start_at,
+                                e.venue AS event_venue,
+                                e.organizer_id AS event_owner_id,
+                                reporter.name AS reporter_name,
+                                reporter.role AS reporter_role,
+                                owner.name AS owner_name,
+                                owner.role AS owner_role
+                            FROM reports r
+                            LEFT JOIN events e ON e.id = r.reported_item_id
+                            LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                            LEFT JOIN users owner ON owner.id = e.organizer_id
+                            WHERE r.report_type = 'event'
+                            ORDER BY r.created_at DESC");
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            error_log("Error fetching event reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getFundraiserReports(): array {
+        try {
+            if (!$this->tableExists('reports') || !$this->columnExists('reports', 'report_type') || !$this->columnExists('reports', 'reported_item_id')) {
+                return [];
+            }
+
+            $idColumn = $this->columnExists('reports', 'report_id') ? 'report_id' : ($this->columnExists('reports', 'id') ? 'id' : null);
+            if ($idColumn === null) {
+                return [];
+            }
+
+            $this->db->query("SELECT
+                                r.$idColumn AS id,
+                                'reports' AS source,
+                                r.reported_item_id AS fundraiser_id,
+                                r.reporter_id,
+                                r.category,
+                                r.details,
+                                r.link AS reference_link,
+                                r.status,
+                                r.created_at,
+                                r.updated_at,
+                                fr.title AS fundraiser_title,
+                                fr.headline AS fundraiser_headline,
+                                fr.club_name AS fundraiser_club_name,
+                                fr.status AS fundraiser_status,
+                                fr.user_id AS fundraiser_owner_id,
+                                reporter.name AS reporter_name,
+                                reporter.role AS reporter_role,
+                                owner.name AS owner_name,
+                                owner.role AS owner_role
+                            FROM reports r
+                            LEFT JOIN fundraising_requests fr ON fr.id = r.reported_item_id
+                            LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                            LEFT JOIN users owner ON owner.id = fr.user_id
+                            WHERE r.report_type = 'fundraiser'
+                            ORDER BY r.created_at DESC");
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            error_log("Error fetching fundraiser reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function updateContentReportStatus(int $reportId, string $status, int $adminId, string $source = 'reports'): bool {
         try {
             if ($reportId <= 0) {
@@ -1887,23 +1974,99 @@ class M_admin {
      * Remove/Delete a fundraiser
      */
     public function removeFundraiser($id) {
-        // First delete related records
-        $this->db->query("DELETE FROM fundraising_team_members WHERE request_id = :id");
-        $this->db->bind(':id', $id);
-        $this->db->execute();
+        $safeId = (int)$id;
+        if ($safeId <= 0) {
+            return false;
+        }
 
-        $this->db->query("DELETE FROM fundraising_bank_details WHERE request_id = :id");
-        $this->db->bind(':id', $id);
-        $this->db->execute();
+        try {
+            $this->db->beginTransaction();
 
-        $this->db->query("DELETE FROM fundraising_donations WHERE request_id = :id");
-        $this->db->bind(':id', $id);
-        $this->db->execute();
+            // Remove related records first for environments without strict FK cascades.
+            $this->db->query("DELETE FROM fundraising_team_members WHERE request_id = :id");
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
 
-        // Then delete main record
-        $this->db->query("DELETE FROM fundraising_requests WHERE id = :id");
-        $this->db->bind(':id', $id);
-        return $this->db->execute();
+            $this->db->query("DELETE FROM fundraising_bank_details WHERE request_id = :id");
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
+
+            $this->db->query("DELETE FROM fundraising_donations WHERE request_id = :id");
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
+
+            $this->db->query("DELETE FROM fundraising_requests WHERE id = :id");
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
+
+            $deleted = $this->db->rowCount() > 0;
+            if ($deleted) {
+                $this->db->commit();
+                return true;
+            }
+
+            $this->db->rollBack();
+            return false;
+        } catch (Exception $e) {
+            try {
+                $this->db->rollBack();
+            } catch (Exception $ignored) {
+            }
+            error_log('Error removing fundraiser: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Remove/Delete an event and related records.
+     */
+    public function removeEvent($id) {
+        $safeId = (int)$id;
+        if ($safeId <= 0) {
+            return false;
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            // Keep cleanup resilient if some optional tables are missing in a given environment.
+            $cleanupStatements = [
+                'DELETE FROM event_attendees WHERE event_id = :id',
+                'DELETE FROM event_bookmarks WHERE event_id = :id',
+                'DELETE FROM event_images WHERE event_id = :id',
+                'DELETE FROM event_tags WHERE event_id = :id',
+                'UPDATE event_requests SET event_id = NULL WHERE event_id = :id',
+            ];
+
+            foreach ($cleanupStatements as $sql) {
+                try {
+                    $this->db->query($sql);
+                    $this->db->bind(':id', $safeId);
+                    $this->db->execute();
+                } catch (Exception $ignored) {
+                }
+            }
+
+            $this->db->query('DELETE FROM events WHERE id = :id');
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
+
+            $deleted = $this->db->rowCount() > 0;
+            if ($deleted) {
+                $this->db->commit();
+                return true;
+            }
+
+            $this->db->rollBack();
+            return false;
+        } catch (Exception $e) {
+            try {
+                $this->db->rollBack();
+            } catch (Exception $ignored) {
+            }
+            error_log('Error removing event: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

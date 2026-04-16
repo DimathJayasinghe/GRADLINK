@@ -200,10 +200,14 @@
         public function reports() {
             $postReports = $this->adminModel->getPostReports();
             $profileReports = $this->adminModel->getProfileReports();
+            $eventReports = $this->adminModel->getEventReports();
+            $fundraiserReports = $this->adminModel->getFundraiserReports();
             $data = [
                 'reports' => $postReports,
                 'postReports' => $postReports,
                 'profileReports' => $profileReports,
+                'eventReports' => $eventReports,
+                'fundraiserReports' => $fundraiserReports,
             ];
             $this->view('admin/v_reports', $data);
         }
@@ -257,6 +261,83 @@
 
             $this->redirect('/admin/reports');
         }
+
+        public function removeReportedEvent() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $eventId = (int)($input['event_id'] ?? 0);
+            $reportId = (int)($input['report_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($eventId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Invalid event ID'], 400);
+                return;
+            }
+
+            if ($adminId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Unauthenticated'], 401);
+                return;
+            }
+
+            $removed = $this->adminModel->removeEvent($eventId);
+            if (!$removed) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Failed to remove event'], 400);
+                return;
+            }
+
+            if ($reportId > 0) {
+                $this->adminModel->updateContentReportStatus($reportId, 'resolved', $adminId, 'reports');
+            }
+
+            $this->jsonResponse(['ok' => true, 'message' => 'Event removed successfully']);
+        }
+
+        public function removeReportedFundraiser() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $fundraiserId = (int)($input['fundraiser_id'] ?? 0);
+            $reportId = (int)($input['report_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($fundraiserId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Invalid fundraiser ID'], 400);
+                return;
+            }
+
+            if ($adminId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Unauthenticated'], 401);
+                return;
+            }
+
+            $removed = $this->adminModel->removeFundraiser($fundraiserId);
+            if (!$removed) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Failed to remove fundraiser'], 400);
+                return;
+            }
+
+            if ($reportId > 0) {
+                $this->adminModel->updateContentReportStatus($reportId, 'resolved', $adminId, 'reports');
+            }
+
+            $this->jsonResponse(['ok' => true, 'message' => 'Fundraiser removed successfully']);
+        }
+
         public function posts() {
             $data = [];
             $this->view('admin/v_posts', $data);

@@ -177,6 +177,85 @@
         background: #2563eb;
     }
 
+    .report-btn {
+        background: #c0394c;
+        border: none;
+        cursor: pointer;
+    }
+
+    .report-btn:hover {
+        background: #a93242;
+    }
+
+    .fundraise-report-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.62);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1300;
+        padding: 1rem;
+    }
+
+    .fundraise-report-modal {
+        width: min(540px, 100%);
+        background: var(--bg-alt, #161b22);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+    }
+
+    .fundraise-report-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+    }
+
+    .fundraise-report-header h3 {
+        margin: 0;
+    }
+
+    .fundraise-report-close {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        padding: 0.3rem 0.55rem;
+    }
+
+    .fundraise-report-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .fundraise-report-group label {
+        font-size: 0.86rem;
+        color: var(--muted);
+    }
+
+    .fundraise-report-group select,
+    .fundraise-report-group textarea,
+    .fundraise-report-group input {
+        width: 100%;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--input, #0f141a);
+        color: var(--text);
+        padding: 0.55rem 0.7rem;
+    }
+
+    .fundraise-report-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.6rem;
+        margin-top: 0.7rem;
+    }
+
     .no-campaigns,
     .no-filter-results {
         margin-top: 1rem;
@@ -222,7 +301,6 @@ $sidebar_left = [
         <h2>Open Campaigns</h2>
         <p class="fundraise-subtitle">Explore all current fundraisers and support a cause today.</p>
     </div>
-
     <?php if (!empty($data['fundraise_reqs'])): ?>
         <div class="fundraise-controls">
             <input id="campaignSearch" class="fundraise-control" type="text" placeholder="Search by campaign, club, or headline">
@@ -313,13 +391,58 @@ $sidebar_left = [
                             <?php endif; ?>
                         </p>
 
-                        <a class="view-btn" href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>">View Details</a>
+                        <div style="display:flex; gap:0.45rem;">
+                            <a class="view-btn" style="flex:1;" href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>">View Details</a>
+                            <button
+                                type="button"
+                                class="view-btn report-btn report-fundraiser-btn"
+                                style="flex:1;"
+                                data-fundraiser-id="<?php echo (int)$req->req_id; ?>"
+                            >Report</button>
+                        </div>
                     </div>
                 </article>
             <?php endforeach; ?>
         </div>
 
         <p id="campaignNoResults" class="no-filter-results is-hidden">No campaigns match your search and filters.</p>
+
+        <div id="fundraiserReportModal" class="fundraise-report-overlay" style="display:none;">
+            <div class="fundraise-report-modal">
+                <div class="fundraise-report-header">
+                    <h3>Report Fundraiser Campaign</h3>
+                    <button type="button" class="fundraise-report-close" data-action="close">X</button>
+                </div>
+                <form id="fundraiser-report-form" novalidate>
+                    <input type="hidden" id="fundraiserReportId" value="">
+                    <div class="fundraise-report-group">
+                        <label for="fundraiserReportCategory">Category</label>
+                        <select id="fundraiserReportCategory" required>
+                            <option value="" disabled selected>Select a category</option>
+                            <option>Spam</option>
+                            <option>Harassment or bullying</option>
+                            <option>Hate or abusive content</option>
+                            <option>Misinformation</option>
+                            <option>Fraud or suspicious fundraising</option>
+                            <option>Illegal or dangerous acts</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="fundraise-report-group">
+                        <label for="fundraiserReportDetails">Details (optional)</label>
+                        <textarea id="fundraiserReportDetails" rows="4" placeholder="Add any details or context..."></textarea>
+                    </div>
+                    <div class="fundraise-report-group">
+                        <label for="fundraiserReportLink">Reference link (optional)</label>
+                        <input type="url" id="fundraiserReportLink" placeholder="https://..." />
+                    </div>
+                    <div class="fundraise-report-actions">
+                        <button type="button" class="view-btn" data-action="cancel">Cancel</button>
+                        <button type="submit" class="view-btn">Submit Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     <?php else: ?>
         <p class="no-campaigns">No fundraise requests found.</p>
     <?php endif; ?>
@@ -406,6 +529,104 @@ $sidebar_left = [
     sortSelect?.addEventListener('change', applyFilters);
 
     applyFilters();
+})();
+
+(() => {
+    const reportButtons = document.querySelectorAll('.report-fundraiser-btn');
+    const reportModal = document.getElementById('fundraiserReportModal');
+    const reportForm = document.getElementById('fundraiser-report-form');
+    const reportId = document.getElementById('fundraiserReportId');
+    const reportCategory = document.getElementById('fundraiserReportCategory');
+    const reportDetails = document.getElementById('fundraiserReportDetails');
+    const reportLink = document.getElementById('fundraiserReportLink');
+    const reportEndpoint = '<?php echo URLROOT; ?>/report/submitReport/fundraiser';
+
+    if (!reportButtons.length || !reportModal || !reportForm || !reportId) {
+        return;
+    }
+
+    const notify = (message) => {
+        if (typeof show_popup === 'function') {
+            show_popup(message);
+            return;
+        }
+        alert(message);
+    };
+
+    const closeReportModal = () => {
+        reportModal.style.display = 'none';
+    };
+
+    reportButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            reportId.value = String(Number(btn.dataset.fundraiserId || 0));
+            reportModal.style.display = 'flex';
+        });
+    });
+
+    reportModal.querySelector('[data-action="close"]')?.addEventListener('click', closeReportModal);
+    reportModal.querySelector('[data-action="cancel"]')?.addEventListener('click', closeReportModal);
+    reportModal.addEventListener('click', (e) => {
+        if (e.target === reportModal) {
+            closeReportModal();
+        }
+    });
+
+    reportForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fundraiserId = Number(reportId.value || 0);
+        if (!fundraiserId) {
+            notify('Invalid fundraiser id for report');
+            return;
+        }
+
+        const category = reportCategory ? reportCategory.value : '';
+        if (!category) {
+            notify('Please select a report category');
+            return;
+        }
+
+        const submitBtn = reportForm.querySelector('button[type="submit"]');
+        const previousText = submitBtn ? submitBtn.textContent : 'Submit Report';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+        }
+
+        try {
+            const fd = new FormData();
+            fd.append('fundraiser_id', String(fundraiserId));
+            fd.append('category', category);
+            fd.append('details', reportDetails ? reportDetails.value.trim() : '');
+            const linkValue = reportLink ? reportLink.value.trim() : '';
+            if (linkValue) {
+                fd.append('link', linkValue);
+            }
+
+            const response = await fetch(reportEndpoint, {
+                method: 'POST',
+                body: fd
+            });
+
+            const json = await response.json().catch(() => null);
+            if (!response.ok || !json || (json.success !== true && json.status !== 'success')) {
+                throw new Error((json && json.message) ? json.message : 'Failed to submit campaign report');
+            }
+
+            notify('Thanks for your report. Our team will review this campaign.');
+            reportForm.reset();
+            closeReportModal();
+        } catch (err) {
+            console.error('Fundraiser report submission failed', err);
+            notify(err && err.message ? err.message : 'Failed to submit campaign report');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = previousText;
+            }
+        }
+    });
 })();
 <?php $scripts = ob_get_clean(); ?>
 

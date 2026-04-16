@@ -376,11 +376,6 @@ ob_start(); ?>
         color: #fff;
     }
 
-    .btn-rsvp {
-        background-color: #007bff;
-        color: #303030ff;
-    }
-
     .btn-view {
         background-color: #6c757d;
     }
@@ -656,7 +651,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button style="padding: 9px; color:white;" class="bookmark-btn ${event.bookmarked ? 'bookmarked' : 'not-bookmarked'}" data-event-id="${event.id}">
                             ${event.bookmarked ? 'Remove Bookmark' : 'Add to Bookmarks'}
                         </button>
-                        <button class="btn btn-rsvp" style="background-color: #455663;padding:9px;" data-event-id="${event.id}">RSVP (<span class="rsvp-count" data-event-id="${event.id}"></span>)</button>
                         <a style="padding: 9px;" class="btn btn-view" href="<?php echo URLROOT; ?>/calender/show/${encodeURIComponent(event.id)}" value=${event.id}>View Details</a>
                     </div>
                     `;
@@ -664,8 +658,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 // then attach to DOM
                 eventItem.innerHTML = html;                
                 eventsList.appendChild(eventItem);
-                // refresh the attendee count display for this event (includes guests)
-                try{ refreshAttendeeCountForEvent(event.id); }catch(e){console.error('refresh count failed',e);} 
             });
         } else {
             // No events for this date
@@ -741,54 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // RSVP clicked
-            if (e.target.closest('.btn-rsvp')){
-                const btn = e.target.closest('.btn-rsvp');
-                const eventId = btn.getAttribute('data-event-id');
-                if(!eventId) return;
-                // Open RSVP modal and set selected event id via global helper
-                if(window.__GL_openRsvpModal){
-                    window.__GL_openRsvpModal(Number(eventId));
-                } else if(typeof openRsvpModal === 'function'){
-                    openRsvpModal(Number(eventId));
-                }
-                return;
-            }
     });
-});
-
-// Use the central RSVP modal included by the layout adapter. Register a handler
-// that will be called by the adapter after a successful RSVP so we can refresh counts.
-if(!window.__GL_onRsvpConfirmed){
-    window.__GL_onRsvpConfirmed = function(ev){
-        try{ refreshAttendeeCountForEvent(ev); }catch(e){console.error(e);} 
-    };
-}
-function refreshAttendeeCountForEvent(eventId){
-    fetch('<?php echo URLROOT; ?>/calender/attendees?event_id=' + encodeURIComponent(eventId), { credentials: 'same-origin' })
-        .then(r=>r.json()).then(data=>{
-            if(data && data.ok){
-                const countEls = document.querySelectorAll('.rsvp-count[data-event-id="'+eventId+'"]');
-                // prefer attendees_count computed by server (includes guests), fallback to attendees length
-                const cnt = (typeof data.attendees_count !== 'undefined') ? data.attendees_count : (data.attendees? data.attendees.length : 0);
-                countEls.forEach(el=> el.textContent = cnt);
-                // If on details page, update attendees list too (in that view we'll fetch attendees separately)
-            }
-        }).catch(err=>console.error('Could not refresh attendees',err));
-}
-
-// Initialize rsvp counts for visible events
-document.addEventListener('DOMContentLoaded', function(){
-    // for each unique event id in events, fetch attendees count
-    const seen = new Set();
-    for(const d in events){
-        events[d].forEach(ev=>{
-            if(!seen.has(String(ev.id))){
-                seen.add(String(ev.id));
-                refreshAttendeeCountForEvent(ev.id);
-            }
-        });
-    }
 });
 
 // Original event handling

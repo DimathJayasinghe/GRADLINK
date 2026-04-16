@@ -2,6 +2,8 @@
 <?php
 $postReports = $data['postReports'] ?? ($data['reports'] ?? []);
 $profileReports = $data['profileReports'] ?? [];
+$eventReports = $data['eventReports'] ?? [];
+$fundraiserReports = $data['fundraiserReports'] ?? [];
 ?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/common.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/admin/dashboard-common.css">
@@ -532,6 +534,259 @@ $profileReports = $data['profileReports'] ?? [];
     </div>
 </div>
 
+<div class="admin-card" style="margin-top: 1.25rem;">
+    <div class="card-header report-card-header">
+        <div>
+            <h3 style="margin:0;">Event Reports</h3>
+            <div class="table-subtitle">Reports submitted against events</div>
+        </div>
+        <span class="status-badge status-pending"><?php echo count($eventReports); ?> total</span>
+    </div>
+
+    <div class="reports-table-wrapper">
+        <table class="admin-table" id="eventReportsTable">
+            <thead>
+                <tr>
+                    <th class="report-id">Report ID</th>
+                    <th class="report-reporter">Reporter</th>
+                    <th class="report-content">Event</th>
+                    <th class="report-type">Type</th>
+                    <th class="report-status">Status</th>
+                    <th class="report-date">Date</th>
+                    <th class="report-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($eventReports)): ?>
+                    <?php foreach ($eventReports as $report): ?>
+                        <?php
+                        $reportId = (int)($report->id ?? 0);
+                        $reporterName = trim((string)($report->reporter_name ?? 'Unknown'));
+                        $reporterRole = trim((string)($report->reporter_role ?? ''));
+                        $eventTitle = trim((string)($report->event_title ?? ''));
+                        $eventId = (int)($report->event_id ?? 0);
+                        if ($eventTitle === '') {
+                            $eventTitle = 'Event #' . $eventId;
+                        }
+                        $eventStart = trim((string)($report->event_start_at ?? ''));
+                        $eventVenue = trim((string)($report->event_venue ?? ''));
+                        $eventSummary = $eventTitle;
+                        if ($eventStart !== '') {
+                            $eventSummary .= ' | ' . $eventStart;
+                        }
+                        if ($eventVenue !== '') {
+                            $eventSummary .= ' | ' . $eventVenue;
+                        }
+                        $status = trim((string)($report->status ?? 'pending'));
+                        $statusClass = in_array($status, ['pending', 'resolved', 'rejected'], true) ? $status : 'pending';
+                        $category = trim((string)($report->category ?? ''));
+                        $modalDetails = trim((string)($report->details ?? ''));
+                        $modalLink = trim((string)($report->reference_link ?? ''));
+                        $source = trim((string)($report->source ?? 'reports'));
+                        $suspendTargetId = (int)($report->event_owner_id ?? 0);
+                        $suspendTargetName = trim((string)($report->owner_name ?? 'User #' . $suspendTargetId));
+                        $ownerRoleRaw = trim((string)($report->owner_role ?? ''));
+                        $ownerRole = strtolower($ownerRoleRaw);
+                        $ownerProtected = $ownerRole !== '' && strpos($ownerRole, 'admin') !== false;
+                        ?>
+                        <tr>
+                            <td><?php echo $reportId; ?></td>
+                            <td data-modal-value="<?php echo htmlspecialchars($reporterName . ($reporterRole !== '' ? ' (' . $reporterRole . ')' : '')); ?>">
+                                <?php echo htmlspecialchars($reporterName); ?>
+                                <?php if ($reporterRole !== ''): ?>
+                                    <div class="table-subtitle"><?php echo htmlspecialchars($reporterRole); ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td class="report-snippet" data-modal-value="<?php echo htmlspecialchars($eventSummary); ?>">
+                                <?php echo htmlspecialchars($eventTitle); ?>
+                                <?php if ($eventStart !== '' || $eventVenue !== ''): ?>
+                                    <div class="table-subtitle">
+                                        <?php echo htmlspecialchars(trim(($eventStart !== '' ? $eventStart : '') . ($eventVenue !== '' ? ' | ' . $eventVenue : ''), ' |')); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo htmlspecialchars($category !== '' ? $category : 'Other'); ?></td>
+                            <td><span class="status-badge status-<?php echo htmlspecialchars($statusClass); ?>"><?php echo ucfirst(htmlspecialchars($statusClass)); ?></span></td>
+                            <td><?php echo htmlspecialchars((string)($report->created_at ?? '')); ?></td>
+                            <td>
+                                <div class="report-actions-wrap">
+                                    <button
+                                        class="admin-btn view-report"
+                                        data-report-kind="Event Report"
+                                        data-details="<?php echo htmlspecialchars($modalDetails); ?>"
+                                        data-link="<?php echo htmlspecialchars($modalLink); ?>"
+                                    >View</button>
+                                    <form class="admin-status-form" method="post" action="<?php echo URLROOT; ?>/admin/updateContentReportStatus">
+                                        <input type="hidden" name="report_id" value="<?php echo $reportId; ?>">
+                                        <input type="hidden" name="source" value="<?php echo htmlspecialchars($source); ?>">
+                                        <select class="admin-select" name="status" required>
+                                            <option value="pending" <?php echo $statusClass === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                            <option value="resolved" <?php echo $statusClass === 'resolved' ? 'selected' : ''; ?>>Resolved</option>
+                                            <option value="rejected" <?php echo $statusClass === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+                                        </select>
+                                        <button class="admin-btn" type="submit">Save</button>
+                                    </form>
+                                    <?php if ($eventId > 0): ?>
+                                        <button
+                                            type="button"
+                                            class="admin-btn admin-btn-danger remove-event-btn"
+                                            data-event-id="<?php echo $eventId; ?>"
+                                            data-report-id="<?php echo $reportId; ?>"
+                                        >Remove Event</button>
+                                    <?php endif; ?>
+                                    <?php if ($suspendTargetId > 0 && !$ownerProtected): ?>
+                                        <button
+                                            type="button"
+                                            class="admin-btn admin-btn-danger suspend-user-btn"
+                                            data-user-id="<?php echo $suspendTargetId; ?>"
+                                            data-user-name="<?php echo htmlspecialchars($suspendTargetName); ?>"
+                                        >Suspend User</button>
+                                    <?php elseif ($ownerProtected): ?>
+                                        <span class="table-subtitle">Protected admin account</span>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="7">No event reports yet.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="admin-card" style="margin-top: 1.25rem;">
+    <div class="card-header report-card-header">
+        <div>
+            <h3 style="margin:0;">Fundraiser Campaign Reports</h3>
+            <div class="table-subtitle">Reports submitted against fundraiser campaigns</div>
+        </div>
+        <span class="status-badge status-pending"><?php echo count($fundraiserReports); ?> total</span>
+    </div>
+
+    <div class="reports-table-wrapper">
+        <table class="admin-table" id="fundraiserReportsTable">
+            <thead>
+                <tr>
+                    <th class="report-id">Report ID</th>
+                    <th class="report-reporter">Reporter</th>
+                    <th class="report-content">Campaign</th>
+                    <th class="report-type">Type</th>
+                    <th class="report-status">Status</th>
+                    <th class="report-date">Date</th>
+                    <th class="report-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($fundraiserReports)): ?>
+                    <?php foreach ($fundraiserReports as $report): ?>
+                        <?php
+                        $reportId = (int)($report->id ?? 0);
+                        $reporterName = trim((string)($report->reporter_name ?? 'Unknown'));
+                        $reporterRole = trim((string)($report->reporter_role ?? ''));
+                        $fundraiserId = (int)($report->fundraiser_id ?? 0);
+                        $fundraiserTitle = trim((string)($report->fundraiser_title ?? ''));
+                        if ($fundraiserTitle === '') {
+                            $fundraiserTitle = 'Campaign #' . $fundraiserId;
+                        }
+                        $fundraiserHeadline = trim((string)($report->fundraiser_headline ?? ''));
+                        $fundraiserClub = trim((string)($report->fundraiser_club_name ?? ''));
+                        $fundraiserStatus = trim((string)($report->fundraiser_status ?? ''));
+                        $summaryParts = [$fundraiserTitle];
+                        if ($fundraiserClub !== '') {
+                            $summaryParts[] = $fundraiserClub;
+                        }
+                        if ($fundraiserStatus !== '') {
+                            $summaryParts[] = $fundraiserStatus;
+                        }
+                        $fundraiserSummary = implode(' | ', $summaryParts);
+                        if ($fundraiserHeadline !== '') {
+                            $fundraiserSummary .= ' | ' . $fundraiserHeadline;
+                        }
+                        $status = trim((string)($report->status ?? 'pending'));
+                        $statusClass = in_array($status, ['pending', 'resolved', 'rejected'], true) ? $status : 'pending';
+                        $category = trim((string)($report->category ?? ''));
+                        $modalDetails = trim((string)($report->details ?? ''));
+                        $modalLink = trim((string)($report->reference_link ?? ''));
+                        $source = trim((string)($report->source ?? 'reports'));
+                        $suspendTargetId = (int)($report->fundraiser_owner_id ?? 0);
+                        $suspendTargetName = trim((string)($report->owner_name ?? 'User #' . $suspendTargetId));
+                        $ownerRoleRaw = trim((string)($report->owner_role ?? ''));
+                        $ownerRole = strtolower($ownerRoleRaw);
+                        $ownerProtected = $ownerRole !== '' && strpos($ownerRole, 'admin') !== false;
+                        ?>
+                        <tr>
+                            <td><?php echo $reportId; ?></td>
+                            <td data-modal-value="<?php echo htmlspecialchars($reporterName . ($reporterRole !== '' ? ' (' . $reporterRole . ')' : '')); ?>">
+                                <?php echo htmlspecialchars($reporterName); ?>
+                                <?php if ($reporterRole !== ''): ?>
+                                    <div class="table-subtitle"><?php echo htmlspecialchars($reporterRole); ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td class="report-snippet" data-modal-value="<?php echo htmlspecialchars($fundraiserSummary); ?>">
+                                <?php echo htmlspecialchars($fundraiserTitle); ?>
+                                <?php if ($fundraiserClub !== '' || $fundraiserStatus !== ''): ?>
+                                    <div class="table-subtitle">
+                                        <?php echo htmlspecialchars(trim(($fundraiserClub !== '' ? $fundraiserClub : '') . ($fundraiserStatus !== '' ? ' | ' . $fundraiserStatus : ''), ' |')); ?>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo htmlspecialchars($category !== '' ? $category : 'Other'); ?></td>
+                            <td><span class="status-badge status-<?php echo htmlspecialchars($statusClass); ?>"><?php echo ucfirst(htmlspecialchars($statusClass)); ?></span></td>
+                            <td><?php echo htmlspecialchars((string)($report->created_at ?? '')); ?></td>
+                            <td>
+                                <div class="report-actions-wrap">
+                                    <button
+                                        class="admin-btn view-report"
+                                        data-report-kind="Fundraiser Report"
+                                        data-details="<?php echo htmlspecialchars($modalDetails); ?>"
+                                        data-link="<?php echo htmlspecialchars($modalLink); ?>"
+                                    >View</button>
+                                    <form class="admin-status-form" method="post" action="<?php echo URLROOT; ?>/admin/updateContentReportStatus">
+                                        <input type="hidden" name="report_id" value="<?php echo $reportId; ?>">
+                                        <input type="hidden" name="source" value="<?php echo htmlspecialchars($source); ?>">
+                                        <select class="admin-select" name="status" required>
+                                            <option value="pending" <?php echo $statusClass === 'pending' ? 'selected' : ''; ?>>Pending</option>
+                                            <option value="resolved" <?php echo $statusClass === 'resolved' ? 'selected' : ''; ?>>Resolved</option>
+                                            <option value="rejected" <?php echo $statusClass === 'rejected' ? 'selected' : ''; ?>>Rejected</option>
+                                        </select>
+                                        <button class="admin-btn" type="submit">Save</button>
+                                    </form>
+                                    <?php if ($fundraiserId > 0): ?>
+                                        <button
+                                            type="button"
+                                            class="admin-btn admin-btn-danger remove-fundraiser-btn"
+                                            data-fundraiser-id="<?php echo $fundraiserId; ?>"
+                                            data-report-id="<?php echo $reportId; ?>"
+                                        >Remove Campaign</button>
+                                    <?php endif; ?>
+                                    <?php if ($suspendTargetId > 0 && !$ownerProtected): ?>
+                                        <button
+                                            type="button"
+                                            class="admin-btn admin-btn-danger suspend-user-btn"
+                                            data-user-id="<?php echo $suspendTargetId; ?>"
+                                            data-user-name="<?php echo htmlspecialchars($suspendTargetName); ?>"
+                                        >Suspend User</button>
+                                    <?php elseif ($ownerProtected): ?>
+                                        <span class="table-subtitle">Protected admin account</span>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="7">No fundraiser reports yet.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- Modal for viewing report details -->
 <div id="reportModal" class="admin-modal" style="display:none;">
     <div class="admin-modal-content">
@@ -687,6 +942,145 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Suspension failed', err);
                 await AdminPopup.alert(err && err.message ? err.message : 'Failed to suspend user', {
                     title: 'Suspend User',
+                    danger: true
+                });
+                this.disabled = false;
+                this.textContent = previousText;
+            }
+        });
+    });
+
+    const removeRowAndRefreshCount = (btn, emptyMessage) => {
+        const row = btn.closest('tr');
+        if (!row) {
+            return;
+        }
+
+        const tbody = row.parentElement;
+        const table = row.closest('table');
+        const card = row.closest('.admin-card');
+        row.remove();
+
+        if (card) {
+            const countBadge = card.querySelector('.status-badge.status-pending');
+            if (countBadge) {
+                const activeRows = tbody ? tbody.querySelectorAll('tr').length : 0;
+                countBadge.textContent = `${activeRows} total`;
+            }
+        }
+
+        if (tbody && tbody.querySelectorAll('tr').length === 0) {
+            const colspan = table ? table.querySelectorAll('thead th').length : 7;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="${colspan}">${emptyMessage}</td>`;
+            tbody.appendChild(tr);
+        }
+    };
+
+    document.querySelectorAll('.remove-event-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const eventId = Number(this.dataset.eventId || 0);
+            const reportId = Number(this.dataset.reportId || 0);
+            if (!eventId) {
+                await AdminPopup.alert('Invalid event id for removal', { title: 'Remove Event', danger: true });
+                return;
+            }
+
+            const confirmed = await AdminPopup.confirm(
+                'Remove this reported event from the platform? This action cannot be undone.',
+                { title: 'Remove Event', confirmText: 'Remove', danger: true }
+            );
+            if (!confirmed) {
+                return;
+            }
+
+            const previousText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'Removing...';
+
+            try {
+                const res = await fetch(`<?php echo URLROOT; ?>/admin/removeReportedEvent`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        event_id: eventId,
+                        report_id: reportId
+                    })
+                });
+
+                const json = await res.json().catch(() => null);
+                if (!res.ok || !json || !json.ok) {
+                    throw new Error((json && json.error) ? json.error : 'Failed to remove event');
+                }
+
+                await AdminPopup.alert((json && json.message) ? json.message : 'Event removed successfully', {
+                    title: 'Remove Event'
+                });
+                removeRowAndRefreshCount(this, 'No event reports yet.');
+            } catch (err) {
+                console.error('Event removal failed', err);
+                await AdminPopup.alert(err && err.message ? err.message : 'Failed to remove event', {
+                    title: 'Remove Event',
+                    danger: true
+                });
+                this.disabled = false;
+                this.textContent = previousText;
+            }
+        });
+    });
+
+    document.querySelectorAll('.remove-fundraiser-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const fundraiserId = Number(this.dataset.fundraiserId || 0);
+            const reportId = Number(this.dataset.reportId || 0);
+            if (!fundraiserId) {
+                await AdminPopup.alert('Invalid campaign id for removal', { title: 'Remove Campaign', danger: true });
+                return;
+            }
+
+            const confirmed = await AdminPopup.confirm(
+                'Remove this reported fundraiser campaign from the platform? This action cannot be undone.',
+                { title: 'Remove Campaign', confirmText: 'Remove', danger: true }
+            );
+            if (!confirmed) {
+                return;
+            }
+
+            const previousText = this.textContent;
+            this.disabled = true;
+            this.textContent = 'Removing...';
+
+            try {
+                const res = await fetch(`<?php echo URLROOT; ?>/admin/removeReportedFundraiser`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        fundraiser_id: fundraiserId,
+                        report_id: reportId
+                    })
+                });
+
+                const json = await res.json().catch(() => null);
+                if (!res.ok || !json || !json.ok) {
+                    throw new Error((json && json.error) ? json.error : 'Failed to remove campaign');
+                }
+
+                await AdminPopup.alert((json && json.message) ? json.message : 'Campaign removed successfully', {
+                    title: 'Remove Campaign'
+                });
+                removeRowAndRefreshCount(this, 'No fundraiser reports yet.');
+            } catch (err) {
+                console.error('Fundraiser removal failed', err);
+                await AdminPopup.alert(err && err.message ? err.message : 'Failed to remove campaign', {
+                    title: 'Remove Campaign',
                     danger: true
                 });
                 this.disabled = false;
