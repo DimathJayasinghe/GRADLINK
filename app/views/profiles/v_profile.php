@@ -158,28 +158,40 @@
 
         // No-op: certificate handlers are implemented in the later script block per-form
 
-        // Profile edit button -> open profile popup
+        // Profile/location edit button -> open profile popup
         const profileEditBtn = document.querySelector('.profile-edit-btn');
+        const locationEditBtn = document.getElementById('editLocationBtn');
+
+        const openProfilePopup = function() {
+            const popup = document.getElementById('editProfilePopup');
+            const form = document.getElementById('editProfileForm');
+            if (!popup || !form) return;
+
+            const bioInput = document.getElementById('profileBioInput');
+            const batchInput = document.getElementById('profileBatchNoInput');
+            const countryInput = document.getElementById('profileCountryInput');
+
+            if (bioInput) bioInput.value = form.dataset.initialBio || '';
+            if (batchInput) batchInput.value = form.dataset.initialBatch || '';
+            if (countryInput) countryInput.value = form.dataset.initialCountry || 'Sri Lanka';
+
+            const fileInput = document.getElementById('profileImageInput');
+            const fileName = document.getElementById('profileImgFileName');
+            if (fileInput) fileInput.value = '';
+            if (fileName) fileName.textContent = 'No file chosen';
+
+            const preview = document.getElementById('profileImagePreview');
+            const img = document.getElementById('profileImageEl');
+            if (preview && img) preview.src = img.src;
+
+            popup.style.display = 'flex';
+        };
+
         if (profileEditBtn) {
-            profileEditBtn.addEventListener('click', function() {
-                const popup = document.getElementById('editProfilePopup');
-                const form = document.getElementById('editProfileForm');
-                if (!popup || !form) return;
-                const bioInput = document.getElementById('profileBioInput');
-                const batchInput = document.getElementById('profileBatchNoInput');
-                if (bioInput) bioInput.value = form.dataset.initialBio || '';
-                if (batchInput) batchInput.value = form.dataset.initialBatch || '';
-
-                const fileInput = document.getElementById('profileImageInput');
-                const fileName = document.getElementById('profileImgFileName');
-                if (fileInput) fileInput.value = '';
-                if (fileName) fileName.textContent = 'No file chosen';
-
-                const preview = document.getElementById('profileImagePreview');
-                const img = document.getElementById('profileImageEl');
-                if (preview && img) preview.src = img.src;
-                popup.style.display = 'flex';
-            });
+            profileEditBtn.addEventListener('click', openProfilePopup);
+        }
+        if (locationEditBtn) {
+            locationEditBtn.addEventListener('click', openProfilePopup);
         }
 
         // Add fundraising section to the existing right sidebar

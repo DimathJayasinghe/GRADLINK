@@ -1,4 +1,5 @@
 <!-- Profile Edit Popup  -->
+<?php $countries = require APPROOT . '/data/countries_data.php'; ?>
 <?php if ($isOwner): ?>
     <div id="editProfilePopup" class="certificate-add-popup" style="display:none;">
         <div class="certificate-add">
@@ -12,7 +13,8 @@
                 method="post"
                 enctype="multipart/form-data"
                 data-initial-bio="<?= htmlspecialchars($data['userDetails']->bio ?? '', ENT_QUOTES, 'UTF-8') ?>"
-                data-initial-batch="<?= htmlspecialchars($data['userDetails']->batch_no ?? '', ENT_QUOTES, 'UTF-8') ?>">
+                data-initial-batch="<?= htmlspecialchars($data['userDetails']->batch_no ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                data-initial-country="<?= htmlspecialchars($data['userDetails']->country ?? 'Sri Lanka', ENT_QUOTES, 'UTF-8') ?>">
                 <div class="form-group">
                     <label>Profile Picture</label>
                     <div class="file-upload-container">
@@ -46,6 +48,24 @@
                                 color: var(--text);
                                 padding:5px;
                         ">
+                </div>
+                <?php $selectedCountry = !empty($data['userDetails']->country) ? (string)$data['userDetails']->country : 'Sri Lanka'; ?>
+                <div class="form-group">
+                    <label for="profileCountryInput">Country</label>
+                    <select id="profileCountryInput" name="profileCountryInput" style="
+                                max-width: 100%;
+                                background: rgba(255, 255, 255, 0.05);
+                                border: 1px solid var(--border);
+                                border-radius: 5px;
+                                color: var(--text);
+                                padding:5px;
+                        " required>
+                        <?php foreach ($countries as $country): ?>
+                            <option value="<?= htmlspecialchars($country, ENT_QUOTES, 'UTF-8') ?>" <?= $selectedCountry === $country ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($country, ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div style="margin-top:12px;">
                     <button type="submit" class="save-btn" id="saveProfileBtn">Save Changes</button>

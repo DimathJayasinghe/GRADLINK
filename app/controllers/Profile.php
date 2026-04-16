@@ -48,6 +48,19 @@ class Profile extends Controller{
         return true;
     }
 
+    private function getSupportedCountries(): array
+    {
+        $file = APPROOT . '/data/countries_data.php';
+        if (is_file($file)) {
+            $countries = require $file;
+            if (is_array($countries) && !empty($countries)) {
+                return array_values(array_filter($countries, 'is_string'));
+            }
+        }
+
+        return ['Sri Lanka'];
+    }
+
     public function index(){
         $user_id = $this->getQueryParam('userid', null);
         if (!$user_id){
@@ -223,6 +236,7 @@ class Profile extends Controller{
 
         $bio = trim($_POST['profileBioInput'] ?? '');
         $batch_no = trim($_POST['profileBatchNoInput'] ?? '');
+        $country = trim((string)($_POST['profileCountryInput'] ?? ''));
         
 
         // Validation
@@ -232,6 +246,17 @@ class Profile extends Controller{
         }
         if ($batch_no === '') {
             echo json_encode(['success' => false, 'error' => 'Batch number cannot be empty']);
+            return;
+        }
+
+        if ($country === '') {
+            echo json_encode(['success' => false, 'error' => 'Country cannot be empty']);
+            return;
+        }
+
+        $allowedCountries = $this->getSupportedCountries();
+        if (!in_array($country, $allowedCountries, true)) {
+            echo json_encode(['success' => false, 'error' => 'Please select a valid country']);
             return;
         }
 
@@ -281,7 +306,7 @@ class Profile extends Controller{
         }
 
         // Update DB record via model
-        if($this->Model->updateProfileBioImage($_SESSION['user_id'], $profile_image, $bio, $batch_no)) {
+        if($this->Model->updateProfileBioImage($_SESSION['user_id'], $profile_image, $bio, $batch_no, $country)) {
             $current = $this->Model->getUserDetails($_SESSION['user_id']);
             $_SESSION['profile_image'] = $current->profile_image ?? null;
             // $_SESSION['bio'] = $current->bio ?? null;

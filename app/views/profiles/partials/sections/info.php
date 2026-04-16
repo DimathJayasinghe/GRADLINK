@@ -1,8 +1,47 @@
 <!-- Info Section: Certificates, Work Experience and Projects -->
     <div id="infoSection" style="display:none; flex-direction: column;">
 
-        <!-- Work Experience Section -->
+        <!-- Location Section -->
         <div class="section-header">
+            <div class="section-title">Location</div>
+            <?php if ($isOwner): ?>
+                <div class="section-actions">
+                    <div class="section-action-btn" id="editLocationBtn" title="Edit Location">
+                        <i class="fas fa-pencil-alt"></i>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div id="locationContainer">
+            <?php $profileCountry = trim((string)($data['userDetails']->country ?? '')); ?>
+            <?php if ($profileCountry !== ''): ?>
+                <div class="certificate-card location-card" data-country="<?= htmlspecialchars($profileCountry) ?>">
+                    <div class="certificate-card-image">
+                        <i class="fas fa-globe-asia"></i>
+                    </div>
+                    <div class="certificate-details">
+                        <div class="certificate-card-position"><?= htmlspecialchars($profileCountry) ?></div>
+                        <div class="certificate-issuer">Country</div>
+                    </div>
+                </div>
+            <?php else: ?>
+                <div class="info-empty-state" id="noLocationMessage">
+                    <div class="info-empty-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <div class="info-empty-title">No Location Added Yet</div>
+                    <div class="info-empty-text">
+                        <?php if ($isOwner): ?>
+                            Click the edit icon to set your location.
+                        <?php else: ?>
+                            This user has not added a location yet.
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Work Experience Section -->
+        <div class="section-header" style="margin-top:1.5em;">
             <div class="section-title">Work Experience</div>
             <?php if ($isOwner) {
                 echo '
