@@ -85,6 +85,7 @@ class Signup extends Controller
             'confirm_password' => '',
             'full_name' => '',
             'graduation_year' => '',
+            'country' => 'Sri Lanka',
             'errors' => []
         ];
         $this->view('auth/signup/v_signup_alumni', $data);
@@ -103,6 +104,7 @@ class Signup extends Controller
             'confirm_password' => '',
             'full_name' => '',
             'graduation_year' => '',
+            'country' => 'Sri Lanka',
             'errors' => []
         ];
         $this->view('auth/signup/v_signup_undergrad', $data);
@@ -125,6 +127,7 @@ class Signup extends Controller
             'display_name' => $_POST['display_name'] ?? '',
             'gender' => isset($_POST['gender']) ? strtolower(trim($_POST['gender'])) : null,
             'batch_no' => $_POST['graduation_year'] ?? '',
+            'country' => trim((string)($_POST['country'] ?? 'Sri Lanka')),
             'nic' => $_POST['nic'] ?? '',
             'bio' => $_POST['bio'] ?? '',
             'explain_yourself' => $_POST['explain_yourself'] ?? '',
@@ -191,6 +194,7 @@ class Signup extends Controller
             'display_name' => $_POST['display_name'] ?? '',
             'gender' => isset($_POST['gender']) ? strtolower(trim($_POST['gender'])) : null,
             'batch_no' => $_POST['batch_no'] ?? '',
+            'country' => trim((string)($_POST['country'] ?? 'Sri Lanka')),
             'student_id' => $_POST['student_id'] ?? '',
             'bio' => $_POST['bio'] ?? '',
             'skills' => $_POST['skills'] ?? [],
@@ -350,6 +354,32 @@ class Signup extends Controller
         if (empty($data['batch_no'])) {
             $data['errors'][] = 'Please select your batch';
         }
+
+        // Country validation (used for admin location analytics map)
+        $country = trim((string)($data['country'] ?? ''));
+        if ($country === '') {
+            $data['errors'][] = 'Please select your country';
+        } else {
+            $allowedCountries = $this->getSupportedCountries();
+            if (!in_array($country, $allowedCountries, true)) {
+                $data['errors'][] = 'Please select a valid country from the list';
+            }
+        }
+
+        $data['country'] = $country;
+    }
+
+    private function getSupportedCountries(): array
+    {
+        $file = APPROOT . '/data/countries_data.php';
+        if (is_file($file)) {
+            $countries = require $file;
+            if (is_array($countries) && !empty($countries)) {
+                return array_values(array_filter($countries, 'is_string'));
+            }
+        }
+
+        return ['Sri Lanka'];
     }
 
 

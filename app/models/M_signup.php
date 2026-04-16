@@ -3,6 +3,39 @@ class M_signup
 {
     private $db;
 
+    private function ensureUserLocationsTable(): void
+    {
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS user_locations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                country VARCHAR(100) NOT NULL DEFAULT 'Sri Lanka',
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_user_location (user_id),
+                KEY idx_country (country),
+                CONSTRAINT fk_user_locations_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->db->execute();
+        } catch (Exception $e) {
+        }
+    }
+
+    private function ensurePendingAlumniCountryColumn(): void
+    {
+        try {
+            $this->db->query("SHOW COLUMNS FROM unregisted_alumni LIKE 'country'");
+            $column = $this->db->single();
+
+            if (!$column) {
+                $this->db->query("ALTER TABLE unregisted_alumni
+                                  ADD COLUMN country VARCHAR(100) NOT NULL DEFAULT 'Sri Lanka' AFTER batch_no");
+                $this->db->execute();
+            }
+        } catch (Exception $e) {
+        }
+    }
+
     private function ensureSuspendedUsersTable(): void
     {
         try {
@@ -32,6 +65,8 @@ class M_signup
     public function __construct()
     {
         $this->db = new Database();
+        $this->ensureUserLocationsTable();
+        $this->ensurePendingAlumniCountryColumn();
         $this->ensureSuspendedUsersTable();
     }
 
@@ -135,8 +170,8 @@ class M_signup
      */
     public function registerPendingAlumni($data)
     {
-        $this->db->query("INSERT INTO unregisted_alumni (name, email, password, role, display_name, gender, profile_image, bio, explain_yourself, skills, nic, batch_no) 
-                          VALUES (:name, :email, :password, 'alumni', :display_name, :gender, :profile_image, :bio, :explain_yourself, :skills, :nic, :batch_no)");
+        $this->db->query("INSERT INTO unregisted_alumni (name, email, password, role, display_name, gender, profile_image, bio, explain_yourself, skills, nic, batch_no, country) 
+                          VALUES (:name, :email, :password, 'alumni', :display_name, :gender, :profile_image, :bio, :explain_yourself, :skills, :nic, :batch_no, :country)");
 
         $this->db->bind(':name', $data['name']);
         $this->db->bind(':email', $data['email']);
@@ -149,6 +184,7 @@ class M_signup
         $this->db->bind(':skills', $data['skills_json'] ?? null);
         $this->db->bind(':nic', $data['nic'] ?? null);
         $this->db->bind(':batch_no', $data['batch_no'] ?? null);
+        $this->db->bind(':country', $data['country'] ?? 'Sri Lanka');
 
         if ($this->db->execute()) {
             $this->db->query("SELECT LAST_INSERT_ID() as id");
@@ -166,30 +202,51 @@ class M_signup
      */
     public function registerUndergrad($data)
     {
-        // Prepare SQL statement
-        $this->db->query("INSERT INTO users (name, email, password, role, display_name, gender, profile_image, bio, skills, student_id, batch_no) 
-              VALUES (:name, :email, :password, :role, :display_name, :gender, :profile_image, :bio, :skills, :student_id, :batch_no)");
+        try {
+            $this->db->beginTransaction();
 
-        // Bind values
-        $this->db->bind(':name', $data['name']);
-        $this->db->bind(':email', $data['email']);
-        $this->db->bind(':password', $data['password']);
-        $this->db->bind(':role', $data['role']);
-        $this->db->bind(':display_name', $data['display_name'] ?? $data['name']);
-        $this->db->bind(':gender', isset($data['gender']) && in_array($data['gender'], ['male', 'female'], true) ? $data['gender'] : null);
-        $this->db->bind(':profile_image', 'default.jpg');
-        $this->db->bind(':bio', $data['bio'] ?? null);
-        $this->db->bind(':skills', $data['skills_json'] ?? null);
-        $this->db->bind(':student_id', $data['student_id'] ?? null);
-        $this->db->bind(':batch_no', $data['batch_no'] ?? null);
+            // Prepare SQL statement
+            $this->db->query("INSERT INTO users (name, email, password, role, display_name, gender, profile_image, bio, skills, student_id, batch_no) 
+                  VALUES (:name, :email, :password, :role, :display_name, :gender, :profile_image, :bio, :skills, :student_id, :batch_no)");
 
-        // Execute
-        if ($this->db->execute()) {
-            // Since dbh is private in Database class, we need to get last ID differently
+            // Bind values
+            $this->db->bind(':name', $data['name']);
+            $this->db->bind(':email', $data['email']);
+            $this->db->bind(':password', $data['password']);
+            $this->db->bind(':role', $data['role']);
+            $this->db->bind(':display_name', $data['display_name'] ?? $data['name']);
+            $this->db->bind(':gender', isset($data['gender']) && in_array($data['gender'], ['male', 'female'], true) ? $data['gender'] : null);
+            $this->db->bind(':profile_image', 'default.jpg');
+            $this->db->bind(':bio', $data['bio'] ?? null);
+            $this->db->bind(':skills', $data['skills_json'] ?? null);
+            $this->db->bind(':student_id', $data['student_id'] ?? null);
+            $this->db->bind(':batch_no', $data['batch_no'] ?? null);
+
+            if (!$this->db->execute()) {
+                $this->db->rollBack();
+                return false;
+            }
+
             $this->db->query("SELECT LAST_INSERT_ID() as id");
             $result = $this->db->single();
-            return $result->id;
-        } else {
+            $userId = $result->id ?? null;
+
+            if (!$userId) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            if (!$this->upsertUserLocation((int)$userId, $data['country'] ?? 'Sri Lanka')) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $this->db->commit();
+            return $userId;
+        } catch (Exception $e) {
+            if (method_exists($this->db, 'rollBack')) {
+                $this->db->rollBack();
+            }
             return false;
         }
     }
@@ -244,6 +301,29 @@ class M_signup
     }
 
     /**
+     * Upsert user location row
+     */
+    public function upsertUserLocation($userId, $country)
+    {
+        try {
+            $safeCountry = trim((string)$country);
+            if ($safeCountry === '') {
+                $safeCountry = 'Sri Lanka';
+            }
+            $safeCountry = substr($safeCountry, 0, 100);
+
+            $this->db->query("INSERT INTO user_locations (user_id, country)
+                              VALUES (:user_id, :country)
+                              ON DUPLICATE KEY UPDATE country = VALUES(country), updated_at = CURRENT_TIMESTAMP");
+            $this->db->bind(':user_id', (int)$userId);
+            $this->db->bind(':country', $safeCountry);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    /**
      * Approve a pending alumni: move from unregisted_alumni to users
      * Returns new user id on success
      */
@@ -282,6 +362,12 @@ class M_signup
             $result = $this->db->single();
             $newUserId = $result->id ?? null;
             if (!$newUserId) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            // Persist country immediately so approved alumni appears on admin location map.
+            if (!$this->upsertUserLocation((int)$newUserId, $pending->country ?? 'Sri Lanka')) {
                 $this->db->rollBack();
                 return false;
             }
