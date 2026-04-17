@@ -267,16 +267,9 @@ $countries = require APPROOT . '/data/countries_data.php';
                     body: formData
                 });
 
-                const responseText = await response.text();
-                console.log('Response:', responseText); // Debug log
-
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error('JSON Parse Error:', parseError);
-                    console.error('Raw response:', responseText);
-                    showOtpStatus('Server error. Check console for details.', 'error');
+                const data = await response.json().catch(() => null);
+                if (!data) {
+                    showOtpStatus('Unexpected server response. Please try again.', 'error');
                     sendOtpBtn.disabled = false;
                     sendOtpBtn.textContent = 'Send OTP';
                     return;
@@ -294,7 +287,6 @@ $countries = require APPROOT . '/data/countries_data.php';
                     sendOtpBtn.textContent = 'Send OTP';
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
                 showOtpStatus('Network error. Please try again.', 'error');
                 sendOtpBtn.disabled = false;
                 sendOtpBtn.textContent = 'Send OTP';
