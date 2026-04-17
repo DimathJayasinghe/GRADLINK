@@ -334,7 +334,7 @@ $countries = require APPROOT . '/data/countries_data.php';
 
                 const data = await response.json();
 
-                if (data.success || 1) { // Temporary bypass for testing
+                if (data.success) { 
                     isEmailVerified = true;
                     emailVerifiedInput.value = '1';
                     otpSection.style.display = 'none';
