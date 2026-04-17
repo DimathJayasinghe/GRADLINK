@@ -186,21 +186,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Verify
     document.querySelectorAll('.verify-alumni').forEach(btn => {
-        btn.onclick = function() {
+        btn.onclick = async function() {
             const row = this.closest('tr');
             const id = row ? row.getAttribute('data-req-id') : null;
-            if (!id) return alert('Missing request ID');
+            if (!id) {
+                await AdminPopup.alert('Missing request ID', { title: 'Verify Alumni', danger: true });
+                return;
+            }
             goTo(`${"<?php echo URLROOT; ?>"}/signup/alumni?id=${encodeURIComponent(id)}`);
         };
     });
 
     // Reject
     document.querySelectorAll('.reject-alumni').forEach(btn => {
-        btn.onclick = function() {
+        btn.onclick = async function() {
             const row = this.closest('tr');
             const id = row ? row.getAttribute('data-req-id') : null;
-            if (!id) return alert('Missing request ID');
-            if (!confirm('Are you sure you want to reject this request?')) {
+            if (!id) {
+                await AdminPopup.alert('Missing request ID', { title: 'Reject Alumni', danger: true });
+                return;
+            }
+            const confirmed = await AdminPopup.confirm('Are you sure you want to reject this request?', {
+                title: 'Reject Alumni',
+                confirmText: 'Reject',
+                danger: true
+            });
+            if (!confirmed) {
                 return;
             }
             goTo(`${"<?php echo URLROOT; ?>"}/signup/alumni?reject_id=${encodeURIComponent(id)}`);
@@ -210,13 +221,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Bulk actions
     const bulkVerify = document.getElementById('bulk-verify');
     if (bulkVerify) {
-        bulkVerify.onclick = function() {
+        bulkVerify.onclick = async function() {
             const checked = document.querySelectorAll('.selectAlumni:checked');
             if (checked.length === 0) {
-                alert('Please select at least one alumni.');
+                await AdminPopup.alert('Please select at least one alumni.', { title: 'Bulk Verify' });
                 return;
             }
-            if (!confirm(`Verify ${checked.length} alumni?`)) {
+            const confirmed = await AdminPopup.confirm(`Verify ${checked.length} alumni?`, {
+                title: 'Bulk Verify',
+                confirmText: 'Verify'
+            });
+            if (!confirmed) {
                 return;
             }
             const form = document.createElement('form');
@@ -237,13 +252,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const bulkReject = document.getElementById('bulk-reject');
     if (bulkReject) {
-        bulkReject.onclick = function() {
+        bulkReject.onclick = async function() {
             const checked = document.querySelectorAll('.selectAlumni:checked');
             if (checked.length === 0) {
-                alert('Please select at least one alumni.');
+                await AdminPopup.alert('Please select at least one alumni.', { title: 'Bulk Reject' });
                 return;
             }
-            if (!confirm(`Reject ${checked.length} alumni?`)) {
+            const confirmed = await AdminPopup.confirm(`Reject ${checked.length} alumni?`, {
+                title: 'Bulk Reject',
+                confirmText: 'Reject',
+                danger: true
+            });
+            if (!confirmed) {
                 return;
             }
             const form = document.createElement('form');

@@ -1,8 +1,28 @@
 <?php
 class M_Profile{
     protected $db;
+
+    private function ensureUserLocationsTable(): void
+    {
+        try {
+            $this->db->query("CREATE TABLE IF NOT EXISTS user_locations (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                country VARCHAR(100) NOT NULL DEFAULT 'Sri Lanka',
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_user_location (user_id),
+                KEY idx_country (country),
+                CONSTRAINT fk_user_locations_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            $this->db->execute();
+        } catch (Exception $e) {
+        }
+    }
+
     public function __construct() {
         $this->db = new Database();
+        $this->ensureUserLocationsTable();
     }
 
     public function getUser($user_id){
@@ -12,7 +32,24 @@ class M_Profile{
         return $this->db->rowCount();
     }
     public function getUserDetails($user_id){
-        $this->db->query("SELECT id, name, email, role, display_name, profile_image, bio, skills, nic, batch_no, student_id, created_at FROM users WHERE id = :user_id");
+                $this->db->query("SELECT
+                                                        u.id,
+                                                        u.name,
+                                                        u.email,
+                                                        u.role,
+                                                        u.display_name,
+                                                        u.profile_image,
+                                                        u.bio,
+                                                        u.skills,
+                                                        u.nic,
+                                                        u.batch_no,
+                                                        u.student_id,
+                                                        u.created_at,
+                                                        ul.country
+                                                    FROM users u
+                                                    LEFT JOIN user_locations ul ON ul.user_id = u.id
+                                                    WHERE u.id = :user_id
+                                                    LIMIT 1");
         $this->db->bind(':user_id', $user_id);
         return $this->db->single();
     }
@@ -26,15 +63,46 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
-    public function updateProfileBioImage($user_id, $profile_image, $bio, $batch_no){
-        $this->db->query('UPDATE users SET profile_image = :profile_image, bio = :bio, batch_no = :batch_no WHERE id = :user_id');
-        $this->db->bind(':profile_image', $profile_image);
-        $this->db->bind(':bio', $bio);
-        $this->db->bind(':batch_no', $batch_no);
-        $this->db->bind(':user_id', $user_id);
+    public function updateProfileBioImage($user_id, $profile_image, $bio, $batch_no, $country){
+        try {
+            $safeCountry = trim((string)$country);
+            if ($safeCountry === '') {
+                $safeCountry = 'Sri Lanka';
+            }
+            $safeCountry = substr($safeCountry, 0, 100);
 
-        $ok = $this->db->execute();
-        return $ok;
+            $this->db->beginTransaction();
+
+            $this->db->query('UPDATE users SET profile_image = :profile_image, bio = :bio, batch_no = :batch_no WHERE id = :user_id');
+            $this->db->bind(':profile_image', $profile_image);
+            $this->db->bind(':bio', $bio);
+            $this->db->bind(':batch_no', $batch_no);
+            $this->db->bind(':user_id', $user_id);
+
+            if (!$this->db->execute()) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $this->db->query('INSERT INTO user_locations (user_id, country)
+                              VALUES (:user_id, :country)
+                              ON DUPLICATE KEY UPDATE country = VALUES(country), updated_at = CURRENT_TIMESTAMP');
+            $this->db->bind(':user_id', (int)$user_id);
+            $this->db->bind(':country', $safeCountry);
+
+            if (!$this->db->execute()) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            if (method_exists($this->db, 'rollBack')) {
+                $this->db->rollBack();
+            }
+            return false;
+        }
     }
 
     /**
@@ -235,8 +303,7 @@ class M_Profile{
     }
 
     public function createProject($user_id, $title, $description, $skills, $start_date, $end_date){
-
-        try{
+        try {
             $this->db->query('INSERT INTO projects (user_id, title, description, skills_used, start_date, end_date) VALUES (:uid, :title, :description, :skills, :start_date, :end_date)');
             $this->db->bind(':uid', $user_id);
             $this->db->bind(':title', $title);
@@ -245,9 +312,8 @@ class M_Profile{
             $this->db->bind(':start_date', $start_date);
             $this->db->bind(':end_date', $end_date);
             return $this->db->execute();
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log("Project Creation Error: " . $e->getMessage());
-            echo $e->getMessage();
             return false;
         }
     }

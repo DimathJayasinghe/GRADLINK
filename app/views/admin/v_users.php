@@ -6,6 +6,19 @@
     .admin-table-wrapper{
         border-color: #3a3a3a;
     } 
+    .user-action-group {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        align-items: center;
+    }
+    .admin-btn-warning {
+        background: #b86a00;
+        color: #fff;
+    }
+    .admin-btn-warning:hover {
+        background: #cc7600;
+    }
     .special-toggle-form {
         display: inline-flex;
         justify-content: center;
@@ -54,6 +67,19 @@
     <div class="admin-header" style="border-bottom: 2px solid #3a3a3a; padding-bottom: 10px;">
         <h1>Users</h1>
     </div>
+
+    <?php
+        $flashMessages = SessionManager::getFlash();
+        if (!empty($flashMessages)):
+    ?>
+        <div class="flash-messages" style="margin-bottom: 1.25rem;">
+            <?php foreach ($flashMessages as $message): ?>
+                <div class="flash-message <?php echo htmlspecialchars($message['type']); ?>" style="padding: 12px 16px; border-radius: 4px; margin-bottom: 8px; font-weight: 500;">
+                    <?php echo htmlspecialchars($message['message']); ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 
     <div class="card">
 
@@ -120,8 +146,21 @@
                             <td data-label="Role"><?php echo htmlspecialchars($u->role ?? ''); ?></td>
                             <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->batch_no ?? '')); ?></td>
                             <td data-label="Actions">
-                                <button class="admin-btn view-user" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
-                                <button class="admin-btn admin-btn-danger delete-user">Delete</button>
+                                <div class="user-action-group">
+                                    <button class="admin-btn view-user" type="button" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
+                                    <button
+                                        class="admin-btn admin-btn-warning suspend-user-btn"
+                                        type="button"
+                                        data-user-id="<?php echo (int)$u->id; ?>"
+                                        data-user-name="<?php echo htmlspecialchars($u->name ?? 'User', ENT_QUOTES, 'UTF-8'); ?>"
+                                    >Suspend</button>
+                                    <button
+                                        class="admin-btn admin-btn-danger delete-user"
+                                        type="button"
+                                        data-user-id="<?php echo (int)$u->id; ?>"
+                                        data-user-name="<?php echo htmlspecialchars($u->name ?? 'User', ENT_QUOTES, 'UTF-8'); ?>"
+                                    >Delete</button>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -152,8 +191,21 @@
                             <!-- <td data-label="Role"><?php echo htmlspecialchars($u->role ?? ''); ?></td> -->
                             <td data-label="Batch"><?php echo htmlspecialchars($u->batch_no ?? ($u->batch_no ?? '01')); ?></td>
                             <td data-label="Actions">
-                                <button class="admin-btn view-user" style="margin: 3px;" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
-                                <button class="admin-btn admin-btn-danger delete-user">Delete</button>
+                                <div class="user-action-group">
+                                    <button class="admin-btn view-user" type="button" onclick="location.href='<?php echo URLROOT; ?>/profile?userid=<?php echo (int)$u->id; ?>';">View</button>
+                                    <button
+                                        class="admin-btn admin-btn-warning suspend-user-btn"
+                                        type="button"
+                                        data-user-id="<?php echo (int)$u->id; ?>"
+                                        data-user-name="<?php echo htmlspecialchars($u->name ?? 'User', ENT_QUOTES, 'UTF-8'); ?>"
+                                    >Suspend</button>
+                                    <button
+                                        class="admin-btn admin-btn-danger delete-user"
+                                        type="button"
+                                        data-user-id="<?php echo (int)$u->id; ?>"
+                                        data-user-name="<?php echo htmlspecialchars($u->name ?? 'User', ENT_QUOTES, 'UTF-8'); ?>"
+                                    >Delete</button>
+                                </div>
                             </td>
                             <td style="text-align: center;">
                                 <?php $isSpecial = !empty($u->special_alumni); ?>
@@ -240,6 +292,139 @@
 
             // small accessibility: allow Escape to clear search
             searchEl && searchEl.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') { searchEl.value=''; filterRows(); } });
+        })();
+
+        (function() {
+            const suspendButtons = document.querySelectorAll('.suspend-user-btn');
+            if (!suspendButtons.length) return;
+
+            const apiBase = '<?php echo URLROOT; ?>';
+
+            suspendButtons.forEach((btn) => {
+                btn.addEventListener('click', async function() {
+                    const userId = Number(this.dataset.userId || 0);
+                    const userName = this.dataset.userName || `User #${userId}`;
+
+                    if (!userId) {
+                        await AdminPopup.alert('Invalid user id for suspension', { title: 'Suspend User' });
+                        return;
+                    }
+
+                    const reasonInput = await AdminPopup.prompt(
+                        `Suspend ${userName}?\nProvide a reason (optional):`,
+                        'Suspended by admin from User Management',
+                        { title: 'Suspend User', confirmText: 'Suspend', danger: true }
+                    );
+                    if (reasonInput === null) {
+                        return;
+                    }
+
+                    const previousText = this.textContent;
+                    this.disabled = true;
+                    this.textContent = 'Suspending...';
+
+                    try {
+                        const response = await fetch(`${apiBase}/admin/suspendUser`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({
+                                user_id: userId,
+                                reason: (reasonInput || '').trim()
+                            })
+                        });
+
+                        const payload = await response.json().catch(() => null);
+                        if (!response.ok || !payload || !payload.ok) {
+                            throw new Error((payload && payload.error) ? payload.error : 'Failed to suspend user');
+                        }
+
+                        await AdminPopup.alert(
+                            (payload && payload.message) ? payload.message : `${userName} suspended successfully`,
+                            { title: 'Suspend User' }
+                        );
+                        this.textContent = 'Suspended';
+                    } catch (err) {
+                        await AdminPopup.alert(err && err.message ? err.message : 'Failed to suspend user', {
+                            title: 'Suspend User',
+                            danger: true
+                        });
+                        this.disabled = false;
+                        this.textContent = previousText;
+                    }
+                });
+            });
+        })();
+
+        (function() {
+            const deleteButtons = document.querySelectorAll('.delete-user');
+            if (!deleteButtons.length) return;
+
+            const apiBase = '<?php echo URLROOT; ?>';
+
+            deleteButtons.forEach((btn) => {
+                btn.addEventListener('click', async function() {
+                    const userId = Number(this.dataset.userId || 0);
+                    const userName = this.dataset.userName || `User #${userId}`;
+
+                    if (!userId) {
+                        await AdminPopup.alert('Invalid user id for deletion', { title: 'Delete User', danger: true });
+                        return;
+                    }
+
+                    const confirmed = await AdminPopup.confirm(
+                        `Permanently delete ${userName}? This action cannot be undone.`,
+                        { title: 'Delete User', confirmText: 'Delete User', danger: true }
+                    );
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    const previousText = this.textContent;
+                    const row = this.closest('tr');
+                    this.disabled = true;
+                    this.textContent = 'Deleting...';
+
+                    try {
+                        const response = await fetch(`${apiBase}/admin/deleteUser`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify({
+                                user_id: userId
+                            })
+                        });
+
+                        const payload = await response.json().catch(() => null);
+                        if (!response.ok || !payload || !payload.ok) {
+                            throw new Error((payload && payload.error) ? payload.error : 'Failed to delete user');
+                        }
+
+                        if (row) {
+                            row.remove();
+                        }
+
+                        await AdminPopup.alert(
+                            (payload && payload.message) ? payload.message : `${userName} deleted successfully`,
+                            { title: 'Delete User' }
+                        );
+                    } catch (err) {
+                        await AdminPopup.alert(err && err.message ? err.message : 'Failed to delete user', {
+                            title: 'Delete User',
+                            danger: true
+                        });
+                        this.disabled = false;
+                        this.textContent = previousText;
+                    }
+                });
+            });
         })();
     </script>
 </div>

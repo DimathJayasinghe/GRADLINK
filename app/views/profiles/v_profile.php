@@ -79,174 +79,7 @@
     <!-- Posts Section -->
     <?php require APPROOT . '/views/profiles/partials/sections/post.php'; ?>
 
-    <!-- Info Section: Certificates, Work Experience and Projects -->
-    <div class="info-section" id="infoSection">
-        <!-- Work Experience Section -->
-        <div class="section-header">
-            <div class="section-title">Work Experience</div>
-            <?php if ($isOwner) {
-                echo '
-                        <div class="section-actions">
-                        <div class="section-action-btn" id="editWorkBtn" title="Edit Work Experience">
-                            <i class="fas fa-pencil-alt"></i>
-                        </div>
-                        <div class="section-action-btn" id="addWorkBtn" title="Add Work Experience">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                        </div>';
-            } ?>
-
-        </div>
-
-        <!-- Work Experience Cards -->
-        <div id="workContainer">
-            <?php
-            // Sample work experience data
-            $sampleWork = [
-                ['id' => 1, 'title' => 'Software Engineer', 'company' => 'Google', 'period' => '2021 - Present'],
-                ['id' => 2, 'title' => 'Associate Developer', 'company' => 'Microsoft', 'period' => '2019 - 2021'],
-                ['id' => 3, 'title' => 'Intern', 'company' => 'Facebook', 'period' => '2018 - 2019']
-            ];
-
-            if (!empty($sampleWork)):
-                foreach ($sampleWork as $work):
-            ?>
-                    <div class="certificate-card work-card" data-id="<?= $work['id'] ?>" data-title="<?= htmlspecialchars($work['title']) ?>" data-company="<?= htmlspecialchars($work['company']) ?>" data-period="<?= htmlspecialchars($work['period']) ?>">
-                        <div class="certificate-card-image">
-                            <i class="fas fa-briefcase"></i>
-                        </div>
-                        <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($work['title']) ?></div>
-                            <div class="certificate-issuer"><?= htmlspecialchars($work['company']) ?></div>
-                            <div class="certificate-date"><?= htmlspecialchars($work['period']) ?></div>
-                        </div>
-                        <?php if ($isOwner) {
-                            echo '<div class="certificate-actions">
-                            <div class="certificate-action-btn edit-btn" title="Edit Work Experience">
-                                <i class="fas fa-pencil-alt"></i>
-                            </div>
-                            <div class="certificate-action-btn delete-btn" title="Delete Work Experience">
-                                <i class="fas fa-trash-alt"></i>
-                            </div>
-                        </div>';
-                        } ?>
-
-                    </div>
-                <?php
-                endforeach;
-            else:
-                ?>
-                <div>No work experience added yet.</div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Certificates Section with Action Buttons -->
-        <div class="section-header" style="margin-top:1.5em;">
-            <div class="section-title">Certificates</div>
-            <?php if ($isOwner) {
-                echo '
-                            <div class="section-actions">
-                        <div class="section-action-btn" id="editCertificatesBtn" title="Edit Certificates">
-                            <i class="fas fa-pencil-alt"></i>
-                        </div>
-                        <div class="section-action-btn" id="addCertificateBtn" title="Add Certificate">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                    </div>
-                        ';
-            } ?>
-
-        </div>
-
-        <!-- Certificate Cards -->
-        <div id="certificatesContainer">
-            <?php
-            if (!empty($data['certificates'])):
-                foreach ($data['certificates'] as $cert):
-                    $date = new DateTime($cert->issued_date);
-                    $formattedDate = $date->format('F Y');
-            ?>
-                    <div class="certificate-card"
-                        data-id="<?= htmlspecialchars($cert->id) ?>"
-                        data-name="<?= htmlspecialchars($cert->name) ?>"
-                        data-issuer="<?= htmlspecialchars($cert->issuer) ?>"
-                        data-issued_date="<?= htmlspecialchars($cert->issued_date) ?>"
-                        data-file="<?= htmlspecialchars($cert->certificate_file ?? '') ?>">
-                        <div class="certificate-card-image"><i class="fas fa-certificate"></i></div>
-                        <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($cert->name) ?></div>
-                            <div class="certificate-issuer"><?= htmlspecialchars($cert->issuer) ?></div>
-                            <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
-                        </div>
-                        <!-- Always-visible View button -->
-                        <div class="certificate-view-btn-wrapper" style="display:flex; gap:8px; align-items:center;">
-                            <div class="certificate-action-btn view-btn" title="View Certificate"><i class="fas fa-eye"></i></div>
-                        </div>
-                        <?php if ($isOwner): ?>
-                            <div class="certificate-actions">
-                                <div class="certificate-action-btn edit-btn" title="Edit Certificate"><i class="fas fa-pencil-alt"></i></div>
-                                <div class="certificate-action-btn delete-btn" title="Delete Certificate"><i class="fas fa-trash-alt"></i></div>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                <?php
-                endforeach;
-            else:
-                ?>
-                <div>No certificates added yet.</div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Projects Section -->
-        <div class="section-header" style="margin-top:1.5em;">
-            <div class="section-title">Projects</div>
-            <?php if ($isOwner) {
-                echo '
-                            <div class="section-actions">
-                        <div class="section-action-btn" id="editProjectsBtn" title="Edit Projects">
-                            <i class="fas fa-pencil-alt"></i>
-                        </div>
-                        <div class="section-action-btn" id="addProjectBtn" title="Add Project">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                    </div>
-                        ';
-            } ?>
-
-        </div>
-
-        <div id="projectsContainer">
-            <?php
-            // Sample project data
-            $sampleProjects = [
-                ['id' => 1, 'title' => 'AI-Powered Healthcare App'],
-                ['id' => 2, 'title' => 'Smart Home Automation System']
-            ];
-
-            if (!empty($sampleProjects)): foreach ($sampleProjects as $project): ?>
-                    <div class="project-card" data-id="<?= $project['id'] ?>" data-title="<?= htmlspecialchars($project['title']) ?>">
-                        <div class="project-card-image">
-                            <i class="fas fa-project-diagram"></i>
-                        </div>
-                        <div class="project-card-title"><?= htmlspecialchars($project['title']) ?></div>
-                        <?php if ($isOwner) {
-                            echo '<div class="certificate-actions">
-                                <div class="certificate-action-btn edit-btn" title="Edit Project">
-                                    <i class="fas fa-pencil-alt"></i>
-                                </div>
-                                <div class="certificate-action-btn delete-btn" title="Delete Project">
-                                    <i class="fas fa-trash-alt"></i>
-                                </div>
-                            </div>';
-                        } ?>
-
-                    </div>
-                <?php endforeach;
-            else: ?>
-                <div>No projects added yet.</div>
-            <?php endif; ?>
-        </div>
-    </div>
+    <?php require APPROOT . '/views/profiles/partials/sections/info.php'; ?>
 </div>
 
 <?php
@@ -323,26 +156,42 @@
         setupEditModeForSection('editCertificatesBtn', 'certificatesContainer', 'certificate-card');
         setupEditModeForSection('editProjectsBtn', 'projectsContainer', 'project-card');
 
-        // Setup card action buttons for all card types
-        setupCardActionButtons('.work-card');
-        setupCardActionButtons('.project-card');
-
         // No-op: certificate handlers are implemented in the later script block per-form
 
-        // Profile edit button -> open profile popup
+        // Profile/location edit button -> open profile popup
         const profileEditBtn = document.querySelector('.profile-edit-btn');
+        const locationEditBtn = document.getElementById('editLocationBtn');
+
+        const openProfilePopup = function() {
+            const popup = document.getElementById('editProfilePopup');
+            const form = document.getElementById('editProfileForm');
+            if (!popup || !form) return;
+
+            const bioInput = document.getElementById('profileBioInput');
+            const batchInput = document.getElementById('profileBatchNoInput');
+            const countryInput = document.getElementById('profileCountryInput');
+
+            if (bioInput) bioInput.value = form.dataset.initialBio || '';
+            if (batchInput) batchInput.value = form.dataset.initialBatch || '';
+            if (countryInput) countryInput.value = form.dataset.initialCountry || 'Sri Lanka';
+
+            const fileInput = document.getElementById('profileImageInput');
+            const fileName = document.getElementById('profileImgFileName');
+            if (fileInput) fileInput.value = '';
+            if (fileName) fileName.textContent = 'No file chosen';
+
+            const preview = document.getElementById('profileImagePreview');
+            const img = document.getElementById('profileImageEl');
+            if (preview && img) preview.src = img.src;
+
+            popup.style.display = 'flex';
+        };
+
         if (profileEditBtn) {
-            profileEditBtn.addEventListener('click', function() {
-                const popup = document.getElementById('editProfilePopup');
-                if (!popup) return;
-                const bioEl = document.getElementById('profileBioEl');
-                const bioInput = document.getElementById('profileBioInput');
-                if (bioEl && bioInput) bioInput.value = bioEl.textContent.trim();
-                const preview = document.getElementById('profileImagePreview');
-                const img = document.getElementById('profileImageEl');
-                if (preview && img) preview.src = img.src;
-                popup.style.display = 'flex';
-            });
+            profileEditBtn.addEventListener('click', openProfilePopup);
+        }
+        if (locationEditBtn) {
+            locationEditBtn.addEventListener('click', openProfilePopup);
         }
 
         // Add fundraising section to the existing right sidebar
@@ -429,6 +278,134 @@
                     // Fallback to GET navigation if form is missing for any reason
                     window.location.href = `<?php echo URLROOT ?>/messages?user=${encodeURIComponent(targetId)}`;
                 }
+            });
+        }
+
+        // Report profile behavior
+        const reportProfileBtn = document.getElementById('reportProfileBtn');
+        if (reportProfileBtn) {
+            reportProfileBtn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-user-id');
+                if (!targetId) return;
+
+                const overlayId = `profile-report-popup-${targetId}`;
+                let overlay = document.getElementById(overlayId);
+
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = overlayId;
+                    overlay.className = 'certificate-add-popup';
+                    overlay.style.display = 'none';
+                    overlay.innerHTML = `
+                        <div class="certificate-add" style="max-width:560px;">
+                            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+                            <div class="form-title">Report Profile</div>
+                            <form class="certificate-form" id="profileReportForm-${targetId}" novalidate>
+                                <div class="form-group">
+                                    <label for="profileReportCategory-${targetId}">Category</label>
+                                    <select id="profileReportCategory-${targetId}" required>
+                                        <option value="" disabled selected>Select a category</option>
+                                        <option>Fake account</option>
+                                        <option>Impersonation</option>
+                                        <option>Harassment or bullying</option>
+                                        <option>Hate or abusive content</option>
+                                        <option>Spam</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profileReportDetails-${targetId}">Details (optional)</label>
+                                    <textarea id="profileReportDetails-${targetId}" rows="4" placeholder="Add any details or context..." style="padding:10px;border-radius: var(--radius-lg);border:1px solid var(--border);background:var(--input);color:var(--text);"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profileReportLink-${targetId}">Reference link (optional)</label>
+                                    <input type="url" id="profileReportLink-${targetId}" placeholder="https://..." />
+                                </div>
+                                <div style="display:flex; gap:12px; justify-content:flex-end;">
+                                    <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+                                    <button type="submit" class="save-btn" style="background:var(--primary);color:#fff;">Submit Report</button>
+                                </div>
+                            </form>
+                        </div>`;
+                    document.body.appendChild(overlay);
+
+                    const closePopup = () => {
+                        overlay.style.display = 'none';
+                    };
+
+                    overlay.querySelector('.close-popup')?.addEventListener('click', closePopup);
+                    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', closePopup);
+                    overlay.addEventListener('click', function(e) {
+                        if (e.target === overlay) {
+                            closePopup();
+                        }
+                    });
+
+                    const notify = (message) => {
+                        if (typeof show_popup === 'function') {
+                            show_popup(message);
+                            return;
+                        }
+                        alert(message);
+                    };
+
+                    const form = overlay.querySelector(`#profileReportForm-${targetId}`);
+                    form?.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+
+                        const categoryEl = overlay.querySelector(`#profileReportCategory-${targetId}`);
+                        const detailsEl = overlay.querySelector(`#profileReportDetails-${targetId}`);
+                        const linkEl = overlay.querySelector(`#profileReportLink-${targetId}`);
+                        const submitBtn = form.querySelector('button[type="submit"]');
+
+                        const category = categoryEl ? categoryEl.value : '';
+                        const details = detailsEl ? detailsEl.value.trim() : '';
+                        const link = linkEl ? linkEl.value.trim() : '';
+
+                        if (!category) {
+                            notify('Please select a category');
+                            return;
+                        }
+
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Submitting...';
+                        }
+
+                        try {
+                            const fd = new FormData();
+                            fd.append('profile_id', targetId);
+                            fd.append('category', category);
+                            fd.append('details', details);
+                            if (link) {
+                                fd.append('link', link);
+                            }
+
+                            const res = await fetch(`${window.URLROOT}/report/submitReport/profile`, {
+                                method: 'POST',
+                                body: fd
+                            });
+
+                            const data = await res.json().catch(() => null);
+                            if (!res.ok || !data || (data.success !== true && data.status !== 'success')) {
+                                throw new Error((data && data.message) ? data.message : 'Failed to submit report');
+                            }
+
+                            notify('Thanks for your report. Our team will review it shortly.');
+                            closePopup();
+                        } catch (err) {
+                            console.error('Profile report submission error', err);
+                            notify(err && err.message ? err.message : 'Error submitting report. Please try again later.');
+                        } finally {
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit Report';
+                            }
+                        }
+                    });
+                }
+
+                overlay.style.display = 'flex';
             });
         }
     });
@@ -837,293 +814,349 @@
         }
     })();
 
-    // Profile Edit Handlers (visual only)
+    // Profile Edit Handlers (API-backed)
     (function() {
         const popup = document.getElementById('editProfilePopup');
         if (!popup) return; // only for owner
+
         const form = document.getElementById('editProfileForm');
         const chooseBtn = document.getElementById('chooseProfileImgBtn');
         const fileInput = document.getElementById('profileImageInput');
         const fileName = document.getElementById('profileImgFileName');
         const preview = document.getElementById('profileImagePreview');
-        const pageImg = document.getElementById('profileImageEl');
-        const bioInput = document.getElementById('profileBioInput');
-        const bioEl = document.getElementById('profileBioEl');
+        const saveBtn = document.getElementById('saveProfileBtn');
+        const PROFILE_IMG_MAX_SIZE = 5 * 1024 * 1024;
+
+        async function parseJsonResponse(response) {
+            const body = await response.text();
+            if (!body) return {};
+            try {
+                return JSON.parse(body);
+            } catch (e) {
+                throw new Error('Invalid server response');
+            }
+        }
 
         if (chooseBtn && fileInput) {
             chooseBtn.addEventListener('click', () => fileInput.click());
         }
+
         if (fileInput) {
             fileInput.addEventListener('change', function() {
-                const f = this.files && this.files[0];
-                fileName.textContent = f ? f.name : 'No file chosen';
+                const f = this.files && this.files[0] ? this.files[0] : null;
+                if (fileName) fileName.textContent = f ? f.name : 'No file chosen';
+                if (!f) return;
+
+                if (!f.type || !f.type.startsWith('image/')) {
+                    alert('Please select a valid image file.');
+                    this.value = '';
+                    if (fileName) fileName.textContent = 'No file chosen';
+                    return;
+                }
+
+                if (f.size > PROFILE_IMG_MAX_SIZE) {
+                    alert('Profile image exceeds 5MB.');
+                    this.value = '';
+                    if (fileName) fileName.textContent = 'No file chosen';
+                    return;
+                }
+
                 if (f) {
                     const reader = new FileReader();
                     reader.onload = e => {
-                        preview.src = e.target.result;
+                        if (preview) preview.src = e.target.result;
                     };
                     reader.readAsDataURL(f);
                 }
             });
         }
+
         if (form) {
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                // visually update page image and bio
-                if (pageImg && preview) pageImg.src = preview.src;
-                if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
-                // close popup
-                const closeBtn = popup.querySelector('.close-popup');
-                if (closeBtn) closeBtn.click();
-                else popup.style.display = 'none';
+
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+                }
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const json = await parseJsonResponse(response);
+                    if (!response.ok || !json.success) {
+                        throw new Error(json.error || 'Failed to update profile');
+                    }
+
+                    window.location.reload();
+                } catch (err) {
+                    alert(err && err.message ? err.message : 'Failed to update profile');
+                } finally {
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                    }
+                }
             });
         }
     })();
 
-    // Work Experience and Projects Popups (visual only)
+    // Work Experience and Projects (API-backed)
     (function() {
-        // Work Add
+        const workContainer = document.getElementById('workContainer');
+        const projectsContainer = document.getElementById('projectsContainer');
+
         const addWorkBtn = document.getElementById('addWorkBtn');
         const addWorkPopup = document.getElementById('addWorkPopup');
         const addWorkForm = document.getElementById('addWorkForm');
-        const workContainer = document.getElementById('workContainer');
-        if (addWorkBtn && addWorkPopup) {
-            addWorkBtn.addEventListener('click', () => {
-                addWorkForm && addWorkForm.reset();
-                addWorkPopup.style.display = 'flex';
-            });
-        }
-        if (addWorkForm && workContainer) {
-            addWorkForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const title = document.getElementById('workTitleAdd').value.trim();
-                const company = document.getElementById('workCompanyAdd').value.trim();
-                const period = document.getElementById('workPeriodAdd').value.trim();
-                if (!title || !company || !period) return;
-                const id = Date.now();
-                const card = document.createElement('div');
-                card.className = 'certificate-card work-card';
-                card.setAttribute('data-id', String(id));
-                card.setAttribute('data-title', title);
-                card.setAttribute('data-company', company);
-                card.setAttribute('data-period', period);
-                card.innerHTML = `
-                <div class="certificate-card-image"><i class="fas fa-briefcase"></i></div>
-                <div class="certificate-details">
-                    <div class="certificate-card-title"></div>
-                    <div class="certificate-issuer"></div>
-                    <div class="certificate-date"></div>
-                </div>
-                <div class="certificate-actions">
-                    <div class="certificate-action-btn edit-btn" title="Edit Work Experience"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="certificate-action-btn delete-btn" title="Delete Work Experience"><i class="fas fa-trash-alt"></i></div>
-                </div>`;
-                card.querySelector('.certificate-card-title').textContent = title;
-                card.querySelector('.certificate-issuer').textContent = company;
-                card.querySelector('.certificate-date').textContent = period;
-                workContainer.appendChild(card);
-                bindWorkCardActions(card);
-                addWorkPopup.style.display = 'none';
-            });
-        }
-
-        // Work Edit
         const editWorkPopup = document.getElementById('editWorkPopup');
         const editWorkForm = document.getElementById('editWorkForm');
+        const deleteWorkPopup = document.getElementById('deleteWorkPopup');
+        const confirmDeleteWorkBtn = document.getElementById('confirmDeleteWorkBtn');
+        const cancelDeleteWorkBtn = document.getElementById('cancelDeleteWorkBtn');
 
-        function bindWorkCardActions(card) {
-            const editBtn = card.querySelector('.edit-btn');
-            const deleteBtn = card.querySelector('.delete-btn');
-            if (editBtn) editBtn.addEventListener('click', function() {
-                const id = card.dataset.id || '';
-                document.getElementById('workIdEdit').value = id;
-                document.getElementById('workTitleEdit').value = card.dataset.title || '';
-                document.getElementById('workCompanyEdit').value = card.dataset.company || '';
-                document.getElementById('workPeriodEdit').value = card.dataset.period || '';
-                editWorkPopup.style.display = 'flex';
-            });
-            if (deleteBtn) deleteBtn.addEventListener('click', function() {
-                // if (confirm('Are you sure you want to delete this work experience?')) card.remove();
-            });
-        }
-        // bind existing
-        document.querySelectorAll('#workContainer .work-card').forEach(bindWorkCardActions);
-        if (editWorkForm) {
-            editWorkForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const id = document.getElementById('workIdEdit').value;
-                const title = document.getElementById('workTitleEdit').value.trim();
-                const company = document.getElementById('workCompanyEdit').value.trim();
-                const period = document.getElementById('workPeriodEdit').value.trim();
-                const card = document.querySelector(`#workContainer .work-card[data-id="${CSS.escape(id)}"]`);
-                if (card) {
-                    card.dataset.title = title;
-                    card.dataset.company = company;
-                    card.dataset.period = period;
-                    card.querySelector('.certificate-card-title').textContent = title;
-                    card.querySelector('.certificate-issuer').textContent = company;
-                    card.querySelector('.certificate-date').textContent = period;
-                }
-                editWorkPopup.style.display = 'none';
-            });
-        }
-
-        // Project Add
         const addProjectBtn = document.getElementById('addProjectBtn');
         const addProjectPopup = document.getElementById('addProjectPopup');
         const addProjectForm = document.getElementById('addProjectForm');
-        const projectsContainer = document.getElementById('projectsContainer');
-        if (addProjectBtn && addProjectPopup) {
-            addProjectBtn.addEventListener('click', () => {
-                addProjectForm && addProjectForm.reset();
-                addProjectPopup.style.display = 'flex';
-            });
-        }
-        if (addProjectForm && projectsContainer) {
-            addProjectForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const title = document.getElementById('projectTitleAdd').value.trim();
-                if (!title) return;
-                const id = Date.now();
-                const card = document.createElement('div');
-                card.className = 'project-card';
-                card.setAttribute('data-id', String(id));
-                card.setAttribute('data-title', title);
-                card.innerHTML = `
-                <div class="project-card-image"><i class="fas fa-project-diagram"></i></div>
-                <div class="project-card-title"></div>
-                <div class="certificate-actions">
-                    <div class="certificate-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="certificate-action-btn delete-btn" title="Delete Project"><i class="fas fa-trash-alt"></i></div>
-                </div>`;
-                card.querySelector('.project-card-title').textContent = title;
-                projectsContainer.appendChild(card);
-                bindProjectCardActions(card);
-                addProjectPopup.style.display = 'none';
-            });
-        }
-
-        // Project Edit
         const editProjectPopup = document.getElementById('editProjectPopup');
         const editProjectForm = document.getElementById('editProjectForm');
+        const viewProjectPopup = document.getElementById('viewProjectPopup');
+        const deleteProjectPopup = document.getElementById('deleteProjectPopup');
+        const confirmDeleteProjectBtn = document.getElementById('confirmDeleteProjectBtn');
+        const cancelDeleteProjectBtn = document.getElementById('cancelDeleteProjectBtn');
 
-        function bindProjectCardActions(card) {
-            const editBtn = card.querySelector('.edit-btn');
-            const deleteBtn = card.querySelector('.delete-btn');
-            if (editBtn) editBtn.addEventListener('click', function() {
-                const id = card.dataset.id || '';
-                document.getElementById('projectIdEdit').value = id;
-                document.getElementById('projectTitleEdit').value = card.dataset.title || card.querySelector('.project-card-title')?.textContent || '';
-                editProjectPopup.style.display = 'flex';
+        if (!workContainer || !projectsContainer) {
+            return;
+        }
+
+        let pendingWorkId = null;
+        let pendingProjectId = null;
+
+        function openPopup(popup) {
+            if (popup) popup.style.display = 'flex';
+        }
+
+        function closePopup(popup) {
+            if (popup) popup.style.display = 'none';
+        }
+
+        async function parseJsonResponse(response) {
+            const body = await response.text();
+            if (!body) return {};
+            try {
+                return JSON.parse(body);
+            } catch (e) {
+                throw new Error('Invalid server response');
+            }
+        }
+
+        async function postForm(form) {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
             });
-            if (deleteBtn) deleteBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete this project?')) card.remove();
+            const json = await parseJsonResponse(response);
+            if (!response.ok || !json.success) {
+                throw new Error(json.error || 'Operation failed');
+            }
+            return json;
+        }
+
+        async function deleteByUrl(url) {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+            const json = await parseJsonResponse(response);
+            if (!response.ok || !json.success) {
+                throw new Error(json.error || 'Delete failed');
+            }
+            return json;
+        }
+
+        // Open Add popups
+        if (addWorkBtn && addWorkPopup && addWorkForm) {
+            addWorkBtn.addEventListener('click', function() {
+                addWorkForm.reset();
+                openPopup(addWorkPopup);
             });
         }
-        // bind existing
-        document.querySelectorAll('#projectsContainer .project-card').forEach(bindProjectCardActions);
-        if (editProjectForm) {
-            editProjectForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const id = document.getElementById('projectIdEdit').value;
-                const title = document.getElementById('projectTitleEdit').value.trim();
-                const card = document.querySelector(`#projectsContainer .project-card[data-id="${CSS.escape(id)}"]`);
-                if (card) {
-                    card.dataset.title = title;
-                    const titleEl = card.querySelector('.project-card-title');
-                    if (titleEl) titleEl.textContent = title;
-                }
-                editProjectPopup.style.display = 'none';
+
+        if (addProjectBtn && addProjectPopup && addProjectForm) {
+            addProjectBtn.addEventListener('click', function() {
+                addProjectForm.reset();
+                openPopup(addProjectPopup);
             });
         }
-    })();
 
-    // Delegated handler to ensure Project edit popup always opens
-    (function() {
-        const container = document.getElementById('projectsContainer');
-        const editProjectPopup = document.getElementById('editProjectPopup');
-        if (!container || !editProjectPopup) return;
-        container.addEventListener('click', function(e) {
-            const btn = e.target.closest('.project-card .edit-btn');
-            if (!btn) return;
-            const card = btn.closest('.project-card');
-            if (!card) return;
-            const id = card.dataset.id || '';
-            const title = card.dataset.title || card.querySelector('.project-card-title')?.textContent || '';
-            const idInput = document.getElementById('projectIdEdit');
-            const titleInput = document.getElementById('projectTitleEdit');
-            if (idInput) idInput.value = id;
-            if (titleInput) titleInput.value = title;
-            editProjectPopup.style.display = 'flex';
+        // Close popups with built-in close buttons
+        [
+            addWorkPopup,
+            editWorkPopup,
+            deleteWorkPopup,
+            addProjectPopup,
+            editProjectPopup,
+            viewProjectPopup,
+            deleteProjectPopup
+        ].forEach(function(popup) {
+            popup?.querySelector('.close-popup')?.addEventListener('click', function() {
+                closePopup(popup);
+            });
         });
-    })();
 
-    // Work/Project delete confirmation popups (visual only)
-    (function() {
-        // Work delete
-        const workContainer = document.getElementById('workContainer');
-        const deleteWorkPopup = document.getElementById('deleteWorkPopup');
-        const confirmWorkBtn = document.getElementById('confirmDeleteWorkBtn');
-        const cancelWorkBtn = document.getElementById('cancelDeleteWorkBtn');
-        let pendingWorkCard = null;
+        // Work: add/edit/delete
+        if (addWorkForm) {
+            addWorkForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await postForm(addWorkForm);
+                    window.location.reload();
+                } catch (err) {
+                    alert(err.message || 'Failed to add work experience');
+                }
+            });
+        }
+
+        if (workContainer && editWorkPopup) {
+            workContainer.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.work-card .edit-btn');
+                if (!editBtn) return;
+
+                const card = editBtn.closest('.work-card');
+                if (!card) return;
+
+                document.getElementById('workIdEdit').value = card.dataset.id || '';
+                document.getElementById('workPositionEdit').value = card.dataset.position || '';
+                document.getElementById('workCompanyEdit').value = card.dataset.company || '';
+                document.getElementById('workPeriodEdit').value = card.dataset.period || '';
+                openPopup(editWorkPopup);
+            });
+        }
+
+        if (editWorkForm) {
+            editWorkForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await postForm(editWorkForm);
+                    window.location.reload();
+                } catch (err) {
+                    alert(err.message || 'Failed to update work experience');
+                }
+            });
+        }
+
         if (workContainer && deleteWorkPopup) {
             workContainer.addEventListener('click', function(e) {
-                const btn = e.target.closest('.work-card .delete-btn');
-                if (!btn) return;
-                e.stopPropagation();
-                pendingWorkCard = btn.closest('.work-card');
-                deleteWorkPopup.style.display = 'flex';
-            });
-        }
-        if (cancelWorkBtn) {
-            cancelWorkBtn.addEventListener('click', function() {
-                pendingWorkCard = null;
-                if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
-            });
-        }
-        if (confirmWorkBtn) {
-            confirmWorkBtn.addEventListener('click', function() {
-                if (pendingWorkCard) pendingWorkCard.remove();
-                pendingWorkCard = null;
-                if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+                const deleteBtn = e.target.closest('.work-card .delete-btn');
+                if (!deleteBtn) return;
+
+                const card = deleteBtn.closest('.work-card');
+                pendingWorkId = card?.dataset?.id || null;
+                if (pendingWorkId) openPopup(deleteWorkPopup);
             });
         }
 
-        // Project delete
-        const projectsContainer = document.getElementById('projectsContainer');
-        const deleteProjectPopup = document.getElementById('deleteProjectPopup');
-        const confirmProjectBtn = document.getElementById('confirmDeleteProjectBtn');
-        const cancelProjectBtn = document.getElementById('cancelDeleteProjectBtn');
-        let pendingProjectCard = null;
-        if (projectsContainer && deleteProjectPopup) {
+        cancelDeleteWorkBtn?.addEventListener('click', function() {
+            pendingWorkId = null;
+            closePopup(deleteWorkPopup);
+        });
+
+        confirmDeleteWorkBtn?.addEventListener('click', async function() {
+            if (!pendingWorkId) return;
+            try {
+                await deleteByUrl(`${window.URLROOT}/profile/deleteWorkExperience?id=${encodeURIComponent(pendingWorkId)}`);
+                window.location.reload();
+            } catch (err) {
+                alert(err.message || 'Failed to delete work experience');
+            }
+        });
+
+        // Project: add/edit/view/delete
+        if (addProjectForm) {
+            addProjectForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await postForm(addProjectForm);
+                    window.location.reload();
+                } catch (err) {
+                    alert(err.message || 'Failed to add project');
+                }
+            });
+        }
+
+        if (projectsContainer) {
             projectsContainer.addEventListener('click', function(e) {
-                const btn = e.target.closest('.project-card .delete-btn');
-                if (!btn) return;
-                e.stopPropagation();
-                pendingProjectCard = btn.closest('.project-card');
-                deleteProjectPopup.style.display = 'flex';
-            });
-        }
-        if (cancelProjectBtn) {
-            cancelProjectBtn.addEventListener('click', function() {
-                pendingProjectCard = null;
-                if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
-            });
-        }
-        if (confirmProjectBtn) {
-            confirmProjectBtn.addEventListener('click', function() {
-                if (pendingProjectCard) pendingProjectCard.remove();
-                pendingProjectCard = null;
-                if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
+                const card = e.target.closest('.project-card');
+                if (!card) return;
+
+                const editBtn = e.target.closest('.project-card .edit-btn');
+                if (editBtn && editProjectPopup) {
+                    document.getElementById('projectIdEdit').value = card.dataset.id || '';
+                    document.getElementById('projectTitleEdit').value = card.dataset.title || '';
+                    document.getElementById('projectDescEdit').value = card.dataset.desc || '';
+                    document.getElementById('projectSkillsEdit').value = card.dataset.skills || '';
+                    document.getElementById('startDateEdit').value = card.dataset.start_date || '';
+                    document.getElementById('endDateEdit').value = card.dataset.end_date || '';
+                    openPopup(editProjectPopup);
+                    return;
+                }
+
+                const viewBtn = e.target.closest('.project-card .view-btn');
+                if (viewBtn && viewProjectPopup) {
+                    const start = card.dataset.start_date || '';
+                    const end = card.dataset.end_date || '';
+                    document.getElementById('viewProjectTitle').textContent = card.dataset.title || '';
+                    document.getElementById('viewProjectDesc').textContent = card.dataset.desc || '';
+                    document.getElementById('viewProjectSkills').textContent = card.dataset.skills || '';
+                    document.getElementById('viewProjectStartDate').textContent = start || 'N/A';
+                    document.getElementById('viewProjectEndDate').textContent = end || 'N/A';
+                    openPopup(viewProjectPopup);
+                    return;
+                }
+
+                const deleteBtn = e.target.closest('.project-card .delete-btn');
+                if (deleteBtn) {
+                    pendingProjectId = card.dataset.id || null;
+                    if (pendingProjectId) openPopup(deleteProjectPopup);
+                }
             });
         }
 
-        // Allow using the small X close button for both popups
-        document.querySelectorAll('#deleteWorkPopup .close-popup, #deleteProjectPopup .close-popup').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const popup = this.closest('.certificate-add-popup');
-                if (popup) popup.style.display = 'none';
+        if (editProjectForm) {
+            editProjectForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await postForm(editProjectForm);
+                    window.location.reload();
+                } catch (err) {
+                    alert(err.message || 'Failed to update project');
+                }
             });
+        }
+
+        cancelDeleteProjectBtn?.addEventListener('click', function() {
+            pendingProjectId = null;
+            closePopup(deleteProjectPopup);
+        });
+
+        confirmDeleteProjectBtn?.addEventListener('click', async function() {
+            if (!pendingProjectId) return;
+            try {
+                await deleteByUrl(`${window.URLROOT}/profile/deleteProjects?id=${encodeURIComponent(pendingProjectId)}`);
+                window.location.reload();
+            } catch (err) {
+                alert(err.message || 'Failed to delete project');
+            }
         });
     })();
 

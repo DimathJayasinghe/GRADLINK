@@ -75,17 +75,29 @@ trait Notifiable
 
             $messageText = $this->extractNotificationText($content, $type);
             $link = $this->extractNotificationLink($content);
-
-            $sent = EmailHandler::sendNotificationEmail(
-                $recipient['email'],
+            $payload = EmailHandler::buildNotificationEmailPayload(
                 $recipient['name'],
                 $type,
                 $messageText,
                 $link
             );
 
-            if (!$sent) {
-                error_log('[Notifiable::notify] Notification email sending failed for user ' . $receiverId . ' type=' . $type);
+            $emailJobModel = $this->model('M_email_job');
+            if (!$emailJobModel || !method_exists($emailJobModel, 'enqueueNotificationEmailJob')) {
+                error_log('[Notifiable::notify] Email job model unavailable; notification email was not queued.');
+                return;
+            }
+
+            $queued = $emailJobModel->enqueueNotificationEmailJob(
+                $recipient['email'],
+                $payload['subject'],
+                $payload['html_body'],
+                $payload['plain_body'],
+                $payload['to_name']
+            );
+
+            if (!$queued) {
+                error_log('[Notifiable::notify] Notification email queue insert failed for user ' . $receiverId . ' type=' . $type);
             }
         } catch (Throwable $e) {
             error_log('[Notifiable::notify] Notification email error: ' . $e->getMessage());
@@ -102,10 +114,10 @@ trait Notifiable
 
             $settings = $settingsModel->getNotificationSettings($receiverId);
             if (!$settings) {
-                return true;
+                return false;
             }
 
-            return (int)($settings->email_enabled ?? 1) === 1;
+            return (int)($settings->email_enabled ?? 0) === 1;
         } catch (Throwable $e) {
             error_log('[Notifiable::notify] Failed to read email notification setting: ' . $e->getMessage());
             return false;

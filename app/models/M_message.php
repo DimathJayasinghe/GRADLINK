@@ -94,11 +94,8 @@ class M_message extends Database {
     }
     
     /**
-     * Get all available users (excluding current user) with optional search
-     * Shows users that:
-     * 1. Current user follows them, OR
-     * 2. They follow current user AND have sent at least one message, OR
-     * 3. Admin role AND there's a message history
+     * Get all available users (excluding current user) with optional search.
+     * A chat is allowed when at least one user follows the other.
      */
     public function getAvailableUsers($currentUserId, $searchTerm = null) {
         $sql = "SELECT 
@@ -112,14 +109,12 @@ class M_message extends Database {
                 LEFT JOIN followers f_following ON f_following.followed_id = u.id AND f_following.follower_id = :current_user_id
                 LEFT JOIN followers f_follower ON f_follower.follower_id = u.id AND f_follower.followed_id = :current_user_id
                 LEFT JOIN messages m ON (m.sender_id = u.id AND m.receiver_id = :current_user_id) OR (m.receiver_id = u.id AND m.sender_id = :current_user_id)
-                LEFT JOIN messages m_from_them ON m_from_them.sender_id = u.id AND m_from_them.receiver_id = :current_user_id
                 LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
                 WHERE u.id != :current_user_id
                     AND su.id IS NULL
                     AND (
                         f_following.follower_id IS NOT NULL 
-                        OR (f_follower.follower_id IS NOT NULL AND m_from_them.message_id IS NOT NULL)
-                        OR (u.role = 'admin' AND m.message_id IS NOT NULL)
+                        OR f_follower.follower_id IS NOT NULL
                     )";
         
         // Add search filter if provided
@@ -140,6 +135,31 @@ class M_message extends Database {
         }
         
         return $this->resultSet();
+    }
+
+    public function canUsersChat($userIdA, $userIdB): bool {
+        $userIdA = (int)$userIdA;
+        $userIdB = (int)$userIdB;
+
+        if ($userIdA <= 0 || $userIdB <= 0 || $userIdA === $userIdB) {
+            return false;
+        }
+
+        try {
+            $sql = "SELECT 1
+                    FROM followers
+                    WHERE (follower_id = :user_a AND followed_id = :user_b)
+                       OR (follower_id = :user_b AND followed_id = :user_a)
+                    LIMIT 1";
+
+            $this->query($sql);
+            $this->bind(':user_a', $userIdA);
+            $this->bind(':user_b', $userIdB);
+
+            return $this->single() !== false;
+        } catch (Throwable $e) {
+            return false;
+        }
     }
     
     /**

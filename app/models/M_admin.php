@@ -129,6 +129,214 @@ class M_admin {
         }
     }
 
+    public function getUsersExportRows(?string $role = null): array {
+        try {
+            $batchExpr = $this->columnExists('users', 'batch_no')
+                ? 'u.batch_no'
+                : ($this->columnExists('users', 'graduation_year') ? 'u.graduation_year' : 'NULL');
+            $genderExpr = $this->columnExists('users', 'gender') ? 'u.gender' : 'NULL';
+            $specialExpr = $this->columnExists('users', 'special_alumni') ? 'u.special_alumni' : '0';
+            $createdExpr = $this->columnExists('users', 'created_at') ? 'u.created_at' : 'NULL';
+            $orderExpr = $this->columnExists('users', 'created_at') ? 'u.created_at DESC' : 'u.id DESC';
+
+            $sql = "SELECT
+                        u.id AS id,
+                        u.name AS name,
+                        u.email AS email,
+                        u.role AS role,
+                        {$batchExpr} AS batch,
+                        {$genderExpr} AS gender,
+                        {$specialExpr} AS special_alumni,
+                        {$createdExpr} AS created_at
+                    FROM users u";
+
+            $binds = [];
+            $sql = $this->appendRoleFilterClause($sql, $role, 'u.role', $binds);
+            $sql .= " ORDER BY {$orderExpr}";
+
+            $this->db->query($sql);
+            foreach ($binds as $key => $value) {
+                $this->db->bind($key, $value);
+            }
+
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    public function getContentExportRows(?string $role = null): array {
+        if (!$this->tableExists('posts')) {
+            return [];
+        }
+
+        try {
+            $titleExpr = $this->columnExists('posts', 'title') ? 'p.title' : 'NULL';
+            $bodyExpr = $this->columnExists('posts', 'content')
+                ? 'p.content'
+                : ($this->columnExists('posts', 'description') ? 'p.description' : 'NULL');
+            $statusExpr = $this->columnExists('posts', 'status') ? 'p.status' : "'published'";
+            $createdExpr = $this->columnExists('posts', 'created_at') ? 'p.created_at' : 'NULL';
+            $orderExpr = $this->columnExists('posts', 'created_at') ? 'p.created_at DESC' : 'p.id DESC';
+
+            $canJoinUsers = $this->columnExists('posts', 'user_id') && $this->tableExists('users');
+
+            $sql = "SELECT
+                        p.id AS content_id,
+                        'post' AS content_type,
+                        {$titleExpr} AS title,
+                        {$bodyExpr} AS body,
+                        {$statusExpr} AS status,
+                        {$createdExpr} AS created_at,";
+
+            if ($canJoinUsers) {
+                $sql .= " p.user_id AS author_id,
+                          u.name AS author_name,
+                          u.email AS author_email,
+                          u.role AS author_role
+                          FROM posts p
+                          LEFT JOIN users u ON u.id = p.user_id";
+            } else {
+                $authorExpr = $this->columnExists('posts', 'user_id') ? 'p.user_id' : 'NULL';
+                $sql .= " {$authorExpr} AS author_id,
+                          NULL AS author_name,
+                          NULL AS author_email,
+                          NULL AS author_role
+                          FROM posts p";
+            }
+
+            $binds = [];
+            if ($canJoinUsers) {
+                $sql = $this->appendRoleFilterClause($sql, $role, 'u.role', $binds);
+            }
+            $sql .= " ORDER BY {$orderExpr}";
+
+            $this->db->query($sql);
+            foreach ($binds as $key => $value) {
+                $this->db->bind($key, $value);
+            }
+
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    public function getEventsExportRows(?string $role = null): array {
+        if (!$this->tableExists('events')) {
+            return [];
+        }
+
+        try {
+            $titleCol = $this->firstExistingColumn('events', ['title', 'name', 'headline']);
+            $statusCol = $this->firstExistingColumn('events', ['status']);
+            $startCol = $this->firstExistingColumn('events', ['start_datetime', 'start_date', 'event_date', 'date']);
+            $venueCol = $this->firstExistingColumn('events', ['venue', 'location', 'place']);
+            $createdCol = $this->firstExistingColumn('events', ['created_at', 'updated_at']);
+            $organizerCol = $this->firstExistingColumn('events', ['organizer_id', 'user_id', 'created_by']);
+
+            $titleExpr = $titleCol ? "e.`{$titleCol}`" : 'NULL';
+            $statusExpr = $statusCol ? "e.`{$statusCol}`" : "'unknown'";
+            $startExpr = $startCol ? "e.`{$startCol}`" : 'NULL';
+            $venueExpr = $venueCol ? "e.`{$venueCol}`" : 'NULL';
+            $createdExpr = $createdCol ? "e.`{$createdCol}`" : 'NULL';
+            $organizerExpr = $organizerCol ? "e.`{$organizerCol}`" : 'NULL';
+
+            $sql = "SELECT
+                        e.id AS event_id,
+                        {$titleExpr} AS title,
+                        {$statusExpr} AS status,
+                        {$startExpr} AS start_at,
+                        {$venueExpr} AS venue,
+                        {$organizerExpr} AS organizer_id,
+                        {$createdExpr} AS created_at";
+
+            $canJoinUsers = $organizerCol !== null && $this->tableExists('users');
+            if ($canJoinUsers) {
+                $sql .= ", u.name AS organizer_name,
+                          u.email AS organizer_email,
+                          u.role AS organizer_role
+                          FROM events e
+                          LEFT JOIN users u ON u.id = e.`{$organizerCol}`";
+            } else {
+                $sql .= ", NULL AS organizer_name,
+                          NULL AS organizer_email,
+                          NULL AS organizer_role
+                          FROM events e";
+            }
+
+            $binds = [];
+            if ($canJoinUsers) {
+                $sql = $this->appendRoleFilterClause($sql, $role, 'u.role', $binds);
+            }
+
+            if ($createdCol) {
+                $sql .= " ORDER BY e.`{$createdCol}` DESC";
+            } else if ($startCol) {
+                $sql .= " ORDER BY e.`{$startCol}` DESC";
+            } else {
+                $sql .= " ORDER BY e.id DESC";
+            }
+
+            $this->db->query($sql);
+            foreach ($binds as $key => $value) {
+                $this->db->bind($key, $value);
+            }
+
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            return [];
+        }
+    }
+
+    private function firstExistingColumn(string $table, array $columns): ?string {
+        foreach ($columns as $column) {
+            if ($this->columnExists($table, $column)) {
+                return $column;
+            }
+        }
+
+        return null;
+    }
+
+    private function appendRoleFilterClause(string $sql, ?string $role, string $column, array &$binds): string {
+        $roleValues = $this->getRoleFilterValues($role);
+        if (empty($roleValues)) {
+            return $sql;
+        }
+
+        $placeholders = [];
+        foreach ($roleValues as $idx => $value) {
+            $placeholder = ':role_' . $idx;
+            $placeholders[] = $placeholder;
+            $binds[$placeholder] = $value;
+        }
+
+        $joiner = (stripos($sql, ' where ') !== false) ? ' AND ' : ' WHERE ';
+        return $sql . $joiner . $column . ' IN (' . implode(', ', $placeholders) . ')';
+    }
+
+    private function getRoleFilterValues(?string $role): array {
+        $normalized = strtolower(trim((string)$role));
+        if ($normalized === '' || $normalized === 'all') {
+            return [];
+        }
+
+        if ($normalized === 'undergrad') {
+            return ['undergrad', 'student', 'undergraduate'];
+        }
+
+        if ($normalized === 'alumni') {
+            return ['alumni', 'alumnus'];
+        }
+
+        if ($normalized === 'admin') {
+            return ['admin', 'administrator', 'system_admin', 'system-administrator', 'super_admin'];
+        }
+
+        return [];
+    }
+
     public function setSpecialAlumniStatus(int $userId, bool $isSpecial): array {
         if ($userId <= 0) {
             return ['ok' => false, 'message' => 'Invalid user ID.'];
@@ -252,35 +460,370 @@ class M_admin {
     }
 
     public function getPostReports(): array {
+        $all = [];
+
         try {
-            $this->db->query('
-                SELECT
-                    r.id,
-                    r.post_id,
-                    r.post_owner_id,
-                    r.reporter_id,
-                    r.category,
-                    r.details,
-                    r.reference_link,
-                    r.status,
-                    r.created_at,
-                    r.updated_at,
-                    p.content AS post_content,
-                    p.created_at AS post_created_at,
-                    reporter.name AS reporter_name,
-                    reporter.role AS reporter_role,
-                    owner.name AS owner_name,
-                    owner.role AS owner_role
-                FROM post_reports r
-                LEFT JOIN posts p ON p.id = r.post_id
-                LEFT JOIN users reporter ON reporter.id = r.reporter_id
-                LEFT JOIN users owner ON owner.id = r.post_owner_id
-                ORDER BY r.created_at DESC
-            ');
-            return $this->db->resultSet();
+            // Preferred source: generic reports table used by /report/submitReport/post.
+            if ($this->tableExists('reports') && $this->columnExists('reports', 'report_type') && $this->columnExists('reports', 'reported_item_id')) {
+                $idColumn = $this->columnExists('reports', 'report_id') ? 'report_id' : ($this->columnExists('reports', 'id') ? 'id' : null);
+                if ($idColumn !== null) {
+                    $this->db->query("SELECT
+                                        r.$idColumn AS id,
+                                        'reports' AS source,
+                                        r.reported_item_id AS post_id,
+                                        p.user_id AS post_owner_id,
+                                        r.reporter_id,
+                                        r.category,
+                                        r.details,
+                                        r.link AS reference_link,
+                                        r.status,
+                                        r.created_at,
+                                        r.updated_at,
+                                        p.content AS post_content,
+                                        p.created_at AS post_created_at,
+                                        reporter.name AS reporter_name,
+                                        reporter.role AS reporter_role,
+                                        owner.name AS owner_name,
+                                        owner.role AS owner_role
+                                    FROM reports r
+                                    LEFT JOIN posts p ON p.id = r.reported_item_id
+                                    LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                                    LEFT JOIN users owner ON owner.id = p.user_id
+                                    WHERE r.report_type = 'post'
+                                    ORDER BY r.created_at DESC");
+                    $rows = $this->db->resultSet();
+                    if (is_array($rows)) {
+                        $all = array_merge($all, $rows);
+                    }
+                }
+            }
+
+            // Legacy source: post_reports table.
+            if ($this->tableExists('post_reports')) {
+                $this->db->query("SELECT
+                                    r.id,
+                                    'post_reports' AS source,
+                                    r.post_id,
+                                    COALESCE(p.user_id, r.post_owner_id) AS post_owner_id,
+                                    r.reporter_id,
+                                    r.category,
+                                    r.details,
+                                    r.reference_link,
+                                    r.status,
+                                    r.created_at,
+                                    r.updated_at,
+                                    p.content AS post_content,
+                                    p.created_at AS post_created_at,
+                                    reporter.name AS reporter_name,
+                                    reporter.role AS reporter_role,
+                                    owner.name AS owner_name,
+                                    owner.role AS owner_role
+                                FROM post_reports r
+                                LEFT JOIN posts p ON p.id = r.post_id
+                                LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                                LEFT JOIN users owner ON owner.id = COALESCE(p.user_id, r.post_owner_id)
+                                ORDER BY r.created_at DESC");
+                $rows = $this->db->resultSet();
+                if (is_array($rows)) {
+                    $all = array_merge($all, $rows);
+                }
+            }
+
+            if (!empty($all)) {
+                usort($all, function ($a, $b) {
+                    $aTs = strtotime((string)($a->created_at ?? '')) ?: 0;
+                    $bTs = strtotime((string)($b->created_at ?? '')) ?: 0;
+                    return $bTs <=> $aTs;
+                });
+            }
+
+            return $all;
         } catch (Throwable $e) {
             error_log("Error fetching post reports: " . $e->getMessage());
             return [];
+        }
+    }
+
+    public function getProfileReports(): array {
+        try {
+            if (!$this->tableExists('reports') || !$this->columnExists('reports', 'report_type') || !$this->columnExists('reports', 'reported_item_id')) {
+                return [];
+            }
+
+            $idColumn = $this->columnExists('reports', 'report_id') ? 'report_id' : ($this->columnExists('reports', 'id') ? 'id' : null);
+            if ($idColumn === null) {
+                return [];
+            }
+
+            $this->db->query("SELECT
+                                r.$idColumn AS id,
+                                'reports' AS source,
+                                r.reported_item_id AS profile_id,
+                                r.reporter_id,
+                                r.category,
+                                r.details,
+                                r.link AS reference_link,
+                                r.status,
+                                r.created_at,
+                                r.updated_at,
+                                reporter.name AS reporter_name,
+                                reporter.role AS reporter_role,
+                                target.name AS target_name,
+                                target.role AS target_role,
+                                target.profile_image AS target_profile_image
+                            FROM reports r
+                            LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                            LEFT JOIN users target ON target.id = r.reported_item_id
+                            WHERE r.report_type = 'profile'
+                            ORDER BY r.created_at DESC");
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            error_log("Error fetching profile reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getEventReports(): array {
+        try {
+            if (!$this->tableExists('reports') || !$this->columnExists('reports', 'report_type') || !$this->columnExists('reports', 'reported_item_id')) {
+                return [];
+            }
+
+            $idColumn = $this->columnExists('reports', 'report_id') ? 'report_id' : ($this->columnExists('reports', 'id') ? 'id' : null);
+            if ($idColumn === null) {
+                return [];
+            }
+
+            $this->db->query("SELECT
+                                r.$idColumn AS id,
+                                'reports' AS source,
+                                r.reported_item_id AS event_id,
+                                r.reporter_id,
+                                r.category,
+                                r.details,
+                                r.link AS reference_link,
+                                r.status,
+                                r.created_at,
+                                r.updated_at,
+                                e.title AS event_title,
+                                e.start_datetime AS event_start_at,
+                                e.venue AS event_venue,
+                                e.organizer_id AS event_owner_id,
+                                reporter.name AS reporter_name,
+                                reporter.role AS reporter_role,
+                                owner.name AS owner_name,
+                                owner.role AS owner_role
+                            FROM reports r
+                            LEFT JOIN events e ON e.id = r.reported_item_id
+                            LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                            LEFT JOIN users owner ON owner.id = e.organizer_id
+                            WHERE r.report_type = 'event'
+                            ORDER BY r.created_at DESC");
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            error_log("Error fetching event reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function getFundraiserReports(): array {
+        try {
+            if (!$this->tableExists('reports') || !$this->columnExists('reports', 'report_type') || !$this->columnExists('reports', 'reported_item_id')) {
+                return [];
+            }
+
+            $idColumn = $this->columnExists('reports', 'report_id') ? 'report_id' : ($this->columnExists('reports', 'id') ? 'id' : null);
+            if ($idColumn === null) {
+                return [];
+            }
+
+            $this->db->query("SELECT
+                                r.$idColumn AS id,
+                                'reports' AS source,
+                                r.reported_item_id AS fundraiser_id,
+                                r.reporter_id,
+                                r.category,
+                                r.details,
+                                r.link AS reference_link,
+                                r.status,
+                                r.created_at,
+                                r.updated_at,
+                                fr.title AS fundraiser_title,
+                                fr.headline AS fundraiser_headline,
+                                fr.club_name AS fundraiser_club_name,
+                                fr.status AS fundraiser_status,
+                                fr.user_id AS fundraiser_owner_id,
+                                reporter.name AS reporter_name,
+                                reporter.role AS reporter_role,
+                                owner.name AS owner_name,
+                                owner.role AS owner_role
+                            FROM reports r
+                            LEFT JOIN fundraising_requests fr ON fr.id = r.reported_item_id
+                            LEFT JOIN users reporter ON reporter.id = r.reporter_id
+                            LEFT JOIN users owner ON owner.id = fr.user_id
+                            WHERE r.report_type = 'fundraiser'
+                            ORDER BY r.created_at DESC");
+            return $this->db->resultSet();
+        } catch (Throwable $e) {
+            error_log("Error fetching fundraiser reports: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function updateContentReportStatus(int $reportId, string $status, int $adminId, string $source = 'reports'): bool {
+        try {
+            if ($reportId <= 0) {
+                return false;
+            }
+
+            if (!in_array($status, ['pending', 'resolved', 'rejected'], true)) {
+                return false;
+            }
+
+            $safeSource = strtolower(trim($source));
+
+            if ($safeSource === 'post_reports') {
+                if ($this->updatePostReportsStatus($reportId, $status)) {
+                    return true;
+                }
+                return $this->updateGenericReportsStatus($reportId, $status, $adminId);
+            }
+
+            if ($this->updateGenericReportsStatus($reportId, $status, $adminId)) {
+                return true;
+            }
+
+            return $this->updatePostReportsStatus($reportId, $status);
+        } catch (Throwable $e) {
+            error_log('Error updating content report status: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function updateGenericReportsStatus(int $reportId, string $status, int $adminId): bool {
+        if (!$this->tableExists('reports')) {
+            return false;
+        }
+
+        // Resolve schema flags once. Avoid schema helper calls after preparing UPDATE,
+        // because those helpers replace the active PDO statement in Database.
+        $hasUpdatedAt = $this->columnExists('reports', 'updated_at');
+        $hasReviewedBy = $this->columnExists('reports', 'reviewed_by');
+        $hasReviewedAt = $this->columnExists('reports', 'reviewed_at');
+
+        $pkCandidates = [];
+        if ($this->columnExists('reports', 'report_id')) {
+            $pkCandidates[] = 'report_id';
+        }
+        if ($this->columnExists('reports', 'id')) {
+            $pkCandidates[] = 'id';
+        }
+        if (empty($pkCandidates)) {
+            $pkCandidates = ['report_id', 'id'];
+        }
+
+        foreach (array_unique($pkCandidates) as $idColumn) {
+            try {
+                $setParts = ['status = :status'];
+                if ($hasUpdatedAt) {
+                    $setParts[] = 'updated_at = NOW()';
+                }
+                if ($hasReviewedBy) {
+                    $setParts[] = 'reviewed_by = :reviewed_by';
+                }
+                if ($hasReviewedAt) {
+                    $setParts[] = 'reviewed_at = NOW()';
+                }
+
+                $sql = 'UPDATE reports SET ' . implode(', ', $setParts) . " WHERE $idColumn = :id";
+                $this->db->query($sql);
+                $this->db->bind(':status', $status);
+                if ($hasReviewedBy) {
+                    $this->db->bind(':reviewed_by', $adminId > 0 ? $adminId : null);
+                }
+                $this->db->bind(':id', $reportId);
+
+                if (!$this->db->execute()) {
+                    continue;
+                }
+
+                if ($this->db->rowCount() > 0) {
+                    return true;
+                }
+
+                // If rowCount is 0, it may still be successful when status is unchanged.
+                $this->db->query("SELECT 1 AS found_row FROM reports WHERE $idColumn = :id LIMIT 1");
+                $this->db->bind(':id', $reportId);
+                if ($this->db->single()) {
+                    return true;
+                }
+            } catch (Throwable $e) {
+            }
+        }
+
+        return false;
+    }
+
+    private function updatePostReportsStatus(int $reportId, string $status): bool {
+        if (!$this->tableExists('post_reports')) {
+            return false;
+        }
+
+        try {
+            $setParts = ['status = :status'];
+            if ($this->columnExists('post_reports', 'updated_at')) {
+                $setParts[] = 'updated_at = NOW()';
+            }
+
+            $sql = 'UPDATE post_reports SET ' . implode(', ', $setParts) . ' WHERE id = :id';
+            $this->db->query($sql);
+            $this->db->bind(':status', $status);
+            $this->db->bind(':id', $reportId);
+            if (!$this->db->execute()) {
+                return false;
+            }
+
+            if ($this->db->rowCount() > 0) {
+                return true;
+            }
+
+            $this->db->query('SELECT 1 AS found_row FROM post_reports WHERE id = :id LIMIT 1');
+            $this->db->bind(':id', $reportId);
+            return $this->db->single() ? true : false;
+        } catch (Throwable $e) {
+            error_log('Error updating post_reports status: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function tableExists(string $table): bool {
+        try {
+            $safeTable = preg_replace('/[^A-Za-z0-9_]/', '', $table);
+            if ($safeTable === '') {
+                return false;
+            }
+
+            $this->db->query("SHOW TABLES LIKE '$safeTable'");
+            $row = $this->db->single();
+            return $row ? true : false;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function columnExists(string $table, string $column): bool {
+        try {
+            $safeTable = preg_replace('/[^A-Za-z0-9_]/', '', $table);
+            $safeColumn = preg_replace('/[^A-Za-z0-9_]/', '', $column);
+            if ($safeTable === '' || $safeColumn === '') {
+                return false;
+            }
+
+            $this->db->query("SHOW COLUMNS FROM `$safeTable` LIKE '$safeColumn'");
+            $row = $this->db->single();
+            return $row ? true : false;
+        } catch (Throwable $e) {
+            return false;
         }
     }
 
@@ -1027,8 +1570,8 @@ class M_admin {
                 return ['ok' => false, 'message' => 'User not found'];
             }
 
-            if (strtolower((string)($user->role ?? '')) === 'admin') {
-                return ['ok' => false, 'message' => 'Admin accounts cannot be suspended'];
+            if ($this->isProtectedAdminAccount($user)) {
+                return ['ok' => false, 'message' => 'System administrator accounts cannot be suspended'];
             }
 
             $this->db->query("SELECT id FROM suspended_users WHERE user_id = :user_id AND status = 'active' LIMIT 1");
@@ -1071,6 +1614,29 @@ class M_admin {
         } catch (Exception $e) {
             return ['ok' => false, 'message' => 'Failed to suspend user'];
         }
+    }
+
+    private function isProtectedAdminAccount(object $user): bool {
+        $role = strtolower(trim((string)($user->role ?? '')));
+        $name = strtolower(trim((string)($user->name ?? '')));
+        $email = strtolower(trim((string)($user->email ?? '')));
+
+        if (
+            $role === 'admin' ||
+            $role === 'administrator' ||
+            $role === 'system_admin' ||
+            $role === 'system-administrator' ||
+            $role === 'super_admin' ||
+            strpos($role, 'admin') !== false
+        ) {
+            return true;
+        }
+
+        if ($name === 'system administrator' || $email === 'admin@gradlink.com') {
+            return true;
+        }
+
+        return false;
     }
 
     public function liftSuspension(int $suspensionId, int $adminId): array {
@@ -1418,23 +1984,99 @@ class M_admin {
      * Remove/Delete a fundraiser
      */
     public function removeFundraiser($id) {
-        // First delete related records
-        $this->db->query("DELETE FROM fundraising_team_members WHERE request_id = :id");
-        $this->db->bind(':id', $id);
-        $this->db->execute();
+        $safeId = (int)$id;
+        if ($safeId <= 0) {
+            return false;
+        }
 
-        $this->db->query("DELETE FROM fundraising_bank_details WHERE request_id = :id");
-        $this->db->bind(':id', $id);
-        $this->db->execute();
+        try {
+            $this->db->beginTransaction();
 
-        $this->db->query("DELETE FROM fundraising_donations WHERE request_id = :id");
-        $this->db->bind(':id', $id);
-        $this->db->execute();
+            // Remove related records first for environments without strict FK cascades.
+            $this->db->query("DELETE FROM fundraising_team_members WHERE request_id = :id");
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
 
-        // Then delete main record
-        $this->db->query("DELETE FROM fundraising_requests WHERE id = :id");
-        $this->db->bind(':id', $id);
-        return $this->db->execute();
+            $this->db->query("DELETE FROM fundraising_bank_details WHERE request_id = :id");
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
+
+            $this->db->query("DELETE FROM fundraising_donations WHERE request_id = :id");
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
+
+            $this->db->query("DELETE FROM fundraising_requests WHERE id = :id");
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
+
+            $deleted = $this->db->rowCount() > 0;
+            if ($deleted) {
+                $this->db->commit();
+                return true;
+            }
+
+            $this->db->rollBack();
+            return false;
+        } catch (Exception $e) {
+            try {
+                $this->db->rollBack();
+            } catch (Exception $ignored) {
+            }
+            error_log('Error removing fundraiser: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Remove/Delete an event and related records.
+     */
+    public function removeEvent($id) {
+        $safeId = (int)$id;
+        if ($safeId <= 0) {
+            return false;
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            // Keep cleanup resilient if some optional tables are missing in a given environment.
+            $cleanupStatements = [
+                'DELETE FROM event_attendees WHERE event_id = :id',
+                'DELETE FROM event_bookmarks WHERE event_id = :id',
+                'DELETE FROM event_images WHERE event_id = :id',
+                'DELETE FROM event_tags WHERE event_id = :id',
+                'UPDATE event_requests SET event_id = NULL WHERE event_id = :id',
+            ];
+
+            foreach ($cleanupStatements as $sql) {
+                try {
+                    $this->db->query($sql);
+                    $this->db->bind(':id', $safeId);
+                    $this->db->execute();
+                } catch (Exception $ignored) {
+                }
+            }
+
+            $this->db->query('DELETE FROM events WHERE id = :id');
+            $this->db->bind(':id', $safeId);
+            $this->db->execute();
+
+            $deleted = $this->db->rowCount() > 0;
+            if ($deleted) {
+                $this->db->commit();
+                return true;
+            }
+
+            $this->db->rollBack();
+            return false;
+        } catch (Exception $e) {
+            try {
+                $this->db->rollBack();
+            } catch (Exception $ignored) {
+            }
+            error_log('Error removing event: ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

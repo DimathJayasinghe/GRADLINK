@@ -7,96 +7,17 @@ class M_notification {
         $this->db = new Database();
     }
 
-    private function getNotificationSettingsForUser(int $userId): ?object {
-        $row = null;
-
-        try {
-            $this->db->query('SELECT mentions_enabled, followers_enabled, engagement_enabled, dnd_enabled, dnd_start, dnd_end, dnd_days FROM user_notification_settings WHERE user_id = :user_id LIMIT 1');
-            $this->db->bind(':user_id', $userId);
-            $row = $this->db->single();
-        } catch (Throwable $e) {
-            // If settings lookup fails, fail open (do not block notifications)
-            error_log('[notifications] settings lookup failed: ' . $e->getMessage());
-            return null;
-        }
-
-        if (!$row) {
-            return null;
-        }
-
-        // Normalize to ints for consistent comparisons
-        $row->mentions_enabled = (int)($row->mentions_enabled ?? 1);
-        $row->followers_enabled = (int)($row->followers_enabled ?? 1);
-        $row->engagement_enabled = (int)($row->engagement_enabled ?? 1);
-        $row->dnd_enabled = (int)($row->dnd_enabled ?? 0);
-
-        return $row;
-    }
-
-    private function getSuppressedTypesForSettings(?object $settings): array {
-        if ($settings === null) {
-            return [];
-        }
-
-        $suppressed = [];
-
-        if ((int)($settings->followers_enabled ?? 1) === 0) {
-            $suppressed[] = 'follow_request';
-            $suppressed[] = 'started_following';
-        }
-
-        if ((int)($settings->engagement_enabled ?? 1) === 0) {
-            $suppressed[] = 'like';
-            $suppressed[] = 'comment';
-            $suppressed[] = 'share';
-        }
-
-        if ((int)($settings->mentions_enabled ?? 1) === 0) {
-            // These types may be introduced later; keeping mapping here is harmless.
-            $suppressed[] = 'mention';
-            $suppressed[] = 'reply';
-        }
-
-        return array_values(array_unique($suppressed));
-    }
-
-    private function isTypeSuppressedForUser(int $receiverId, string $type): bool {
-        $settings = $this->getNotificationSettingsForUser($receiverId);
-        $suppressed = $this->getSuppressedTypesForSettings($settings);
-        return in_array($type, $suppressed, true);
-    }
-
     public function isNotificationTypeEnabledForUser(int $receiverId, string $type): bool {
         if ($receiverId <= 0 || $type === '') {
             return false;
         }
 
-        return !$this->isTypeSuppressedForUser($receiverId, $type);
-    }
-
-    private function appendTypeNotInClause(string $baseSql, array $types, array &$bindMap): string {
-        if (empty($types)) {
-            return $baseSql;
-        }
-
-        $placeholders = [];
-        foreach (array_values($types) as $i => $t) {
-            $ph = ':type_ex_' . $i;
-            $placeholders[] = $ph;
-            $bindMap[$ph] = $t;
-        }
-
-        return $baseSql . ' AND type NOT IN (' . implode(',', $placeholders) . ')';
+        return true;
     }
 
     public function createNotification($receiverId, $type, $referenceId, $content) {
         try {
             $receiverId = (int)$receiverId;
-
-            // Respect user's notification category preferences
-            if ($receiverId > 0 && $this->isTypeSuppressedForUser($receiverId, (string)$type)) {
-                return true; // Suppressed by settings; treat as successful no-op
-            }
 
             // Ensure content is stored as JSON string
             $payload = is_string($content) ? $content : json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -119,18 +40,8 @@ class M_notification {
 
     public function getUserNotifications($userId) {
         $userId = (int)$userId;
-        $settings = $this->getNotificationSettingsForUser($userId);
-        $suppressed = $this->getSuppressedTypesForSettings($settings);
-
-        $bindMap = [':receiver_id' => $userId];
-        $sql = 'SELECT * FROM notifications WHERE receiver_id = :receiver_id';
-        $sql = $this->appendTypeNotInClause($sql, $suppressed, $bindMap);
-        $sql .= ' ORDER BY created_at DESC';
-
-        $this->db->query($sql);
-        foreach ($bindMap as $k => $v) {
-            $this->db->bind($k, $v);
-        }
+        $this->db->query('SELECT * FROM notifications WHERE receiver_id = :receiver_id ORDER BY created_at DESC');
+        $this->db->bind(':receiver_id', $userId);
         $rows = $this->db->resultSet();
         // Decode JSON content for each row when possible
         foreach ($rows as $row) {
@@ -146,17 +57,8 @@ class M_notification {
 
     public function getUserNotificationsCount($userId) {
         $userId = (int)$userId;
-        $settings = $this->getNotificationSettingsForUser($userId);
-        $suppressed = $this->getSuppressedTypesForSettings($settings);
-
-        $bindMap = [':receiver_id' => $userId];
-        $sql = 'SELECT COUNT(*) AS count FROM notifications WHERE receiver_id = :receiver_id AND is_read = 0';
-        $sql = $this->appendTypeNotInClause($sql, $suppressed, $bindMap);
-
-        $this->db->query($sql);
-        foreach ($bindMap as $k => $v) {
-            $this->db->bind($k, $v);
-        }
+        $this->db->query('SELECT COUNT(*) AS count FROM notifications WHERE receiver_id = :receiver_id AND is_read = 0');
+        $this->db->bind(':receiver_id', $userId);
         $row = $this->db->single();
         return $row ? (int)$row->count : 0;
     }

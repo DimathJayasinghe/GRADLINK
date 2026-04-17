@@ -227,7 +227,7 @@
                         <td>
                             <div class="support-actions">
                                 <button class="support-btn support-btn-view" onclick="viewFeedback(<?php echo $fb->id; ?>)">View</button>
-                                <form method="POST" action="<?php echo URLROOT; ?>/admin/deleteFeedbackEntry" style="display:inline;" onsubmit="return confirm('Delete this feedback?')">
+                                <form method="POST" action="<?php echo URLROOT; ?>/admin/deleteFeedbackEntry" style="display:inline;" class="feedback-delete-form">
                                     <input type="hidden" name="id" value="<?php echo $fb->id; ?>">
                                     <button type="submit" class="support-btn support-btn-delete">Delete</button>
                                 </form>
@@ -339,6 +339,17 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.support-modal').forEach(modal => {
         modal.addEventListener('click', function(e) {
             if (e.target === this) this.style.display = 'none';
+        });
+    });
+
+    // ---- Replace native feedback-delete confirm with popup ----
+    document.querySelectorAll('.feedback-delete-form').forEach(form => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const shouldDelete = await AdminPopup.confirm('Delete this feedback entry?');
+            if (shouldDelete) {
+                this.submit();
+            }
         });
     });
 

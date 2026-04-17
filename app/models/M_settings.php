@@ -3,26 +3,22 @@ class M_settings extends Database {
 
     const ACTION_DEACTIVATE_ONLY = 'deactivate_only';
     const ACTION_DEACTIVATE_AND_DELETE = 'deactivate_and_delete';
+    private static $notificationSettingsSchemaChecked = false;
 
     /**
      * Ensure notification settings table exists.
      * This keeps notification settings APIs resilient on fresh/local DBs.
      */
     private function ensureNotificationSettingsTable() {
+        if (self::$notificationSettingsSchemaChecked) {
+            return true;
+        }
+
         try {
             if (!$this->tableExists('user_notification_settings')) {
                 $sql = "CREATE TABLE user_notification_settings (
                             user_id INT PRIMARY KEY,
-                            email_enabled TINYINT(1) DEFAULT 1,
-                            sound_enabled TINYINT(1) DEFAULT 0,
-                            mentions_enabled TINYINT(1) DEFAULT 1,
-                            followers_enabled TINYINT(1) DEFAULT 1,
-                            engagement_enabled TINYINT(1) DEFAULT 1,
-                            dnd_enabled TINYINT(1) DEFAULT 0,
-                            dnd_start TIME NULL,
-                            dnd_end TIME NULL,
-                            dnd_days VARCHAR(50) NULL,
-                            in_app_disabled_types TEXT NULL,
+                            email_enabled TINYINT(1) NOT NULL DEFAULT 0,
                             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
                         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
 
@@ -32,27 +28,48 @@ class M_settings extends Database {
                 }
             }
 
-            $columnsToEnsure = [
-                'email_enabled' => 'TINYINT(1) DEFAULT 1',
-                'sound_enabled' => 'TINYINT(1) DEFAULT 0',
-                'mentions_enabled' => 'TINYINT(1) DEFAULT 1',
-                'followers_enabled' => 'TINYINT(1) DEFAULT 1',
-                'engagement_enabled' => 'TINYINT(1) DEFAULT 1',
-                'dnd_enabled' => 'TINYINT(1) DEFAULT 0',
-                'dnd_start' => 'TIME NULL',
-                'dnd_end' => 'TIME NULL',
-                'dnd_days' => 'VARCHAR(50) NULL',
-                'in_app_disabled_types' => 'TEXT NULL',
+            if (!$this->columnExists('user_notification_settings', 'email_enabled')) {
+                $this->query('ALTER TABLE user_notification_settings ADD COLUMN email_enabled TINYINT(1) NOT NULL DEFAULT 0');
+                if (!$this->execute()) {
+                    return false;
+                }
+            }
+
+            // Force default-off behavior for users who have no explicit preference saved.
+            $this->query('ALTER TABLE user_notification_settings MODIFY COLUMN email_enabled TINYINT(1) NOT NULL DEFAULT 0');
+            if (!$this->execute()) {
+                return false;
+            }
+
+            if (!$this->columnExists('user_notification_settings', 'updated_at')) {
+                $this->query('ALTER TABLE user_notification_settings ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP');
+                if (!$this->execute()) {
+                    return false;
+                }
+            }
+
+            $legacyColumns = [
+                'sound_enabled',
+                'mentions_enabled',
+                'followers_enabled',
+                'engagement_enabled',
+                'dnd_enabled',
+                'dnd_start',
+                'dnd_end',
+                'dnd_days',
+                'in_app_disabled_types',
             ];
 
-            foreach ($columnsToEnsure as $column => $definition) {
-                if (!$this->columnExists('user_notification_settings', $column)) {
-                    $this->query("ALTER TABLE user_notification_settings ADD COLUMN {$column} {$definition}");
+            foreach ($legacyColumns as $column) {
+                if ($this->columnExists('user_notification_settings', $column)) {
+                    $this->query("ALTER TABLE user_notification_settings DROP COLUMN {$column}");
                     if (!$this->execute()) {
                         return false;
                     }
                 }
             }
+
+            self::$notificationSettingsSchemaChecked = true;
 
             return true;
         } catch (Throwable $e) {
@@ -184,7 +201,7 @@ class M_settings extends Database {
         }
 
         try {
-            $sql = "SELECT * FROM user_notification_settings WHERE user_id = :user_id LIMIT 1";
+            $sql = "SELECT user_id, email_enabled, updated_at FROM user_notification_settings WHERE user_id = :user_id LIMIT 1";
             $this->query($sql);
             $this->bind(':user_id', $userId);
 
@@ -203,46 +220,16 @@ class M_settings extends Database {
             return false;
         }
 
-        $columnValueMap = [
-            'email_enabled' => (int)($settings['email_enabled'] ?? 1),
-            'sound_enabled' => (int)($settings['sound_enabled'] ?? 0),
-            'mentions_enabled' => (int)($settings['mentions_enabled'] ?? 1),
-            'followers_enabled' => (int)($settings['followers_enabled'] ?? 1),
-            'engagement_enabled' => (int)($settings['engagement_enabled'] ?? 1),
-            'dnd_enabled' => (int)($settings['dnd_enabled'] ?? 0),
-            'dnd_start' => $settings['dnd_start'] ?? null,
-            'dnd_end' => $settings['dnd_end'] ?? null,
-            'dnd_days' => $settings['dnd_days'] ?? null,
-        ];
+        $emailEnabled = (int)($settings['email_enabled'] ?? 0) === 1 ? 1 : 0;
 
         try {
-            $insertColumns = ['user_id'];
-            $insertPlaceholders = [':user_id'];
-            $updateAssignments = [];
-
-            foreach ($columnValueMap as $column => $value) {
-                if ($this->columnExists('user_notification_settings', $column)) {
-                    $insertColumns[] = $column;
-                    $insertPlaceholders[] = ':' . $column;
-                    $updateAssignments[] = "{$column} = VALUES({$column})";
-                }
-            }
-
-            if (empty($updateAssignments)) {
-                return false;
-            }
-
-            $sql = "INSERT INTO user_notification_settings (" . implode(', ', $insertColumns) . ")
-                    VALUES (" . implode(', ', $insertPlaceholders) . ")
-                    ON DUPLICATE KEY UPDATE " . implode(', ', $updateAssignments);
+            $sql = "INSERT INTO user_notification_settings (user_id, email_enabled)
+                    VALUES (:user_id, :email_enabled)
+                    ON DUPLICATE KEY UPDATE email_enabled = VALUES(email_enabled)";
 
             $this->query($sql);
             $this->bind(':user_id', (int)$userId);
-            foreach ($columnValueMap as $column => $value) {
-                if (in_array($column, $insertColumns, true)) {
-                    $this->bind(':' . $column, $value);
-                }
-            }
+            $this->bind(':email_enabled', $emailEnabled);
 
             return $this->execute();
         } catch (Throwable $e) {

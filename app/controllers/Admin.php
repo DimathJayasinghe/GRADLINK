@@ -126,12 +126,218 @@
             $this->view('admin/v_engagement', $data);
         }
 
+        public function exportUsersCsv() {
+            $roleFilter = $this->resolveExportRoleFilter();
+            $rows = $this->adminModel->getUsersExportRows($roleFilter);
+
+            $csvRows = [];
+            foreach ($rows as $row) {
+                $csvRows[] = [
+                    (int)($row->id ?? 0),
+                    (string)($row->name ?? ''),
+                    (string)($row->email ?? ''),
+                    (string)($row->role ?? ''),
+                    (string)($row->batch ?? ''),
+                    (string)($row->gender ?? ''),
+                    !empty($row->special_alumni) ? 'yes' : 'no',
+                    (string)($row->created_at ?? ''),
+                ];
+            }
+
+            $suffix = $roleFilter ?: 'all';
+            $filename = 'users_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
+            $this->streamCsvDownload($filename, ['id', 'name', 'email', 'role', 'batch', 'gender', 'special_alumni', 'created_at'], $csvRows);
+        }
+
+        public function exportContentCsv() {
+            $roleFilter = $this->resolveExportRoleFilter();
+            $rows = $this->adminModel->getContentExportRows($roleFilter);
+
+            $csvRows = [];
+            foreach ($rows as $row) {
+                $csvRows[] = [
+                    (int)($row->content_id ?? 0),
+                    (string)($row->content_type ?? 'post'),
+                    (string)($row->title ?? ''),
+                    (string)($row->status ?? ''),
+                    (string)($row->author_name ?? ''),
+                    (string)($row->author_email ?? ''),
+                    (string)($row->author_role ?? ''),
+                    (string)($row->created_at ?? ''),
+                    (string)($row->body ?? ''),
+                ];
+            }
+
+            $suffix = $roleFilter ?: 'all';
+            $filename = 'content_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
+            $this->streamCsvDownload($filename, ['content_id', 'type', 'title', 'status', 'author_name', 'author_email', 'author_role', 'created_at', 'body'], $csvRows);
+        }
+
+        public function exportEventsCsv() {
+            $roleFilter = $this->resolveExportRoleFilter();
+            $rows = $this->adminModel->getEventsExportRows($roleFilter);
+
+            $csvRows = [];
+            foreach ($rows as $row) {
+                $csvRows[] = [
+                    (int)($row->event_id ?? 0),
+                    (string)($row->title ?? ''),
+                    (string)($row->status ?? ''),
+                    (string)($row->start_at ?? ''),
+                    (string)($row->venue ?? ''),
+                    (string)($row->organizer_name ?? ''),
+                    (string)($row->organizer_email ?? ''),
+                    (string)($row->organizer_role ?? ''),
+                    (string)($row->created_at ?? ''),
+                ];
+            }
+
+            $suffix = $roleFilter ?: 'all';
+            $filename = 'events_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
+            $this->streamCsvDownload($filename, ['event_id', 'title', 'status', 'start_at', 'venue', 'organizer_name', 'organizer_email', 'organizer_role', 'created_at'], $csvRows);
+        }
+
         public function reports() {
+            $postReports = $this->adminModel->getPostReports();
+            $profileReports = $this->adminModel->getProfileReports();
+            $eventReports = $this->adminModel->getEventReports();
+            $fundraiserReports = $this->adminModel->getFundraiserReports();
             $data = [
-                'reports' => $this->adminModel->getPostReports(),
+                'reports' => $postReports,
+                'postReports' => $postReports,
+                'profileReports' => $profileReports,
+                'eventReports' => $eventReports,
+                'fundraiserReports' => $fundraiserReports,
             ];
             $this->view('admin/v_reports', $data);
         }
+
+        public function updateContentReportStatus() {
+            $accept = strtolower((string)($_SERVER['HTTP_ACCEPT'] ?? ''));
+            $requestedWith = strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? ''));
+            $isJsonRequest = (strpos($accept, 'application/json') !== false) || ($requestedWith === 'xmlhttprequest');
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                if ($isJsonRequest) {
+                    $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                    return;
+                }
+                SessionManager::setFlash('error', 'Invalid request method.');
+                $this->redirect('/admin/reports');
+                return;
+            }
+
+            $reportId = (int)($_POST['report_id'] ?? 0);
+            $status = trim((string)($_POST['status'] ?? ''));
+            $source = trim((string)($_POST['source'] ?? 'reports'));
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            $allowed = ['pending', 'resolved', 'rejected'];
+            if ($reportId <= 0 || !in_array($status, $allowed, true)) {
+                if ($isJsonRequest) {
+                    $this->jsonResponse(['ok' => false, 'error' => 'Invalid report status update request.'], 422);
+                    return;
+                }
+                SessionManager::setFlash('error', 'Invalid report status update request.');
+                $this->redirect('/admin/reports');
+                return;
+            }
+
+            $ok = $this->adminModel->updateContentReportStatus($reportId, $status, $adminId, $source);
+            if ($isJsonRequest) {
+                if ($ok) {
+                    $this->jsonResponse(['ok' => true, 'message' => 'Report status updated successfully.', 'status' => $status]);
+                } else {
+                    $this->jsonResponse(['ok' => false, 'error' => 'Failed to update report status.'], 400);
+                }
+                return;
+            }
+
+            if ($ok) {
+                SessionManager::setFlash('success', 'Report status updated successfully.');
+            } else {
+                SessionManager::setFlash('error', 'Failed to update report status.');
+            }
+
+            $this->redirect('/admin/reports');
+        }
+
+        public function removeReportedEvent() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $eventId = (int)($input['event_id'] ?? 0);
+            $reportId = (int)($input['report_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($eventId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Invalid event ID'], 400);
+                return;
+            }
+
+            if ($adminId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Unauthenticated'], 401);
+                return;
+            }
+
+            $removed = $this->adminModel->removeEvent($eventId);
+            if (!$removed) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Failed to remove event'], 400);
+                return;
+            }
+
+            if ($reportId > 0) {
+                $this->adminModel->updateContentReportStatus($reportId, 'resolved', $adminId, 'reports');
+            }
+
+            $this->jsonResponse(['ok' => true, 'message' => 'Event removed successfully']);
+        }
+
+        public function removeReportedFundraiser() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $fundraiserId = (int)($input['fundraiser_id'] ?? 0);
+            $reportId = (int)($input['report_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($fundraiserId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Invalid fundraiser ID'], 400);
+                return;
+            }
+
+            if ($adminId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Unauthenticated'], 401);
+                return;
+            }
+
+            $removed = $this->adminModel->removeFundraiser($fundraiserId);
+            if (!$removed) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Failed to remove fundraiser'], 400);
+                return;
+            }
+
+            if ($reportId > 0) {
+                $this->adminModel->updateContentReportStatus($reportId, 'resolved', $adminId, 'reports');
+            }
+
+            $this->jsonResponse(['ok' => true, 'message' => 'Fundraiser removed successfully']);
+        }
+
         public function posts() {
             $data = [];
             $this->view('admin/v_posts', $data);
@@ -182,6 +388,75 @@
             }
 
             $this->jsonResponse(['ok' => false, 'error' => $result['message'] ?? 'Failed to suspend user'], 400);
+        }
+
+        public function deleteUser() {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                $this->jsonResponse(['ok' => false, 'error' => 'Method not allowed'], 405);
+                return;
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            if (!is_array($input)) {
+                $input = $_POST;
+            }
+
+            $userId = (int)($input['user_id'] ?? 0);
+            $adminId = (int)($_SESSION['user_id'] ?? 0);
+
+            if ($userId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Invalid user ID'], 422);
+                return;
+            }
+
+            if ($adminId <= 0) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Unauthenticated'], 401);
+                return;
+            }
+
+            if ($userId === $adminId) {
+                $this->jsonResponse(['ok' => false, 'error' => 'You cannot delete your own admin account from this screen'], 400);
+                return;
+            }
+
+            $settingsModel = $this->model('M_settings');
+            if (!$settingsModel || !method_exists($settingsModel, 'getUserById') || !method_exists($settingsModel, 'deleteAccount')) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Delete service unavailable'], 500);
+                return;
+            }
+
+            $targetUser = $settingsModel->getUserById($userId);
+            if (!$targetUser) {
+                $this->jsonResponse(['ok' => false, 'error' => 'User not found'], 404);
+                return;
+            }
+
+            $role = strtolower(trim((string)($targetUser->role ?? '')));
+            $name = strtolower(trim((string)($targetUser->name ?? '')));
+            $email = strtolower(trim((string)($targetUser->email ?? '')));
+            $isProtected = (
+                $role === 'admin' ||
+                $role === 'administrator' ||
+                $role === 'system_admin' ||
+                $role === 'system-administrator' ||
+                $role === 'super_admin' ||
+                strpos($role, 'admin') !== false ||
+                $name === 'system administrator' ||
+                $email === 'admin@gradlink.com'
+            );
+
+            if ($isProtected) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Admin accounts cannot be deleted from this screen'], 403);
+                return;
+            }
+
+            $deleted = $settingsModel->deleteAccount($userId);
+            if (!$deleted) {
+                $this->jsonResponse(['ok' => false, 'error' => 'Failed to delete user'], 400);
+                return;
+            }
+
+            $this->jsonResponse(['ok' => true, 'message' => 'User deleted successfully']);
         }
 
         public function liftSuspension() {
@@ -745,6 +1020,45 @@
             http_response_code($status);
             header('Content-Type: application/json');
             echo json_encode($payload);
+        }
+
+        private function resolveExportRoleFilter(): ?string {
+            $role = strtolower(trim((string)($_GET['role'] ?? '')));
+            if ($role === '' || $role === 'all') {
+                return null;
+            }
+
+            if (!in_array($role, ['admin', 'alumni', 'undergrad'], true)) {
+                return null;
+            }
+
+            return $role;
+        }
+
+        private function streamCsvDownload(string $filename, array $headers, array $rows): void {
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+
+            echo "\xEF\xBB\xBF";
+            $output = fopen('php://output', 'w');
+
+            if ($output === false) {
+                exit;
+            }
+
+            fputcsv($output, $headers);
+            foreach ($rows as $row) {
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+            exit;
         }
 
         private function getRecentSystemUpdates(int $limit = 20): array {

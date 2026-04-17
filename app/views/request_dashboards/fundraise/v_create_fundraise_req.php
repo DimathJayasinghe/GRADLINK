@@ -11,11 +11,32 @@
     .tagged-member { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #1a1a1a; border: 1px solid #2f2f2f; border-radius: 999px; color: #e5e7eb; font-size: 0.95rem; }
     .tag-remove { background: none; border: 0; color: #f87171; cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 2px 6px; border-radius: 4px; }
     .tag-remove:hover { color: #ef4444; background: #262626; }
+    .server-error-box {
+        border: 1px solid #dc2626;
+        background: rgba(220, 38, 38, 0.12);
+        color: #fecaca;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-top: 12px;
+    }
+    .server-error-box ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    .server-error-box li {
+        margin: 4px 0;
+    }
 </style>
 
 <?php $styles = ob_get_clean(); ?>
 
 <?php
+    $errors = $data['errors'] ?? [];
+    $old = $data['old'] ?? [];
+    $oldValue = static function(string $key, string $default = '') use ($old): string {
+        return htmlspecialchars((string)($old[$key] ?? $default), ENT_QUOTES, 'UTF-8');
+    };
+
     $sidebar_left = [
         ['label'=>'View All Fundraise Requests', 'url'=>'/fundraiser/all','active'=>false ,'icon'=>'list'],
         ['label'=>'View my Fundraise Requests', 'url'=>'/fundraiser/myrequests','active'=>false, 'icon'=>'user'],
@@ -31,6 +52,16 @@
                 <h2>Create New Request</h2>
             </div>
         </div>
+
+        <?php if (!empty($errors)): ?>
+            <div class="server-error-box">
+                <ul>
+                    <?php foreach ($errors as $error): ?>
+                        <li><?= htmlspecialchars((string)$error, ENT_QUOTES, 'UTF-8') ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
         
         <!-- Progress Bar -->
         <div class="progress-container">
@@ -58,7 +89,7 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="club_name">Club/Society/Team Name:</label>
-                        <input type="text" class="form-control" id="club_name" name="club_name" required>
+                        <input type="text" class="form-control" id="club_name" name="club_name" value="<?= $oldValue('club_name') ?>" required>
                     </div>
                     
                     <div class="form-group">
@@ -68,7 +99,7 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="position">Position in Club/Society/Team:</label>
-                        <input type="text" class="form-control" id="position" name="position" required>
+                        <input type="text" class="form-control" id="position" name="position" value="<?= $oldValue('position') ?>" required>
                     </div>
                     
                     <div class="form-group">
@@ -77,7 +108,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="phone">Applicant Phone Number:</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="<?= $oldValue('phone') ?>" required>
                     </div>
                 </div>
                 <div class="form-section">
@@ -105,17 +136,17 @@
                 <div class="form-section">
                     <div class="form-group">
                         <label class="form-label" for="project_title">Project Title:</label>
-                        <input type="text" class="form-control" id="project_title" name="project_title" required>
+                        <input type="text" class="form-control" id="project_title" name="project_title" value="<?= $oldValue('project_title') ?>" required>
                     </div>
                     <div class="form-section">
                     <div class="form-group">
                         <label class="form-label" for="headline">Short Title/Headline:</label>
-                        <input type="text" class="form-control" id="headline" name="headline" required>
+                        <input type="text" class="form-control" id="headline" name="headline" value="<?= $oldValue('headline') ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="description">Detailed Project Description (for Alumni Website):</label>
-                        <textarea class="form-control" id="description" name="description" style="height: 200px;" required></textarea>
+                        <textarea class="form-control" id="description" name="description" style="height: 200px;" required><?= $oldValue('description') ?></textarea>
                         <p class="form-text">Please provide a comprehensive description of your project, including its purpose, impact, and how funds will be used.</p>
                     </div>
                     
@@ -149,23 +180,23 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="amount_needed">Total Amount Needed (LKR):</label>
-                        <input type="number" class="form-control" id="amount_needed" name="amount_needed" min="0" required>
+                        <input type="number" class="form-control" id="amount_needed" name="amount_needed" min="0" value="<?= $oldValue('amount_needed') ?>" required>
                     </div>
                 </div>
                 <div class="form-section">
                     <div class="form-group">
                         <label class="form-label" for="objective">Purpose/Objective of Fundraising:</label>
-                        <textarea class="form-control" id="objective" name="objective" required></textarea>
+                        <textarea class="form-control" id="objective" name="objective" required><?= $oldValue('objective') ?></textarea>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="start_date">Proposed Start Date:</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="<?= $oldValue('start_date') ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="end_date">Proposed End Date:</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="<?= $oldValue('end_date') ?>" required>
                     </div>
                     
                 </div>
@@ -176,9 +207,9 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="fund_manager">Who will manage the funds? (Name of Treasurer/Committee):</label>
-                        <input type="text" class="form-control" id="fund_manager" name="fund_manager" required>
+                        <input type="text" class="form-control" id="fund_manager" name="fund_manager" value="<?= $oldValue('fund_manager') ?>" required>
                         <label class="form-label" for="fund_manager_contact">Contact Number:</label>
-                        <input type="tel" class="form-control" id="fund_manager_contact" name="fund_manager_contact" required>
+                        <input type="tel" class="form-control" id="fund_manager_contact" name="fund_manager_contact" value="<?= $oldValue('fund_manager_contact') ?>" required>
                     </div>
                 </div>
                 
@@ -187,21 +218,21 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="bank_name">Bank Name:</label>
-                        <input type="text" class="form-control" id="bank_name" name="bank_name" required>
+                        <input type="text" class="form-control" id="bank_name" name="bank_name" value="<?= $oldValue('bank_name') ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="account_number">Account Number:</label>
-                        <input type="text" class="form-control" id="account_number" name="account_number" required>
+                        <input type="text" class="form-control" id="account_number" name="account_number" value="<?= $oldValue('account_number') ?>" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="branch">Branch:</label>
-                        <input type="text" class="form-control" id="branch" name="branch" required>
+                        <input type="text" class="form-control" id="branch" name="branch" value="<?= $oldValue('branch') ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="account_holder">Account Holder (University/Club/Society):</label>
-                        <input type="text" class="form-control" id="account_holder" name="account_holder" required>
+                        <input type="text" class="form-control" id="account_holder" name="account_holder" value="<?= $oldValue('account_holder') ?>" required>
                     </div>
                 </div>
                 
@@ -224,10 +255,10 @@
                             <div class="form-group">
                                 <label class="form-label" for="advisor_name">Lecture in charge of Club/Society (If applicable)</label>
                                 <div class="tag-input-wrapper">
-                                    <input type="text" class="form-control" id="advisor_name" name="advisor_name" placeholder="Type @ to search" autocomplete="off" oninput="getTags(this)" onchange="getTags(this)">
+                                    <input type="text" class="form-control" id="advisor_name" name="advisor_name" placeholder="Type @ to search" autocomplete="off" oninput="getTags(this)" onchange="getTags(this)" value="<?= $oldValue('advisor_name') ?>">
                                     <div id="advisor-suggestions" class="tag-suggestions"></div>
                                 </div>
-                                <input type="hidden" id="advisor_id" name="advisor_id">
+                                <input type="hidden" id="advisor_id" name="advisor_id" value="<?= $oldValue('advisor_id') ?>">
                                 <p class="form-text">Pick a lecturer to lock their user id into the request.</p>
                             </div>
                         </div>

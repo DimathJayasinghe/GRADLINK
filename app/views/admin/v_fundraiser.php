@@ -408,8 +408,12 @@ function closeCreateModal() {
 }
 
 // Quick approve
-function quickApprove(id) {
-    if (!confirm('Are you sure you want to approve this fundraiser?')) return;
+async function quickApprove(id) {
+    const confirmed = await AdminPopup.confirm('Are you sure you want to approve this fundraiser?', {
+        title: 'Approve Fundraiser',
+        confirmText: 'Approve'
+    });
+    if (!confirmed) return;
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = URLROOT + '/admin/approveFundraiser';
@@ -419,8 +423,13 @@ function quickApprove(id) {
 }
 
 // Hold fundraiser
-function holdFund(id) {
-    if (!confirm('Are you sure you want to put this fundraiser on hold?')) return;
+async function holdFund(id) {
+    const confirmed = await AdminPopup.confirm('Are you sure you want to put this fundraiser on hold?', {
+        title: 'Hold Fundraiser',
+        confirmText: 'Hold',
+        danger: true
+    });
+    if (!confirmed) return;
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = URLROOT + '/admin/holdFundraiser';
@@ -430,8 +439,12 @@ function holdFund(id) {
 }
 
 // Complete fundraiser (mark as completed)
-function completeFund(id) {
-    if (!confirm('Are you sure you want to mark this fundraiser as completed?')) return;
+async function completeFund(id) {
+    const confirmed = await AdminPopup.confirm('Are you sure you want to mark this fundraiser as completed?', {
+        title: 'Complete Fundraiser',
+        confirmText: 'Complete'
+    });
+    if (!confirmed) return;
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = URLROOT + '/admin/completeFundraiser';
@@ -441,10 +454,17 @@ function completeFund(id) {
 }
 
 // Bulk approve
-function bulkApprove() {
+async function bulkApprove() {
     const checked = document.querySelectorAll('.fund-select:checked');
-    if (checked.length === 0) { alert('Select at least one fundraiser.'); return; }
-    if (!confirm(`Approve ${checked.length} fundraiser(s)?`)) return;
+    if (checked.length === 0) {
+        await AdminPopup.alert('Select at least one fundraiser.', { title: 'Bulk Approve' });
+        return;
+    }
+    const confirmed = await AdminPopup.confirm(`Approve ${checked.length} fundraiser(s)?`, {
+        title: 'Bulk Approve',
+        confirmText: 'Approve'
+    });
+    if (!confirmed) return;
     
     const form = document.createElement('form');
     form.method = 'POST';
@@ -461,11 +481,19 @@ function bulkApprove() {
 }
 
 // Bulk reject
-function bulkReject() {
+async function bulkReject() {
     const checked = document.querySelectorAll('.fund-select:checked');
-    if (checked.length === 0) { alert('Select at least one fundraiser.'); return; }
-    const reason = prompt('Enter rejection reason for all selected:');
-    if (!reason) return;
+    if (checked.length === 0) {
+        await AdminPopup.alert('Select at least one fundraiser.', { title: 'Bulk Reject' });
+        return;
+    }
+    const reason = await AdminPopup.prompt('Enter rejection reason for all selected:', '', {
+        title: 'Bulk Reject',
+        confirmText: 'Reject',
+        danger: true,
+        required: true
+    });
+    if (reason === null) return;
     
     const form = document.createElement('form');
     form.method = 'POST';

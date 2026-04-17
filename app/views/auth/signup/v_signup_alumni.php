@@ -4,6 +4,7 @@
 <?php
 // Import the skills data
 $skills = require APPROOT . '/data/skills_data.php';
+$countries = require APPROOT . '/data/countries_data.php';
 ?>
 <style>
     /* Container styles */
@@ -153,6 +154,17 @@ $skills = require APPROOT . '/data/skills_data.php';
                             <?php endfor; ?>
                         </select>
                     </div>
+                </div>
+
+                <?php $selectedCountry = isset($data['country']) ? (string)$data['country'] : 'Sri Lanka'; ?>
+                <div class="form-group">
+                    <select id="country" name="country" required aria-label="Country">
+                        <?php foreach ($countries as $country): ?>
+                            <option value="<?php echo htmlspecialchars($country); ?>" <?php echo ($selectedCountry === $country) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($country); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <div class="form-group">
@@ -629,6 +641,7 @@ $skills = require APPROOT . '/data/skills_data.php';
     }
 
     .form-group input,
+    .form-group select,
     .form-group textarea,
     .select-field {
         width: 100%;

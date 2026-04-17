@@ -550,24 +550,11 @@ class settings extends Controller{
 
             if (!$settings) {
                 $settings = (object)[
-                    'email_enabled' => 1,
-                    'sound_enabled' => 0,
-                    'mentions_enabled' => 1,
-                    'followers_enabled' => 1,
-                    'engagement_enabled' => 1,
-                    'dnd_enabled' => 0,
-                    'dnd_start' => null,
-                    'dnd_end' => null,
-					'dnd_days' => null
+                    'email_enabled' => 0
                 ];
             } else {
                 // Ensure consistent scalar types for the frontend (PDO may return strings)
                 $settings->email_enabled = (int)($settings->email_enabled ?? 0);
-                $settings->sound_enabled = (int)($settings->sound_enabled ?? 0);
-                $settings->mentions_enabled = (int)($settings->mentions_enabled ?? 1);
-                $settings->followers_enabled = (int)($settings->followers_enabled ?? 1);
-                $settings->engagement_enabled = (int)($settings->engagement_enabled ?? 1);
-                $settings->dnd_enabled = (int)($settings->dnd_enabled ?? 0);
             }
 
             $this->jsonResponse(['success' => true, 'settings' => $settings]);
@@ -590,23 +577,8 @@ class settings extends Controller{
             $input = $this->getJsonInput();
 
             $payload = [
-                'email_enabled' => !empty($input['email_enabled']) ? 1 : 0,
-                'sound_enabled' => !empty($input['sound_enabled']) ? 1 : 0,
-                'mentions_enabled' => !empty($input['mentions_enabled']) ? 1 : 0,
-                'followers_enabled' => !empty($input['followers_enabled']) ? 1 : 0,
-                'engagement_enabled' => !empty($input['engagement_enabled']) ? 1 : 0,
-                'dnd_enabled' => !empty($input['dnd_enabled']) ? 1 : 0,
-                'dnd_start' => isset($input['dnd_start']) ? trim((string)$input['dnd_start']) : null,
-                'dnd_end' => isset($input['dnd_end']) ? trim((string)$input['dnd_end']) : null,
-                'dnd_days' => isset($input['dnd_days']) ? trim((string)$input['dnd_days']) : null
+                'email_enabled' => !empty($input['email_enabled']) ? 1 : 0
             ];
-
-            if ($payload['dnd_enabled']) {
-                if (empty($payload['dnd_start']) || empty($payload['dnd_end'])) {
-                    $this->jsonResponse(['success' => false, 'error' => 'DND start and end times are required when DND is enabled'], 422);
-                    return;
-                }
-            }
 
             $saved = $this->model->upsertNotificationSettings($userId, $payload);
 

@@ -82,6 +82,12 @@ class Report extends Controller
         $details = $_POST['details'] ?? null;
         $link = $_POST['link'] ?? null;
 
+        if (is_numeric($profileId) && (int)$profileId === (int)$userId) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'cannot_report_self', 'message' => 'You cannot report your own profile']);
+            return;
+        }
+
         $this->_submitGenericReport($userId, 'profile', $profileId, $category, $details, $link);
     }
 
@@ -92,7 +98,28 @@ class Report extends Controller
         $details = $_POST['details'] ?? null;
         $link = $_POST['link'] ?? null;
 
-        $this->_submitGenericReport($userId, 'event', $eventId, $category, $details, $link);
+        $eventIdInt = is_numeric($eventId) ? (int)$eventId : 0;
+        if ($eventIdInt <= 0) {
+            $this->_submitGenericReport($userId, 'event', $eventId, $category, $details, $link);
+            return;
+        }
+
+        $eventModel = $this->model('M_event');
+        $event = $eventModel ? $eventModel->findById($eventIdInt) : null;
+        if (!$event) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'event_not_found', 'message' => 'Event not found']);
+            return;
+        }
+
+        $organizerId = (int)($event->organizer_id ?? 0);
+        if ($organizerId > 0 && $organizerId === (int)$userId) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'cannot_report_own_event', 'message' => 'You cannot report your own event']);
+            return;
+        }
+
+        $this->_submitGenericReport($userId, 'event', $eventIdInt, $category, $details, $link);
     }
 
     function _report_fundraiser(){
@@ -102,7 +129,28 @@ class Report extends Controller
         $details = $_POST['details'] ?? null;
         $link = $_POST['link'] ?? null;
 
-        $this->_submitGenericReport($userId, 'fundraiser', $fundraiserId, $category, $details, $link);
+        $fundraiserIdInt = is_numeric($fundraiserId) ? (int)$fundraiserId : 0;
+        if ($fundraiserIdInt <= 0) {
+            $this->_submitGenericReport($userId, 'fundraiser', $fundraiserId, $category, $details, $link);
+            return;
+        }
+
+        $fundraiserModel = $this->model('M_fundraiser');
+        $fundraiser = $fundraiserModel ? $fundraiserModel->getFundraiserById($fundraiserIdInt) : null;
+        if (!$fundraiser) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'fundraiser_not_found', 'message' => 'Fundraiser campaign not found']);
+            return;
+        }
+
+        $ownerId = (int)($fundraiser->user_id ?? 0);
+        if ($ownerId > 0 && $ownerId === (int)$userId) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'cannot_report_own_fundraiser', 'message' => 'You cannot report your own fundraiser campaign']);
+            return;
+        }
+
+        $this->_submitGenericReport($userId, 'fundraiser', $fundraiserIdInt, $category, $details, $link);
     }
 
     private function _submitGenericReport($userId, $type, $itemId, $category, $details, $link){

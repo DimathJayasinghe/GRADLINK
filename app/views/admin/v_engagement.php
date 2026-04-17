@@ -451,7 +451,7 @@
         markerClusterGroup.clearLayers();
         
         if (!locations || locations.length === 0) {
-            alert('No location data available.');
+            AdminPopup.alert('No location data available.', { title: 'Location Data' });
             return;
         }
         
@@ -775,7 +775,7 @@
         const exportEventsBtn = document.getElementById('export-events');
         if(exportEventsBtn){
             exportEventsBtn.addEventListener('click', function(){
-                downloadCSV('events_export.csv', [['id','title','status','start_datetime','venue']]);
+                window.location.href = `<?php echo URLROOT; ?>/admin/exportEventsCsv${roleQuery}`;
             });
         }
     });

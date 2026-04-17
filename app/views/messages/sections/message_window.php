@@ -23,6 +23,11 @@ async function startConversation(userId) {
         const response = await fetch(`<?php echo URLROOT; ?>/messages/getConversation?userId=${userId}`);
         const data = await response.json();
 
+        if (!data.success) {
+            chatRoom.innerHTML = `<div class="chat_error">${escapeHtml(String(data.error || 'Unable to open this conversation.'))}</div>`;
+            return;
+        }
+
         chatRoom.innerHTML = `
         <div class="message-section" id="conversationSection">
             <div class="message-section-header">
@@ -125,6 +130,11 @@ async function loadMessages(userId) {
         const wasAtBottom = isAtBottom(chatMessages);
         const response = await fetch(`<?php echo URLROOT; ?>/messages/getMessages?userId=${userId}`);
         const data = await response.json();
+
+        if (!data.success) {
+            chatMessages.innerHTML = `<div class="error">${escapeHtml(String(data.error || 'Failed to load messages'))}</div>`;
+            return;
+        }
 
         if (data.messages) {
             chatMessages.innerHTML = ''; // clear old

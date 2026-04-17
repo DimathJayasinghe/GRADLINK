@@ -146,7 +146,7 @@ $flashMessages = SessionManager::getFlash();
                                         <input type="hidden" name="suspension_id" value="<?php echo (int)($row->suspension_id ?? 0); ?>">
                                         <button type="submit" class="admin-btn">Allow Access</button>
                                     </form>
-                                    <form method="post" action="<?php echo URLROOT; ?>/admin/removeSuspendedUser" onsubmit="return confirm('Remove this user account from the system permanently?');">
+                                    <form method="post" action="<?php echo URLROOT; ?>/admin/removeSuspendedUser" class="js-remove-suspended-form">
                                         <input type="hidden" name="suspension_id" value="<?php echo (int)($row->suspension_id ?? 0); ?>">
                                         <button type="submit" class="admin-btn admin-btn-danger">Remove User</button>
                                     </form>
@@ -201,5 +201,23 @@ $flashMessages = SessionManager::getFlash();
         </table>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.js-remove-suspended-form').forEach((form) => {
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const confirmed = await AdminPopup.confirm('Remove this user account from the system permanently?', {
+                title: 'Remove Suspended User',
+                confirmText: 'Remove',
+                danger: true
+            });
+            if (confirmed) {
+                form.submit();
+            }
+        });
+    });
+});
+</script>
 <?php $content = ob_get_clean(); ?>
 <?php require APPROOT . '/views/admin/dashboard_layout.php'; ?>

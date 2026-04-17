@@ -1,6 +1,7 @@
 -- NOTE: If this table already exists in your DB, run the following to add the new columns:
 -- ALTER TABLE `unregisted_alumni` ADD COLUMN `explain_yourself` text DEFAULT NULL AFTER `bio`;
 -- ALTER TABLE `unregisted_alumni` ADD COLUMN `gender` ENUM('male','female') NULL AFTER `display_name`;
+-- ALTER TABLE `unregisted_alumni` ADD COLUMN `country` VARCHAR(100) NOT NULL DEFAULT 'Sri Lanka' AFTER `batch_no`;
 
 CREATE TABLE IF NOT EXISTS `unregisted_alumni` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `unregisted_alumni` (
   `skills` text DEFAULT NULL,
   `nic` varchar(20) DEFAULT NULL,
   `batch_no` int(11) DEFAULT NULL,
+  `country` varchar(100) NOT NULL DEFAULT 'Sri Lanka',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   PRIMARY KEY (`id`)

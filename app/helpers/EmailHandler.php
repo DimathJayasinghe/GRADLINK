@@ -66,7 +66,7 @@ class EmailHandler
         return self::send($email, $subject, $htmlBody, '', $plainBody);
     }
 
-    public static function sendNotificationEmail(string $email, string $recipientName, string $type, string $messageText, ?string $link = null): bool
+    public static function buildNotificationEmailPayload(string $recipientName, string $type, string $messageText, ?string $link = null): array
     {
         $typeLabel = ucwords(str_replace('_', ' ', trim($type)));
         $safeName = trim($recipientName) !== '' ? trim($recipientName) : 'there';
@@ -90,7 +90,25 @@ class EmailHandler
             $plainBody .= "\nView on Gradlink: " . $link;
         }
 
-        return self::send($email, $subject, $htmlBody, $safeName, $plainBody);
+        return [
+            'to_name' => $safeName,
+            'subject' => $subject,
+            'html_body' => $htmlBody,
+            'plain_body' => $plainBody,
+        ];
+    }
+
+    public static function sendNotificationEmail(string $email, string $recipientName, string $type, string $messageText, ?string $link = null): bool
+    {
+        $payload = self::buildNotificationEmailPayload($recipientName, $type, $messageText, $link);
+
+        return self::send(
+            $email,
+            $payload['subject'],
+            $payload['html_body'],
+            $payload['to_name'],
+            $payload['plain_body']
+        );
     }
 
     private static function resolveEncryptionMode(): string

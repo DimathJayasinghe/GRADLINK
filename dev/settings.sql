@@ -53,17 +53,25 @@ DO
 DELIMITER ;
 CREATE TABLE user_notification_settings (
   user_id INT PRIMARY KEY,
-  email_enabled TINYINT(1) DEFAULT 1,
-  mentions_enabled TINYINT(1) DEFAULT 1,
-  followers_enabled TINYINT(1) DEFAULT 1,
-  engagement_enabled TINYINT(1) DEFAULT 1,
-  dnd_enabled TINYINT(1) DEFAULT 0,
-  dnd_start TIME NULL,
-  dnd_end TIME NULL,
-  dnd_days ENUM('weekdays','weekends','everyday') NULL,
-  in_app_disabled_types TEXT NULL,
+  email_enabled TINYINT(1) NOT NULL DEFAULT 0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE email_jobs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  to_email VARCHAR(255) NOT NULL,
+  to_name VARCHAR(255) NULL,
+  subject VARCHAR(255) NOT NULL,
+  html_body MEDIUMTEXT NOT NULL,
+  plain_body TEXT NULL,
+  status ENUM('pending','processing','failed') NOT NULL DEFAULT 'pending',
+  attempts INT NOT NULL DEFAULT 0,
+  reserved_at DATETIME NULL,
+  last_error TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_email_jobs_status_id (status, id)
 );
 CREATE TABLE support_tickets (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
