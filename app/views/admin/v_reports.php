@@ -49,6 +49,47 @@ $fundraiserReports = $data['fundraiserReports'] ?? [];
     line-height: 1.35;
 }
 
+.reports-filter-panel {
+    margin-bottom: 1rem;
+    border: 1px solid var(--border, #3a3a3a);
+    border-radius: 0.7rem;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.8rem;
+}
+
+.reports-filter-controls {
+    display: grid;
+    grid-template-columns: minmax(130px, 160px) minmax(150px, 190px) 1fr auto;
+    gap: 0.55rem;
+    align-items: center;
+}
+
+.reports-filter-input {
+    height: 34px;
+    border-radius: 0.4rem;
+    border: 1px solid #3f4654;
+    background-color: #262a32;
+    color: #f0f4ff;
+    padding: 0 0.65rem;
+    font-size: 0.84rem;
+}
+
+.reports-filter-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.reports-filter-reset {
+    height: 34px;
+}
+
+.reports-filter-summary {
+    margin-top: 0.55rem;
+    font-size: 0.82rem;
+    color: #a8b2c4;
+}
+
 .reports-table-wrapper {
     overflow-x: auto;
     border-top: 1px solid var(--border, #3a3a3a);
@@ -303,6 +344,10 @@ $fundraiserReports = $data['fundraiserReports'] ?? [];
         align-items: center;
         justify-content: center;
     }
+
+    .reports-filter-controls {
+        grid-template-columns: 1fr;
+    }
 }
 </style>
 <?php $styles = ob_get_clean()?>
@@ -328,6 +373,32 @@ $fundraiserReports = $data['fundraiserReports'] ?? [];
 <div class="admin-header">
     <h1>Reports Moderation</h1>
 
+</div>
+
+<div class="reports-filter-panel">
+    <div class="reports-filter-controls">
+        <select id="reportsFilterStatus" class="admin-select">
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="resolved">Resolved</option>
+            <option value="rejected">Rejected</option>
+        </select>
+        <select id="reportsFilterGroup" class="admin-select">
+            <option value="all">All Report Types</option>
+            <option value="post">Post Reports</option>
+            <option value="profile">Profile Reports</option>
+            <option value="event">Event Reports</option>
+            <option value="fundraiser">Fundraiser Reports</option>
+        </select>
+        <input
+            type="text"
+            id="reportsFilterQuery"
+            class="reports-filter-input"
+            placeholder="Search by reporter, content, category, or date"
+        >
+        <button type="button" id="reportsFilterReset" class="admin-btn reports-filter-reset">Reset</button>
+    </div>
+    <div id="reportsFilterSummary" class="reports-filter-summary"></div>
 </div>
 
 <div class="admin-card">
@@ -812,6 +883,186 @@ document.addEventListener('DOMContentLoaded', function() {
         return String(str ?? '').replace(/[&<>"']/g, (m) => map[m]);
     };
 
+    const reportStatusFilter = document.getElementById('reportsFilterStatus');
+    const reportGroupFilter = document.getElementById('reportsFilterGroup');
+    const reportQueryFilter = document.getElementById('reportsFilterQuery');
+    const reportFilterReset = document.getElementById('reportsFilterReset');
+    const reportFilterSummary = document.getElementById('reportsFilterSummary');
+
+    const reportTableConfigs = [
+        {
+            id: 'contentReportsTable',
+            group: 'post',
+            baseEmptyText: 'No post reports yet.',
+            filteredEmptyText: 'No post reports match the current filters.'
+        },
+        {
+            id: 'userReportsTable',
+            group: 'profile',
+            baseEmptyText: 'No profile reports yet.',
+            filteredEmptyText: 'No profile reports match the current filters.'
+        },
+        {
+            id: 'eventReportsTable',
+            group: 'event',
+            baseEmptyText: 'No event reports yet.',
+            filteredEmptyText: 'No event reports match the current filters.'
+        },
+        {
+            id: 'fundraiserReportsTable',
+            group: 'fundraiser',
+            baseEmptyText: 'No fundraiser reports yet.',
+            filteredEmptyText: 'No fundraiser reports match the current filters.'
+        }
+    ];
+
+    const reportTables = reportTableConfigs.map((config) => {
+        const table = document.getElementById(config.id);
+        if (!table) {
+            return null;
+        }
+
+        const tbody = table.querySelector('tbody');
+        const card = table.closest('.admin-card');
+        const countBadge = card ? card.querySelector('.status-badge.status-pending') : null;
+        const rows = tbody
+            ? Array.from(tbody.querySelectorAll('tr')).filter((row) => row.querySelector('.status-badge'))
+            : [];
+
+        return {
+            ...config,
+            table,
+            tbody,
+            card,
+            countBadge,
+            columnCount: table.querySelectorAll('thead th').length || 7,
+            rows
+        };
+    }).filter(Boolean);
+
+    const clearMessageRows = (state) => {
+        if (!state || !state.tbody) {
+            return;
+        }
+
+        Array.from(state.tbody.querySelectorAll('tr')).forEach((row) => {
+            if (!state.rows.includes(row)) {
+                row.remove();
+            }
+        });
+
+        state.tbody.querySelectorAll('.report-empty-row, .report-filter-empty-row').forEach((row) => {
+            row.remove();
+        });
+    };
+
+    const ensureMessageRow = (state, message, cssClass) => {
+        if (!state || !state.tbody) {
+            return;
+        }
+
+        clearMessageRows(state);
+        const tr = document.createElement('tr');
+        tr.className = cssClass;
+        tr.innerHTML = `<td colspan="${state.columnCount}">${esc(message)}</td>`;
+        state.tbody.appendChild(tr);
+    };
+
+    const hasActiveFilters = () => {
+        const statusValue = reportStatusFilter ? reportStatusFilter.value : 'all';
+        const groupValue = reportGroupFilter ? reportGroupFilter.value : 'all';
+        const queryValue = reportQueryFilter ? reportQueryFilter.value.trim() : '';
+        return statusValue !== 'all' || groupValue !== 'all' || queryValue !== '';
+    };
+
+    const applyReportFilters = () => {
+        const statusValue = reportStatusFilter ? reportStatusFilter.value : 'all';
+        const groupValue = reportGroupFilter ? reportGroupFilter.value : 'all';
+        const queryValue = reportQueryFilter ? reportQueryFilter.value.trim().toLowerCase() : '';
+        const activeFilters = hasActiveFilters();
+
+        let totalRows = 0;
+        let visibleRows = 0;
+
+        reportTables.forEach((state) => {
+            if (!state.table || !state.tbody) {
+                return;
+            }
+
+            clearMessageRows(state);
+
+            const groupMatches = groupValue === 'all' || state.group === groupValue;
+            if (state.card) {
+                state.card.style.display = groupMatches ? '' : 'none';
+            }
+            if (!groupMatches) {
+                return;
+            }
+
+            if (!state.rows.length) {
+                ensureMessageRow(state, state.baseEmptyText, 'report-empty-row');
+                return;
+            }
+
+            let tableVisible = 0;
+            state.rows.forEach((row) => {
+                const badge = row.querySelector('.status-badge');
+                const rowStatus = badge ? String(badge.textContent || '').trim().toLowerCase() : '';
+                const statusMatches = statusValue === 'all' || rowStatus === statusValue;
+                const queryMatches = queryValue === '' || String(row.textContent || '').toLowerCase().includes(queryValue);
+                const showRow = statusMatches && queryMatches;
+
+                row.style.display = showRow ? '' : 'none';
+
+                totalRows += 1;
+                if (showRow) {
+                    visibleRows += 1;
+                    tableVisible += 1;
+                }
+            });
+
+            if (tableVisible === 0) {
+                ensureMessageRow(
+                    state,
+                    activeFilters ? state.filteredEmptyText : state.baseEmptyText,
+                    activeFilters ? 'report-filter-empty-row' : 'report-empty-row'
+                );
+            }
+
+            if (state.countBadge) {
+                state.countBadge.textContent = `${state.rows.length} total`;
+            }
+        });
+
+        if (reportFilterSummary) {
+            if (totalRows === 0) {
+                reportFilterSummary.textContent = activeFilters
+                    ? 'No reports match the current filters.'
+                    : 'No reports available.';
+            } else {
+                reportFilterSummary.textContent = `Showing ${visibleRows} of ${totalRows} reports`;
+            }
+        }
+    };
+
+    if (reportStatusFilter) {
+        reportStatusFilter.addEventListener('change', applyReportFilters);
+    }
+    if (reportGroupFilter) {
+        reportGroupFilter.addEventListener('change', applyReportFilters);
+    }
+    if (reportQueryFilter) {
+        reportQueryFilter.addEventListener('input', applyReportFilters);
+    }
+    if (reportFilterReset) {
+        reportFilterReset.addEventListener('click', () => {
+            if (reportStatusFilter) reportStatusFilter.value = 'all';
+            if (reportGroupFilter) reportGroupFilter.value = 'all';
+            if (reportQueryFilter) reportQueryFilter.value = '';
+            applyReportFilters();
+        });
+    }
+
     // View report
     document.querySelectorAll('.view-report').forEach(btn => {
         btn.onclick = function() {
@@ -877,6 +1128,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     badge.className = `status-badge status-${selectedStatus}`;
                     badge.textContent = selectedStatus.charAt(0).toUpperCase() + selectedStatus.slice(1);
                 }
+
+                applyReportFilters();
             } catch (err) {
                 console.error('Status update failed', err);
                 await AdminPopup.alert(err && err.message ? err.message : 'Failed to save report status', {
@@ -950,31 +1203,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    const removeRowAndRefreshCount = (btn, emptyMessage) => {
+    const removeRowAndRefreshCount = (btn) => {
         const row = btn.closest('tr');
         if (!row) {
             return;
         }
 
-        const tbody = row.parentElement;
-        const table = row.closest('table');
-        const card = row.closest('.admin-card');
-        row.remove();
-
-        if (card) {
-            const countBadge = card.querySelector('.status-badge.status-pending');
-            if (countBadge) {
-                const activeRows = tbody ? tbody.querySelectorAll('tr').length : 0;
-                countBadge.textContent = `${activeRows} total`;
+        const tableState = reportTables.find((state) => state.rows.includes(row));
+        if (tableState) {
+            tableState.rows = tableState.rows.filter((item) => item !== row);
+            if (tableState.countBadge) {
+                tableState.countBadge.textContent = `${tableState.rows.length} total`;
             }
         }
 
-        if (tbody && tbody.querySelectorAll('tr').length === 0) {
-            const colspan = table ? table.querySelectorAll('thead th').length : 7;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td colspan="${colspan}">${emptyMessage}</td>`;
-            tbody.appendChild(tr);
-        }
+        row.remove();
+        applyReportFilters();
     };
 
     document.querySelectorAll('.remove-event-btn').forEach(btn => {
@@ -1020,7 +1264,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 await AdminPopup.alert((json && json.message) ? json.message : 'Event removed successfully', {
                     title: 'Remove Event'
                 });
-                removeRowAndRefreshCount(this, 'No event reports yet.');
+                removeRowAndRefreshCount(this);
             } catch (err) {
                 console.error('Event removal failed', err);
                 await AdminPopup.alert(err && err.message ? err.message : 'Failed to remove event', {
@@ -1076,7 +1320,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 await AdminPopup.alert((json && json.message) ? json.message : 'Campaign removed successfully', {
                     title: 'Remove Campaign'
                 });
-                removeRowAndRefreshCount(this, 'No fundraiser reports yet.');
+                removeRowAndRefreshCount(this);
             } catch (err) {
                 console.error('Fundraiser removal failed', err);
                 await AdminPopup.alert(err && err.message ? err.message : 'Failed to remove campaign', {
@@ -1088,6 +1332,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    applyReportFilters();
 });
 </script>
 <?php $content = ob_get_clean(); ?>
