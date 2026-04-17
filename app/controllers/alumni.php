@@ -37,7 +37,7 @@ class alumni extends Controller{
                 'selected_req_id' => $selected_req_id,
             ];
             if (SessionManager::hasRole('admin')){
-                $this->view("/admin/verifications", $data);
+                $this->view("/admin/v_verifications", $data);
             }
             else if (SessionManager::isSpecialAlumni()){
                 $this->view("/alumni_approval/approval_dashboard", $data);
