@@ -119,6 +119,11 @@
     color: #dc3545;
 }
 
+.status-completed {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196f3;
+}
+
 #analytics-charts {
     margin-top: 2rem;
     padding: 1.5rem;
@@ -144,6 +149,93 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.campaign-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-top: 0.9rem;
+}
+
+.report-campaign-btn {
+    border: 1px solid rgba(220, 53, 69, 0.45);
+    border-radius: var(--radius-sm);
+    color: #fff;
+    background: #dc3545;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.58rem 1rem;
+}
+
+.fundraise-report-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.62);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+    padding: 1rem;
+}
+
+.fundraise-report-modal {
+    width: min(540px, 100%);
+    background: var(--bg-alt, #161b22);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.fundraise-report-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+}
+
+.fundraise-report-header h3 {
+    margin: 0;
+    color: var(--text);
+}
+
+.fundraise-report-close {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0.3rem 0.55rem;
+}
+
+.fundraise-report-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.fundraise-report-group label {
+    font-size: 0.86rem;
+    color: var(--muted);
+}
+
+.fundraise-report-group select,
+.fundraise-report-group textarea,
+.fundraise-report-group input {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--input, #0f141a);
+    color: var(--text);
+    padding: 0.55rem 0.7rem;
+}
+
+.fundraise-report-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.7rem;
 }
 
 @media (max-width: 768px) {
@@ -185,6 +277,15 @@
         <div class="analytics-header">
             <h2>Analytics for: <?php echo htmlspecialchars($target_post->title); ?></h2>
             <p class="description"><?php echo htmlspecialchars($target_post->description); ?></p>
+            
+            <?php if (!empty($target_post->project_poster)): ?>
+                <div class="project-poster-banner" style="margin: 1.5rem 0;">
+                    <img src="<?php echo URLROOT . '/media/fundraiser/' . basename($target_post->project_poster); ?>" 
+                         alt="<?php echo htmlspecialchars($target_post->title); ?> - Project Poster" 
+                         style="width: 100%; max-height: 400px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                         onerror="this.parentElement.style.display='none';">
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="analytics-info">
@@ -227,26 +328,280 @@
         <div class="progress-container">
             <div class="progress-fill" style="width: <?php echo $percentage; ?>%"></div>
         </div>
-        
+
         <?php if (!$expired): ?>
             <p>Time Left: <?php echo $timeleft->days; ?> days</p>
         <?php endif; ?>
-        
-        <p class="status">Status: 
+
+        <p class="status">Status:
             <span class="status-badge status-<?php echo strtolower($target_post->status); ?>">
                 <?php echo htmlspecialchars($target_post->status); ?>
             </span>
         </p>
-        <button style="background-color:#4caf50" onclick="GL_openDonationModal()">
-            <span class="btn" style="color:#ffffff">Make a Donation</span>
-        </button>
 
-        <!-- Analytics charts with placeholders -->
-        <div id="analytics-charts">
-            <h3>Fundraising Analytics</h3>
-            <div class="chart-placeholder">
-                <p>charts will be displayed here</p>
+        <?php
+        $canDonate = in_array($target_post->status, ['Approved', 'Active']) && !$expired;
+        ?>
+
+        <div class="campaign-action-row">
+            <?php if ($canDonate): ?>
+                <button style="background-color:#4caf50" onclick="GL_openDonationModal()">
+                    <span class="btn" style="color:#ffffff">Make a Donation</span>
+                </button>
+            <?php endif; ?>
+
+            <button
+                type="button"
+                id="open-fundraiser-report-modal"
+                class="report-campaign-btn"
+                data-fundraiser-id="<?php echo (int)($target_post->req_id ?? 0); ?>"
+                data-report-endpoint="<?php echo URLROOT; ?>/report/submitReport/fundraiser"
+            >Report Campaign</button>
+        </div>
+
+        <?php if (!$canDonate): ?>
+            <?php if ($target_post->status === 'Pending'): ?>
+                <p style="color: var(--warning); margin-top: 1rem; padding: 0.75rem; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-md);">
+                    ⏳ This campaign is pending approval. Donations will be enabled once approved.
+                </p>
+            <?php elseif ($target_post->status === 'Rejected'): ?>
+                <p style="color: var(--danger); margin-top: 1rem; padding: 0.75rem; background: rgba(220, 53, 69, 0.1); border-radius: var(--radius-md);">
+                    ❌ This campaign has been rejected and cannot accept donations.
+                    <?php if (!empty($target_post->rejection_reason)): ?>
+                        <br><strong>Reason:</strong> <?php echo htmlspecialchars($target_post->rejection_reason); ?>
+                    <?php endif; ?>
+                </p>
+            <?php elseif ($expired): ?>
+                <p style="color: var(--muted); margin-top: 1rem; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border-radius: var(--radius-md);">
+                    ⏰ This campaign has expired and is no longer accepting donations.
+                </p>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <div id="fundraiserReportModal" class="fundraise-report-overlay" style="display:none;">
+            <div class="fundraise-report-modal">
+                <div class="fundraise-report-header">
+                    <h3>Report Fundraiser Campaign</h3>
+                    <button type="button" class="fundraise-report-close" data-action="close">X</button>
+                </div>
+                <form id="fundraiser-report-form" novalidate>
+                    <div class="fundraise-report-group">
+                        <label for="fundraiserReportCategory">Category</label>
+                        <select id="fundraiserReportCategory" required>
+                            <option value="" disabled selected>Select a category</option>
+                            <option>Spam</option>
+                            <option>Harassment or bullying</option>
+                            <option>Hate or abusive content</option>
+                            <option>Misinformation</option>
+                            <option>Fraud or suspicious fundraising</option>
+                            <option>Illegal or dangerous acts</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="fundraise-report-group">
+                        <label for="fundraiserReportDetails">Details (optional)</label>
+                        <textarea id="fundraiserReportDetails" rows="4" placeholder="Add any details or context..."></textarea>
+                    </div>
+                    <div class="fundraise-report-group">
+                        <label for="fundraiserReportLink">Reference link (optional)</label>
+                        <input type="url" id="fundraiserReportLink" placeholder="https://..." />
+                    </div>
+                    <div class="fundraise-report-actions">
+                        <button type="button" class="btn" data-action="cancel">Cancel</button>
+                        <button type="submit" class="btn" style="background:var(--primary);color:#fff;">Submit Report</button>
+                    </div>
+                </form>
             </div>
+        </div>
+
+        
+        <!-- Donation Timeline & Impact Visualization -->
+        <div id="donation-analytics" style="margin-top: 2rem;">
+            <h3 style="margin-bottom: 1.5rem; font-weight: 600; font-size: 1.3rem; color: var(--text);">Donation Analytics</h3>
+            
+            <?php if (!empty($data['donations']) && count($data['donations']) > 0): ?>
+                <?php 
+                // Check if current user is the campaign owner
+                $isOwner = isset($_SESSION['user_id']) && $_SESSION['user_id'] == $target_post->user_id;
+                ?>
+                
+                <!-- Donation Stats Summary (Owner Only) -->
+                <?php if ($isOwner): ?>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div style="background: rgba(76, 175, 80, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #4caf50;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Total Donors</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #4caf50;"><?php echo count($data['donations']); ?></p>
+                        </div>
+                        <div style="background: rgba(33, 150, 243, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #2196f3;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Average Donation</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #2196f3;">
+                                Rs.<?php echo number_format($target_post->raised_amount / count($data['donations']), 2); ?>
+                            </p>
+                        </div>
+                        <div style="background: rgba(255, 152, 0, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid #ff9800;">
+                            <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Remaining</p>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #ff9800;">
+                                Rs.<?php echo number_format($target_post->target_amount - $target_post->raised_amount, 2); ?>
+                            </p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Donations Over Time Chart (For Everyone) -->
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 2rem;">
+                    <h4 style="margin: 0 0 1.5rem 0; font-weight: 600; font-size: 1.1rem; color: var(--text);">Donations Over Time</h4>
+                    <canvas id="donationsChart" style="max-height: 300px;"></canvas>
+                </div>
+                
+                <!-- Only show detailed contributors list to campaign owner -->
+                <?php if ($isOwner): ?>
+                    <!-- Recent Contributions (Owner Only) -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;">
+                        <h4 style="margin: 0 0 1.5rem 0; font-weight: 600; font-size: 1.1rem; color: var(--text);">Recent Contributions</h4>
+                        
+                        <?php 
+                        foreach ($data['donations'] as $index => $donation): 
+                            $donorName = $donation->is_anonymous ? 'Anonymous Donor' : ($donation->display_name ?? $donation->donor_name ?? 'Anonymous');
+                        ?>
+                            <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: start;">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                            <?php if (!$donation->is_anonymous && !empty($donation->profile_image)): ?>
+                                                <img src="<?php echo URLROOT . '/public/img/profiles/' . $donation->profile_image; ?>" 
+                                                     alt="<?php echo htmlspecialchars($donorName); ?>" 
+                                                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                                            <?php else: ?>
+                                                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9rem;">
+                                                    <?php echo substr($donorName, 0, 1); ?>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div>
+                                                <p style="margin: 0; font-weight: 600; color: var(--text); font-size: 1rem;">
+                                                    <?php echo htmlspecialchars($donorName); ?>
+                                                </p>
+                                                <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--muted);">
+                                                    <?php echo date('M j, Y g:i A', strtotime($donation->created_at)); ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <?php if (!empty($donation->message)): ?>
+                                            <p style="margin: 0.5rem 0 0 2.75rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03); border-left: 2px solid var(--link); border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--muted); font-style: italic;">
+                                                "<?php echo htmlspecialchars($donation->message); ?>"
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div style="text-align: right; margin-left: 1rem;">
+                                        <p style="margin: 0; font-size: 1.3rem; font-weight: 700; color: #4caf50;">
+                                            +Rs.<?php echo number_format($donation->amount, 2); ?>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                
+                <!-- Chart.js Script -->
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                    // Prepare data for chart
+                    const donations = <?php echo json_encode(array_reverse($data['donations'])); ?>;
+                    
+                    // Calculate cumulative amounts over time
+                    let cumulativeAmount = 0;
+                    const chartData = donations.map(donation => {
+                        cumulativeAmount += parseFloat(donation.amount);
+                        return {
+                            date: new Date(donation.created_at),
+                            amount: cumulativeAmount
+                        };
+                    });
+                    
+                    const ctx = document.getElementById('donationsChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: chartData.map(d => d.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                            datasets: [{
+                                label: 'Total Raised (Rs.)',
+                                data: chartData.map(d => d.amount),
+                                borderColor: '#4caf50',
+                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: '#4caf50',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    labels: {
+                                        color: '#fff',
+                                        font: {
+                                            size: 12
+                                        }
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#fff',
+                                    bodyColor: '#fff',
+                                    borderColor: '#4caf50',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Total: Rs.' + context.parsed.y.toLocaleString('en-LK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.05)'
+                                    },
+                                    ticks: {
+                                        color: '#aaa',
+                                        font: {
+                                            size: 11
+                                        }
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.05)'
+                                    },
+                                    ticks: {
+                                        color: '#aaa',
+                                        font: {
+                                            size: 11
+                                        },
+                                        callback: function(value) {
+                                            return 'Rs.' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                </script>
+            <?php else: ?>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 2rem; text-align: center;">
+                    <p style="margin: 0; color: var(--muted); font-size: 1rem;">
+                        📊 No donations yet. Be the first to support this campaign!
+                    </p>
+                </div>
+            <?php endif; ?>
         </div>
     <?php else: ?>
         <p>Fundraise request not found.</p>
@@ -260,4 +615,101 @@
 ?>
 
 <?php $content = ob_get_clean(); ?>
+<?php
+$scripts = <<<'JS'
+document.addEventListener('DOMContentLoaded', function() {
+    var reportOpenBtn = document.getElementById('open-fundraiser-report-modal');
+    var reportModal = document.getElementById('fundraiserReportModal');
+    var reportForm = document.getElementById('fundraiser-report-form');
+    if (!reportOpenBtn || !reportModal || !reportForm) {
+        return;
+    }
+
+    var reportCategory = document.getElementById('fundraiserReportCategory');
+    var reportDetails = document.getElementById('fundraiserReportDetails');
+    var reportLink = document.getElementById('fundraiserReportLink');
+    var fundraiserId = Number(reportOpenBtn.getAttribute('data-fundraiser-id') || 0);
+    var reportEndpoint = reportOpenBtn.getAttribute('data-report-endpoint') || '/report/submitReport/fundraiser';
+
+    function notify(message) {
+        if (typeof show_popup === 'function') {
+            show_popup(message);
+            return;
+        }
+        alert(message);
+    }
+
+    function closeReportModal() {
+        reportModal.style.display = 'none';
+    }
+
+    reportOpenBtn.addEventListener('click', function() {
+        reportModal.style.display = 'flex';
+    });
+
+    reportModal.querySelector('[data-action="close"]')?.addEventListener('click', closeReportModal);
+    reportModal.querySelector('[data-action="cancel"]')?.addEventListener('click', closeReportModal);
+    reportModal.addEventListener('click', function(e) {
+        if (e.target === reportModal) {
+            closeReportModal();
+        }
+    });
+
+    reportForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        if (!fundraiserId) {
+            notify('Invalid fundraiser id for report');
+            return;
+        }
+
+        var category = reportCategory ? reportCategory.value : '';
+        if (!category) {
+            notify('Please select a report category');
+            return;
+        }
+
+        var submitBtn = reportForm.querySelector('button[type="submit"]');
+        var previousText = submitBtn ? submitBtn.textContent : 'Submit Report';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+        }
+
+        try {
+            var fd = new FormData();
+            fd.append('fundraiser_id', String(fundraiserId));
+            fd.append('category', category);
+            fd.append('details', reportDetails ? reportDetails.value.trim() : '');
+            var linkValue = reportLink ? reportLink.value.trim() : '';
+            if (linkValue) {
+                fd.append('link', linkValue);
+            }
+
+            var response = await fetch(reportEndpoint, {
+                method: 'POST',
+                body: fd
+            });
+
+            var json = await response.json().catch(function() { return null; });
+            if (!response.ok || !json || (json.success !== true && json.status !== 'success')) {
+                throw new Error((json && json.message) ? json.message : 'Failed to submit campaign report');
+            }
+
+            notify('Thanks for your report. Our team will review this campaign.');
+            reportForm.reset();
+            closeReportModal();
+        } catch (err) {
+            console.error('Fundraiser report submission failed', err);
+            notify(err && err.message ? err.message : 'Failed to submit campaign report');
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = previousText;
+            }
+        }
+    });
+});
+JS;
+?>
 <?php require APPROOT . '/views/request_dashboards/request_dashboard_layout_adapter.php';?>

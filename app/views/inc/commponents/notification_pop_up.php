@@ -5,7 +5,7 @@
             <h3>Notifications</h3>
             <div class="notification-header-actions">
                 <button class="mark-all-read-btn" id="markAllReadBtn" title="Mark all as read">
-                    <i class="fas fa-check-double"></i>
+                    <i class="fas fa-check-double" style="margin-right: 0px;"></i>
                 </button>
                 <button class="modal-close-btn" id="closeNotificationModal">
                     <i class="fas fa-times" style="margin-right: 0px;"></i>
@@ -26,8 +26,6 @@
 <script src="<?php echo URLROOT; ?>/js/notificationManager.js"></script>
 <script>
     // Initialize notification manager when DOM is ready
-    let notificationManager;
-    
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initNotifications);
     } else {
@@ -35,7 +33,7 @@
     }
     
     function initNotifications() {
-        notificationManager = new NotificationManager({
+        window.notificationManager = new NotificationManager({
             urlRoot: '<?php echo URLROOT; ?>',
             pollInterval: 20000 // Poll every 20 seconds
         });
@@ -43,8 +41,8 @@
     
     // Global function for sidebar button
     function NotificationModal() {
-        if (notificationManager) {
-            notificationManager.toggleModal();
+        if (window.notificationManager) {
+            window.notificationManager.toggleModal();
         }
     }
 </script>

@@ -58,12 +58,30 @@ class messages extends Controller{
         header('Content-Type: application/json');
         
         try {
-            $userId = $this->getQueryParam('userId', null);
+            $currentUserId = (int)($_SESSION['user_id'] ?? 0);
+            $userId = (int)$this->getQueryParam('userId', 0);
             
             if (!$userId) {
                 echo json_encode([
                     'success' => false,
                     'error' => 'User ID is required'
+                ]);
+                return;
+            }
+
+            if (!$this->message_model->canUsersChat($currentUserId, $userId)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Chat is allowed only between users connected by follow.'
+                ]);
+                return;
+            }
+
+            if ($this->message_model->isUserSuspended($userId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'This account is suspended. Chat is currently frozen.'
                 ]);
                 return;
             }
@@ -98,13 +116,32 @@ class messages extends Controller{
         header('Content-Type: application/json');
         
         try {
-            $currentUserId = $_SESSION['user_id'];
-            $otherUserId = $this->getQueryParam('userId', null);
+            $currentUserId = (int)($_SESSION['user_id'] ?? 0);
+            $otherUserId = (int)$this->getQueryParam('userId', 0);
             
             if (!$otherUserId) {
                 echo json_encode([
                     'success' => false,
                     'error' => 'User ID is required'
+                ]);
+                return;
+            }
+
+            if (!$this->message_model->canUsersChat($currentUserId, $otherUserId)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Chat is allowed only between users connected by follow.',
+                    'messages' => []
+                ]);
+                return;
+            }
+
+            if ($this->message_model->isUserSuspended($otherUserId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'This conversation is unavailable because the account is suspended.',
+                    'messages' => []
                 ]);
                 return;
             }
@@ -135,8 +172,8 @@ class messages extends Controller{
             // Get JSON input
             $input = json_decode(file_get_contents('php://input'), true);
             
-            $currentUserId = $_SESSION['user_id'];
-            $recipientId = $input['recipientId'] ?? null;
+            $currentUserId = (int)($_SESSION['user_id'] ?? 0);
+            $recipientId = (int)($input['recipientId'] ?? 0);
             $content = $input['content'] ?? null;
             
             if (!$recipientId || !$content) {
@@ -154,17 +191,27 @@ class messages extends Controller{
                 ]);
                 return;
             }
+
+            if ($this->message_model->isUserSuspended($currentUserId) || $this->message_model->isUserSuspended($recipientId)) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Messaging is unavailable because one of the accounts is suspended.'
+                ]);
+                return;
+            }
+
+            if (!$this->message_model->canUsersChat($currentUserId, $recipientId)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Chat is allowed only between users connected by follow.'
+                ]);
+                return;
+            }
             
             $messageId = $this->message_model->sendMessage($currentUserId, $recipientId, $content);
             
             if ($messageId) {
-                // Increment unread count for recipient
-                try {
-                    $this->message_model->incrementUnreadCount($currentUserId, $recipientId, $messageId);
-                } catch (Exception $e) {
-                    error_log('Failed to increment unread count: ' . $e->getMessage());
-                }
-                
                 // Get sender name from session or use generic text
                 $senderName = $_SESSION['user_name'] ?? 'Someone';
                 
@@ -223,13 +270,22 @@ class messages extends Controller{
         try {
             $input = json_decode(file_get_contents('php://input'), true);
             
-            $currentUserId = $_SESSION['user_id'];
-            $otherUserId = $input['userId'] ?? null;
+            $currentUserId = (int)($_SESSION['user_id'] ?? 0);
+            $otherUserId = (int)($input['userId'] ?? 0);
             
             if (!$otherUserId) {
                 echo json_encode([
                     'success' => false,
                     'error' => 'User ID is required'
+                ]);
+                return;
+            }
+
+            if (!$this->message_model->canUsersChat($currentUserId, $otherUserId)) {
+                http_response_code(403);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Chat is allowed only between users connected by follow.'
                 ]);
                 return;
             }

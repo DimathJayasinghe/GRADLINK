@@ -48,15 +48,14 @@
     };
     $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'", 'active' => true];
     require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
-    require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 <?php $leftsidebar = ob_get_clean(); ?>
 <?php ob_start();?>
     <!-- Settings categories -->
     <?php 
         $settings_categories = [
             ['icon' => 'user', 'label' => 'Account', 'link' => URLROOT . '/settings/account', 'active' => $data['section'] === 'account'? true : false],
-            ['icon' => 'shield-alt', 'label' => 'Privacy', 'link' => URLROOT . '/settings/privacyandsafety','active' => $data['section'] === 'privacyandsafety'? true : false],
             ['icon' => 'bell', 'label' => 'Notifications', 'link' => URLROOT . '/settings/notifications','active' => $data['section'] === 'notifications'? true : false],
+            ['icon' => 'bookmark', 'label' => 'Bookmarks', 'link' => URLROOT . '/settings/bookmarks','active' => $data['section'] === 'bookmark'? true : false],
             // ['icon' => 'paint-brush', 'label' => 'Appearance', 'link' => URLROOT . '/settings/appearance','active' => $data['section'] === 'appearance'? true : false],
             ['icon' => 'question-circle', 'label'=>'Help', 'link' => URLROOT . '/settings/helpandsupport','active' => $data['section'] === 'helpandsupport'? true : false],
         ];

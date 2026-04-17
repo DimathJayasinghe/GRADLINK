@@ -4,7 +4,6 @@
 /* Component stylings */
 @import url('./components/form_styles.css');
 @import url('./components/topnavbar_styles.css');
-@import url('./auth/login_shared.css');
 
 /* FONTS */
 @font-face {
@@ -62,7 +61,7 @@
 }
 
 /* Button variants */
-.btn{
+.btn {
   border: 1px solid transparent;
   padding: 5px;
   border-radius: 5px;
@@ -173,8 +172,13 @@
 
 /* Provide @keyframes used by buttons and auth loader */
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive button adjustments */
@@ -184,13 +188,13 @@
     font-size: 0.9rem;
     min-width: 100px;
   }
-  
+
   .btn-sm {
     padding: 0.5rem 0.875rem;
     font-size: 0.8rem;
     min-width: 70px;
   }
-  
+
   .btn-lg {
     padding: 1rem 2rem;
     font-size: 1rem;
@@ -198,50 +202,50 @@
   }
 }
 
-h1{
-    color: var(--text);
-    font-size: 2em;
-    text-align: center;
-    margin-top: 20px;
+h1 {
+  color: var(--text);
+  font-size: 2em;
+  text-align: center;
+  margin-top: 20px;
 }
 
-body{
-    margin: 0;
-    font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    font-weight: bold;
-    font-size: small;
-    text-align: left;
-    background-color: var(--bg);
-    color: var(--text);
+body {
+  margin: 0;
+  font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-weight: bold;
+  font-size: small;
+  text-align: left;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
-.user-card{
-    background-color: var(--card);
-    color: var(--text);
-    border-radius: 10px;
-    box-shadow: var(--shadow-1);
-    padding: 20px;
-    margin: 20px auto;
-    width: 300px;
-    text-align: center;
+.user-card {
+  background-color: var(--card);
+  color: var(--text);
+  border-radius: 10px;
+  box-shadow: var(--shadow-1);
+  padding: 20px;
+  margin: 20px auto;
+  width: 300px;
+  text-align: center;
 }
 
-.hide{
-    display: none;
+.hide {
+  display: none;
 }
 
-.form-invalid{
-    border: 2px solid red;
-    background-color: #ffe6e6;
-    color: red;
-    padding: 10px;
-    border-radius: 5px;
+.form-invalid {
+  border: 2px solid red;
+  background-color: #ffe6e6;
+  color: red;
+  padding: 10px;
+  border-radius: 5px;
 }
 
-.card-container{
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    padding: 20px;
+.card-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
 }

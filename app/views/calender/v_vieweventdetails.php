@@ -146,6 +146,80 @@
     border: 1px solid var(--border);
 }
 
+.btn-report {
+    border: 1px solid rgba(220, 53, 69, 0.45);
+}
+
+.report-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.62);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+    padding: 1rem;
+}
+
+.report-modal {
+    width: min(540px, 100%);
+    background: var(--bg-alt, #161b22);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.report-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.report-modal-header h3 {
+    margin: 0;
+    color: var(--text);
+}
+
+.report-close {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0.3rem 0.55rem;
+}
+
+.report-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.report-form-group label {
+    font-size: 0.86rem;
+    color: var(--muted);
+}
+
+.report-form-group select,
+.report-form-group textarea,
+.report-form-group input {
+    width: 100%;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--input, #0f141a);
+    color: var(--text);
+    padding: 0.55rem 0.7rem;
+}
+
+.report-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.6rem;
+}
+
 @media (max-width: 768px) {
     .details-info {
         grid-template-columns: 1fr;
@@ -203,19 +277,19 @@
                 <span class="info-value"><?php echo date('h:i A', strtotime($request->event_time)); ?></span>
             </div>
             
-            <div class="details-info-item" style="padding: 0px;display: flex; align-items: center; justify-content: center;">
-                <?php
-                    $isBookmarked = !empty($request->bookmarked);
-                ?>
-                <button id="bookmark-btn" style="background-color:<?php echo $isBookmarked ? '#ec2424ff' : '#4caf50'; ?>" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
-                    <span class="btn" style="color: ffffff;" id="bookmark-label"><?php echo $isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'; ?></span>
-                </button>
-            </div>
-            <div class="details-info-item" style="padding: 0px;display: flex; align-items: center; justify-content: center;">
-                <button id="detail-rsvp-btn" style="background-color:#455663; padding: 13px 60px" style="margin: 0px; " data-event-id="<?php echo htmlspecialchars($request->event_id); ?>">
-                    <span class="btn" style="color:#ffffff">RSVP</span>
-                </button>
-            </div>
+            <?php
+                $isBookmarked = !empty($request->bookmarked);
+            ?>
+            <button
+                id="bookmark-btn"
+                style="background-color:<?php echo $isBookmarked ? '#ec2424ff' : '#4caf50'; ?>; margin:0;"
+                data-bookmarked="<?php echo $isBookmarked ? '1' : '0'; ?>"
+                data-event-id="<?php echo htmlspecialchars($request->event_id); ?>"
+            >
+                <span class="btn" style="color: ffffff;" id="bookmark-label"><?php echo $isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'; ?></span>
+            </button>
+            <!-- <div class="details-info-item" style="padding: 0px;display: flex; align-items: center; justify-content: center;">
+            </div> -->
         </div>
         
         <div class="event-info">
@@ -256,7 +330,50 @@
 
         <div class="action-buttons">
             <a href="<?php echo URLROOT; ?>/calender/" class="btn btn-back">Back to All Event Requests</a>
+            <button
+                type="button"
+                id="open-event-report-modal"
+                class="btn btn-danger btn-report"
+                data-event-id="<?php echo (int)$request->event_id; ?>"
+                data-report-endpoint="<?php echo URLROOT; ?>/report/submitReport/event"
+            >Report Event</button>
             <!-- <button id="detail-cancel-rsvp-btn" class="btn btn-danger" style="display:none;">Cancel My RSVP</button> -->
+        </div>
+
+        <div id="eventReportModal" class="report-overlay" style="display:none;">
+            <div class="report-modal">
+                <div class="report-modal-header">
+                    <h3>Report Event</h3>
+                    <button type="button" class="report-close" data-action="close">X</button>
+                </div>
+                <form id="event-report-form" novalidate>
+                    <div class="report-form-group">
+                        <label for="eventReportCategory">Category</label>
+                        <select id="eventReportCategory" required>
+                            <option value="" disabled selected>Select a category</option>
+                            <option>Spam</option>
+                            <option>Harassment or bullying</option>
+                            <option>Hate or abusive content</option>
+                            <option>Misinformation</option>
+                            <option>Illegal or dangerous acts</option>
+                            <option>Sexual content</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="report-form-group">
+                        <label for="eventReportDetails">Details (optional)</label>
+                        <textarea id="eventReportDetails" rows="4" placeholder="Add any details or context..."></textarea>
+                    </div>
+                    <div class="report-form-group">
+                        <label for="eventReportLink">Reference link (optional)</label>
+                        <input type="url" id="eventReportLink" placeholder="https://..." />
+                    </div>
+                    <div class="report-form-actions">
+                        <button type="button" class="btn btn-back" data-action="cancel">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Report</button>
+                    </div>
+                </form>
+            </div>
         </div>
         
     <?php else: ?>
@@ -272,126 +389,144 @@
 // Provide a small script to handle bookmark add/remove via AJAX
 $scripts = <<<'JS'
 document.addEventListener('DOMContentLoaded', function(){
+    function notify(message){
+        if(typeof show_popup === 'function'){
+            show_popup(message);
+            return;
+        }
+        alert(message);
+    }
+
     var btn = document.getElementById('bookmark-btn');
-    if(!btn) return;
     var label = document.getElementById('bookmark-label');
-    var eventId = btn.getAttribute('data-event-id');
+    var eventId = btn ? btn.getAttribute('data-event-id') : null;
 
     function postJson(path, body){
         return fetch(path, {
             method: 'POST',
             credentials: 'same-origin',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': window.GL_CSRF_TOKEN || ''
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(body)
         }).then(function(resp){ return resp.json(); });
     }
 
-    btn.addEventListener('click', function(e){
-        e.preventDefault();
-        var currently = btn.classList.contains('btn-primary');
-        var target = currently ? '/calender/removeBookmarkAjax' : '/calender/addBookmark';
-        postJson(target, { event_id: parseInt(eventId), csrf_token: window.GL_CSRF_TOKEN })
-            .then(function(data){
-                if(data && data.ok){
-                    if(currently){
-                        btn.classList.remove('btn-primary');
-                        btn.classList.add('btn-danger');
-                        label.textContent = 'Add Bookmark';
+    if(btn && eventId){
+        btn.addEventListener('click', function(e){
+            e.preventDefault();
+            var currently = String(btn.getAttribute('data-bookmarked') || '0') === '1';
+            postJson('/bookmark/update', {
+                type: 'events',
+                reference_id: parseInt(eventId, 10),
+                bookmarked: !currently
+            })
+                .then(function(data){
+                    if(data && data.ok){
+                        var nextState = !!data.bookmarked;
+                        btn.setAttribute('data-bookmarked', nextState ? '1' : '0');
+                        btn.style.backgroundColor = nextState ? '#ec2424ff' : '#4caf50';
+                        if(label){
+                            label.textContent = nextState ? 'Remove Bookmark' : 'Add Bookmark';
+                        }
                     } else {
-                        btn.classList.remove('btn-danger');
-                        btn.classList.add('btn-primary');
-                        label.textContent = 'Bookmarked';
+                        console.error('Bookmark action failed', data);
+                        notify('Could not update bookmark: ' + (data && data.error ? data.error : 'Unknown error'));
                     }
-                } else {
-                    console.error('Bookmark action failed', data);
-                    alert('Could not update bookmark: ' + (data && data.error ? data.error : 'Unknown error'));
-                }
-            }).catch(function(err){
-                console.error('Request failed', err);
-                alert('Network error while updating bookmark');
+                }).catch(function(err){
+                    console.error('Request failed', err);
+                    notify('Network error while updating bookmark');
+                });
             });
+
+    }
+
+    var reportOpenBtn = document.getElementById('open-event-report-modal');
+    var reportModal = document.getElementById('eventReportModal');
+    var reportForm = document.getElementById('event-report-form');
+    if(!reportOpenBtn || !reportModal || !reportForm){
+        return;
+    }
+
+    var reportCategory = document.getElementById('eventReportCategory');
+    var reportDetails = document.getElementById('eventReportDetails');
+    var reportLink = document.getElementById('eventReportLink');
+    var reportEventId = Number(reportOpenBtn.getAttribute('data-event-id') || 0);
+    var reportEndpoint = reportOpenBtn.getAttribute('data-report-endpoint') || '/report/submitReport/event';
+
+    function closeReportModal(){
+        reportModal.style.display = 'none';
+    }
+
+    reportOpenBtn.addEventListener('click', function(){
+        reportModal.style.display = 'flex';
+    });
+
+    reportModal.querySelector('[data-action="close"]')?.addEventListener('click', closeReportModal);
+    reportModal.querySelector('[data-action="cancel"]')?.addEventListener('click', closeReportModal);
+    reportModal.addEventListener('click', function(e){
+        if(e.target === reportModal){
+            closeReportModal();
+        }
+    });
+
+    reportForm.addEventListener('submit', async function(e){
+        e.preventDefault();
+
+        if(!reportEventId){
+            notify('Invalid event id for report');
+            return;
+        }
+
+        var category = reportCategory ? reportCategory.value : '';
+        if(!category){
+            notify('Please select a report category');
+            return;
+        }
+
+        var submitBtn = reportForm.querySelector('button[type="submit"]');
+        var previousText = submitBtn ? submitBtn.textContent : 'Submit Report';
+        if(submitBtn){
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+        }
+
+        try {
+            var fd = new FormData();
+            fd.append('event_id', String(reportEventId));
+            fd.append('category', category);
+            fd.append('details', reportDetails ? reportDetails.value.trim() : '');
+
+            var linkValue = reportLink ? reportLink.value.trim() : '';
+            if(linkValue){
+                fd.append('link', linkValue);
+            }
+
+            var response = await fetch(reportEndpoint, {
+                method: 'POST',
+                body: fd
+            });
+
+            var json = await response.json().catch(function(){ return null; });
+            if(!response.ok || !json || (json.success !== true && json.status !== 'success')){
+                throw new Error((json && json.message) ? json.message : 'Failed to submit event report');
+            }
+
+            notify('Thanks for your report. Our team will review this event.');
+            reportForm.reset();
+            closeReportModal();
+        } catch (err) {
+            console.error('Event report submission failed', err);
+            notify(err && err.message ? err.message : 'Failed to submit event report');
+        } finally {
+            if(submitBtn){
+                submitBtn.disabled = false;
+                submitBtn.textContent = previousText;
+            }
+        }
     });
 });
 JS;
 
 require APPROOT . '/views/calender/v_layout_adapter.php';
 ?>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-    var detailRsvp = document.getElementById('detail-rsvp-btn');
-    var detailCancel = document.getElementById('detail-cancel-rsvp-btn');
-    var evtId = detailRsvp ? detailRsvp.getAttribute('data-event-id') : null;
-    if(detailRsvp){
-        detailRsvp.addEventListener('click', function(e){
-            // open global modal
-            window.__GL_openRsvpModal && window.__GL_openRsvpModal(Number(evtId), '<?php echo addslashes(htmlspecialchars($request->title)); ?>');
-        });
-    }
-
-    // Expose handler to update attendees after RSVP completes
-    window.__GL_onRsvpConfirmed = function(ev){
-        // refresh attendees list via AJAX
-        fetch('<?php echo URLROOT; ?>/calender/attendees?event_id=' + encodeURIComponent(ev), { credentials: 'same-origin' }).then(r=>r.json()).then(function(data){
-            if(data && data.ok){
-                // update attendees list in DOM
-                var container = document.querySelector('.event-info + .event-info');
-                if(container){
-                    var html = '<h3 style="margin-top:0;">Attendees</h3><ul style="list-style:none;padding:0;margin:0;">';
-                    data.attendees.forEach(function(a){
-                        var name = a.name || a.email || 'User';
-                        html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+name+'</strong>' + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>';
-                    });
-                    html += '</ul>';
-                    container.innerHTML = html;
-                }
-                // show/hide cancel button if current user is in the list
-                fetch('<?php echo URLROOT; ?>/auth/current_user_id.json', { credentials: 'same-origin' }).then(r=>r.json()).then(function(j){
-                    var uid = j && j.user_id;
-                    var me = data.attendees.find(function(a){ return Number(a.user_id) === Number(uid); });
-                    if(me){ detailCancel.style.display = 'inline-flex'; } else { detailCancel.style.display = 'none'; }
-                }).catch(()=>{});
-            }
-        }).catch(err=>console.error('attendees fetch failed',err));
-    };
-
-    // Wire cancel button to call cancel endpoint
-    if(detailCancel){
-        detailCancel.addEventListener('click', function(){
-            if(!confirm('Cancel your RSVP?')) return;
-            fetch('<?php echo URLROOT; ?>/calender/cancelRsvp', { method: 'POST', credentials: 'same-origin', headers: Object.assign({'Content-Type':'application/json'}, (window.GL_CSRF_TOKEN?{'X-CSRF-Token':window.GL_CSRF_TOKEN}:{})), body: JSON.stringify({ event_id: Number(evtId), csrf_token: (window.GL_CSRF_TOKEN||null) }) }).then(r=>r.json()).then(function(data){
-                if(data && data.ok){
-                    // refresh attendees UI
-                    window.__GL_onRsvpConfirmed && window.__GL_onRsvpConfirmed(evtId);
-                } else { alert('Cancel failed'); }
-            }).catch(err=>{ console.error(err); alert('Cancel failed'); });
-        });
-    }
-
-    // Initial check: show cancel button if current user already RSVP'd
-    fetch('<?php echo URLROOT; ?>/calender/attendees?event_id=' + encodeURIComponent(evtId), { credentials: 'same-origin' }).then(r=>r.json()).then(function(data){
-        if(data && data.ok){
-            // render initial attendees into the list container
-            var container = document.querySelector('.event-info + .event-info');
-            if(container){
-                if(data.attendees.length === 0){ container.innerHTML = '<p class="no-events">No attendees yet.</p>'; }
-                else {
-                    var html = '<h3 style="margin-top:0;">Attendees</h3><ul style="list-style:none;padding:0;margin:0;">';
-                    data.attendees.forEach(function(a){ html += '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><strong>'+ (a.name||a.email||'User') +'</strong>' + (a.guests>0?(' <span style="color:var(--muted);">('+a.guests+' guests)</span>'):'') + '</li>'; });
-                    html += '</ul>';
-                    container.innerHTML = html;
-                }
-            }
-            // show cancel button if current user is present
-            fetch('<?php echo URLROOT; ?>/auth/current_user_id.json', { credentials: 'same-origin' }).then(r=>r.json()).then(function(j){
-                var uid = j && j.user_id;
-                var me = data.attendees.find(function(a){ return Number(a.user_id) === Number(uid); });
-                if(me){ detailCancel.style.display = 'inline-flex'; } else { detailCancel.style.display = 'none'; }
-            }).catch(()=>{});
-        }
-    }).catch(()=>{});
-
-});
-</script>

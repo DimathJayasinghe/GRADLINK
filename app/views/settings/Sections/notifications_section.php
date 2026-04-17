@@ -12,7 +12,7 @@
 				<p>Receive updates via email</p>
 			</div>
 			<label class="toggle">
-				<input type="checkbox" id="emailNotif" checked>
+				<input type="checkbox" id="emailNotif">
 				<span class="slider"></span>
 			</label>
 		</div>
@@ -28,16 +28,16 @@
 			</label>
 		</div> -->
 
-		<div class="settings-option">
+		<!-- <div class="settings-option">
 			<div class="settings-option-details">
-				<h4>In-App Sounds</h4>
+				<h4>In-App Notifications</h4>
 				<p>Play a sound for new notifications</p>
 			</div>
 			<label class="toggle">
 				<input type="checkbox" id="soundNotif">
 				<span class="slider"></span>
 			</label>
-		</div>
+		</div> -->
 	</div>
 
 	<!-- <div class="settings-section">
@@ -63,7 +63,7 @@
 		</div>
 	</div> -->
 
-	<div class="settings-section">
+	<!-- <div class="settings-section">
 		<h3>Categories</h3>
 		<div class="section-divider"></div>
 		<div class="settings-option">
@@ -98,7 +98,7 @@
 		</div>
 	</div>
 
-	<!-- DND Modal -->
+	 DND Modal 
 	<div id="dndModal" class="settings-modal">
 		<div class="settings-modal-content">
 			<div class="settings-modal-header">
@@ -131,30 +131,106 @@
 			</div>
 		</div>
 	</div>
-</div>
+</div> -->
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-	const dndModal = document.getElementById('dndModal');
-	const openDND = document.getElementById('openDND');
-	if (openDND) openDND.addEventListener('click', () => openModal(dndModal));
+document.addEventListener('DOMContentLoaded', function() {
+	const URLROOT = '<?= URLROOT ?>';
+	const emailToggle = document.getElementById('emailNotif');
 
-	document.querySelectorAll('.settings-close-modal, .cancel-modal').forEach(el => {
-		el.addEventListener('click', function(){ closeModal(this.closest('.settings-modal')); });
-	});
+	if (!emailToggle) {
+		return;
+	}
 
-	window.addEventListener('click', function(event) {
-		if (event.target === dndModal) closeModal(dndModal);
-	});
+	loadNotificationSettings();
+	emailToggle.addEventListener('change', handleEmailToggleChange);
 
-	const dndForm = document.getElementById('dndForm');
-	if (dndForm) dndForm.addEventListener('submit', function(e){
-		e.preventDefault();
-		alert('Quiet hours saved. Demo only.');
-		closeModal(dndModal);
-	});
+	async function loadNotificationSettings() {
+		try {
+			const response = await fetch(`${URLROOT}/settings/getNotificationSettings`);
+			const data = await parseJsonResponse(response);
 
-	function openModal(modal){ if (modal) modal.style.display = 'block'; }
-	function closeModal(modal){ if (modal) modal.style.display = 'none'; }
+			if (!response.ok || !data.success || !data.settings) {
+				throw new Error(data.error || `Failed to load settings (${response.status})`);
+			}
+
+			safeSetCheckbox(emailToggle, data.settings.email_enabled);
+		} catch (error) {
+			console.error('Failed to load notification settings:', error);
+			safeSetCheckbox(emailToggle, 0);
+		}
+	}
+
+	async function handleEmailToggleChange() {
+		const payload = { email_enabled: emailToggle.checked ? 1 : 0 };
+
+		try {
+			const response = await fetch(`${URLROOT}/settings/updateNotificationSettings`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			});
+
+			const data = await parseJsonResponse(response);
+
+			if (!response.ok || !data.success) {
+				throw new Error(data.error || `Failed to save settings (${response.status})`);
+			}
+
+			showNotification('Settings saved', 'success');
+			refreshNotificationBadge();
+		} catch (error) {
+			emailToggle.checked = !emailToggle.checked;
+			showNotification('Error saving settings', 'error');
+		}
+	}
+
+	function safeSetCheckbox(checkbox, value) {
+		checkbox.checked = (value === 1 || value === '1' || value === true);
+	}
+
+	function refreshNotificationBadge() {
+		if (window.notificationManager && typeof window.notificationManager.fetchCount === 'function') {
+			window.notificationManager.fetchCount();
+		}
+	}
+
+	async function parseJsonResponse(response) {
+		const body = await response.text();
+		if (!body) {
+			return {};
+		}
+
+		try {
+			return JSON.parse(body);
+		} catch (error) {
+			throw new Error(`Server returned non-JSON response (${response.status})`);
+		}
+	}
+
+	function showNotification(message, type) {
+		const notification = document.createElement('div');
+		notification.className = `notification notification-${type}`;
+		notification.textContent = message;
+		notification.style.cssText = `
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			padding: 15px 20px;
+			background: ${type === 'success' ? '#4caf50' : '#f44336'};
+			color: white;
+			border-radius: 5px;
+			z-index: 10000;
+			box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+		`;
+
+		document.body.appendChild(notification);
+
+		setTimeout(() => {
+			notification.style.transition = 'opacity 0.3s';
+			notification.style.opacity = '0';
+			setTimeout(() => notification.remove(), 300);
+		}, 3000);
+	}
 });
 </script>

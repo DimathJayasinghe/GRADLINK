@@ -1,11 +1,42 @@
 
 <?php ob_start(); ?>
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/fundraise_req_create_styles.css"> 
- 
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/fundraise_req_create_styles.css">
+<style>
+    .tag-input-wrapper { position: relative; }
+    .tag-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: #111518; border: 1px solid #2f2f2f; border-radius: 8px; margin-top: 4px; padding: 6px 0; max-height: 220px; overflow-y: auto; z-index: 5; display: none; }
+    .tag-suggestion { width: 100%; text-align: left; padding: 8px 12px; background: transparent; color: #f5f5f5; border: 0; cursor: pointer; }
+    .tag-suggestion:hover { background: #1f1f1f; }
+    .tag-suggestion.status { cursor: default; opacity: 0.8; }
+    .tagged-members { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .tagged-member { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #1a1a1a; border: 1px solid #2f2f2f; border-radius: 999px; color: #e5e7eb; font-size: 0.95rem; }
+    .tag-remove { background: none; border: 0; color: #f87171; cursor: pointer; font-size: 0.9rem; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+    .tag-remove:hover { color: #ef4444; background: #262626; }
+    .server-error-box {
+        border: 1px solid #dc2626;
+        background: rgba(220, 38, 38, 0.12);
+        color: #fecaca;
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin-top: 12px;
+    }
+    .server-error-box ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+    .server-error-box li {
+        margin: 4px 0;
+    }
+</style>
 
 <?php $styles = ob_get_clean(); ?>
 
 <?php
+    $errors = $data['errors'] ?? [];
+    $old = $data['old'] ?? [];
+    $oldValue = static function(string $key, string $default = '') use ($old): string {
+        return htmlspecialchars((string)($old[$key] ?? $default), ENT_QUOTES, 'UTF-8');
+    };
+
     $sidebar_left = [
         ['label'=>'View All Fundraise Requests', 'url'=>'/fundraiser/all','active'=>false ,'icon'=>'list'],
         ['label'=>'View my Fundraise Requests', 'url'=>'/fundraiser/myrequests','active'=>false, 'icon'=>'user'],
@@ -21,6 +52,16 @@
                 <h2>Create New Request</h2>
             </div>
         </div>
+
+        <?php if (!empty($errors)): ?>
+            <div class="server-error-box">
+                <ul>
+                    <?php foreach ($errors as $error): ?>
+                        <li><?= htmlspecialchars((string)$error, ENT_QUOTES, 'UTF-8') ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
         
         <!-- Progress Bar -->
         <div class="progress-container">
@@ -28,16 +69,18 @@
                 <div class="progress-step active" id="step-1">1</div>
                 <div class="progress-step" id="step-2">2</div>
                 <div class="progress-step" id="step-3">3</div>
+                <div class="progress-step" id="step-4">4</div>
             </div>
             <div class="progress-labels">
-                <div class="progress-label active">Basic Information</div>
+                <div class="progress-label active">Contact Details</div>
+                <div class="progress-label">Campaign Details</div>
                 <div class="progress-label">Financial Details</div>
                 <div class="progress-label">Content & Approval</div>
             </div>
         </div>
 
         <!-- Form Container -->
-        <form id="fundraisingForm" method="post" action="#" enctype="multipart/form-data">
+        <form id="fundraisingForm" method="post" action="<?php echo URLROOT . "/fundraiser/create" ?>" enctype="multipart/form-data">
             
             <!-- Page 1: Basic Information -->
             <div class="form-page active" id="page-1">
@@ -45,170 +88,65 @@
                     <h2 class="section-title">Contact & Project Information</h2>
                     
                     <div class="form-group">
-                        <label class="form-label" for="club_name">Club/Society Name:</label>
-                        <input type="text" class="form-control" id="club_name" name="club_name" required>
+                        <label class="form-label" for="club_name">Club/Society/Team Name:</label>
+                        <input type="text" class="form-control" id="club_name" name="club_name" value="<?= $oldValue('club_name') ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="contact_person">Contact Person/Project Coordinator:</label>
-                        <input type="text" class="form-control" id="contact_person" name="contact_person" required>
+                        <input type="text" class="form-control" id="contact_person" name="contact_person" value="<?php echo $_SESSION['user_name']?>" disabled>
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label" for="position">Position in Club/Society:</label>
-                        <input type="text" class="form-control" id="position" name="position" required>
+                        <label class="form-label" for="position">Position in Club/Society/Team:</label>
+                        <input type="text" class="form-control" id="position" name="position" value="<?= $oldValue('position') ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="email">Email:</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <input type="email" class="form-control" id="email" name="email" value="dimathjaya@gmail.com" disabled>
                     </div>
-                    
                     <div class="form-group">
-                        <label class="form-label" for="phone">Phone:</label>
-                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                        <label class="form-label" for="phone">Applicant Phone Number:</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="<?= $oldValue('phone') ?>" required>
                     </div>
-                    
+                </div>
+                <div class="form-section">
+                    <h3 class="section-title">Team Details (If applicable)</h3>
                     <div class="form-group">
-                        <label class="form-label" for="project_title">Project Title:</label>
-                        <input type="text" class="form-control" id="project_title" name="project_title" required>
+                        <label class="form-label" for="team_mention_input">Mention Team Members (optional):</label>
+                        <div class="tag-input-wrapper">
+                            <input type="text" class="form-control" id="team_mention_input" name="team_mention_input" placeholder="Type @username to search" autocomplete="off" oninput="getTags(this)">
+                            <div id="tag-suggestions" class="tag-suggestions"></div>
+                        </div>
+                        <p class="form-text">Start with @ to search users, then click a result to add them as a team member.</p>
+                        <div id="team-members" class="tagged-members"></div>
+                        <div id="team-members-hidden"></div>
                     </div>
                 </div>
                 
-                <div class="form-section">
-                    <div class="form-group">
-                        <label class="form-label" for="objective">Purpose/Objective of Fundraising:</label>
-                        <textarea class="form-control" id="objective" name="objective" required></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="start_date">Proposed Start Date:</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="end_date">Proposed End Date:</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Target Audience:</label>
-                        <div class="checkbox-group">
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="audience_alumni" name="audience[]" value="Alumni">
-                                <label for="audience_alumni">Alumni</label>
-                            </div>
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="audience_students" name="audience[]" value="Students">
-                                <label for="audience_students">Students</label>
-                            </div>
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="audience_staff" name="audience[]" value="Staff">
-                                <label for="audience_staff">Staff</label>
-                            </div>
-                            <div class="checkbox-item">
-                                <input type="checkbox" id="audience_public" name="audience[]" value="General Public">
-                                <label for="audience_public">General Public</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 
                 <div class="form-footer">
                     <button type="button" class="btn btn-next" onclick="nextPage(1)">Next</button>
                 </div>
             </div>
-            
-            <!-- Page 2: Financial Details -->
-            <div class="form-page" id="page-2">
+
+
+            <div class="form-page" id="page-2"> 
                 <div class="form-section">
-                    <h2 class="section-title">Financial Information</h2>
-                    
                     <div class="form-group">
-                        <label class="form-label" for="amount_needed">Total Amount Needed (LKR):</label>
-                        <input type="number" class="form-control" id="amount_needed" name="amount_needed" min="0" required>
+                        <label class="form-label" for="project_title">Project Title:</label>
+                        <input type="text" class="form-control" id="project_title" name="project_title" value="<?= $oldValue('project_title') ?>" required>
                     </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="min_contribution">Minimum Expected Contribution (per alumni, if applicable):</label>
-                        <input type="number" class="form-control" id="min_contribution" name="min_contribution" min="0">
-                        <p class="form-text">Leave blank if no minimum is required</p>
-                    </div>
-                </div>
-                
-                <div class="form-section">
-                    <h2 class="section-title">Suggested Contribution Tiers</h2>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="tier_1">Tier 1 (LKR):</label>
-                        <input type="text" class="form-control" id="tier_1" name="tier_1" placeholder="e.g., 1,000 LKR - Basic Supporter">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="tier_2">Tier 2 (LKR):</label>
-                        <input type="text" class="form-control" id="tier_2" name="tier_2" placeholder="e.g., 5,000 LKR - Silver Supporter">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="tier_3">Tier 3 (LKR):</label>
-                        <input type="text" class="form-control" id="tier_3" name="tier_3" placeholder="e.g., 10,000 LKR - Gold Supporter">
-                    </div>
-                </div>
-                
-                <div class="form-section">
-                    <h2 class="section-title">Fund Management</h2>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="fund_manager">Who will manage the funds? (Name of Treasurer/Committee):</label>
-                        <input type="text" class="form-control" id="fund_manager" name="fund_manager" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="fund_recording">How will funds be recorded and reported?</label>
-                        <textarea class="form-control" id="fund_recording" name="fund_recording" required></textarea>
-                    </div>
-                </div>
-                
-                <div class="form-section">
-                    <h2 class="section-title">Bank Account Details (University-Linked/Official Account Only)</h2>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="bank_name">Bank Name:</label>
-                        <input type="text" class="form-control" id="bank_name" name="bank_name" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="account_number">Account Number:</label>
-                        <input type="text" class="form-control" id="account_number" name="account_number" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="account_holder">Account Holder (University/Club/Society):</label>
-                        <input type="text" class="form-control" id="account_holder" name="account_holder" required>
-                    </div>
-                </div>
-                
-                <div class="form-footer">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-previous" onclick="previousPage(2)">Previous</button>
-                        <button type="button" class="btn" onclick="nextPage(2)">Next</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Page 3: Content & Approval -->
-            <div class="form-page" id="page-3">
-                <div class="form-section">
-                    <h2 class="section-title">Content for Alumni Website Post</h2>
-                    
+                    <div class="form-section">
                     <div class="form-group">
                         <label class="form-label" for="headline">Short Title/Headline:</label>
-                        <input type="text" class="form-control" id="headline" name="headline" required>
+                        <input type="text" class="form-control" id="headline" name="headline" value="<?= $oldValue('headline') ?>" required>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label" for="description">Detailed Project Description (for Alumni Website):</label>
-                        <textarea class="form-control" id="description" name="description" style="height: 200px;" required></textarea>
+                        <textarea class="form-control" id="description" name="description" style="height: 200px;" required><?= $oldValue('description') ?></textarea>
                         <p class="form-text">Please provide a comprehensive description of your project, including its purpose, impact, and how funds will be used.</p>
                     </div>
                     
@@ -218,37 +156,110 @@
                             <label for="project_poster" class="upload-area" id="poster-upload-area">
                                 <i>📁</i>
                                 <span>Click to upload or drag and drop</span>
-                                <p class="form-text">Recommended size: 1200 x 800 pixels, PNG or JPG format</p>
+                                <p class="form-text">Recommended: <strong>1200 × 400 px</strong> (3:1 ratio, banner style)</p>
+                                <p class="form-text" style="font-size: 0.75rem; color: var(--text-muted);">PNG or JPG format, max 5MB</p>
                             </label>
                             <input type="file" id="project_poster" name="project_poster" accept="image/*" hidden>
                         </div>
                     </div>
                 </div>
-                
-                <div class="signature-section">
-                    <h2 class="section-title">Approvals</h2>
+                </div>
+                <div class="form-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-previous" onclick="previousPage(2)">Previous</button>
+                        <button type="button" class="btn" onclick="nextPage(2)">Next</button>
+                    </div>
+                </div>
+            </div>
+            
+
+            <!-- Page 3: Financial Details -->
+            <div class="form-page" id="page-3">
+                <div class="form-section">
+                    <h2 class="section-title">Financial Information</h2>
                     
-                    <div class="signature-row">
-                        <div class="signature-field">
-                            <div class="form-group">
-                                <label class="form-label" for="president_name">President/Head of Club/Society:</label>
-                                <input type="text" class="form-control" id="president_name" name="president_name" required>
-                            </div>
-                        </div>
-                        
-                        <div class="signature-field">
-                            <div class="form-group">
-                                <label class="form-label" for="signature_date">Date:</label>
-                                <input type="date" class="form-control" id="signature_date" name="signature_date" required>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label" for="amount_needed">Total Amount Needed (LKR):</label>
+                        <input type="number" class="form-control" id="amount_needed" name="amount_needed" min="0" value="<?= $oldValue('amount_needed') ?>" required>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <div class="form-group">
+                        <label class="form-label" for="objective">Purpose/Objective of Fundraising:</label>
+                        <textarea class="form-control" id="objective" name="objective" required><?= $oldValue('objective') ?></textarea>
                     </div>
                     
-                    <div class="signature-row">
-                        <div class="signature-field">
+                    <div class="form-group">
+                        <label class="form-label" for="start_date">Proposed Start Date:</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="<?= $oldValue('start_date') ?>" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="end_date">Proposed End Date:</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="<?= $oldValue('end_date') ?>" required>
+                    </div>
+                    
+                </div>
+                
+                
+                <div class="form-section">
+                    <h2 class="section-title">Fund Management</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="fund_manager">Who will manage the funds? (Name of Treasurer/Committee):</label>
+                        <input type="text" class="form-control" id="fund_manager" name="fund_manager" value="<?= $oldValue('fund_manager') ?>" required>
+                        <label class="form-label" for="fund_manager_contact">Contact Number:</label>
+                        <input type="tel" class="form-control" id="fund_manager_contact" name="fund_manager_contact" value="<?= $oldValue('fund_manager_contact') ?>" required>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h2 class="section-title">Bank Account Details (University-Linked/Official Account Only)</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="bank_name">Bank Name:</label>
+                        <input type="text" class="form-control" id="bank_name" name="bank_name" value="<?= $oldValue('bank_name') ?>" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="account_number">Account Number:</label>
+                        <input type="text" class="form-control" id="account_number" name="account_number" value="<?= $oldValue('account_number') ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="branch">Branch:</label>
+                        <input type="text" class="form-control" id="branch" name="branch" value="<?= $oldValue('branch') ?>" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="account_holder">Account Holder (University/Club/Society):</label>
+                        <input type="text" class="form-control" id="account_holder" name="account_holder" value="<?= $oldValue('account_holder') ?>" required>
+                    </div>
+                </div>
+                
+                <div class="form-footer">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-previous" onclick="previousPage(3)">Previous</button>
+                        <button type="button" class="btn" onclick="nextPage(3)">Next</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Page 4: Content & Approval -->
+            <div class="form-page" id="page-4">
+                
+                
+                <div class="inchange-section">
+                    <h2 class="section-title">Approval Authority</h2>
+                    <div class="inchange-row">
+                        <div class="inchange-field">
                             <div class="form-group">
-                                <label class="form-label" for="advisor_name">Faculty Advisor/Staff-in-Charge (if applicable):</label>
-                                <input type="text" class="form-control" id="advisor_name" name="advisor_name">
+                                <label class="form-label" for="advisor_name">Lecture in charge of Club/Society (If applicable)</label>
+                                <div class="tag-input-wrapper">
+                                    <input type="text" class="form-control" id="advisor_name" name="advisor_name" placeholder="Type @ to search" autocomplete="off" oninput="getTags(this)" onchange="getTags(this)" value="<?= $oldValue('advisor_name') ?>">
+                                    <div id="advisor-suggestions" class="tag-suggestions"></div>
+                                </div>
+                                <input type="hidden" id="advisor_id" name="advisor_id" value="<?= $oldValue('advisor_id') ?>">
+                                <p class="form-text">Pick a lecturer to lock their user id into the request.</p>
                             </div>
                         </div>
                     </div>
@@ -256,7 +267,7 @@
                 
                 <div class="form-footer">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-previous" onclick="previousPage(3)">Previous</button>
+                        <button type="button" class="btn btn-previous" onclick="previousPage(4)">Previous</button>
                         <button type="submit" class="btn">Submit Request</button>
                     </div>
                 </div>
@@ -267,8 +278,145 @@
     <script>
     // Current page tracker
     let currentPage = 1;
-    const totalPages = 3;
-    
+    const totalPages = 4;
+
+    const TAG_ENDPOINT = '<?php echo URLROOT; ?>/fundraiser/getAvailableUsers';
+
+    const teamMembers = new Map();
+    let advisorId = '';
+
+    const tagState = {
+        ensureBox(inputEl) {
+            const explicitId = inputEl.dataset.suggestionId || inputEl.getAttribute('data-suggestion-id');
+            let box = explicitId ? document.getElementById(explicitId) : null;
+            if (!box) {
+                box = inputEl.parentNode.querySelector('.tag-suggestions');
+            }
+            if (!box) {
+                box = document.createElement('div');
+                box.className = 'tag-suggestions';
+                inputEl.parentNode.appendChild(box);
+            }
+            box.style.display = 'block';
+            const parent = inputEl.parentNode;
+            if (parent && window.getComputedStyle(parent).position === 'static') {
+                parent.style.position = 'relative';
+            }
+            return box;
+        },
+        hide(box) {
+            if (box) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+            }
+        }
+    };
+
+    function renderTeamMembers() {
+        const list = document.getElementById('team-members');
+        const hidden = document.getElementById('team-members-hidden');
+        if (!list || !hidden) { return; }
+
+        list.innerHTML = '';
+        hidden.innerHTML = '';
+
+        teamMembers.forEach(user => {
+            const pill = document.createElement('span');
+            pill.className = 'tagged-member';
+            pill.textContent = user.name || user.email || `User ${user.id}`;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'tag-remove';
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', () => {
+                teamMembers.delete(user.id);
+                renderTeamMembers();
+            });
+
+            pill.appendChild(removeBtn);
+            list.appendChild(pill);
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'team_members[]';
+            hiddenInput.value = user.id;
+            hidden.appendChild(hiddenInput);
+        });
+    }
+
+    function addAdvisor(user) {
+        const advisorInput = document.getElementById('advisor_name');
+        const advisorHidden = document.getElementById('advisor_id');
+        const displayName = user.name || user.email || `User ${user.id}`;
+        if (advisorInput) { advisorInput.value = displayName; }
+        if (advisorHidden) { advisorHidden.value = user.id; }
+        advisorId = user.id;
+    }
+
+    function selectSuggestion(user, inputEl, box) {
+        if (!inputEl) { return; }
+        if (inputEl.id === 'team_mention_input') {
+            if (!teamMembers.has(user.id)) {
+                teamMembers.set(user.id, user);
+                renderTeamMembers();
+            }
+            inputEl.value = '';
+        } else if (inputEl.id === 'advisor_name') {
+            addAdvisor(user);
+        } else {
+            const displayName = user.name || user.email || `User ${user.id}`;
+            inputEl.value = displayName;
+        }
+        tagState.hide(box);
+    }
+
+    async function getTags(inputEl) {
+        if (!inputEl) { return; }
+        const rawValue = inputEl.value || '';
+        const match = rawValue.match(/@([\w.\-_]{1,50})$/);
+        if (!match || match[1].length < 2) {
+            tagState.hide(tagState.ensureBox(inputEl));
+            return;
+        }
+
+        const query = match[1];
+        const box = tagState.ensureBox(inputEl);
+        box.innerHTML = '<div class="tag-suggestion status">Searching…</div>';
+
+        try {
+            const res = await fetch(`${TAG_ENDPOINT}?search=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            if (!data.success || !Array.isArray(data.users) || data.users.length === 0) {
+                box.innerHTML = '<div class="tag-suggestion status">No users found</div>';
+                return;
+            }
+
+            box.innerHTML = '';
+            data.users.forEach(user => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'tag-suggestion';
+                btn.textContent = user.name;
+                btn.addEventListener('click', () => selectSuggestion(user, inputEl, box));
+                box.appendChild(btn);
+            });
+        } catch (err) {
+            console.error('Tag lookup failed', err);
+            box.innerHTML = '<div class="tag-suggestion status">Unable to load users</div>';
+        }
+    }
+
+    function copyRequesterName(checkbox, targetFieldId) {
+        const requesterName = document.getElementById('contact_person').value;
+        const targetField = document.getElementById(targetFieldId);
+        
+        if (checkbox.checked) {
+            targetField.value = requesterName;
+        } else {
+            targetField.value = '';
+        }
+    }
     // Function to navigate to the next page
     function nextPage(pageNum) {
         // Validate current page fields before proceeding
@@ -373,31 +521,6 @@
             }
         });
         
-        // For page 1, check if at least one target audience is selected
-        if (pageNum === 1) {
-            const audienceChecks = page.querySelectorAll('input[name="audience[]"]:checked');
-            if (audienceChecks.length === 0) {
-                const audienceGroup = page.querySelector('.checkbox-group');
-                isValid = false;
-                
-                // Add error message if it doesn't already exist
-                const errorId = 'audience-error';
-                if (!document.getElementById(errorId)) {
-                    const errorMsg = document.createElement('p');
-                    errorMsg.id = errorId;
-                    errorMsg.classList.add('form-text');
-                    errorMsg.style.color = '#ef4444';
-                    errorMsg.textContent = 'Please select at least one target audience';
-                    audienceGroup.parentNode.appendChild(errorMsg);
-                }
-            } else {
-                // Remove error message if exists
-                const errorMsg = document.getElementById('audience-error');
-                if (errorMsg) {
-                    errorMsg.remove();
-                }
-            }
-        }
         
         if (!isValid) {
             // Show a general error message at top of page
@@ -427,28 +550,29 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize progress labels
         updateProgressLabels();
-        
-        // Set up form submission
-        const form = document.getElementById('fundraisingForm');
-        form.addEventListener('submit', function(e) {
-            // Validate last page before submission
-            if (!validatePage(3)) {
-                e.preventDefault();
-                return false;
-            }
-            
-            // In a real app, this would submit the form
-            // For demo purposes, just show an alert
-            e.preventDefault();
-            alert('Form submitted successfully!');
-            console.log('Form data would be submitted here.');
-            
-            // Log form data
-            const formData = new FormData(form);
-            for (const [key, value] of formData.entries()) {
-                console.log(`${key}: ${value}`);
-            }
+
+        // Close suggestion dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            const boxes = document.querySelectorAll('.tag-suggestions');
+            boxes.forEach(box => {
+                const wrapper = box.closest('.tag-input-wrapper') || box.parentNode;
+                if (box.style.display === 'block' && wrapper && !wrapper.contains(e.target)) {
+                    tagState.hide(box);
+                }
+            });
         });
+
+        // Initialize team members list UI
+        renderTeamMembers();
+        const teamInput = document.getElementById('team_mention_input');
+        if (teamInput) {
+            teamInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    tagState.hide(tagState.ensureBox(teamInput));
+                }
+            });
+        }
+        
         
         // File upload preview for project poster
         const posterInput = document.getElementById('project_poster');

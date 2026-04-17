@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'name' => 'gradlink/app',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '1c351517c11e97766ee72b414616addc75f7cb65',
+        'type' => 'library',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => true,
+    ),
+    'versions' => array(
+        'gradlink/app' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '1c351517c11e97766ee72b414616addc75f7cb65',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'phpmailer/phpmailer' => array(
+            'pretty_version' => 'v7.0.2',
+            'version' => '7.0.2.0',
+            'reference' => 'ebf1655bd5b99b3f97e1a3ec0a69e5f4cd7ea088',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../phpmailer/phpmailer',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'stripe/stripe-php' => array(
+            'pretty_version' => 'v19.1.0',
+            'version' => '19.1.0.0',
+            'reference' => '4e3de7211645699b1f5b5f1f1b45bd9faf369426',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../stripe/stripe-php',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+    ),
+);

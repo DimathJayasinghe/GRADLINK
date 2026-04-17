@@ -17,7 +17,7 @@ class Cookie
         int $ttl = 0,
         string $path = '/',
         ?string $domain = null,
-        bool $secure = null,
+        ?bool $secure = null,
         bool $httpOnly = true,
         string $sameSite = 'Lax'
     ): bool {

@@ -17,6 +17,7 @@
     .rejected {color: var(--danger);}
     .pending {color: var(--warning);}
     .approved {color: var(--success);}
+    .completed {color: #2196f3;}
     .expired {color: var(--muted); font-weight: 600;}
 </style>
 <?php $styles = ob_get_clean(); ?>
@@ -61,6 +62,9 @@
                             case 'Rejected':
                                 echo '<span class="rejected">[REJECTED]</span>';
                                 break;
+                            case 'Completed':
+                                echo '<span class="completed">[COMPLETED]</span>';
+                                break;
                             default:
                                 echo '';
                         }
@@ -77,7 +81,20 @@
                 <p>Deadline: <?php echo htmlspecialchars($req->deadline); ?></p>
                 <?php if (!$expired){echo '<p>Time Left: '.$timeleft->days.' days</p>';}?>
                 <p class="status">Status: <?php echo htmlspecialchars($req->status); ?></p>
-                <a href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>">View Details</a>
+                
+                <?php if ($req->status === 'Rejected' && !empty($req->rejection_reason)): ?>
+                    <div style="margin-top: 0.75rem; padding: 0.75rem; background: rgba(220, 53, 69, 0.1); border-left: 3px solid var(--danger); border-radius: var(--radius-sm);">
+                        <p style="margin: 0; color: var(--danger); font-weight: 600; font-size: 0.9rem;">Rejection Reason:</p>
+                        <p style="margin: 0.5rem 0 0 0; color: var(--text); font-size: 0.9rem;"><?php echo htmlspecialchars($req->rejection_reason); ?></p>
+                    </div>
+                <?php endif; ?>
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+                    <?php if ($req->status === 'Pending'): ?>
+                        <a href="<?php echo URLROOT; ?>/fundraiser/edit/<?php echo $req->req_id; ?>" style="flex: 1; padding: 0.5rem 1rem; background: var(--warning); color: #fff; border-radius: var(--radius-sm); text-align: center; text-decoration: none; font-weight: 600; transition: background 0.2s ease;">Edit</a>
+                    <?php endif; ?>
+                    <a href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>" style="flex: 1; padding: 0.5rem 1rem; background: var(--link); color: #fff; border-radius: var(--radius-sm); text-align: center; text-decoration: none; font-weight: 600; transition: background 0.2s ease;">View Details</a>
+                </div>
             </div>
         <?php endforeach; ?>
     </div>

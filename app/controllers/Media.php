@@ -24,8 +24,17 @@ class Media extends Controller {
         $path = $this->baseDir . DIRECTORY_SEPARATOR . $folder . DIRECTORY_SEPARATOR . $filename;
         if (!is_file($path)) {
             if ($folder === 'profile_pic') {
-                $path = $this->baseDir . DIRECTORY_SEPARATOR . 'profile_pic' . DIRECTORY_SEPARATOR . 'default.jpg';
-                if (!is_file($path)) { http_response_code(404); exit; }
+                $fallbackCandidates = ['default.jpg', 'default.png'];
+                $resolvedFallback = null;
+                foreach ($fallbackCandidates as $fallback) {
+                    $candidate = $this->baseDir . DIRECTORY_SEPARATOR . 'profile_pic' . DIRECTORY_SEPARATOR . $fallback;
+                    if (is_file($candidate)) {
+                        $resolvedFallback = $candidate;
+                        break;
+                    }
+                }
+                if ($resolvedFallback === null) { http_response_code(404); exit; }
+                $path = $resolvedFallback;
             } else {
                 http_response_code(404); exit; }
         }
@@ -55,6 +64,11 @@ class Media extends Controller {
     // /media/certificate/{filename}
     public function certificate($filename = '') {
         $this->serve('certificates', $filename);
+    }
+
+    // /media/fundraiser/{filename}
+    public function fundraiser($filename = '') {
+        $this->serve('fundraisers', $filename);
     }
 }
 ?>

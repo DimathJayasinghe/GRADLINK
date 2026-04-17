@@ -89,6 +89,77 @@ class Post extends Controller
         header('Content-Type: application/json');
         echo json_encode($this->m->getComments($pid));
     }
+
+    public function editComment($cid)
+    {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        if (!is_numeric($cid) || (int)$cid <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid comment ID']);
+            return;
+        }
+
+        $comment = $this->m->getCommentById((int)$cid);
+        if (!$comment) {
+            echo json_encode(['ok' => false, 'error' => 'Comment not found']);
+            return;
+        }
+        if ((int)$comment->user_id !== (int)($_SESSION['user_id'] ?? 0)) {
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+
+        $content = trim($_POST['content'] ?? '');
+        if ($content === '') {
+            echo json_encode(['ok' => false, 'error' => 'Comment cannot be empty']);
+            return;
+        }
+
+        $ok = $this->m->updateComment((int)$cid, $content);
+        if (!$ok) {
+            echo json_encode(['ok' => false, 'error' => 'Failed to update comment']);
+            return;
+        }
+
+        echo json_encode(['ok' => true, 'comments' => $this->m->getComments((int)$comment->post_id)]);
+    }
+
+    public function deleteComment($cid)
+    {
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['ok' => false, 'error' => 'Method not allowed']);
+            return;
+        }
+        if (!is_numeric($cid) || (int)$cid <= 0) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid comment ID']);
+            return;
+        }
+
+        $comment = $this->m->getCommentById((int)$cid);
+        if (!$comment) {
+            echo json_encode(['ok' => false, 'error' => 'Comment not found']);
+            return;
+        }
+        if ((int)$comment->user_id !== (int)($_SESSION['user_id'] ?? 0)) {
+            echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+            return;
+        }
+
+        $ok = $this->m->deleteComment((int)$cid);
+        if (!$ok) {
+            echo json_encode(['ok' => false, 'error' => 'Failed to delete comment']);
+            return;
+        }
+
+        echo json_encode(['ok' => true, 'comments' => $this->m->getComments((int)$comment->post_id)]);
+    }
+
     public function like($pid)
     {
         if (!is_numeric($pid) || (int)$pid <= 0) {
@@ -232,35 +303,27 @@ class Post extends Controller
 
 
     // --- ADMIN CONTENT MANAGEMENT ENDPOINTS ---
-    // Only allow access if user is admin (add your own admin check logic)
     public function admin_list()
     {
-        // DEBUG: Output session and query info
-        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
+        if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
-            echo 'Forbidden';
+            header('Content-Type: application/json');
+            echo json_encode(['error' => 'Forbidden']);
             return;
         }
         $status = $_GET['status'] ?? 'all';
         $search = $_GET['search'] ?? '';
         $posts = $this->m->adminGetPosts($status, $search);
         header('Content-Type: application/json');
-        echo json_encode([
-            'debug' => [
-                'session' => $_SESSION,
-                'status' => $status,
-                'search' => $search,
-                'count' => is_array($posts) ? count($posts) : 0,
-            ],
-            'posts' => $posts
-        ]);
+        echo json_encode(['posts' => $posts]);
     }
 
     public function admin_approve($id)
     {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+        if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
-            echo 'Forbidden';
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
             return;
         }
         $ok = $this->m->adminApprovePost($id);
@@ -270,9 +333,10 @@ class Post extends Controller
 
     public function admin_reject($id)
     {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['role'] ?? '') !== 'admin') {
+        if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
-            echo 'Forbidden';
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
             return;
         }
         $ok = $this->m->adminRejectPost($id);
@@ -282,14 +346,50 @@ class Post extends Controller
 
     public function admin_delete($id)
     {
-        if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
+        if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
-            echo 'Forbidden';
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
             return;
         }
         $ok = $this->m->adminDeletePost($id);
         header('Content-Type: application/json');
         echo json_encode(['ok' => $ok]);
+    }
+
+    /**
+     * Serve post image from storage
+     */
+    public function image($filename = null)
+    {
+        if (!$filename) {
+            http_response_code(404);
+            return;
+        }
+
+        // Sanitize filename - only allow alphanumeric, underscore, dash, dot
+        $filename = preg_replace('/[^a-zA-Z0-9._-]/', '', $filename);
+        if (!$filename) {
+            http_response_code(404);
+            return;
+        }
+
+        $filepath = APPROOT . '/storage/posts/' . $filename;
+
+        if (!is_file($filepath)) {
+            http_response_code(404);
+            return;
+        }
+
+        $mime = mime_content_type($filepath);
+        if (!$mime) {
+            $mime = 'application/octet-stream';
+        }
+
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($filepath));
+        header('Cache-Control: public, max-age=86400');
+        readfile($filepath);
     }
 
     // Delete post by owner or admin

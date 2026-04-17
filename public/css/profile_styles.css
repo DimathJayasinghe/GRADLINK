@@ -274,6 +274,8 @@
             font-size: 1.2em;
             color: var(--text);
             position: relative;
+            margin-top: 1rem;
+            margin-left: 1rem;
         }
 
         .section-title:after {
@@ -289,6 +291,8 @@
         .section-actions {
             display: flex;
             gap: 10px;
+            margin-top: 1rem;
+            margin-right: 1rem;
         }
 
         .section-action-btn {
@@ -317,7 +321,7 @@
             display: flex;
             flex-direction: row;
             align-items: center;
-            width: 100%;
+            /* width: 100%; */
             min-height: 60px;
             background-color: var(--surface-2);
             padding: 15px;
@@ -325,6 +329,8 @@
             margin-bottom: 1em;
             transition: transform 0.2s;
             position: relative;
+            margin-left: 1rem;
+            margin-right: 1rem;
         }
 
         .project-card:hover,
@@ -380,6 +386,64 @@
 
         .certificate-card.edit-mode .certificate-actions {
             display: flex;
+        }
+
+        /* Styled empty state cards for profile info sections */
+        .info-empty-state {
+            /* width: 100%; */
+            min-height: 132px;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-lg);
+            background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 18px;
+            margin-bottom: 1em;
+            text-align: center;
+            margin-left: 1em;
+            margin-right: 1em;
+        }
+
+        .info-empty-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--surface-3);
+            color: var(--muted);
+            font-size: 1.05em;
+        }
+
+        .info-empty-title {
+            color: var(--text);
+            font-size: 0.98em;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .info-empty-text {
+            color: var(--muted);
+            font-size: 0.88em;
+            max-width: 420px;
+            line-height: 1.35;
+        }
+        
+        /* Work card: show edit/delete in edit mode */
+        .work-card.edit-mode .certificate-actions {
+            display: flex;
+        }
+
+        /* Project card: show edit/delete in edit mode and hide view button */
+        .project-card.edit-mode .certificate-actions {
+            display: flex;
+        }
+        .project-card.edit-mode .certificate-view-btn-wrapper {
+            display: none !important; /* override inline display:flex */
         }
 
         .certificate-action-btn {
@@ -673,6 +737,24 @@
         @media (max-width: 576px) {
             .profile {
                 height: 230px;
+            }
+
+            .info-empty-state {
+                min-height: 120px;
+                padding: 14px;
+            }
+
+            .info-empty-icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .info-empty-title {
+                font-size: 0.94em;
+            }
+
+            .info-empty-text {
+                font-size: 0.82em;
             }
             
             .profile-name-container {

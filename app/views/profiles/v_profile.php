@@ -5,117 +5,60 @@
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/components/postCardStyles.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/profile_styles.css"> <!-- Import profile specific styles -->
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/mainfeed_styles.css"> <!-- Import main feed styles -->
-
 <?php $styles = ob_get_clean(); ?>
+
 <?php
-$notifications = [
-    (object)[
-        'type' => 'like',
-        'user' => 'Alice',
-        'content' => ' liked your post.',
-        'time' => '2h ago',
-        'userImg' => URLROOT . '/media/profile/alice.jpg'
-    ],
-    (object)[
-        'type' => 'follow',
-        'user' => 'Bob',
-        'content' => ' started following you.',
-        'time' => '3h ago',
-        'userImg' => URLROOT . '/media/profile/bob.jpg'
-    ]
-];
-$isOwner = isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] == $data['userDetails']->id;
-?>
-<?php ob_start() ?>
-<?php
-$leftside_buttons = [
-    ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'"],
-    ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
-    ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'badge' => true],
-    ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
-    ['icon' => 'user', 'label' => 'Profile', 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=" . $_SESSION['user_id'] . "'", 'active' => true],
-    // icon for fundraiser
-    ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
-    //icon for post requests
-    ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
-    ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
-];
-//  new portal to approve new alumnis only available for special alumnis
-if ($_SESSION['special_alumni']) {
-    $leftside_buttons[] = [
-        'icon' => 'user-check',
-        'label' => 'Approve Alumni',
-        'onclick' => "window.location.href='" . URLROOT . "/alumni/approve'"
+    $notifications = [
+        (object)[
+            'type' => 'like',
+            'user' => 'Alice',
+            'content' => ' liked your post.',
+            'time' => '2h ago',
+            'userImg' => URLROOT . '/media/profile/alice.jpg'
+        ],
+        (object)[
+            'type' => 'follow',
+            'user' => 'Bob',
+            'content' => ' started following you.',
+            'time' => '3h ago',
+            'userImg' => URLROOT . '/media/profile/bob.jpg'
+        ]
     ];
-};
-$leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
-require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
+    $isOwner = isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] == $data['userDetails']->id;
+?>
+
+<?php ob_start() ?>
+    <?php
+    $leftside_buttons = [
+        ['icon' => 'home', 'label' => 'Home', 'onclick' => "window.location.href='" . URLROOT . "/mainfeed'"],
+        ['icon' => 'search', 'label' => 'Explore', 'onclick' => "window.location.href='" . URLROOT . "/explore'"],
+        ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'badge' => true],
+        ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
+        ['icon' => 'user', 'label' => 'Profile', 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=" . $_SESSION['user_id'] . "'", 'active' => true],
+        // icon for fundraiser
+        ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
+        //icon for post requests
+        ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
+        ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
+    ];
+    //  new portal to approve new alumnis only available for special alumnis
+    if ($_SESSION['special_alumni']) {
+        $leftside_buttons[] = [
+            'icon' => 'user-check',
+            'label' => 'Approve Alumni',
+            'onclick' => "window.location.href='" . URLROOT . "/alumni/approve'"
+        ];
+    };
+    $leftside_buttons[] = ['icon' => 'cog', 'label' => 'Settings', 'onclick' => "window.location.href='" . URLROOT . "/settings'"];
+    require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
 <?php $leftsidebar = ob_get_clean(); ?>
 
 
 <?php ob_start() ?>
 <div class="main-content">
+    
     <!-- Profile Section -->
-    <?php $hasProfileActions = (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id); ?>
-    <div class="profile <?= $hasProfileActions ? 'has-actions' : 'no-actions' ?>">
-        <div class="profile-up-part">
-            <?php if ($isOwner) {
-                echo '
-                            <div class="profile-edit-btn">
-                        <i class="fas fa-pencil-alt"></i>
-                    </div>
-                        ';
-            } ?>
-
-        </div>
-        <div class="profile-down-part">
-            <div class="profile-image">
-                <img src="<?php echo URLROOT; ?>/media/profile/<?php echo $data['userDetails']->profile_image ?? 'default.jpg'; ?>" alt="Profile" id="profileImageEl">
-            </div>
-            <div class="profile-name-container">
-                <div class="profile-name">
-                    <?= isset($data['userDetails']->name) ? htmlspecialchars($data['userDetails']->name) : 'Alumni Name' ?>
-                    <div class="batch-indicator">
-                        <?= isset($data['userDetails']->batch_no) ? htmlspecialchars($data['userDetails']->batch_no) : '20' ?>
-                    </div>
-                </div>
-                <div class="profile-bio" id="profileBioEl">
-                    <?= isset($data['userDetails']->bio) ? htmlspecialchars($data['userDetails']->bio) : 'Software Engineer at Google' ?>
-                </div>
-                <div class="profile-footer-spacer"></div>
-                <?php if (isset($_SESSION['user_id']) && isset($data['userDetails']->id) && $_SESSION['user_id'] != $data['userDetails']->id): ?>
-                    <div class="profile-actions">
-                        <?php 
-                        $isFollowing = $data['isfollowed'];
-                        $hasPending = $data['has_pending_request'] ?? false;
-                        $buttonState = $isFollowing ? 'following' : ($hasPending ? 'pending' : 'follow');
-                        ?>
-                        <button
-                            class="action-btn connect-btn <?= $isFollowing ? 'active' : '' ?> <?= $hasPending ? 'pending' : '' ?>"
-                            id="connectBtn"
-                            data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
-                            data-connected="<?= $isFollowing ?  '1' : '0'; ?>"
-                            data-pending="<?= $hasPending ? '1' : '0'; ?>"
-                            title="<?= htmlspecialchars(($isFollowing ? 'Following ' : ($hasPending ? 'Request pending for ' : 'Follow ')) . ($data['userDetails']->name ?? 'user')) ?>">
-                            <i class="<?= $isFollowing ? 'fas fa-user-check' : ($hasPending ? 'fas fa-clock' : 'fas fa-user-plus') ?>" aria-hidden="true"></i>
-                            <span><?= $isFollowing ? 'Following' : ($hasPending ? 'Pending' : 'Follow') ?></span>
-                        </button>
-                        <?php if ($isFollowing): ?>
-                        <button
-                            class="action-btn message-btn"
-                            id="messageBtn"
-                            data-user-id="<?= htmlspecialchars($data['userDetails']->id) ?>"
-                            title="Message <?= htmlspecialchars($data['userDetails']->name ?? 'user') ?>">
-                            <i class="fas fa-envelope" aria-hidden="true"></i>
-                            <span>Message</span>
-                        </button>
-                        <?php endif; ?>
-                       
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
+    <?php require APPROOT . '/views/profiles/partials/sections/profile.php'; ?>
 
     <!-- Navigation Buttons -->
     <div class="profile-navigation">
@@ -127,548 +70,51 @@ require APPROOT . '/views/inc/commponents/leftSideBar.php'; ?>
         </div>
     </div>
 
-
     <!-- Import newpost_section below navigation -->
-
     <?php
     if ($isOwner) {
         require APPROOT . '/views/inc/commponents/newpost_section.php';
     } ?>
 
-    <!-- Posts Section - Using same structure as main feed -->
-    <div class="feed" id="postsSection">
-        <?php
-        $canViewPosts = ($data['public_profile'] ?? false) || $isOwner || ($data['isfollowed'] ?? false);
-        ?>
-        <?php if (!empty($data['posts']) && $canViewPosts): foreach ($data['posts'] as $p): ?>
-                <post-card
-                    profile-img="<?php echo htmlspecialchars($p->profile_image ?? ''); ?>"
-                    user-role="<?php echo htmlspecialchars($p->role ?? ''); ?>"
-                    user-name="<?php echo htmlspecialchars($p->name ?? 'User'); ?>"
-                    tag="@user<?php echo $p->user_id ?? ''; ?>"
-                    post-time="<?php echo isset($p->created_at) ? date('M d', strtotime($p->created_at)) : ''; ?>"
-                    post-content="<?php echo htmlspecialchars($p->content ?? ''); ?>"
-                    post-img="<?php echo htmlspecialchars($p->image ?? ''); ?>"
-                    like-count="<?php echo $p->likes ?? 0; ?>"
-                    cmnt-count="<?php echo $p->comments ?? 0; ?>"
-                    liked="<?php echo !empty($p->liked) ? 1 : 0; ?>"
-                    post-id="<?php echo $p->id ?? ''; ?>"
-                    post-user-id="<?php echo $p->user_id ?? ''; ?>"
-                    current-user-id="<?php echo $_SESSION['user_id'] ?? ''; ?>"
-                    current-user-role="<?php echo $_SESSION['user_role'] ?? ''; ?>">
-                </post-card>
-            <?php endforeach;
-        elseif (!$canViewPosts): ?>
-            <div class="no-posts-message">
-                <!-- Private profile  -->
-                <div><i class="fas fa-lock" aria-hidden="true"></i>
-                    <p>This Profile is private. Follow to see the content.</p>
-                </div>
-            </div>
-        <?php else: ?>
-            <div class="no-posts-message">No posts yet.</div>
-        <?php endif; ?>
-    </div>
+    <!-- Posts Section -->
+    <?php require APPROOT . '/views/profiles/partials/sections/post.php'; ?>
 
-    <!-- Info Section: Certificates, Work Experience and Projects -->
-    <div class="info-section" id="infoSection">
-        <!-- Work Experience Section -->
-        <div class="section-header">
-            <div class="section-title">Work Experience</div>
-            <?php if ($isOwner) {
-                echo '
-                        <div class="section-actions">
-                        <div class="section-action-btn" id="editWorkBtn" title="Edit Work Experience">
-                            <i class="fas fa-pencil-alt"></i>
-                        </div>
-                        <div class="section-action-btn" id="addWorkBtn" title="Add Work Experience">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                        </div>';
-            } ?>
-
-        </div>
-
-        <!-- Work Experience Cards -->
-        <div id="workContainer">
-            <?php
-            // Sample work experience data
-            $sampleWork = [
-                ['id' => 1, 'title' => 'Software Engineer', 'company' => 'Google', 'period' => '2021 - Present'],
-                ['id' => 2, 'title' => 'Associate Developer', 'company' => 'Microsoft', 'period' => '2019 - 2021'],
-                ['id' => 3, 'title' => 'Intern', 'company' => 'Facebook', 'period' => '2018 - 2019']
-            ];
-
-            if (!empty($sampleWork)):
-                foreach ($sampleWork as $work):
-            ?>
-                    <div class="certificate-card work-card" data-id="<?= $work['id'] ?>" data-title="<?= htmlspecialchars($work['title']) ?>" data-company="<?= htmlspecialchars($work['company']) ?>" data-period="<?= htmlspecialchars($work['period']) ?>">
-                        <div class="certificate-card-image">
-                            <i class="fas fa-briefcase"></i>
-                        </div>
-                        <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($work['title']) ?></div>
-                            <div class="certificate-issuer"><?= htmlspecialchars($work['company']) ?></div>
-                            <div class="certificate-date"><?= htmlspecialchars($work['period']) ?></div>
-                        </div>
-                        <?php if ($isOwner) {
-                            echo '<div class="certificate-actions">
-                            <div class="certificate-action-btn edit-btn" title="Edit Work Experience">
-                                <i class="fas fa-pencil-alt"></i>
-                            </div>
-                            <div class="certificate-action-btn delete-btn" title="Delete Work Experience">
-                                <i class="fas fa-trash-alt"></i>
-                            </div>
-                        </div>';
-                        } ?>
-
-                    </div>
-                <?php
-                endforeach;
-            else:
-                ?>
-                <div>No work experience added yet.</div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Certificates Section with Action Buttons -->
-        <div class="section-header" style="margin-top:1.5em;">
-            <div class="section-title">Certificates</div>
-            <?php if ($isOwner) {
-                echo '
-                            <div class="section-actions">
-                        <div class="section-action-btn" id="editCertificatesBtn" title="Edit Certificates">
-                            <i class="fas fa-pencil-alt"></i>
-                        </div>
-                        <div class="section-action-btn" id="addCertificateBtn" title="Add Certificate">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                    </div>
-                        ';
-            } ?>
-
-        </div>
-
-        <!-- Certificate Cards -->
-        <div id="certificatesContainer">
-            <?php
-            if (!empty($data['certificates'])):
-                foreach ($data['certificates'] as $cert):
-                    $date = new DateTime($cert->issued_date);
-                    $formattedDate = $date->format('F Y');
-            ?>
-                    <div class="certificate-card"
-                        data-id="<?= htmlspecialchars($cert->id) ?>"
-                        data-name="<?= htmlspecialchars($cert->name) ?>"
-                        data-issuer="<?= htmlspecialchars($cert->issuer) ?>"
-                        data-issued_date="<?= htmlspecialchars($cert->issued_date) ?>"
-                        data-file="<?= htmlspecialchars($cert->certificate_file ?? '') ?>">
-                        <div class="certificate-card-image"><i class="fas fa-certificate"></i></div>
-                        <div class="certificate-details">
-                            <div class="certificate-card-title"><?= htmlspecialchars($cert->name) ?></div>
-                            <div class="certificate-issuer"><?= htmlspecialchars($cert->issuer) ?></div>
-                            <div class="certificate-date"><?= htmlspecialchars($formattedDate) ?></div>
-                        </div>
-                        <!-- Always-visible View button -->
-                        <div class="certificate-view-btn-wrapper" style="display:flex; gap:8px; align-items:center;">
-                            <div class="certificate-action-btn view-btn" title="View Certificate"><i class="fas fa-eye"></i></div>
-                        </div>
-                        <?php if ($isOwner): ?>
-                            <div class="certificate-actions">
-                                <div class="certificate-action-btn edit-btn" title="Edit Certificate"><i class="fas fa-pencil-alt"></i></div>
-                                <div class="certificate-action-btn delete-btn" title="Delete Certificate"><i class="fas fa-trash-alt"></i></div>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                <?php
-                endforeach;
-            else:
-                ?>
-                <div>No certificates added yet.</div>
-            <?php endif; ?>
-        </div>
-
-        <!-- Projects Section -->
-        <div class="section-header" style="margin-top:1.5em;">
-            <div class="section-title">Projects</div>
-            <?php if ($isOwner) {
-                echo '
-                            <div class="section-actions">
-                        <div class="section-action-btn" id="editProjectsBtn" title="Edit Projects">
-                            <i class="fas fa-pencil-alt"></i>
-                        </div>
-                        <div class="section-action-btn" id="addProjectBtn" title="Add Project">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                    </div>
-                        ';
-            } ?>
-
-        </div>
-
-        <div id="projectsContainer">
-            <?php
-            // Sample project data
-            $sampleProjects = [
-                ['id' => 1, 'title' => 'AI-Powered Healthcare App'],
-                ['id' => 2, 'title' => 'Smart Home Automation System']
-            ];
-
-            if (!empty($sampleProjects)): foreach ($sampleProjects as $project): ?>
-                    <div class="project-card" data-id="<?= $project['id'] ?>" data-title="<?= htmlspecialchars($project['title']) ?>">
-                        <div class="project-card-image">
-                            <i class="fas fa-project-diagram"></i>
-                        </div>
-                        <div class="project-card-title"><?= htmlspecialchars($project['title']) ?></div>
-                        <?php if ($isOwner) {
-                            echo '<div class="certificate-actions">
-                                <div class="certificate-action-btn edit-btn" title="Edit Project">
-                                    <i class="fas fa-pencil-alt"></i>
-                                </div>
-                                <div class="certificate-action-btn delete-btn" title="Delete Project">
-                                    <i class="fas fa-trash-alt"></i>
-                                </div>
-                            </div>';
-                        } ?>
-
-                    </div>
-                <?php endforeach;
-            else: ?>
-                <div>No projects added yet.</div>
-            <?php endif; ?>
-        </div>
-    </div>
+    <?php require APPROOT . '/views/profiles/partials/sections/info.php'; ?>
 </div>
 
 <?php
 // Hidden form for POST-based navigation to Messages with target user id
-require_once APPROOT . '/helpers/Csrf.php';
 ?>
 <form id="profileMessageForm" method="post" action="<?= URLROOT; ?>/messages" style="display:none;">
     <input type="hidden" name="user" id="profileMessageUserId" value="">
-    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(Csrf::getToken(), ENT_QUOTES); ?>">
 </form>
 
+<!-- Profile Popup -->
+<?php require APPROOT . '/views/profiles/partials/popups/profile.php'; ?>
 
+<!-- Work Experience Popup -->
+<?php require APPROOT . '/views/profiles/partials/popups/work_experience.php'; ?>
 
-<!-- Profile Edit Popup (visual only, no backend) -->
-<?php if ($isOwner): ?>
-    <div id="editProfilePopup" class="certificate-add-popup" style="display:none;">
-        <div class="certificate-add">
-            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-            <div class="form-title">Edit Profile</div>
+<!-- Projects Popup -->
+<?php require APPROOT . '/views/profiles/partials/popups/projects.php'; ?>
 
-            <form id="editProfileForm" class="certificate-form">
-                <div class="form-group">
-                    <label>Profile Picture</label>
-                    <div class="file-upload-container">
-                        <input type="file" id="profileImageInput" accept="image/*" style="display:none;">
-                        <button type="button" class="file-upload-btn" id="chooseProfileImgBtn">Choose Image</button>
-                        <span class="file-name" id="profileImgFileName" style="color:var(--text)">No file chosen</span>
-                    </div>
-                    <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
-                        <img id="profileImagePreview" src="<?php echo URLROOT; ?>/media/profile/<?php echo $data['userDetails']->profile_image ?? 'default.jpg'; ?>" alt="Preview" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid var(--border);">
-                        <span style="color:var(--muted);font-size:0.9rem;">Preview</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="profileBioInput">Bio</label>
-                    <textarea id="profileBioInput" style="
-                                max-width: 100%;
-                                background: rgba(255, 255, 255, 0.05);
-                                border: 1px solid var(--border);
-                                border-radius: 5px;
-                                color: var(--text);
-                                padding:5px;
-                        " rows="3" placeholder="Tell others about you..."></textarea>
-                </div>
-                <div style="margin-top:12px;">
-                    <button type="submit" class="save-btn" id="saveProfileBtn">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Work Experience: Add Popup -->
-<?php if ($isOwner): ?>
-    <div id="addWorkPopup" class="certificate-add-popup" style="display:none;">
-        <div class="certificate-add">
-            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-            <div class="form-title">Add Work Experience</div>
-            <form id="addWorkForm" class="certificate-form">
-                <div class="form-group">
-                    <label for="workTitleAdd">Title</label>
-                    <input type="text" id="workTitleAdd" required>
-                </div>
-                <div class="form-group">
-                    <label for="workCompanyAdd">Company</label>
-                    <input type="text" id="workCompanyAdd" required>
-                </div>
-                <div class="form-group">
-                    <label for="workPeriodAdd">Period</label>
-                    <input type="text" id="workPeriodAdd" placeholder="e.g., 2021 - Present" required>
-                </div>
-                <div style="margin-top:12px;">
-                    <button type="submit" class="save-btn">Add Work</button>
-                </div>
-            </form>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Work Experience: Edit Popup -->
-<?php if ($isOwner): ?>
-    <div id="editWorkPopup" class="certificate-add-popup" style="display:none;">
-        <div class="certificate-add">
-            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-            <div class="form-title">Edit Work Experience</div>
-            <form id="editWorkForm" class="certificate-form">
-                <input type="hidden" id="workIdEdit">
-                <div class="form-group">
-                    <label for="workTitleEdit">Title</label>
-                    <input type="text" id="workTitleEdit" required>
-                </div>
-                <div class="form-group">
-                    <label for="workCompanyEdit">Company</label>
-                    <input type="text" id="workCompanyEdit" required>
-                </div>
-                <div class="form-group">
-                    <label for="workPeriodEdit">Period</label>
-                    <input type="text" id="workPeriodEdit" placeholder="e.g., 2021 - Present" required>
-                </div>
-                <div style="margin-top:12px;">
-                    <button type="submit" class="save-btn">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Projects: Add Popup -->
-<?php if ($isOwner): ?>
-    <div id="addProjectPopup" class="certificate-add-popup" style="display:none;">
-        <div class="certificate-add">
-            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-            <div class="form-title">Add Project</div>
-            <form id="addProjectForm" class="certificate-form">
-                <div class="form-group">
-                    <label for="projectTitleAdd">Title</label>
-                    <input type="text" id="projectTitleAdd" required>
-                </div>
-                <div class="form-group">
-                    <label for="projectDescAdd">Description (optional)</label>
-                    <textarea id="projectDescAdd" style="
-                                max-width: 100%;
-                                background: rgba(255, 255, 255, 0.05);
-                                border: 1px solid var(--border);
-                                border-radius: 5px;
-                                color: var(--text);
-                                padding:5px;
-                        " rows="3" placeholder="Brief description..."></textarea>
-                </div>
-                <div style="margin-top:12px;">
-                    <button type="submit" class="save-btn">Add Project</button>
-                </div>
-            </form>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Projects: Edit Popup -->
-<?php if ($isOwner): ?>
-    <div id="editProjectPopup" class="certificate-add-popup" style="display:none;">
-        <div class="certificate-add">
-            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-            <div class="form-title">Edit Project</div>
-            <form id="editProjectForm" class="certificate-form">
-                <input type="hidden" id="projectIdEdit">
-                <div class="form-group">
-                    <label for="projectTitleEdit">Title</label>
-                    <input type="text" id="projectTitleEdit" required>
-                </div>
-                <div class="form-group">
-                    <label for="projectDescEdit">Description (optional)</label>
-                    <textarea id="projectDescEdit" rows="3"></textarea>
-                </div>
-                <div style="margin-top:12px;">
-                    <button type="submit" class="save-btn">Save Changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Add Certificate Popup (separate form) -->
-<style>
-    /* Disabled state for generic save button */
-    .save-btn:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        filter: grayscale(0.2);
-    }
-</style>
-<div id="addCertificatePopup" class="certificate-add-popup" style="display:none;">
-    <div class="certificate-add">
-        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-        <div class="form-title">Add New Certificate</div>
-
-        <form id="addCertificateForm" method="post" action="<?= URLROOT; ?>/profile/addCertificate" enctype="multipart/form-data" class="certificate-form">
-            <div class="form-group">
-                <label for="certificateNameAdd">Name</label>
-                <input type="text" id="certificateNameAdd" name="certificate_name" required>
-            </div>
-            <div class="form-group">
-                <label for="certificateIssuerAdd">Issuing Organization</label>
-                <input type="text" id="certificateIssuerAdd" name="certificate_issuer" required>
-            </div>
-            <div class="form-group">
-                <label for="certificateDateAdd">Issue Date</label>
-                <input type="date" id="certificateDateAdd" name="certificate_date" required>
-            </div>
-            <div class="form-group">
-                <label for="certificateFileAdd">Upload Certificate (PDF)</label>
-                <div class="file-upload-container">
-                    <input type="file" id="certificateFileAdd" name="certificate_file" accept=".pdf" style="display:none;">
-                    <button type="button" class="file-upload-btn" id="chooseFileBtnAdd" onclick="document.getElementById('certificateFileAdd').click()">Choose File</button>
-                    <span class="file-name" id="fileNameAdd" style="color:var(--text)">No file chosen</span>
-                </div>
-                <span id="certAddTooLarge" style="display:none;color:red;font-size:12px;">Attached file is more than 5MB</span>
-            </div>
-
-            <div style="margin-top:12px;">
-                <button type="submit" class="save-btn" id="saveNewBtnAdd">Save Certificate</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Edit Certificate Popup (separate form) -->
-<div id="editCertificatePopup" class="certificate-add-popup" style="display:none;">
-    <div class="certificate-add">
-        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-        <div class="form-title" id="certificateFormTitleEdit">Edit Certificate</div>
-
-        <form id="editCertificateForm" method="post" action="<?= URLROOT; ?>/profile/updateCertificate" enctype="multipart/form-data" class="certificate-form">
-            <input type="hidden" name="certificate_id" id="certificateIdEdit" value="">
-            <div class="form-group">
-                <label for="certificateNameEdit">Name</label>
-                <input type="text" id="certificateNameEdit" name="certificate_name" required>
-            </div>
-            <div class="form-group">
-                <label for="certificateIssuerEdit">Issuing Organization</label>
-                <input type="text" id="certificateIssuerEdit" name="certificate_issuer" required>
-            </div>
-            <div class="form-group">
-                <label for="certificateDateEdit">Issue Date</label>
-                <input type="date" id="certificateDateEdit" name="certificate_date" required>
-            </div>
-            <div class="form-group">
-
-                <div class="file-upload-container" id="fileUploadContainerEdit">
-                    <label for="certificateFileEdit">Upload Certificate (PDF)</label>
-                    </br>
-                    <input type="file" id="certificateFileEdit" name="certificate_file" accept=".pdf" style="display:none;">
-                    <button type="button" class="file-upload-btn" id="chooseFileBtnEdit" onclick="document.getElementById('certificateFileEdit').click()">Choose File</button>
-                    <span class="file-name" id="fileNameEdit" style="color:var(--text)">No file chosen</span>
-                    <input type="hidden" id="removeFileInputEdit" name="remove_certificate_file" value="0">
-                    <input type="hidden" id="existingFileInputEdit" name="existing_certificate_file" value="">
-                </div>
-
-                <div id="currentFileContainerEdit" style="margin-top:8px; display:none;">
-                    <span style="color:var(--muted)">Current file: </span>
-                    <a href="#" id="currentFileLinkEdit" target="_blank" style="color:var(--link);"></a>
-                    <button type="button" id="cutFileBtnEdit" class="file-cut-btn" title="Remove current file"
-                        style="margin-left:12px;background:none;border:none;color:var(--link);cursor:pointer;font-size:1rem;">
-                        &times;
-                    </button>
-                </div>
-                <span id="certEditTooLarge" style="display:none;color:red;font-size:12px;">Attached file is more than 5MB</span>
-            </div>
-
-            <div style="margin-top:12px;">
-                <button type="submit" class="save-btn" id="saveChangesBtnEdit">Save Changes</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Add Delete Confirmation Popup (uses same styles as certificate-add-popup) -->
-<div id="deleteCertificatePopup" class="certificate-add-popup" style="display:none;">
-    <div class="certificate-add">
-        <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-        <div class="form-title">Delete Certificate</div>
-        <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
-            <p>Are you sure you want to permanently delete this certificate? This action cannot be undone.</p>
-        </div>
-        <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 20px;">
-            <button type="button" id="cancelDeleteCertBtn" class="save-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
-            <button type="button" id="confirmDeleteCertBtn" class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Work Experience Popup (visual only) -->
-<?php if ($isOwner): ?>
-    <div id="deleteWorkPopup" class="certificate-add-popup" style="display:none;">
-        <div class="certificate-add">
-            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-            <div class="form-title">Delete Work Experience</div>
-            <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
-                <p>Are you sure you want to permanently delete this work experience? This action cannot be undone.</p>
-            </div>
-            <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 20px;">
-                <button type="button" id="cancelDeleteWorkBtn" class="save-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
-                <button type="button" id="confirmDeleteWorkBtn" class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
-            </div>
-        </div>
-    </div>
-<?php endif; ?>
-
-<!-- Delete Project Popup (visual only) -->
-<?php if ($isOwner): ?>
-    <div id="deleteProjectPopup" class="certificate-add-popup" style="display:none;">
-        <div class="certificate-add">
-            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-            <div class="form-title">Delete Project</div>
-            <div class="certificate-delete-body" style="color:var(--text); padding:16px;">
-                <p>Are you sure you want to permanently delete this project? This action cannot be undone.</p>
-            </div>
-            <div style="display:flex; gap:12px; justify-content:flex-end; padding:12px 16px 20px;">
-                <button type="button" id="cancelDeleteProjectBtn" class="save-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
-                <button type="button" id="confirmDeleteProjectBtn" class="save-btn" style="background:var(--danger);color:#fff;">Delete</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Certificate PDF Preview Modal -->
-    <div id="certificatePreviewModal" class="certificate-add-popup" style="display:none;">
-        <div class="certificate-add" style="max-width: 900px; width: 90%; height: 85vh; display: flex; flex-direction: column;">
-            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
-            <div class="form-title" id="certificatePreviewTitle" style="margin-bottom: 8px;">Certificate Preview</div>
-            <div style="flex: 1; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: #fff;">
-                <iframe id="certificatePreviewFrame" src="about:blank" title="Certificate PDF" style="width:100%;height:100%;border:0;"></iframe>
-            </div>
-        </div>
-    </div>
-<?php endif; ?>
+<!-- Certificates Popup -->
+<?php require APPROOT . '/views/profiles/partials/popups/certificates.php'; ?>
 
 <?php $center_content = ob_get_clean(); ?>
 <?php ob_start() ?>
 <!-- Include the right sidebar component -->
 <?php
-$rightSidebarStylesIncluded = true; // Prevent duplicate styles
-require APPROOT . '/views/inc/commponents/rightSideBar.php';
+    $rightSidebarStylesIncluded = true; // Prevent duplicate styles
+    require APPROOT . '/views/inc/commponents/rightSideBar.php';
 ?>
 <?php $rightsidebar = ob_get_clean(); ?>
 
-<?php ob_start() ?>
+<script>window.URLROOT = "<?= URLROOT; ?>";</script>
+<script defer src="<?php echo URLROOT ?>/js/component/postCard.js"></script>
 
-<script>
+<?php ob_start() ?>
     window.URLROOT = "<?php echo URLROOT; ?>";
-</script>
-<script src="<?php echo URLROOT ?>/js/component/postCard.js"></script>
-<script>
     // Function to switch between posts and info tabs
     function showTab(tab) {
         // Get the sections
@@ -710,26 +156,42 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         setupEditModeForSection('editCertificatesBtn', 'certificatesContainer', 'certificate-card');
         setupEditModeForSection('editProjectsBtn', 'projectsContainer', 'project-card');
 
-        // Setup card action buttons for all card types
-        setupCardActionButtons('.work-card');
-        setupCardActionButtons('.project-card');
-
         // No-op: certificate handlers are implemented in the later script block per-form
 
-        // Profile edit button -> open profile popup
+        // Profile/location edit button -> open profile popup
         const profileEditBtn = document.querySelector('.profile-edit-btn');
+        const locationEditBtn = document.getElementById('editLocationBtn');
+
+        const openProfilePopup = function() {
+            const popup = document.getElementById('editProfilePopup');
+            const form = document.getElementById('editProfileForm');
+            if (!popup || !form) return;
+
+            const bioInput = document.getElementById('profileBioInput');
+            const batchInput = document.getElementById('profileBatchNoInput');
+            const countryInput = document.getElementById('profileCountryInput');
+
+            if (bioInput) bioInput.value = form.dataset.initialBio || '';
+            if (batchInput) batchInput.value = form.dataset.initialBatch || '';
+            if (countryInput) countryInput.value = form.dataset.initialCountry || 'Sri Lanka';
+
+            const fileInput = document.getElementById('profileImageInput');
+            const fileName = document.getElementById('profileImgFileName');
+            if (fileInput) fileInput.value = '';
+            if (fileName) fileName.textContent = 'No file chosen';
+
+            const preview = document.getElementById('profileImagePreview');
+            const img = document.getElementById('profileImageEl');
+            if (preview && img) preview.src = img.src;
+
+            popup.style.display = 'flex';
+        };
+
         if (profileEditBtn) {
-            profileEditBtn.addEventListener('click', function() {
-                const popup = document.getElementById('editProfilePopup');
-                if (!popup) return;
-                const bioEl = document.getElementById('profileBioEl');
-                const bioInput = document.getElementById('profileBioInput');
-                if (bioEl && bioInput) bioInput.value = bioEl.textContent.trim();
-                const preview = document.getElementById('profileImagePreview');
-                const img = document.getElementById('profileImageEl');
-                if (preview && img) preview.src = img.src;
-                popup.style.display = 'flex';
-            });
+            profileEditBtn.addEventListener('click', openProfilePopup);
+        }
+        if (locationEditBtn) {
+            locationEditBtn.addEventListener('click', openProfilePopup);
         }
 
         // Add fundraising section to the existing right sidebar
@@ -818,6 +280,134 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 }
             });
         }
+
+        // Report profile behavior
+        const reportProfileBtn = document.getElementById('reportProfileBtn');
+        if (reportProfileBtn) {
+            reportProfileBtn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-user-id');
+                if (!targetId) return;
+
+                const overlayId = `profile-report-popup-${targetId}`;
+                let overlay = document.getElementById(overlayId);
+
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = overlayId;
+                    overlay.className = 'certificate-add-popup';
+                    overlay.style.display = 'none';
+                    overlay.innerHTML = `
+                        <div class="certificate-add" style="max-width:560px;">
+                            <button class="close-popup" title="Close"><i class="fas fa-times"></i></button>
+                            <div class="form-title">Report Profile</div>
+                            <form class="certificate-form" id="profileReportForm-${targetId}" novalidate>
+                                <div class="form-group">
+                                    <label for="profileReportCategory-${targetId}">Category</label>
+                                    <select id="profileReportCategory-${targetId}" required>
+                                        <option value="" disabled selected>Select a category</option>
+                                        <option>Fake account</option>
+                                        <option>Impersonation</option>
+                                        <option>Harassment or bullying</option>
+                                        <option>Hate or abusive content</option>
+                                        <option>Spam</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profileReportDetails-${targetId}">Details (optional)</label>
+                                    <textarea id="profileReportDetails-${targetId}" rows="4" placeholder="Add any details or context..." style="padding:10px;border-radius: var(--radius-lg);border:1px solid var(--border);background:var(--input);color:var(--text);"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profileReportLink-${targetId}">Reference link (optional)</label>
+                                    <input type="url" id="profileReportLink-${targetId}" placeholder="https://..." />
+                                </div>
+                                <div style="display:flex; gap:12px; justify-content:flex-end;">
+                                    <button type="button" class="save-btn" data-action="cancel" style="background:transparent;color:var(--text);border:1px solid var(--border);">Cancel</button>
+                                    <button type="submit" class="save-btn" style="background:var(--primary);color:#fff;">Submit Report</button>
+                                </div>
+                            </form>
+                        </div>`;
+                    document.body.appendChild(overlay);
+
+                    const closePopup = () => {
+                        overlay.style.display = 'none';
+                    };
+
+                    overlay.querySelector('.close-popup')?.addEventListener('click', closePopup);
+                    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', closePopup);
+                    overlay.addEventListener('click', function(e) {
+                        if (e.target === overlay) {
+                            closePopup();
+                        }
+                    });
+
+                    const notify = (message) => {
+                        if (typeof show_popup === 'function') {
+                            show_popup(message);
+                            return;
+                        }
+                        alert(message);
+                    };
+
+                    const form = overlay.querySelector(`#profileReportForm-${targetId}`);
+                    form?.addEventListener('submit', async function(e) {
+                        e.preventDefault();
+
+                        const categoryEl = overlay.querySelector(`#profileReportCategory-${targetId}`);
+                        const detailsEl = overlay.querySelector(`#profileReportDetails-${targetId}`);
+                        const linkEl = overlay.querySelector(`#profileReportLink-${targetId}`);
+                        const submitBtn = form.querySelector('button[type="submit"]');
+
+                        const category = categoryEl ? categoryEl.value : '';
+                        const details = detailsEl ? detailsEl.value.trim() : '';
+                        const link = linkEl ? linkEl.value.trim() : '';
+
+                        if (!category) {
+                            notify('Please select a category');
+                            return;
+                        }
+
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Submitting...';
+                        }
+
+                        try {
+                            const fd = new FormData();
+                            fd.append('profile_id', targetId);
+                            fd.append('category', category);
+                            fd.append('details', details);
+                            if (link) {
+                                fd.append('link', link);
+                            }
+
+                            const res = await fetch(`${window.URLROOT}/report/submitReport/profile`, {
+                                method: 'POST',
+                                body: fd
+                            });
+
+                            const data = await res.json().catch(() => null);
+                            if (!res.ok || !data || (data.success !== true && data.status !== 'success')) {
+                                throw new Error((data && data.message) ? data.message : 'Failed to submit report');
+                            }
+
+                            notify('Thanks for your report. Our team will review it shortly.');
+                            closePopup();
+                        } catch (err) {
+                            console.error('Profile report submission error', err);
+                            notify(err && err.message ? err.message : 'Error submitting report. Please try again later.');
+                        } finally {
+                            if (submitBtn) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Submit Report';
+                            }
+                        }
+                    });
+                }
+
+                overlay.style.display = 'flex';
+            });
+        }
     });
 
     // Updated function to set up edit mode only for specific sections
@@ -877,8 +467,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
             }
         });
     }
-</script>
-<script>
+
     // Certificate Preview Modal logic (uses explicit View button)
     (function() {
         const container = document.getElementById('certificatesContainer');
@@ -895,7 +484,7 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
                 const nm = card.dataset.name || 'Certificate Preview';
                 titleEl.textContent = nm;
             }
-            iframe.src = <?php echo URLROOT?> + `/media/certificate/${encodeURIComponent(file)}`;
+            iframe.src = <?php echo json_encode(URLROOT); ?> + `/media/certificate/${encodeURIComponent(file)}`;
             modal.style.display = 'flex';
         }
 
@@ -1225,295 +814,352 @@ require APPROOT . '/views/inc/commponents/rightSideBar.php';
         }
     })();
 
-    // Profile Edit Handlers (visual only)
+    // Profile Edit Handlers (API-backed)
     (function() {
         const popup = document.getElementById('editProfilePopup');
         if (!popup) return; // only for owner
+
         const form = document.getElementById('editProfileForm');
         const chooseBtn = document.getElementById('chooseProfileImgBtn');
         const fileInput = document.getElementById('profileImageInput');
         const fileName = document.getElementById('profileImgFileName');
         const preview = document.getElementById('profileImagePreview');
-        const pageImg = document.getElementById('profileImageEl');
-        const bioInput = document.getElementById('profileBioInput');
-        const bioEl = document.getElementById('profileBioEl');
+        const saveBtn = document.getElementById('saveProfileBtn');
+        const PROFILE_IMG_MAX_SIZE = 5 * 1024 * 1024;
+
+        async function parseJsonResponse(response) {
+            const body = await response.text();
+            if (!body) return {};
+            try {
+                return JSON.parse(body);
+            } catch (e) {
+                throw new Error('Invalid server response');
+            }
+        }
 
         if (chooseBtn && fileInput) {
             chooseBtn.addEventListener('click', () => fileInput.click());
         }
+
         if (fileInput) {
             fileInput.addEventListener('change', function() {
-                const f = this.files && this.files[0];
-                fileName.textContent = f ? f.name : 'No file chosen';
+                const f = this.files && this.files[0] ? this.files[0] : null;
+                if (fileName) fileName.textContent = f ? f.name : 'No file chosen';
+                if (!f) return;
+
+                if (!f.type || !f.type.startsWith('image/')) {
+                    alert('Please select a valid image file.');
+                    this.value = '';
+                    if (fileName) fileName.textContent = 'No file chosen';
+                    return;
+                }
+
+                if (f.size > PROFILE_IMG_MAX_SIZE) {
+                    alert('Profile image exceeds 5MB.');
+                    this.value = '';
+                    if (fileName) fileName.textContent = 'No file chosen';
+                    return;
+                }
+
                 if (f) {
                     const reader = new FileReader();
                     reader.onload = e => {
-                        preview.src = e.target.result;
+                        if (preview) preview.src = e.target.result;
                     };
                     reader.readAsDataURL(f);
                 }
             });
         }
+
         if (form) {
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                // visually update page image and bio
-                if (pageImg && preview) pageImg.src = preview.src;
-                if (bioEl && bioInput) bioEl.textContent = bioInput.value || '';
-                // close popup
-                const closeBtn = popup.querySelector('.close-popup');
-                if (closeBtn) closeBtn.click();
-                else popup.style.display = 'none';
+
+                if (saveBtn) {
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Saving...';
+                }
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        credentials: 'same-origin',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    const json = await parseJsonResponse(response);
+                    if (!response.ok || !json.success) {
+                        throw new Error(json.error || 'Failed to update profile');
+                    }
+
+                    window.location.reload();
+                } catch (err) {
+                    alert(err && err.message ? err.message : 'Failed to update profile');
+                } finally {
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                    }
+                }
             });
         }
     })();
 
-    // Work Experience and Projects Popups (visual only)
+    // Work Experience and Projects (API-backed)
     (function() {
-        // Work Add
+        const workContainer = document.getElementById('workContainer');
+        const projectsContainer = document.getElementById('projectsContainer');
+
         const addWorkBtn = document.getElementById('addWorkBtn');
         const addWorkPopup = document.getElementById('addWorkPopup');
         const addWorkForm = document.getElementById('addWorkForm');
-        const workContainer = document.getElementById('workContainer');
-        if (addWorkBtn && addWorkPopup) {
-            addWorkBtn.addEventListener('click', () => {
-                addWorkForm && addWorkForm.reset();
-                addWorkPopup.style.display = 'flex';
-            });
-        }
-        if (addWorkForm && workContainer) {
-            addWorkForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const title = document.getElementById('workTitleAdd').value.trim();
-                const company = document.getElementById('workCompanyAdd').value.trim();
-                const period = document.getElementById('workPeriodAdd').value.trim();
-                if (!title || !company || !period) return;
-                const id = Date.now();
-                const card = document.createElement('div');
-                card.className = 'certificate-card work-card';
-                card.setAttribute('data-id', String(id));
-                card.setAttribute('data-title', title);
-                card.setAttribute('data-company', company);
-                card.setAttribute('data-period', period);
-                card.innerHTML = `
-                <div class="certificate-card-image"><i class="fas fa-briefcase"></i></div>
-                <div class="certificate-details">
-                    <div class="certificate-card-title"></div>
-                    <div class="certificate-issuer"></div>
-                    <div class="certificate-date"></div>
-                </div>
-                <div class="certificate-actions">
-                    <div class="certificate-action-btn edit-btn" title="Edit Work Experience"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="certificate-action-btn delete-btn" title="Delete Work Experience"><i class="fas fa-trash-alt"></i></div>
-                </div>`;
-                card.querySelector('.certificate-card-title').textContent = title;
-                card.querySelector('.certificate-issuer').textContent = company;
-                card.querySelector('.certificate-date').textContent = period;
-                workContainer.appendChild(card);
-                bindWorkCardActions(card);
-                addWorkPopup.style.display = 'none';
-            });
-        }
-
-        // Work Edit
         const editWorkPopup = document.getElementById('editWorkPopup');
         const editWorkForm = document.getElementById('editWorkForm');
+        const deleteWorkPopup = document.getElementById('deleteWorkPopup');
+        const confirmDeleteWorkBtn = document.getElementById('confirmDeleteWorkBtn');
+        const cancelDeleteWorkBtn = document.getElementById('cancelDeleteWorkBtn');
 
-        function bindWorkCardActions(card) {
-            const editBtn = card.querySelector('.edit-btn');
-            const deleteBtn = card.querySelector('.delete-btn');
-            if (editBtn) editBtn.addEventListener('click', function() {
-                const id = card.dataset.id || '';
-                document.getElementById('workIdEdit').value = id;
-                document.getElementById('workTitleEdit').value = card.dataset.title || '';
-                document.getElementById('workCompanyEdit').value = card.dataset.company || '';
-                document.getElementById('workPeriodEdit').value = card.dataset.period || '';
-                editWorkPopup.style.display = 'flex';
-            });
-            if (deleteBtn) deleteBtn.addEventListener('click', function() {
-                // if (confirm('Are you sure you want to delete this work experience?')) card.remove();
-            });
-        }
-        // bind existing
-        document.querySelectorAll('#workContainer .work-card').forEach(bindWorkCardActions);
-        if (editWorkForm) {
-            editWorkForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const id = document.getElementById('workIdEdit').value;
-                const title = document.getElementById('workTitleEdit').value.trim();
-                const company = document.getElementById('workCompanyEdit').value.trim();
-                const period = document.getElementById('workPeriodEdit').value.trim();
-                const card = document.querySelector(`#workContainer .work-card[data-id="${CSS.escape(id)}"]`);
-                if (card) {
-                    card.dataset.title = title;
-                    card.dataset.company = company;
-                    card.dataset.period = period;
-                    card.querySelector('.certificate-card-title').textContent = title;
-                    card.querySelector('.certificate-issuer').textContent = company;
-                    card.querySelector('.certificate-date').textContent = period;
-                }
-                editWorkPopup.style.display = 'none';
-            });
-        }
-
-        // Project Add
         const addProjectBtn = document.getElementById('addProjectBtn');
         const addProjectPopup = document.getElementById('addProjectPopup');
         const addProjectForm = document.getElementById('addProjectForm');
-        const projectsContainer = document.getElementById('projectsContainer');
-        if (addProjectBtn && addProjectPopup) {
-            addProjectBtn.addEventListener('click', () => {
-                addProjectForm && addProjectForm.reset();
-                addProjectPopup.style.display = 'flex';
-            });
-        }
-        if (addProjectForm && projectsContainer) {
-            addProjectForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const title = document.getElementById('projectTitleAdd').value.trim();
-                if (!title) return;
-                const id = Date.now();
-                const card = document.createElement('div');
-                card.className = 'project-card';
-                card.setAttribute('data-id', String(id));
-                card.setAttribute('data-title', title);
-                card.innerHTML = `
-                <div class="project-card-image"><i class="fas fa-project-diagram"></i></div>
-                <div class="project-card-title"></div>
-                <div class="certificate-actions">
-                    <div class="certificate-action-btn edit-btn" title="Edit Project"><i class="fas fa-pencil-alt"></i></div>
-                    <div class="certificate-action-btn delete-btn" title="Delete Project"><i class="fas fa-trash-alt"></i></div>
-                </div>`;
-                card.querySelector('.project-card-title').textContent = title;
-                projectsContainer.appendChild(card);
-                bindProjectCardActions(card);
-                addProjectPopup.style.display = 'none';
-            });
-        }
-
-        // Project Edit
         const editProjectPopup = document.getElementById('editProjectPopup');
         const editProjectForm = document.getElementById('editProjectForm');
+        const viewProjectPopup = document.getElementById('viewProjectPopup');
+        const deleteProjectPopup = document.getElementById('deleteProjectPopup');
+        const confirmDeleteProjectBtn = document.getElementById('confirmDeleteProjectBtn');
+        const cancelDeleteProjectBtn = document.getElementById('cancelDeleteProjectBtn');
 
-        function bindProjectCardActions(card) {
-            const editBtn = card.querySelector('.edit-btn');
-            const deleteBtn = card.querySelector('.delete-btn');
-            if (editBtn) editBtn.addEventListener('click', function() {
-                const id = card.dataset.id || '';
-                document.getElementById('projectIdEdit').value = id;
-                document.getElementById('projectTitleEdit').value = card.dataset.title || card.querySelector('.project-card-title')?.textContent || '';
-                editProjectPopup.style.display = 'flex';
+        if (!workContainer || !projectsContainer) {
+            return;
+        }
+
+        let pendingWorkId = null;
+        let pendingProjectId = null;
+
+        function openPopup(popup) {
+            if (popup) popup.style.display = 'flex';
+        }
+
+        function closePopup(popup) {
+            if (popup) popup.style.display = 'none';
+        }
+
+        async function parseJsonResponse(response) {
+            const body = await response.text();
+            if (!body) return {};
+            try {
+                return JSON.parse(body);
+            } catch (e) {
+                throw new Error('Invalid server response');
+            }
+        }
+
+        async function postForm(form) {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
             });
-            if (deleteBtn) deleteBtn.addEventListener('click', function() {
-                if (confirm('Are you sure you want to delete this project?')) card.remove();
+            const json = await parseJsonResponse(response);
+            if (!response.ok || !json.success) {
+                throw new Error(json.error || 'Operation failed');
+            }
+            return json;
+        }
+
+        async function deleteByUrl(url) {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+            const json = await parseJsonResponse(response);
+            if (!response.ok || !json.success) {
+                throw new Error(json.error || 'Delete failed');
+            }
+            return json;
+        }
+
+        // Open Add popups
+        if (addWorkBtn && addWorkPopup && addWorkForm) {
+            addWorkBtn.addEventListener('click', function() {
+                addWorkForm.reset();
+                openPopup(addWorkPopup);
             });
         }
-        // bind existing
-        document.querySelectorAll('#projectsContainer .project-card').forEach(bindProjectCardActions);
-        if (editProjectForm) {
-            editProjectForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const id = document.getElementById('projectIdEdit').value;
-                const title = document.getElementById('projectTitleEdit').value.trim();
-                const card = document.querySelector(`#projectsContainer .project-card[data-id="${CSS.escape(id)}"]`);
-                if (card) {
-                    card.dataset.title = title;
-                    const titleEl = card.querySelector('.project-card-title');
-                    if (titleEl) titleEl.textContent = title;
-                }
-                editProjectPopup.style.display = 'none';
+
+        if (addProjectBtn && addProjectPopup && addProjectForm) {
+            addProjectBtn.addEventListener('click', function() {
+                addProjectForm.reset();
+                openPopup(addProjectPopup);
             });
         }
-    })();
 
-    // Delegated handler to ensure Project edit popup always opens
-    (function() {
-        const container = document.getElementById('projectsContainer');
-        const editProjectPopup = document.getElementById('editProjectPopup');
-        if (!container || !editProjectPopup) return;
-        container.addEventListener('click', function(e) {
-            const btn = e.target.closest('.project-card .edit-btn');
-            if (!btn) return;
-            const card = btn.closest('.project-card');
-            if (!card) return;
-            const id = card.dataset.id || '';
-            const title = card.dataset.title || card.querySelector('.project-card-title')?.textContent || '';
-            const idInput = document.getElementById('projectIdEdit');
-            const titleInput = document.getElementById('projectTitleEdit');
-            if (idInput) idInput.value = id;
-            if (titleInput) titleInput.value = title;
-            editProjectPopup.style.display = 'flex';
+        // Close popups with built-in close buttons
+        [
+            addWorkPopup,
+            editWorkPopup,
+            deleteWorkPopup,
+            addProjectPopup,
+            editProjectPopup,
+            viewProjectPopup,
+            deleteProjectPopup
+        ].forEach(function(popup) {
+            popup?.querySelector('.close-popup')?.addEventListener('click', function() {
+                closePopup(popup);
+            });
         });
-    })();
 
-    // Work/Project delete confirmation popups (visual only)
-    (function() {
-        // Work delete
-        const workContainer = document.getElementById('workContainer');
-        const deleteWorkPopup = document.getElementById('deleteWorkPopup');
-        const confirmWorkBtn = document.getElementById('confirmDeleteWorkBtn');
-        const cancelWorkBtn = document.getElementById('cancelDeleteWorkBtn');
-        let pendingWorkCard = null;
+        // Work: add/edit/delete
+        if (addWorkForm) {
+            addWorkForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await postForm(addWorkForm);
+                    window.location.reload();
+                } catch (err) {
+                    alert(err.message || 'Failed to add work experience');
+                }
+            });
+        }
+
+        if (workContainer && editWorkPopup) {
+            workContainer.addEventListener('click', function(e) {
+                const editBtn = e.target.closest('.work-card .edit-btn');
+                if (!editBtn) return;
+
+                const card = editBtn.closest('.work-card');
+                if (!card) return;
+
+                document.getElementById('workIdEdit').value = card.dataset.id || '';
+                document.getElementById('workPositionEdit').value = card.dataset.position || '';
+                document.getElementById('workCompanyEdit').value = card.dataset.company || '';
+                document.getElementById('workPeriodEdit').value = card.dataset.period || '';
+                openPopup(editWorkPopup);
+            });
+        }
+
+        if (editWorkForm) {
+            editWorkForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await postForm(editWorkForm);
+                    window.location.reload();
+                } catch (err) {
+                    alert(err.message || 'Failed to update work experience');
+                }
+            });
+        }
+
         if (workContainer && deleteWorkPopup) {
             workContainer.addEventListener('click', function(e) {
-                const btn = e.target.closest('.work-card .delete-btn');
-                if (!btn) return;
-                e.stopPropagation();
-                pendingWorkCard = btn.closest('.work-card');
-                deleteWorkPopup.style.display = 'flex';
-            });
-        }
-        if (cancelWorkBtn) {
-            cancelWorkBtn.addEventListener('click', function() {
-                pendingWorkCard = null;
-                if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
-            });
-        }
-        if (confirmWorkBtn) {
-            confirmWorkBtn.addEventListener('click', function() {
-                if (pendingWorkCard) pendingWorkCard.remove();
-                pendingWorkCard = null;
-                if (deleteWorkPopup) deleteWorkPopup.style.display = 'none';
+                const deleteBtn = e.target.closest('.work-card .delete-btn');
+                if (!deleteBtn) return;
+
+                const card = deleteBtn.closest('.work-card');
+                pendingWorkId = card?.dataset?.id || null;
+                if (pendingWorkId) openPopup(deleteWorkPopup);
             });
         }
 
-        // Project delete
-        const projectsContainer = document.getElementById('projectsContainer');
-        const deleteProjectPopup = document.getElementById('deleteProjectPopup');
-        const confirmProjectBtn = document.getElementById('confirmDeleteProjectBtn');
-        const cancelProjectBtn = document.getElementById('cancelDeleteProjectBtn');
-        let pendingProjectCard = null;
-        if (projectsContainer && deleteProjectPopup) {
+        cancelDeleteWorkBtn?.addEventListener('click', function() {
+            pendingWorkId = null;
+            closePopup(deleteWorkPopup);
+        });
+
+        confirmDeleteWorkBtn?.addEventListener('click', async function() {
+            if (!pendingWorkId) return;
+            try {
+                await deleteByUrl(`${window.URLROOT}/profile/deleteWorkExperience?id=${encodeURIComponent(pendingWorkId)}`);
+                window.location.reload();
+            } catch (err) {
+                alert(err.message || 'Failed to delete work experience');
+            }
+        });
+
+        // Project: add/edit/view/delete
+        if (addProjectForm) {
+            addProjectForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await postForm(addProjectForm);
+                    window.location.reload();
+                } catch (err) {
+                    alert(err.message || 'Failed to add project');
+                }
+            });
+        }
+
+        if (projectsContainer) {
             projectsContainer.addEventListener('click', function(e) {
-                const btn = e.target.closest('.project-card .delete-btn');
-                if (!btn) return;
-                e.stopPropagation();
-                pendingProjectCard = btn.closest('.project-card');
-                deleteProjectPopup.style.display = 'flex';
-            });
-        }
-        if (cancelProjectBtn) {
-            cancelProjectBtn.addEventListener('click', function() {
-                pendingProjectCard = null;
-                if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
-            });
-        }
-        if (confirmProjectBtn) {
-            confirmProjectBtn.addEventListener('click', function() {
-                if (pendingProjectCard) pendingProjectCard.remove();
-                pendingProjectCard = null;
-                if (deleteProjectPopup) deleteProjectPopup.style.display = 'none';
+                const card = e.target.closest('.project-card');
+                if (!card) return;
+
+                const editBtn = e.target.closest('.project-card .edit-btn');
+                if (editBtn && editProjectPopup) {
+                    document.getElementById('projectIdEdit').value = card.dataset.id || '';
+                    document.getElementById('projectTitleEdit').value = card.dataset.title || '';
+                    document.getElementById('projectDescEdit').value = card.dataset.desc || '';
+                    document.getElementById('projectSkillsEdit').value = card.dataset.skills || '';
+                    document.getElementById('startDateEdit').value = card.dataset.start_date || '';
+                    document.getElementById('endDateEdit').value = card.dataset.end_date || '';
+                    openPopup(editProjectPopup);
+                    return;
+                }
+
+                const viewBtn = e.target.closest('.project-card .view-btn');
+                if (viewBtn && viewProjectPopup) {
+                    const start = card.dataset.start_date || '';
+                    const end = card.dataset.end_date || '';
+                    document.getElementById('viewProjectTitle').textContent = card.dataset.title || '';
+                    document.getElementById('viewProjectDesc').textContent = card.dataset.desc || '';
+                    document.getElementById('viewProjectSkills').textContent = card.dataset.skills || '';
+                    document.getElementById('viewProjectStartDate').textContent = start || 'N/A';
+                    document.getElementById('viewProjectEndDate').textContent = end || 'N/A';
+                    openPopup(viewProjectPopup);
+                    return;
+                }
+
+                const deleteBtn = e.target.closest('.project-card .delete-btn');
+                if (deleteBtn) {
+                    pendingProjectId = card.dataset.id || null;
+                    if (pendingProjectId) openPopup(deleteProjectPopup);
+                }
             });
         }
 
-        // Allow using the small X close button for both popups
-        document.querySelectorAll('#deleteWorkPopup .close-popup, #deleteProjectPopup .close-popup').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const popup = this.closest('.certificate-add-popup');
-                if (popup) popup.style.display = 'none';
+        if (editProjectForm) {
+            editProjectForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                try {
+                    await postForm(editProjectForm);
+                    window.location.reload();
+                } catch (err) {
+                    alert(err.message || 'Failed to update project');
+                }
             });
+        }
+
+        cancelDeleteProjectBtn?.addEventListener('click', function() {
+            pendingProjectId = null;
+            closePopup(deleteProjectPopup);
+        });
+
+        confirmDeleteProjectBtn?.addEventListener('click', async function() {
+            if (!pendingProjectId) return;
+            try {
+                await deleteByUrl(`${window.URLROOT}/profile/deleteProjects?id=${encodeURIComponent(pendingProjectId)}`);
+                window.location.reload();
+            } catch (err) {
+                alert(err.message || 'Failed to delete project');
+            }
         });
     })();
-</script>
+
 <?php $scripts = ob_get_clean(); ?>
+
 <?php require APPROOT . '/views/layouts/threeColumnLayout.php'; ?>
