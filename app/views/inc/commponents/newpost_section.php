@@ -133,7 +133,7 @@
                 if(r.ok){
                     const data=await r.json();
                     if(Array.isArray(data.posts) && data.posts.length && data.posts.length!==initialCount){
-                        feedEl.innerHTML = data.posts.map(p=>`<post-card profile-img="${p.profile_image||'default.jpg'}" user-name="${p.name}" tag="@user${p.user_id}" post-time="${(p.created_at||'').slice(5,10)}" post-content="${(p.content||'').replace(/["<>]/g,'')}" post-img="${p.image||''}" like-count="${p.likes}" cmnt-count="${p.comments}" liked="${p.liked?1:0}" post-id="${p.id}"></post-card>`).join('');
+                        feedEl.innerHTML = data.posts.map(p=>`<post-card profile-img="${p.profile_image||'default.jpg'}" user-name="${p.name}" tag="${(p.display_name||p.name||'User').replace(/["<>]/g,'')}" post-time="${(p.created_at||'').slice(5,10)}" post-content="${(p.content||'').replace(/["<>]/g,'')}" post-img="${p.image||''}" like-count="${p.likes}" cmnt-count="${p.comments}" liked="${p.liked?1:0}" post-id="${p.id}"></post-card>`).join('');
                     }
                 }
             } catch(e) {}

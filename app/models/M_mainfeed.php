@@ -44,6 +44,7 @@ class M_mainfeed{
             $this->db->query("SELECT 
                                 p.*, 
                                 u.name, 
+                                COALESCE(NULLIF(u.display_name, ''), u.name) AS display_name,
                                 u.profile_image, 
                                 u.role,
                                 (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments,
@@ -64,6 +65,7 @@ class M_mainfeed{
             $this->db->query("SELECT 
                                 p.*, 
                                 u.name, 
+                                COALESCE(NULLIF(u.display_name, ''), u.name) AS display_name,
                                 u.profile_image, 
                                 u.role,
                                 (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments,
@@ -84,6 +86,7 @@ class M_mainfeed{
         $this->db->query("SELECT
                                 p.*,
                                 u.name,
+                                COALESCE(NULLIF(u.display_name, ''), u.name) AS display_name,
                                 u.profile_image,
                                 u.role,
                                 (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id) AS comments,

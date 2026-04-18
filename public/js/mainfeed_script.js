@@ -77,7 +77,9 @@ function createPostCard(post) {
   el.setAttribute("profile-img", post.profile_image || "default.jpg");
   el.setAttribute("user-name", post.name || "User");
   el.setAttribute("user-role", (post.role || "undergrad").toLowerCase());
-  el.setAttribute("tag", post.user_handle || `@user${post.user_id ?? ""}`);
+  const displayTag =
+    post.display_name || post.user_handle || post.name || `user${post.user_id ?? ""}`;
+  el.setAttribute("tag", String(displayTag));
 
   el.setAttribute("post-time", post.post_time || (post.created_at ?? "")); // e.g. "2h" or timestamp
   el.setAttribute("post-content", post.content || "");
@@ -239,7 +241,7 @@ function startPollingNewPosts() {
       let feedType = activeTab.getAttribute("value");
       const posts = await fetchNewPosts(feedType);
     } catch (error) {}
-  }, 30000); // 30 seconds interval we check for new posts
+  }, 10000); // 10 seconds interval we check for new posts
 }
 
 async function fetchNewPosts(feedType) {

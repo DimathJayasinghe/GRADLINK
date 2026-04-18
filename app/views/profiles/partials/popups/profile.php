@@ -13,6 +13,7 @@
                 method="post"
                 enctype="multipart/form-data"
                 data-initial-bio="<?= htmlspecialchars($data['userDetails']->bio ?? '', ENT_QUOTES, 'UTF-8') ?>"
+                data-initial-tag="<?= htmlspecialchars(!empty($data['userDetails']->display_name) ? $data['userDetails']->display_name : ($data['userDetails']->name ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                 data-initial-batch="<?= htmlspecialchars($data['userDetails']->batch_no ?? '', ENT_QUOTES, 'UTF-8') ?>"
                 data-initial-country="<?= htmlspecialchars($data['userDetails']->country ?? 'Sri Lanka', ENT_QUOTES, 'UTF-8') ?>">
                 <div class="form-group">
@@ -41,6 +42,17 @@
                 <div class="form-group">
                     <label for="profileBatchNoInput">Batch Number</label>
                     <input type="text" id="profileBatchNoInput" name="profileBatchNoInput" value="<?= isset($data['userDetails']->batch_no) ? htmlspecialchars($data['userDetails']->batch_no) : '' ?>" placeholder="Enter your batch number" style="
+                                max-width: 100%;
+                                background: rgba(255, 255, 255, 0.05);
+                                border: 1px solid var(--border);
+                                border-radius: 5px;
+                                color: var(--text);
+                                padding:5px;
+                        ">
+                </div>
+                <div class="form-group">
+                    <label for="profileTagInput">User Tag</label>
+                    <input type="text" id="profileTagInput" name="profileTagInput" value="<?= htmlspecialchars(!empty($data['userDetails']->display_name) ? $data['userDetails']->display_name : ($data['userDetails']->name ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Enter your tag (without @)" maxlength="100" style="
                                 max-width: 100%;
                                 background: rgba(255, 255, 255, 0.05);
                                 border: 1px solid var(--border);

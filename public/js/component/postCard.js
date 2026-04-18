@@ -7,78 +7,69 @@ class PostCard extends HTMLElement {
   };
   
   connectedCallback() {
-    // Ensure URLROOT is available (fallback if not injected by layout)
-    if (!window.URLROOT || typeof window.URLROOT !== 'string') {
+    if (!window.URLROOT || typeof window.URLROOT !== "string") {
       window.URLROOT = `${location.origin}/GRADLINK`;
     }
-    const appBase = window.URLROOT || `${location.origin}/GRADLINK`;
-    const mediaProfile = (name) =>`${appBase}/media/profile/${encodeURIComponent(name)}`;
-    const mediaPost = (name) =>`${appBase}/media/post/${encodeURIComponent(name)}`;
-    const rawProfile = this.getAttribute("profile-img");
-    const profileImg =rawProfile && rawProfile.trim() !== "" ? rawProfile : "default.jpg";
 
-    const userName = this.getAttribute("user-name") || "User";
-    const postOwnerRole = this.getAttribute("user-role") || "undergrad";
-    const userHandle = this.getAttribute("tag") || "@user";
-    
-    const postTime = this.getAttribute("post-time") || "";
-    const postText = this.getAttribute("post-content") || "";
+    const appBase = window.URLROOT || `${location.origin}/GRADLINK`;
+    const mediaProfile = (name) => `${appBase}/media/profile/${encodeURIComponent(name)}`;
+    const mediaPost = (name) => `${appBase}/media/post/${encodeURIComponent(name)}`;
+    const getAttr = (name, fallback = "") => this.getAttribute(name) || fallback;
+
+    const rawProfile = this.getAttribute("profile-img");
+    const profileImg = rawProfile && rawProfile.trim() !== "" ? rawProfile : "default.jpg";
+    const userName = getAttr("user-name", "User");
+    const postOwnerRole = getAttr("user-role", "undergrad");
+    const normalizedHandle = String(getAttr("tag", "user")).trim().replace(/^@+/, "");
+    const isSystemAdministrator = userName.trim().toLowerCase() === "system administrator";
+    const userHandle = isSystemAdministrator ? "" : `@${normalizedHandle || "user"}`;
+    const postTime = getAttr("post-time");
+    const postText = getAttr("post-content");
     const postImg = this.getAttribute("post-img");
-    const likeCount = this.getAttribute("like-count") || "0";
+    const likeCount = getAttr("like-count", "0");
     const likedInitial = this.getAttribute("liked") === "1";
-    const commentCount = this.getAttribute("cmnt-count") || "0";
-    const repostCount = this.getAttribute("repost-count") || "0"; // unused
-    
-    const postId = this.getAttribute("post-id") || "post-0";
-    const postUserId = this.getAttribute('post-user-id') || null;
-    const currentUserId = this.getAttribute('current-user-id') || null;
-    this.currentUserId = String(currentUserId || '');
-    const currentUserRole = this.getAttribute('current-user-role') || 'undergrad';
-    const isOwner = postUserId && currentUserId && postUserId === currentUserId;
+    const commentCount = getAttr("cmnt-count", "0");
+
+    const postId = getAttr("post-id", "post-0");
+    const postUserId = this.getAttribute("post-user-id") || null;
+    const currentUserId = this.getAttribute("current-user-id") || null;
+    this.currentUserId = String(currentUserId || "");
+    const currentUserRole = getAttr("current-user-role", "undergrad");
+    const isOwner = Boolean(postUserId && currentUserId && postUserId === currentUserId);
+    const isAdmin = currentUserRole.toLowerCase() === "admin";
+    const roleBadge = postOwnerRole === "admin" ? "⭐⭐" : postOwnerRole === "alumni" ? "⭐" : "";
 
     this.innerHTML = `
-      <div class="post ${(postOwnerRole == "admin") ? "admin-post":""}" id="post-${postId}">
+      <div class="post ${postOwnerRole === "admin" ? "admin-post" : ""}" id="post-${postId}">
         <div class="post-header">
           <div class="post-user">
             <img src="${mediaProfile(profileImg)}" alt="User" style="cursor: pointer;" class="profile-photo" onerror="this.onerror=null;this.src='${mediaProfile("default.jpg")}'">
             <div class="post-user-info">
-              <span class="post-user-name" style="cursor: pointer;">${userName + ((postOwnerRole == "admin") ? "⭐⭐" : (postOwnerRole == "alumni") ? "⭐" : "")}</span>
-              <span class="post-user-handle" style="cursor: pointer;">${userHandle}</span>
+              <span class="post-user-name" style="cursor: pointer;">${userName + roleBadge}</span>
+              ${userHandle ? `<span class="post-user-handle" style="cursor: pointer;">${userHandle}</span>` : ""}
               <span class="post-time"> · ${postTime}</span>
-              <div class="post-content"><p class="post-text">${truncatePostText(postText)}</p></div>
+              <div class="post-content"><p class="post-text">${this.truncateContent(postText)}</p></div>
             </div>
           </div>
           <div class="post-menu" role="button" aria-haspopup="true" aria-expanded="false">
             <i class="fas fa-ellipsis-h post-menu-btn"></i>
             <div class="post-dropdown hidden" role="menu">
-              <!-- Always available -->
               <div class="dropdown-item" data-action="bookmark" role="menuitem">Bookmark</div>
               <div class="dropdown-item" data-action="share" role="menuitem">Share</div>
-              <!-- Report: Available to all users -->
               <div class="dropdown-item" data-action="report" role="menuitem">Report</div>
-              <!-- Admin specific actions -->
-              ${currentUserRole.toLowerCase() === 'admin' ? `
-                <!-- Suspend: Admin can suspend post owner (not themselves) -->
-                ${!isOwner ? '<div class="dropdown-item" data-action="suspend" role="menuitem">Suspend User</div>' : ''}
-                <!-- Delete: Admin can delete any post -->
-                <div class="dropdown-item" data-action="delete-post" role="menuitem">Delete Post</div>
-              ` : ''}
-              <!-- Owner specific actions (if not already shown via admin) -->
-              ${isOwner && currentUserRole.toLowerCase() !== 'admin' ? `
-                <div class="dropdown-item" data-action="delete-post" role="menuitem">Delete Post</div>
-              ` : ''}
-              <!-- Only owner can edit -->
-              ${isOwner ? '<div class="dropdown-item" data-action="edit-post" role="menuitem">Edit Post</div>' : ''}
+              ${isAdmin ? `${!isOwner ? '<div class="dropdown-item" data-action="suspend" role="menuitem">Suspend User</div>' : ''}<div class="dropdown-item" data-action="delete-post" role="menuitem">Delete Post</div>` : ""}
+              ${isOwner && !isAdmin ? '<div class="dropdown-item" data-action="delete-post" role="menuitem">Delete Post</div>' : ""}
+              ${isOwner ? '<div class="dropdown-item" data-action="edit-post" role="menuitem">Edit Post</div>' : ""}
             </div>
           </div>
         </div>
-        ${postImg? `<div class=\"post-media\"><img src=\"${mediaPost(postImg)}\" alt=\"Post image\" onerror=\"this.style.display='none'\"></div>`: ""}
-        
+        ${postImg ? `<div class="post-media"><img src="${mediaPost(postImg)}" alt="Post image" onerror="this.style.display='none'"></div>` : ""}
+
         <div class="post-actions">
           <div class="like-btn${likedInitial ? " liked" : ""}" data-post-id="${postId}"><i class="${likedInitial ? "fas" : "far"} fa-heart"></i> <span class="like-count">${likeCount}</span></div>
           <div class="comment-btn" data-post-id="${postId}"><i class="far fa-comment"></i> <span class="comment-count">${commentCount}</span></div>
         </div>
-        
+
         <div class="pc-comments" style="display:none;border-top:1px solid var(--border);margin-top:10px;padding-top:8px">
           <div class="pc-comments-list" style="max-height:200px;overflow:auto;color:#ccc"></div>
           <div style="display:flex;gap:6px;margin-top:6px">
@@ -86,98 +77,79 @@ class PostCard extends HTMLElement {
             <button class="pc-comment-send" style="padding:6px 10px">Send</button>
           </div>
         </div>
-
       </div>`;
 
-    // Wire up profile navigation without inline handlers
-    const clickableProfileEls = this.querySelectorAll('.profile-photo, .post-user-name, .post-user-handle');
+    const routeToProfile = (userId) => {
+      window.location.href = `${window.URLROOT}/profile?userid=${userId}`;
+    };
+
     if (postUserId) {
-      clickableProfileEls.forEach(el => {
+      this.querySelectorAll('.profile-photo, .post-user-name, .post-user-handle').forEach((el) => {
         el.addEventListener('click', () => routeToProfile(postUserId));
       });
     }
 
-
-
-    function  routeToProfile(userId){
-      window.location.href = `${window.URLROOT}/profile?userid=${userId}`;
-    }
-    // Dropdown logic
     const menu = this.querySelector('.post-menu');
     const menuBtn = this.querySelector('.post-menu-btn');
     const dropdown = this.querySelector('.post-dropdown');
-    if(menu && menuBtn && dropdown){
-      menuBtn.addEventListener('click', (e)=>{
+    if (menu && menuBtn && dropdown) {
+      menuBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isHidden = dropdown.classList.toggle('hidden');
         menu.setAttribute('aria-expanded', (!isHidden).toString());
       });
-      // outside click close
-      document.addEventListener('click', (e)=>{
-        if(!this.contains(e.target)){
-          if(!dropdown.classList.contains('hidden')){
-            dropdown.classList.add('hidden');
-            menu.setAttribute('aria-expanded','false');
-          }
-        }
+
+      document.addEventListener('click', (e) => {
+        if (this.contains(e.target) || dropdown.classList.contains('hidden')) return;
+        dropdown.classList.add('hidden');
+        menu.setAttribute('aria-expanded', 'false');
       });
-      
-      // simple action handlers with popups
-      dropdown.addEventListener('click', async (e)=>{
+
+      dropdown.addEventListener('click', (e) => {
         const item = e.target.closest('.dropdown-item');
-        if(!item) return;
+        if (!item) return;
+
         const act = item.getAttribute('data-action');
         dropdown.classList.add('hidden');
-        menu.setAttribute('aria-expanded','false');
-        
-        const isAdmin = currentUserRole.toLowerCase() === 'admin';
-        
-        if(act === 'bookmark'){
-          // Open bookmark confirmation popup
-          this._openBookmarkPopup(postId);
-        } else if (act === 'share') {
-          // Build a shareable link to open this post in a popup window view
-          const shareUrl = `${window.URLROOT}/mainfeed?post_id=${encodeURIComponent(postId)}`;
-          this._openSharePopup(postId, shareUrl);
-        } else if(act === 'report') {
-          // Open report form popup
-          this._openReportPopup(postId);
-        } else if(act === 'suspend') {
-          // Only admin can suspend (not themselves)
-          if(!isAdmin || isOwner) return;
-          this._openSuspendUserPopup(postUserId, userName);
-        } else if(act === 'delete-post') {
-          // Owner OR admin can delete
-          if(!isOwner && !isAdmin) return;
-          this._openDeletePopup(postId);
-        } else if(act === 'edit-post') {
-          // Only owner can edit
-          if(!isOwner) return;
-          
-          // Toggle edit mode for this post
-          this.toggleEditMode(postId, postText, postImg);
+        menu.setAttribute('aria-expanded', 'false');
+
+        switch (act) {
+          case 'bookmark':
+            this._openBookmarkPopup(postId);
+            return;
+          case 'share':
+            this._openSharePopup(postId, `${window.URLROOT}/mainfeed?post_id=${encodeURIComponent(postId)}`);
+            return;
+          case 'report':
+            this._openReportPopup(postId);
+            return;
+          case 'suspend':
+            if (!isAdmin || isOwner) return;
+            this._openSuspendUserPopup(postUserId, userName);
+            return;
+          case 'delete-post':
+            if (!isOwner && !isAdmin) return;
+            this._openDeletePopup(postId);
+            return;
+          case 'edit-post':
+            if (!isOwner) return;
+            this.toggleEditMode(postId, postText);
+            return;
+          default:
+            return;
         }
       });
     }
 
-    // Pure function that returns truncated markup (no inline onclick)
-    function truncatePostText(full){
-      if(!full) return "";
-      if(full.length <= 100) return full;
-      const short = full.slice(0, 100).trim() + "...";
-      return `${short} <span class="seemore-btn" data-action="expand-post">Show more</span>`;
-    }
+    const panel = this.querySelector('.pc-comments');
+    const list = panel.querySelector('.pc-comments-list');
+    const cBtn = this.querySelector('.comment-btn');
+    const postTextEl = this.querySelector('.post-content .post-text');
 
-    // Add event listeners
-    const panel = this.querySelector(".pc-comments");
-    const list = panel.querySelector(".pc-comments-list");
-    const cBtn = this.querySelector(".comment-btn");
-    // Post text expand / collapse (event delegation)
-  const postTextEl = this.querySelector('.post-content .post-text');
-    // Delegated click handler (post + comments)
-    this.addEventListener('click', async (e)=>{
+    this.addEventListener('click', (e) => {
       const target = e.target;
-      // Comment author click -> navigate to profile
+      if (!(target instanceof Element)) return;
+
       const author = target.closest('.comment-author');
       if (author) {
         const uid = author.getAttribute('data-user-id');
@@ -186,145 +158,130 @@ class PostCard extends HTMLElement {
           return;
         }
       }
-      // Post text expand/collapse
-      if(postText.length > 100){
-        const expandBtn = target.closest('[data-action="expand-post"]');
-        const collapseBtn = target.closest('[data-action="collapse-post"]');
-        if(expandBtn){
+
+      if (postText.length > 100) {
+        if (target.closest('[data-action="expand-post"]')) {
           if (postTextEl) {
-            postTextEl.innerHTML = `${postText} <span class=\"seemore-btn\" data-action=\"collapse-post\">Show less</span>`;
+            postTextEl.innerHTML = `${postText} <span class="seemore-btn" data-action="collapse-post">Show less</span>`;
           }
           return;
         }
-        if(collapseBtn){
+        if (target.closest('[data-action="collapse-post"]')) {
           if (postTextEl) {
-            postTextEl.innerHTML = truncatePostText(postText);
+            postTextEl.innerHTML = this.truncateContent(postText);
           }
           return;
         }
       }
-      // Comment expand
-      if(target.matches('[data-action="expand-comment"]')){
-        const full = decodeURIComponent(target.getAttribute('data-full')||'');
-        const wrapper = target.closest('.comment-item');
+
+      const expandComment = target.closest('[data-action="expand-comment"]');
+      if (expandComment) {
+        const full = decodeURIComponent(expandComment.getAttribute('data-full') || '');
+        const wrapper = expandComment.closest('.comment-item');
         const span = wrapper?.querySelector('.comment-text');
-        if(span){
-          span.innerHTML = `${full} <span class=\"seemore-btn\" data-action=\"collapse-comment\" data-full=\"${encodeURIComponent(full)}\">Show less</span>`;
+        if (span) {
+          span.innerHTML = `${full} <span class="seemore-btn" data-action="collapse-comment" data-full="${encodeURIComponent(full)}">Show less</span>`;
         }
         return;
       }
 
-      // Comment edit (owner only)
       const editCommentBtn = target.closest('[data-action="edit-comment"]');
-      if(editCommentBtn){
+      if (editCommentBtn) {
         const cid = editCommentBtn.getAttribute('data-comment-id');
         const raw = decodeURIComponent(editCommentBtn.getAttribute('data-content') || '');
-        if(!cid) return;
+        if (!cid) return;
         this._openEditCommentPopup(cid, raw, list);
         return;
       }
 
-      // Comment delete (owner only)
       const deleteCommentBtn = target.closest('[data-action="delete-comment"]');
-      if(deleteCommentBtn){
+      if (deleteCommentBtn) {
         const cid = deleteCommentBtn.getAttribute('data-comment-id');
-        if(!cid) return;
+        if (!cid) return;
         this._openDeleteCommentPopup(cid, list);
         return;
       }
 
-      // Comment collapse
-      if(target.matches('[data-action="collapse-comment"]')){
-        const full = decodeURIComponent(target.getAttribute('data-full')||'');
-        const short = full.length > 160 ? full.slice(0,140) + '...' : full;
-        const wrapper = target.closest('.comment-item');
+      const collapseComment = target.closest('[data-action="collapse-comment"]');
+      if (collapseComment) {
+        const full = decodeURIComponent(collapseComment.getAttribute('data-full') || '');
+        const short = full.length > 160 ? full.slice(0, 140) + '...' : full;
+        const wrapper = collapseComment.closest('.comment-item');
         const span = wrapper?.querySelector('.comment-text');
-        if(span){
-          if(full.length > 160){
-            span.innerHTML = `${short} <span class=\"seemore-btn\" data-action=\"expand-comment\" data-full=\"${encodeURIComponent(full)}\">Show more</span>`;
-          } else {
-            span.textContent = full;
-          }
+        if (!span) return;
+
+        if (full.length > 160) {
+          span.innerHTML = `${short} <span class="seemore-btn" data-action="expand-comment" data-full="${encodeURIComponent(full)}">Show more</span>`;
+        } else {
+          span.textContent = full;
         }
-        return;
       }
     });
 
-    // Toggle comment panel and load comments if not loaded
-    cBtn.addEventListener("click", async () => {
-      panel.style.display = panel.style.display === "none" ? "block" : "none";
-      if (panel.style.display === "block" && !panel.dataset.loaded) {
-        list.innerHTML = "Loading...";
+    cBtn.addEventListener('click', async () => {
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      if (panel.style.display === 'block' && !panel.dataset.loaded) {
+        list.innerHTML = 'Loading...';
         await this._loadComments(postId, list);
-        panel.dataset.loaded = "1";
+        panel.dataset.loaded = '1';
       }
     });
 
-    // Handle comment submission
-    panel.querySelector(".pc-comment-send").addEventListener("click", async () => {
-        const input = panel.querySelector(".pc-comment-input");
-        const txt = input.value.trim();
-        if (!txt) return;
-        const fd = new FormData();
-        fd.append("content", txt);
-        input.disabled = true;
-        const r = await fetch(`${window.URLROOT}/post/comment/${postId}`, {
-          method: "POST",
-          body: fd,
-        });
-        const js = await r.json();
-        input.value = "";
-        input.disabled = false;
-        this._renderComments(js.comments, list);
-        this._setCommentCount(js.comments.length);
+    panel.querySelector('.pc-comment-send').addEventListener('click', async () => {
+      const input = panel.querySelector('.pc-comment-input');
+      const txt = input.value.trim();
+      if (!txt) return;
+
+      const fd = new FormData();
+      fd.append('content', txt);
+      input.disabled = true;
+
+      const r = await fetch(`${window.URLROOT}/post/comment/${postId}`, {
+        method: 'POST',
+        body: fd,
       });
+      const js = await r.json();
+      input.value = '';
+      input.disabled = false;
+      this._renderComments(js.comments, list);
+      this._setCommentCount(js.comments.length);
+    });
 
-    // Like functionality with error handling
-    const likeBtn = this.querySelector(".like-btn");
-    likeBtn.addEventListener("click", async () => {
+    const likeBtn = this.querySelector('.like-btn');
+    likeBtn.addEventListener('click', async () => {
       try {
-        // Disable button to prevent double-clicks
-        likeBtn.style.pointerEvents = "none";
+        likeBtn.style.pointerEvents = 'none';
 
-        const icon = likeBtn.querySelector("i");
-        const countEl = likeBtn.querySelector(".like-count");
-
-        // Check if URLROOT is defined
+        const icon = likeBtn.querySelector('i');
+        const countEl = likeBtn.querySelector('.like-count');
         if (!window.URLROOT) {
-          console.error(
-            "URLROOT is not defined. Check if it's properly set in the head section."
-          );
-          window.URLROOT = location.origin + "/GRADLINK"; // Fallback
+          console.error('URLROOT is not defined. Check if it\'s properly set in the head section.');
+          window.URLROOT = location.origin + '/GRADLINK';
         }
 
         const r = await fetch(`${window.URLROOT}/post/like/${postId}`);
         const js = await r.json();
-
-        if (js.status === "error") {
-          console.error("Like error:", js.message);
-          show_popup("Error: " + js.message);
+        if (js.status === 'error') {
+          console.error('Like error:', js.message);
+          show_popup('Error: ' + js.message);
           return;
         }
 
-        const liked = js.status === "liked";
-        likeBtn.classList.toggle("liked", liked);
-        icon.classList.toggle("fas", liked);
-        icon.classList.toggle("far", !liked);
+        const liked = js.status === 'liked';
+        likeBtn.classList.toggle('liked', liked);
+        icon.classList.toggle('fas', liked);
+        icon.classList.toggle('far', !liked);
 
-        let c = parseInt(countEl.textContent || "0", 10);
+        let c = parseInt(countEl.textContent || '0', 10);
         c = liked ? c + 1 : Math.max(0, c - 1);
         countEl.textContent = c;
-        this.setAttribute("like-count", c);
+        this.setAttribute('like-count', c);
       } catch (err) {
-        console.error("Like action error:", err);
+        console.error('Like action error:', err);
       } finally {
-        // Re-enable button
-        likeBtn.style.pointerEvents = "";
+        likeBtn.style.pointerEvents = '';
       }
     });
-
-    // Repost functionality (client-side demo)
-    // Repost removed
   }
   async _loadComments(pid, list) {
     try {
@@ -337,11 +294,7 @@ class PostCard extends HTMLElement {
     }
   }
   _renderComments(arr, list) {
-    if (!Array.isArray(arr)) {
-      list.innerHTML = "<em>No comments</em>";
-      return;
-    }
-    if (!arr.length) {
+    if (!Array.isArray(arr) || !arr.length) {
       list.innerHTML = "<em>No comments</em>";
       return;
     }
@@ -366,7 +319,6 @@ class PostCard extends HTMLElement {
       .join("");
   }
 
- 
   _relTime(ts) {
     if (!ts) return "";
     const d = new Date(ts.replace(" ", "T"));
@@ -399,7 +351,7 @@ class PostCard extends HTMLElement {
   /**
    * Toggle edit mode for the post
    */
-  toggleEditMode(postId, originalPostText, originalPostImg) {
+  toggleEditMode(postId, originalPostText) {
     this.isEditing = !this.isEditing;
     
     // Get references to relevant elements
@@ -682,6 +634,15 @@ class PostCard extends HTMLElement {
     return el;
   }
 
+  _bindPopupClose(overlay) {
+    const hide = () => {
+      overlay.style.display = 'none';
+    };
+    overlay.querySelector('.close-popup')?.addEventListener('click', hide);
+    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', hide);
+    return hide;
+  }
+
   _openConfirmPopup({
     title = 'Confirm Action',
     message = 'Are you sure you want to continue?',
@@ -750,8 +711,7 @@ class PostCard extends HTMLElement {
           </div>
         </form>
       </div>`;
-    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
-    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    const hide = this._bindPopupClose(overlay);
 
     const form = overlay.querySelector(`#editCommentForm-${commentId}`);
     const textarea = overlay.querySelector(`#editCommentText-${commentId}`);
@@ -776,7 +736,7 @@ class PostCard extends HTMLElement {
         if(js.ok){
           this._renderComments(js.comments, list);
           this._setCommentCount(js.comments.length);
-          overlay.style.display = 'none';
+          hide();
         } else {
           show_popup(js.error || 'Failed to edit comment');
         }
@@ -808,8 +768,7 @@ class PostCard extends HTMLElement {
           <button type="button" class="save-btn" data-action="confirm" style="background:var(--danger);color:#fff;">Delete</button>
         </div>
       </div>`;
-    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
-    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    const hide = this._bindPopupClose(overlay);
     overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', async ()=>{
       const confirmBtn = overlay.querySelector('[data-action="confirm"]');
       const prevText = confirmBtn?.textContent || 'Delete';
@@ -823,7 +782,7 @@ class PostCard extends HTMLElement {
         if(js.ok){
           this._renderComments(js.comments, list);
           this._setCommentCount(js.comments.length);
-          overlay.style.display = 'none';
+          hide();
         } else {
           show_popup(js.error || 'Failed to delete comment');
         }
@@ -853,9 +812,7 @@ class PostCard extends HTMLElement {
           <button type="button" class="save-btn" data-action="confirm" style="background:var(--danger);color:#fff;">Delete</button>
         </div>
       </div>`;
-    const close = overlay.querySelector('.close-popup');
-    close?.addEventListener('click', ()=> overlay.style.display='none');
-    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    const hide = this._bindPopupClose(overlay);
     overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', async ()=>{
       try {
         const r = await fetch(`${window.URLROOT}/post/delete`, {
@@ -866,7 +823,7 @@ class PostCard extends HTMLElement {
         const js = await r.json().catch(()=>null);
         if (r.ok && js && js.status === 'success'){
           (this.closest('.post-container') || this).remove();
-          overlay.style.display='none';
+          hide();
         } else {
           show_popup(js && js.message ? js.message : 'Failed to delete post');
         }
@@ -906,9 +863,7 @@ class PostCard extends HTMLElement {
           </div>
         </form>
       </div>`;
-
-    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
-    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    const hide = this._bindPopupClose(overlay);
 
     const form = overlay.querySelector(`#suspendUserForm-${uid}`);
     const reasonEl = overlay.querySelector(`#suspendReason-${uid}`);
@@ -933,7 +888,7 @@ class PostCard extends HTMLElement {
 
         const data = await response.json().catch(() => null);
         if (response.ok && data && data.ok) {
-          overlay.style.display = 'none';
+          hide();
           show_popup(data.message || 'User suspended successfully');
         } else {
           show_popup((data && data.error) ? data.error : 'Failed to suspend user');
@@ -965,8 +920,7 @@ class PostCard extends HTMLElement {
           <button type="button" class="save-btn" data-action="confirm" style="background:var(--primary);color:#fff;">Add Bookmark</button>
         </div>
       </div>`;
-    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
-    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    const hide = this._bindPopupClose(overlay);
     overlay.querySelector('[data-action="confirm"]')?.addEventListener('click', async ()=>{
       const btn = overlay.querySelector('[data-action="confirm"]');
       const prevText = btn?.textContent || 'Add Bookmark';
@@ -987,7 +941,7 @@ class PostCard extends HTMLElement {
         });
         const json = await response.json().catch(() => null);
         if (response.ok && json && json.ok) {
-          overlay.style.display = 'none';
+          hide();
           show_popup('Post added to bookmarks');
         } else {
           show_popup((json && json.error) ? json.error : 'Could not bookmark post');
@@ -1039,8 +993,7 @@ class PostCard extends HTMLElement {
           </div>
         </form>
       </div>`;
-    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
-    overlay.querySelector('[data-action="cancel"]')?.addEventListener('click', ()=> overlay.style.display='none');
+    const hide = this._bindPopupClose(overlay);
     const form = overlay.querySelector(`#reportForm-${postId}`);
     form?.addEventListener('submit', async (e)=>{
       e.preventDefault();
@@ -1049,86 +1002,48 @@ class PostCard extends HTMLElement {
         show_popup('Please select a category');
         return;
       }
-      // const details = overlay.querySelector(`#reportDetails-${postId}`)?.value || '';
-      // const link = overlay.querySelector(`#reportLink-${postId}`)?.value || '';
-      // try {
-      //   const response = await fetch(`${window.URLROOT}/post/report`, {
-      //     method: 'POST',
-      //     headers: {
-      //       'Content-Type': 'application/json',
-      //       'X-Requested-With': 'XMLHttpRequest'
-      //     },
-      //     body: JSON.stringify({
-      //       post_id: postId,
-      //       category: cat.value,
-      //       details,
-      //       link,
-      //     }),
-      //   });
-      //   const result = await response.json().catch(() => null);
-      //   if (!response.ok || !result || result.status !== 'success') {
-      //     alert((result && result.message) ? result.message : 'Failed to submit report');
-      //     return;
-      //   }
-      //   overlay.style.display = 'none';
-      //   alert('Thanks for your report');
-      // } catch (error) {
-      //   console.error('Report submit error:', error);
-      //   alert('Network error while submitting report');
-      // }
       const details = (overlay.querySelector(`#reportDetails-${postId}`)?.value || '').trim();
       const link = (overlay.querySelector(`#reportLink-${postId}`)?.value || '').trim();
-      // Emit an event; backend integration can be added later
       const ev = new CustomEvent('post:report', { bubbles: true, detail: { postId, category: cat.value, details, link } });
-      /**
-       * On report, create an async post request to api end point,
-       * /report/submitReport/post
-       */
-      async function submitReport(){
-        try {
-          const fd = new FormData();
-          fd.append('post_id', postId);
-          fd.append('category', cat.value);
-          fd.append('details', details);
-          if (link) {
-            fd.append('link', link);
-          }
-          const r = await fetch(`${window.URLROOT}/report/submitReport/post`, {
-            method: 'POST',
-            body: fd
-          });
-          const data = await r.json().catch(()=>null);
-          if (r.ok && data && (data.status === 'success' || data.success === true)) {
-            // alert('Thanks for your report. Our team will review it shortly.');
-            show_popup('Thanks for your report. Our team will review it shortly.');
-            return true;
-          }
-          throw new Error((data && data.message) ? data.message : 'Failed to submit report');
-        } catch(err){
-          console.error('Report submission error', err);
-          // alert('Error submitting report. Please try again later.');
-          show_popup('Error submitting report. Please try again later.');
-          return false;
-          }
-      }
       const submitBtn = form.querySelector('button[type="submit"]');
       const submitBtnText = submitBtn?.textContent || '';
-      
+
       if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Submitting...';
       }
-      const ok = await submitReport();
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = submitBtnText || 'Submit Report';
+
+      try {
+        const fd = new FormData();
+        fd.append('post_id', postId);
+        fd.append('category', cat.value);
+        fd.append('details', details);
+        if (link) {
+          fd.append('link', link);
+        }
+
+        const r = await fetch(`${window.URLROOT}/report/submitReport/post`, {
+          method: 'POST',
+          body: fd
+        });
+        const data = await r.json().catch(()=>null);
+        if (r.ok && data && (data.status === 'success' || data.success === true)) {
+          show_popup('Thanks for your report. Our team will review it shortly.');
+          this.dispatchEvent(ev);
+          hide();
+          return;
+        }
+
+        show_popup((data && data.message) ? data.message : 'Failed to submit report');
+      } catch(err){
+        console.error('Report submission error', err);
+        show_popup('Error submitting report. Please try again later.');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitBtnText || 'Submit Report';
+        }
       }
-      if (ok) {
-        this.dispatchEvent(ev);
-        overlay.style.display = 'none';
-      }
-      // Optional: optimistic toast
-      // alert('Thanks for your report');
     });
     overlay.style.display = 'flex';
   }
@@ -1155,7 +1070,7 @@ class PostCard extends HTMLElement {
           </div>
         </form>
       </div>`;
-    overlay.querySelector('.close-popup')?.addEventListener('click', ()=> overlay.style.display='none');
+    const hide = this._bindPopupClose(overlay);
     const copyBtn = overlay.querySelector('[data-action="copy"]');
     const shareMsgBtn = overlay.querySelector('[data-action="share-message"]');
     const shareMessagesWrap = overlay.querySelector(`#shareMessagesWrap-${postId}`);
@@ -1243,7 +1158,7 @@ class PostCard extends HTMLElement {
         });
         const data = await response.json().catch(() => null);
         if (response.ok && data && data.success) {
-          overlay.style.display = 'none';
+          hide();
           show_popup(`Post link sent to ${name}`);
           return;
         }
