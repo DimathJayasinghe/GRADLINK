@@ -370,10 +370,6 @@
             $email = strtolower(trim((string)($targetUser->email ?? '')));
             $isProtected = (
                 $role === 'admin' ||
-                $role === 'administrator' ||
-                $role === 'system_admin' ||
-                $role === 'system-administrator' ||
-                $role === 'super_admin' ||
                 strpos($role, 'admin') !== false ||
                 $name === 'system administrator' ||
                 $email === 'admin@gradlink.com'
