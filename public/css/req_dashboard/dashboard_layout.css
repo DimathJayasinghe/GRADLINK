@@ -96,3 +96,10 @@
 .menu div .menu-item {
     margin-bottom: 0;
 }
+
+@media (max-width:768px){
+  .leftsidebar{width:70px;padding:20px 10px}
+  .menu-item a{gap:0;padding:0;font-size:12px; width:100%;justify-content:center; height: fit-content;}
+  .menu li span{display:none}
+  .menu li i{margin: .75rem;font-size:24px;}
+}
