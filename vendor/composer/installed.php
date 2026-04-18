@@ -3,7 +3,7 @@
         'name' => 'gradlink/app',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'fe1d200d071776f7c9c185c89a5620973b97d9c8',
+        'reference' => 'af57c4c36ba1a6a9472344a48b7e6041adafdfa4',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'gradlink/app' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'fe1d200d071776f7c9c185c89a5620973b97d9c8',
+            'reference' => 'af57c4c36ba1a6a9472344a48b7e6041adafdfa4',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

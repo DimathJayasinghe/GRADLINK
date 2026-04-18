@@ -22,6 +22,19 @@
                         <?= isset($data['userDetails']->batch_no) ? htmlspecialchars($data['userDetails']->batch_no) : '20' ?>
                     </div>
                 </div>
+                <?php
+                    $profileName = trim((string)($data['userDetails']->name ?? ''));
+                    $rawTag = trim((string)($data['userDetails']->display_name ?? $profileName));
+                    $normalizedTag = ltrim($rawTag, '@');
+                    $isSystemAdministrator = strcasecmp($profileName, 'System Administrator') === 0
+                        || strcasecmp($normalizedTag, 'System Administrator') === 0;
+                    $showProfileTag = $normalizedTag !== '' && !$isSystemAdministrator;
+                ?>
+                <?php if ($showProfileTag): ?>
+                    <div class="profile-tag" id="profileTagEl">
+                        @<?= htmlspecialchars($normalizedTag, ENT_QUOTES, 'UTF-8') ?>
+                    </div>
+                <?php endif; ?>
                 <div class="profile-bio" id="profileBioEl">
                     <?= isset($data['userDetails']->bio) ? htmlspecialchars($data['userDetails']->bio) : 'Software Engineer at Google' ?>
                 </div>

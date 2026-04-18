@@ -92,6 +92,14 @@
             color: var(--text);
         }
 
+        .profile-tag {
+            font-size: 0.92em;
+            color: var(--primary);
+            letter-spacing: 0.2px;
+            text-align: center;
+            margin-top: -2px;
+        }
+
         /* Yellow batch indicator */
         .batch-indicator {
             background-color: #f1c40f; /* Yellow circle for batch number */
@@ -764,6 +772,10 @@
             
             .profile-name {
                 font-size: 1.2em;
+            }
+
+            .profile-tag {
+                font-size: 0.82em;
             }
             
             .batch-indicator {
