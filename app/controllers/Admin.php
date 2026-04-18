@@ -1087,7 +1087,7 @@
             $owner = trim((string)gl_env('ADMIN_UPDATES_REPO_OWNER', 'KaveenAmarasekara'));
             $repo = trim((string)gl_env('ADMIN_UPDATES_REPO_NAME', 'v0-student-nic-collection'));
             $branch = trim((string)gl_env('ADMIN_UPDATES_BRANCH', 'main'));
-            $token = trim((string)gl_env('GITHUB_TOKEN', gl_env('ADMIN_UPDATES_GITHUB_TOKEN', '')));
+            $token = trim((string)gl_env('GITHUB_TOKEN', ''));
 
             if ($owner === '' || $repo === '') {
                 return [
