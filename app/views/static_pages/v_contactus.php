@@ -73,7 +73,7 @@
 
 			<aside class="card">
 				<h3>Support Details</h3>
-				<p class="muted">Email: <a href="mailto:support@gradlink.example">support@gradlink.example</a></p>
+				<p class="muted">Email: <a href="mailto:support@gradlink.example">support@gradlink.com</a></p>
 				<p class="muted">We aim to respond within 2–3 business days.</p>
 				<hr style="border-color: rgba(255,255,255,0.06); margin: 1rem 0;">
 				<p class="muted">Looking for quick help? Visit the <a href="<?php echo URLROOT; ?>/Hero/support">Support</a> page for FAQs.</p>
