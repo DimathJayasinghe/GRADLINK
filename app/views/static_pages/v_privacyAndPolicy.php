@@ -73,7 +73,7 @@
 			<ul>
 				<li>Access, correct, or delete your information.</li>
 				<li>Update privacy settings in your account.</li>
-				<li>Contact us for assistance at <a href="mailto:support@gradlink.example">support@gradlink.example</a>.</li>
+				<li>Contact us for assistance at <a href="mailto:support@gradlink.example">support@gradlink.com</a></li>
 			</ul>
 
 			<h2 class="section-title">6. Changes</h2>

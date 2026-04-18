@@ -124,6 +124,7 @@ class Signup extends Controller
             'email' => $_POST['email'] ?? '',
             'password' => $_POST['password'] ?? '',
             'confirm_password' => $_POST['confirm_password'] ?? '',
+            'email_verified' => ($_POST['email_verified'] ?? '0') === '1',
             'display_name' => $_POST['display_name'] ?? '',
             'gender' => isset($_POST['gender']) ? strtolower(trim($_POST['gender'])) : null,
             'batch_no' => $_POST['graduation_year'] ?? '',
@@ -136,6 +137,10 @@ class Signup extends Controller
         ];
 
         $this->validateSignup($data);
+        if (!$data['email_verified']) {
+            $data['errors'][] = 'Please verify your email with OTP before signing up.';
+        }
+
         // Gender validation for alumni
         if (empty($data['gender']) || !in_array($data['gender'], ['male', 'female'], true)) {
             $data['errors'][] = 'Please select your gender';
@@ -191,6 +196,7 @@ class Signup extends Controller
             'email' => $_POST['email'] ?? '',
             'password' => $_POST['password'] ?? '',
             'confirm_password' => $_POST['confirm_password'] ?? '',
+            'email_verified' => ($_POST['email_verified'] ?? '0') === '1',
             'display_name' => $_POST['display_name'] ?? '',
             'gender' => isset($_POST['gender']) ? strtolower(trim($_POST['gender'])) : null,
             'batch_no' => $_POST['batch_no'] ?? '',
@@ -203,6 +209,9 @@ class Signup extends Controller
 
         // Validate inputs
         $this->validateSignup($data);
+        if (!$data['email_verified']) {
+            $data['errors'][] = 'Please verify your email with OTP before signing up.';
+        }
 
         // Additional validation for student ID (specific to undergrads)
         if (empty($data['student_id'])) {
@@ -385,102 +394,110 @@ class Signup extends Controller
 
     public function sendOTP()
     {
-        // Implement your OTP sending logic here
-        // For example, you can send an email or SMS with the OTP
-        header('Content-Type: application/json');
-
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid request method"
-            ]);
-            exit;
-        }
-        if (!isset($_POST['email']) || !isset($_POST['purpose'])) {
-            http_response_code(400);
-            echo json_encode([
-                "success" => false,
-                "message" => "Missing required fields"
-            ]);
-            exit;
+            $this->jsonResponse(405, ['success' => false, 'message' => 'Invalid request method']);
         }
 
-        $email = $_POST['email'];
-        $purpose = $_POST['purpose'];
+        $email = trim((string)($_POST['email'] ?? ''));
+        $purpose = $this->normalizeOtpPurpose((string)($_POST['purpose'] ?? ''));
+
+        if ($email === '' || $purpose === null) {
+            $this->jsonResponse(400, ['success' => false, 'message' => 'Missing or invalid fields']);
+        }
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->jsonResponse(400, ['success' => false, 'message' => 'Please enter a valid email address']);
+        }
+
+        if ($purpose === 'signup') {
+            if (($suspension = $this->signupModel->getActiveSuspensionByEmail($email))) {
+                $reason = trim((string)($suspension->reason ?? ''));
+                $message = 'This account is suspended and cannot request signup OTP.';
+                if ($reason !== '') {
+                    $message .= ' Reason: ' . $reason;
+                }
+                $this->jsonResponse(403, ['success' => false, 'message' => $message]);
+            }
+
+            if ($this->signupModel->findUserByEmail($email)) {
+                $this->jsonResponse(409, ['success' => false, 'message' => 'Email already in use']);
+            }
+
+            if ($this->signupModel->findPendingAlumniByEmail($email)) {
+                $this->jsonResponse(409, ['success' => false, 'message' => 'An alumni approval request is already pending for this email']);
+            }
+        }
+
         $otp = random_int(100000, 999999);
 
-        $done = $this->sendOTPEmail($email, $purpose, $otp);
-
-        if ($done) {
-            $this->signupModel->saveOTP($email, $otp, $purpose);
-            http_response_code(200);
-            echo json_encode([
-                "success" => true,
-                "message" => "OTP sent to your email"
-            ]);
-            exit;
-        } else {
-            http_response_code(500);
-            echo json_encode([
-                "success" => false,
-                "message" => "Error while sending OTP"
-            ]);
-            exit;
+        if (!$this->signupModel->saveOTP($email, $otp, $purpose)) {
+            $this->jsonResponse(500, ['success' => false, 'message' => 'Could not generate OTP. Please try again.']);
         }
+
+        if ($this->sendOTPEmail($email, $purpose, $otp)) {
+            $this->jsonResponse(200, ['success' => true, 'message' => 'OTP sent to your email']);
+        }
+
+        $isDebug = filter_var((string)gl_env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
+        $isNonProduction = strtolower((string)gl_env('APP_ENV', 'production')) !== 'production';
+        if ($isDebug && $isNonProduction) {
+            $this->jsonResponse(200, [
+                'success' => true,
+                'message' => 'Email service is unavailable. Use this OTP for local testing.',
+                'otp' => (string)$otp
+            ]);
+        }
+
+        $this->jsonResponse(500, ['success' => false, 'message' => 'Unable to send OTP email. Please try again later.']);
     }
 
     public function verifyOTP()
     {
-        header('Content-Type: application/json');
-
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            http_response_code(405);
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid request method"
-            ]);
-            exit;
+            $this->jsonResponse(405, ['success' => false, 'message' => 'Invalid request method']);
         }
 
-        if (!isset($_POST['email']) || !isset($_POST['otp']) || !isset($_POST['purpose'])) {
-            http_response_code(400);
-            echo json_encode([
-                "success" => false,
-                "message" => "Missing required fields"
-            ]);
-            exit;
+        $email = trim((string)($_POST['email'] ?? ''));
+        $otp = trim((string)($_POST['otp'] ?? ''));
+        $purpose = $this->normalizeOtpPurpose((string)($_POST['purpose'] ?? ''));
+
+        if ($email === '' || $otp === '' || $purpose === null) {
+            $this->jsonResponse(400, ['success' => false, 'message' => 'Missing or invalid fields']);
         }
 
-        $email = trim($_POST['email']);
-        $otp = trim($_POST['otp']);
-        $purpose = trim($_POST['purpose']);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->jsonResponse(400, ['success' => false, 'message' => 'Please enter a valid email address']);
+        }
 
-        // Validate OTP format (6 digits)
         if (!preg_match('/^\d{6}$/', $otp)) {
-            http_response_code(400);
-            echo json_encode([
-                "success" => false,
-                "message" => "Invalid OTP format"
-            ]);
-            exit;
+            $this->jsonResponse(400, ['success' => false, 'message' => 'Invalid OTP format']);
         }
 
-        // Verify OTP using model
         $result = $this->signupModel->verifyOTP($email, $otp, $purpose);
-
-        if ($result['success']) {
-            http_response_code(200);
-        } else {
-            http_response_code(400);
+        if (!is_array($result) || !array_key_exists('success', $result)) {
+            $this->jsonResponse(500, ['success' => false, 'message' => 'Unexpected OTP verification error']);
         }
 
-        echo json_encode($result);
-        exit;
+        $this->jsonResponse($result['success'] ? 200 : 400, $result);
     }
 
     private function sendOTPEmail($email, $purpose, $otp)
     {
         return EmailHandler::sendOtpEmail((string)$email, (string)$purpose, (int)$otp);
+    }
+
+    private function jsonResponse(int $statusCode, array $payload): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($payload);
+        exit;
+    }
+
+    private function normalizeOtpPurpose(string $purpose): ?string
+    {
+        $purpose = strtolower(trim($purpose));
+        $allowed = ['signup', 'login', 'password_reset'];
+        return in_array($purpose, $allowed, true) ? $purpose : null;
     }
 }

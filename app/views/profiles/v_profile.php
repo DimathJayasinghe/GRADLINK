@@ -168,10 +168,12 @@
             if (!popup || !form) return;
 
             const bioInput = document.getElementById('profileBioInput');
+            const tagInput = document.getElementById('profileTagInput');
             const batchInput = document.getElementById('profileBatchNoInput');
             const countryInput = document.getElementById('profileCountryInput');
 
             if (bioInput) bioInput.value = form.dataset.initialBio || '';
+            if (tagInput) tagInput.value = form.dataset.initialTag || '';
             if (batchInput) batchInput.value = form.dataset.initialBatch || '';
             if (countryInput) countryInput.value = form.dataset.initialCountry || 'Sri Lanka';
 

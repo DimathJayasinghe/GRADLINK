@@ -139,11 +139,10 @@ a {
     text-align: center;
 }
 
-/* Hover effects
 .auth-section:hover .section-title {
     transform: translateY(-5px);
     transition: transform 0.3s ease;
-} */
+}
 
 /* Responsive adjustments */
 @media (max-width: 768px) {

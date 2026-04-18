@@ -224,6 +224,11 @@ class Explorer {
         const alumniStar = post.role === 'alumni' ? '<span class="alumni-badge">★</span>' : '';
         const likedClass = post.is_liked ? 'liked' : '';
         const likeIcon = post.is_liked ? 'fas' : 'far';
+        const normalizedName = String(post.name || '').trim().toLowerCase();
+        const normalizedDisplayName = String(post.display_name || '').trim().toLowerCase();
+        const isSystemAdministrator = normalizedName === 'system administrator' || normalizedDisplayName === 'system administrator';
+        const rawTag = String(post.display_name || post.name || `user${post.user_id ?? ''}`).trim().replace(/^@+/, '') || `user${post.user_id ?? ''}`;
+        const displayTag = isSystemAdministrator ? '' : `@${this.escapeHtml(rawTag)}`;
         
         card.innerHTML = `
             <div class="post-card-header">
@@ -238,7 +243,7 @@ class Explorer {
                         ${alumniStar}
                     </div>
                     <div class="post-meta">
-                        <span class="post-handle">@user${post.user_id}</span>
+                        ${displayTag ? `<span class="post-handle">${displayTag}</span>` : ''}
                         <span class="post-time">${new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                 </div>

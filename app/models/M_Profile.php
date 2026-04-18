@@ -63,7 +63,7 @@ class M_Profile{
         return $this->db->resultSet();
     }
 
-    public function updateProfileBioImage($user_id, $profile_image, $bio, $batch_no, $country){
+    public function updateProfileBioImage($user_id, $profile_image, $bio, $batch_no, $country, $display_name){
         try {
             $safeCountry = trim((string)$country);
             if ($safeCountry === '') {
@@ -71,12 +71,17 @@ class M_Profile{
             }
             $safeCountry = substr($safeCountry, 0, 100);
 
+            $safeDisplayName = trim((string)$display_name);
+            $safeDisplayName = ltrim($safeDisplayName, '@');
+            $safeDisplayName = substr($safeDisplayName, 0, 100);
+
             $this->db->beginTransaction();
 
-            $this->db->query('UPDATE users SET profile_image = :profile_image, bio = :bio, batch_no = :batch_no WHERE id = :user_id');
+            $this->db->query('UPDATE users SET profile_image = :profile_image, bio = :bio, batch_no = :batch_no, display_name = :display_name WHERE id = :user_id');
             $this->db->bind(':profile_image', $profile_image);
             $this->db->bind(':bio', $bio);
             $this->db->bind(':batch_no', $batch_no);
+            $this->db->bind(':display_name', $safeDisplayName);
             $this->db->bind(':user_id', $user_id);
 
             if (!$this->db->execute()) {
@@ -360,7 +365,7 @@ class M_Profile{
     }
     
     public function getPosts($user_id){
-        $this->db->query('SELECT p.*, u.name, u.profile_image, u.role, 
+        $this->db->query('SELECT p.*, u.name, COALESCE(NULLIF(u.display_name, \'\'), u.name) AS display_name, u.profile_image, u.role, 
                           (SELECT COUNT(*) FROM post_likes l WHERE l.post_id=p.id) likes,
                           (SELECT COUNT(*) FROM comments c WHERE c.post_id=p.id) comments 
                           FROM posts p 

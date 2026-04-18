@@ -1,9 +1,9 @@
 // Main feed functionality
 
 /**
- * 
+ *
  * ScrollToTop helper is  located in layout file
- * 
+ *
  */
 import "./component/postCard.js";
 
@@ -77,7 +77,9 @@ function createPostCard(post) {
   el.setAttribute("profile-img", post.profile_image || "default.jpg");
   el.setAttribute("user-name", post.name || "User");
   el.setAttribute("user-role", (post.role || "undergrad").toLowerCase());
-  el.setAttribute("tag", post.user_handle || `@user${post.user_id ?? ""}`);
+  const displayTag =
+    post.display_name || post.user_handle || post.name || `user${post.user_id ?? ""}`;
+  el.setAttribute("tag", String(displayTag));
 
   el.setAttribute("post-time", post.post_time || (post.created_at ?? "")); // e.g. "2h" or timestamp
   el.setAttribute("post-content", post.content || "");
@@ -87,7 +89,7 @@ function createPostCard(post) {
   el.setAttribute("liked", post.liked ? "1" : "0");
   el.setAttribute(
     "cmnt-count",
-    String(post.comments ?? post.comment_count ?? 0)
+    String(post.comments ?? post.comment_count ?? 0),
   );
   el.setAttribute("post-id", String(post.id));
   el.setAttribute("post-user-id", String(post.user_id));
@@ -103,9 +105,9 @@ async function fetchFeed(feedType) {
   // Build URL with URLROOT when available
   const response = await fetch(
     `mainfeed?feed_type=${encodeURIComponent(
-      feedType
+      feedType,
     )}&offsetRound=${encodeURIComponent(POST_FETCH_OFFSET_ROUND)}`,
-    { headers: { "X-Requested-With": "XMLHttpRequest" } }
+    { headers: { "X-Requested-With": "XMLHttpRequest" } },
   );
   const data = await response.json();
   if (data.success) {
@@ -117,8 +119,11 @@ async function fetchFeed(feedType) {
     const latest = getLatestCreatedAt(data.posts);
     if (POST_FETCH_OFFSET_ROUND === 1 && latest) {
       // Guard against clock drift/regression: only move forward
-      if (!lastCheckedTimestamp ||
-          new Date(latest.replace(" ", "T")) > new Date(String(lastCheckedTimestamp).replace(" ", "T"))) {
+      if (
+        !lastCheckedTimestamp ||
+        new Date(latest.replace(" ", "T")) >
+          new Date(String(lastCheckedTimestamp).replace(" ", "T"))
+      ) {
         lastCheckedTimestamp = latest;
       }
     }
@@ -236,16 +241,16 @@ function startPollingNewPosts() {
       let feedType = activeTab.getAttribute("value");
       const posts = await fetchNewPosts(feedType);
     } catch (error) {}
-  }, 30000); // 30 seconds interval we check for new posts
+  }, 10000); // 10 seconds interval we check for new posts
 }
 
 async function fetchNewPosts(feedType) {
   try {
     const res = await fetch(
       `mainfeed/newPosts?feed_type=${encodeURIComponent(
-        feedType
+        feedType,
       )}&since=${encodeURIComponent(lastCheckedTimestamp)}`,
-      { headers: { "X-Requested-With": "XMLHttpRequest" } }
+      { headers: { "X-Requested-With": "XMLHttpRequest" } },
     );
     const data = await res.json();
     const ok =
@@ -349,13 +354,18 @@ async function openSharedPostPopup(postId) {
   overlay.style.display = "flex";
 
   try {
-    const response = await fetch(`mainfeed/getPost/${encodeURIComponent(postId)}`, {
-      headers: { "X-Requested-With": "XMLHttpRequest" },
-    });
+    const response = await fetch(
+      `mainfeed/getPost/${encodeURIComponent(postId)}`,
+      {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      },
+    );
     const data = await response.json();
 
     if (!response.ok || !data?.success || !data?.post) {
-      if (content) content.innerHTML = '<p style="color:var(--danger, #f66);">Post not found.</p>';
+      if (content)
+        content.innerHTML =
+          '<p style="color:var(--danger, #f66);">Post not found.</p>';
       return;
     }
 
@@ -366,7 +376,8 @@ async function openSharedPostPopup(postId) {
     }
   } catch (error) {
     if (content) {
-      content.innerHTML = '<p style="color:var(--danger, #f66);">Failed to load post.</p>';
+      content.innerHTML =
+        '<p style="color:var(--danger, #f66);">Failed to load post.</p>';
     }
   }
 }
