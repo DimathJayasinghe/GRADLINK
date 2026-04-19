@@ -141,6 +141,8 @@ if (!empty($flashMessages)): ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const urlRoot = "<?php echo URLROOT; ?>";
+
     // Select all alumni
     const selectAll = document.getElementById('selectAllAlumni');
     if (selectAll) {
@@ -152,33 +154,82 @@ document.addEventListener('DOMContentLoaded', function() {
     // Modal logic
     const modal = document.getElementById('alumniModal');
     const modalClose = document.querySelector('.admin-modal-close');
+    const modalContent = document.getElementById('modalAlumniContent');
     if (modalClose) {
         modalClose.onclick = () => modal.style.display = 'none';
     }
     window.onclick = (e) => { if (e.target == modal) modal.style.display = 'none'; };
 
+    const esc = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    const nl2brSafe = (value) => esc(value).replace(/\n/g, '<br>');
+
+    const showViewError = async (message) => {
+        if (window.AdminPopup && typeof window.AdminPopup.alert === 'function') {
+            await window.AdminPopup.alert(message, { title: 'Alumni Details', danger: true });
+            return;
+        }
+        alert(message);
+    };
+
     // View alumni
     document.querySelectorAll('.view-alumni').forEach(btn => {
-        btn.onclick = function() {
+        btn.onclick = async function() {
             const row = this.closest('tr');
-            const name = row.children[1].textContent;
-            const email = row.children[2].textContent;
-            const batch = row.children[3].textContent;
-            const nic = row.children[4].textContent;
-            const status = row.children[5].textContent;
-            document.getElementById('modalAlumniContent').innerHTML =
-                `<dl class="alumni-modal-grid">
-                    <dt>Name</dt><dd>${name}</dd>
-                    <dt>Email</dt><dd>${email}</dd>
-                    <dt>Batch</dt><dd>${batch}</dd>
-                    <dt>NIC</dt><dd>${nic}</dd>
-                    <dt>Status</dt><dd>${status}</dd>
-                </dl>
-                <div class="alumni-modal-media">
-                    <div class="alumni-modal-media-title">Profile Image</div>
-                    <img src="${"<?php echo URLROOT; ?>"}/media/profile/${encodeURIComponent(row.getAttribute('data-req-id') + '_nic.jpg')}" alt="Profile Image">
-                </div>`;
-            modal.style.display = 'block';
+            const reqId = row ? row.getAttribute('data-req-id') : null;
+            if (!reqId) {
+                await showViewError('Missing request ID.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${urlRoot}/alumni/requestDetails?req_id=${encodeURIComponent(reqId)}`, {
+                    credentials: 'same-origin'
+                });
+                const payload = await response.json().catch(() => null);
+
+                if (!response.ok || !payload || !payload.success || !payload.request) {
+                    const message = payload && payload.error ? payload.error : 'Failed to load alumni details.';
+                    await showViewError(message);
+                    return;
+                }
+
+                const req = payload.request;
+                const explainYourself = String(req.explain_yourself || '').trim() !== ''
+                    ? nl2brSafe(req.explain_yourself)
+                    : '-';
+                const bio = String(req.bio || '').trim() !== ''
+                    ? nl2brSafe(req.bio)
+                    : '-';
+
+                const profileUrl = String(req.profile_url || '').trim() !== ''
+                    ? esc(req.profile_url)
+                    : `${urlRoot}/media/profile/default.jpg`;
+
+                modalContent.innerHTML =
+                    `<dl class="alumni-modal-grid">
+                        <dt>Name</dt><dd>${esc(req.name)}</dd>
+                        <dt>Email</dt><dd>${esc(req.email)}</dd>
+                        <dt>Batch</dt><dd>${esc(req.batch)}</dd>
+                        <dt>NIC</dt><dd>${esc(req.nic)}</dd>
+                        <dt>Display Name</dt><dd>${esc(req.display_name)}</dd>
+                        <dt>Bio</dt><dd>${bio}</dd>
+                        <dt>Explain</dt><dd>${explainYourself}</dd>
+                        <dt>Status</dt><dd>${esc(req.status)}</dd>
+                    </dl>
+                    <div class="alumni-modal-media">
+                        <div class="alumni-modal-media-title">Profile Image</div>
+                        <img src="${profileUrl}" alt="Profile Image" onerror="this.onerror=null;this.src='${urlRoot}/media/profile/default.jpg';">
+                    </div>`;
+                modal.style.display = 'block';
+            } catch (error) {
+                await showViewError('Network error while loading alumni details.');
+            }
         };
     });
 
@@ -193,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 await AdminPopup.alert('Missing request ID', { title: 'Verify Alumni', danger: true });
                 return;
             }
-            goTo(`${"<?php echo URLROOT; ?>"}/signup/alumni?id=${encodeURIComponent(id)}`);
+            goTo(`${urlRoot}/signup/alumni?id=${encodeURIComponent(id)}`);
         };
     });
 
@@ -214,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!confirmed) {
                 return;
             }
-            goTo(`${"<?php echo URLROOT; ?>"}/signup/alumni?reject_id=${encodeURIComponent(id)}`);
+            goTo(`${urlRoot}/signup/alumni?reject_id=${encodeURIComponent(id)}`);
         };
     });
 
@@ -236,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `${"<?php echo URLROOT; ?>"}/admin/bulkVerifyAlumni`;
+            form.action = `${urlRoot}/admin/bulkVerifyAlumni`;
             checked.forEach((cb, i) => {
                 const id = cb.closest('tr').getAttribute('data-req-id');
                 const input = document.createElement('input');
@@ -268,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = `${"<?php echo URLROOT; ?>"}/admin/bulkRejectAlumni`;
+            form.action = `${urlRoot}/admin/bulkRejectAlumni`;
             checked.forEach((cb, i) => {
                 const id = cb.closest('tr').getAttribute('data-req-id');
                 const input = document.createElement('input');
