@@ -104,7 +104,7 @@
                     
                     <div class="form-group">
                         <label class="form-label" for="email">Email:</label>
-                        <input type="email" class="form-control" id="email" name="email" value="dimathjaya@gmail.com" disabled>
+                        <input type="email" class="form-control" id="email" name="email" value="<?= $oldValue('email', $_SESSION['user_email'] ?? '') ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="phone">Applicant Phone Number:</label>
