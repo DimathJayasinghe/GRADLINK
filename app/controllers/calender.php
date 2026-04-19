@@ -7,14 +7,11 @@ class calender extends Controller{
         }
     }
     public function index() {
-        // Load events for the current month to populate the calendar JS
         $eventModel = $this->model('M_event');
 
-        // Default: current month range (but show only upcoming events)
         $start = date('Y-m-01');
         $end = date('Y-m-t');
 
-        // Compute effective start as the later of the month start and "now"
         $nowTs = time();
         $rangeStartTs = strtotime($start . ' 00:00:00');
         $rangeEndTs = strtotime($end . ' 23:59:59');
@@ -27,9 +24,7 @@ class calender extends Controller{
             'visibility' => 'public'
         ]);
 
-        // Normalize events into the lightweight JS-friendly payload
         $payload = [];
-        // Attempt to determine current user so we can mark bookmarked state
         SessionManager::ensureStarted();
         $currentUserId = SessionManager::getUserId();
         $bmModel = $this->model('M_event_bookmark');
@@ -56,9 +51,7 @@ class calender extends Controller{
         $this->view("/calender/v_calender", $data);
     }
 
-    /**
-     * API endpoint to get upcoming public events for sidebar cards.
-     */
+
     public function getUpcomingEvents()
     {
         header('Content-Type: application/json; charset=utf-8');
@@ -105,13 +98,11 @@ class calender extends Controller{
     }
 
     public function show($id = null) {
-        // If no id is provided, redirect to the all page
         if($id === null) {
             header('Location: ' . URLROOT . '/calender');
             exit();
         }
 
-        // Load real event by id
         $eventModel = $this->model('M_event');
         $event = null;
         if(ctype_digit((string)$id)){
@@ -124,8 +115,7 @@ class calender extends Controller{
             return;
         }
 
-        // normalize to view expected property names (backwards-compatible)
-        // Determine bookmark status for this user
+
         SessionManager::ensureStarted();
         $currentUserId = SessionManager::getUserId();
         $bmModel = $this->model('M_event_bookmark');
@@ -147,8 +137,6 @@ class calender extends Controller{
             'bookmarked' => $isBookmarked
         ];
 
-        // Ensure the event image helper/model is loaded so the view can call M_event_image::getUrl()
-        // This avoids a fatal 'Class not found' if the view references the helper.
         $this->model('M_event_image');
 
         $data = ['event' => $normalized];
@@ -156,13 +144,10 @@ class calender extends Controller{
     }
 
     public function bookmarks() {
-        // In a real app, we would fetch the bookmarked events from the database
-        // For now, we'll use mock data
-            // Ensure user is logged in
+
             SessionManager::ensureStarted();
             $userId = SessionManager::getUserId();
             if(!$userId){
-                // Redirect to calendar if not authenticated
                 header('Location: ' . URLROOT . '/calender');
                 exit();
             }
@@ -170,7 +155,6 @@ class calender extends Controller{
             $bm = $this->model('M_event_bookmark');
             $bookmarks = $bm->getBookmarksForUser($userId);
         
-            // Normalize rows to match the view's expectations
             $normalized = [];
             foreach($bookmarks as $b){
                 $normalized[] = (object)[
@@ -191,14 +175,10 @@ class calender extends Controller{
             $this->view("/calender/v_bookmarked_events", $data);
         }
     
-        /**
-         * Remove a bookmarked event for the current user.
-         * Called as: /calender/removeBookmark/{eventId}
-         */
+
         public function removeBookmark($eventId = null){
             SessionManager::ensureStarted();
             $userId = SessionManager::getUserId();
-            // Only accept POST to delete a bookmark
             if($_SERVER['REQUEST_METHOD'] !== 'POST'){
                 header('Location: ' . URLROOT . '/calender/bookmarks');
                 exit();
@@ -215,7 +195,6 @@ class calender extends Controller{
             exit();
         }
 
-        // JSON endpoint: return events grouped by date for a start/end range
     public function events(){
         $start = isset($_GET['start']) ? $_GET['start'] : null;
         $end = isset($_GET['end']) ? $_GET['end'] : null;
