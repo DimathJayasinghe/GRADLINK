@@ -175,30 +175,20 @@ class M_post {
 
 
 	//ADMIN CONTENT MANAGEMENT METHODS
-	public function adminGetPosts($status = 'all', $search = '') {
+	public function adminGetPosts($search = '') {
 		$sql = 'SELECT p.*, u.name as author FROM posts p JOIN users u ON u.id = p.user_id';
 		$where = [];
 		$params = [];
-		// No status column in posts table, so ignore status filter
+
 		if ($search !== '') {
 			$where[] = '(u.name LIKE :search OR p.content LIKE :search)';
 			$params[':search'] = "%$search%";
 		}
 		if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
-		$sql .= ' ORDER BY p.created_at DESC LIMIT 100';
+		$sql .= ' ORDER BY p.created_at DESC';
 		$this->db->query($sql);
 		foreach ($params as $k => $v) $this->db->bind($k, $v);
 		return $this->db->resultSet();
-	}
-
-	public function adminApprovePost($id) {
-		// No status column, so just return true
-		return true;
-	}
-
-	public function adminRejectPost($id) {
-		// No status column, so just return true
-		return true;
 	}
 
 	public function adminDeletePost($id) {
@@ -219,6 +209,9 @@ class M_post {
 				}
 			}
 
+			// TODO - Why not use cascade delete here
+			// TODO - Why delete data directly instead of using a deleted flag or use trigger to move deleted data
+
 			// Delete comments first (correct table name is `comments`)
 			$this->db->query('DELETE FROM comments WHERE post_id = :id');
 			$this->db->bind(':id', $id);
@@ -237,9 +230,7 @@ class M_post {
 			// Remove associated image file if it exists and we successfully deleted the post
 			if ($result && $postImage) {
 				$path = APPROOT . '/storage/posts/' . $postImage;
-				if (is_file($path)) {
-					@unlink($path);
-				}
+				if (is_file($path)) @unlink($path);
 			}
 
 			return $result;
