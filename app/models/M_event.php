@@ -32,10 +32,7 @@ class M_event {
         $this->ensureSuspendedUsersTable();
     }
 
-    /** Create event
-     * $data: associative array of event fields
-     * returns inserted id or false
-     */
+
     public function create(array $data){
         $sql = "INSERT INTO events (slug,title,description,start_datetime,end_datetime,all_day,timezone,venue,capacity,organizer_id,status,visibility,series_id)
                 VALUES (:slug,:title,:description,:start_datetime,:end_datetime,:all_day,:timezone,:venue,:capacity,:organizer_id,:status,:visibility,:series_id)";
@@ -99,7 +96,6 @@ class M_event {
     }
 
     public function findById(int $id){
-        // include primary image (if any) as attachment_image
                 $this->db->query("SELECT e.*, u.name AS organizer_name, u.email AS organizer_email, ei.file_path AS attachment_image
                                                     FROM events e
                                                     LEFT JOIN users u ON u.id = e.organizer_id
@@ -122,7 +118,7 @@ class M_event {
         if(!empty($filters['start'])){ $where[] = 'e.start_datetime >= :start'; $params[':start'] = $filters['start']; }
         if(!empty($filters['end'])){ $where[] = 'e.start_datetime <= :end'; $params[':end'] = $filters['end']; }
         if(!empty($filters['visibility'])){ $where[] = 'e.visibility = :visibility'; $params[':visibility'] = $filters['visibility']; }
-    // include primary image (attachment_image) via left join to event_images
+    
         $sql = "SELECT e.*, u.name AS organizer_name, ei.file_path AS attachment_image
                 FROM events e
                 LEFT JOIN users u ON u.id = e.organizer_id
