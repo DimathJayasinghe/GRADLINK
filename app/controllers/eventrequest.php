@@ -25,7 +25,7 @@ class eventrequest extends Controller{
     }
     
     public function all(){
-        // Use DB-backed model to fetch user's event requests
+        // fetch user's event requests
         SessionManager::ensureStarted();
         $current_user_id = SessionManager::getUserId();
         $rows = $this->model->getAllForUser($current_user_id);
@@ -34,12 +34,12 @@ class eventrequest extends Controller{
     }
 
     public function show($id = null) {
-        // If no id is provided, redirect to the all page
+        
         if($id === null) {
             header('Location: ' . URLROOT . '/eventrequest/all');
             exit();
         }
-        // Fetch from DB
+        
         $req = $this->model->getById((int)$id);
         if($req){
             $data = ['request' => $req];
@@ -51,7 +51,7 @@ class eventrequest extends Controller{
     }
     
     public function analytics($id = null) {
-        // If no id is provided, redirect to my requests
+        
         if($id === null) {
             header('Location: ' . URLROOT . '/eventrequest/myrequests');
             exit();
@@ -67,13 +67,12 @@ class eventrequest extends Controller{
     }
 
     public function edit($id = null) {
-        // $event = $this->model->getEventRequestById($id);
         $event = $this->model->getById((int)$id);
         $data = ['event' => $event];
         $this->view("/request_dashboards/eventreq/v_eventrequest", $data);
     }
 
-    // Handle update of an existing event request (POST)
+    // update of an existing event request (POST)
     public function update($id = null){
         SessionManager::ensureStarted();
         if($_SERVER['REQUEST_METHOD'] !== 'POST' || $id === null){
@@ -88,22 +87,22 @@ class eventrequest extends Controller{
             SessionManager::setFlash('error','Permission denied'); header('Location: ' . URLROOT . '/eventrequest/all'); exit();
         }
 
-        // Build update payload
+        
         $data = [];
-    $data['title'] = $_POST['event_title'] ?? '';
-    $data['description'] = $_POST['description'] ?? null;
-    $data['club_name'] = $_POST['organizer'] ?? null;
-    $data['position'] = $_POST['requester_position'] ?? null;
-    $data['event_date'] = $_POST['event_date'] ?? null;
-    $data['event_time'] = $_POST['event_time'] ?? null;
-    $data['event_venue'] = $_POST['venue'] ?? null;
-    // additional optional fields
-    $data['short_tagline'] = $_POST['short_tagline'] ?? null;
-    $data['event_type'] = $_POST['event_type'] ?? null;
-    $data['post_caption'] = $_POST['post_caption'] ?? null;
-    $data['add_to_calendar'] = isset($_POST['add_to_calendar']) && $_POST['add_to_calendar'] == '1' ? 1 : 0;
-    $data['president_name'] = $_POST['president_name'] ?? null;
-    $data['approval_date'] = $_POST['approval_date'] ?? null;
+        $data['title'] = $_POST['event_title'] ?? '';
+        $data['description'] = $_POST['description'] ?? null;
+        $data['club_name'] = $_POST['organizer'] ?? null;
+        $data['position'] = $_POST['requester_position'] ?? null;
+        $data['event_date'] = $_POST['event_date'] ?? null;
+        $data['event_time'] = $_POST['event_time'] ?? null;
+        $data['event_venue'] = $_POST['venue'] ?? null;
+        // additional optional fields
+        $data['short_tagline'] = $_POST['short_tagline'] ?? null;
+        $data['event_type'] = $_POST['event_type'] ?? null;
+        $data['post_caption'] = $_POST['post_caption'] ?? null;
+        $data['add_to_calendar'] = isset($_POST['add_to_calendar']) && $_POST['add_to_calendar'] == '1' ? 1 : 0;
+        $data['president_name'] = $_POST['president_name'] ?? null;
+        $data['approval_date'] = $_POST['approval_date'] ?? null;
         $data['status'] = $row->status ?? 'Pending';
 
         // handle uploaded image (optional)
@@ -133,10 +132,10 @@ class eventrequest extends Controller{
         }
     }
 
-    // Handle creation of a new event request (POST)
+    // creation of a new event request (POST)
     public function create(){
         SessionManager::ensureStarted();
-        // Only accept POST
+        
         if($_SERVER['REQUEST_METHOD'] !== 'POST'){
             header('Location: ' . URLROOT . '/eventrequest');
             exit();
@@ -158,14 +157,14 @@ class eventrequest extends Controller{
         $data['event_date'] = $_POST['event_date'] ?? null;
         $data['event_time'] = $_POST['event_time'] ?? null;
         $data['event_venue'] = $_POST['venue'] ?? null;
-    $data['status'] = 'Pending';
-    // additional optional fields
-    $data['short_tagline'] = $_POST['short_tagline'] ?? null;
-    $data['event_type'] = $_POST['event_type'] ?? null;
-    $data['post_caption'] = $_POST['post_caption'] ?? null;
-    $data['add_to_calendar'] = isset($_POST['add_to_calendar']) && $_POST['add_to_calendar'] == '1' ? 1 : 0;
-    $data['president_name'] = $_POST['president_name'] ?? null;
-    $data['approval_date'] = $_POST['approval_date'] ?? null;
+        $data['status'] = 'Pending';
+        // additional optional fields
+        $data['short_tagline'] = $_POST['short_tagline'] ?? null;
+        $data['event_type'] = $_POST['event_type'] ?? null;
+        $data['post_caption'] = $_POST['post_caption'] ?? null;
+        $data['add_to_calendar'] = isset($_POST['add_to_calendar']) && $_POST['add_to_calendar'] == '1' ? 1 : 0;
+        $data['president_name'] = $_POST['president_name'] ?? null;
+        $data['approval_date'] = $_POST['approval_date'] ?? null;
 
         // handle uploaded image
         $imgName = null;
@@ -194,7 +193,7 @@ class eventrequest extends Controller{
         }
     }
 
-    // Delete an event request (allow GET for existing UI link; accept POST for compatibility)
+    // Delete an event request
     public function delete($id){
         SessionManager::ensureStarted();
         if($id === null){
@@ -203,7 +202,7 @@ class eventrequest extends Controller{
         }
 
         if($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET'){
-            // Only accept GET or POST for deletion
+           
             header('Location: ' . URLROOT . '/eventrequest/all');
             exit();
         }
@@ -221,7 +220,7 @@ class eventrequest extends Controller{
         exit();
     }
 
-    // Approve an event request (admin) - toggles status to Approved
+    // Approve an event request (admin)
     public function approve($id = null){
         SessionManager::ensureStarted();
         SessionManager::requireRole('admin');
@@ -250,13 +249,11 @@ class eventrequest extends Controller{
         exit();
     }
 
-    /**
-     * Create an event from a request object. Returns new event id or false.
-     */
+    
     protected function createEventFromRequest($req){
         if(!$req) return false;
 
-        // Avoid duplicate event creation if this request was already converted.
+        // Avoid duplicate event 
         if(!empty($req->event_id)){
             $this->model->setStatus((int)$req->id, 'Approved');
             return (int)$req->event_id;
@@ -293,7 +290,7 @@ class eventrequest extends Controller{
             $this->model->setEventId((int)$req->id, (int)$newEventId);
             $this->model->setStatus((int)$req->id, 'Approved');
             // If request indicates adding to calendar, also publish a post
-            $shouldPost = isset($req->add_to_calendar) ? (int)$req->add_to_calendar === 1 : true; // default true if column not present
+            $shouldPost = isset($req->add_to_calendar) ? (int)$req->add_to_calendar === 1 : true;
             if($shouldPost){
                 $this->publishEventPost($req, (int)$newEventId);
             }
@@ -326,7 +323,7 @@ class eventrequest extends Controller{
             if($postId){
                 $this->model->setPostId((int)$req->id, is_int($postId) ? $postId : null);
             }
-        }catch(Throwable $e){ /* swallow to avoid blocking approval flow */ }
+        }catch(Throwable $e){ }
     }
 
     // ADMIN: JSON listing for event requests with filters

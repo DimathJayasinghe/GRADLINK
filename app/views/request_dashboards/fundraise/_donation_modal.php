@@ -209,6 +209,48 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
             color: #dc3545;
         }
 
+        .gl-notify-toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+            z-index: 1800;
+            pointer-events: none;
+        }
+
+        .gl-notify-toast {
+            min-width: 260px;
+            max-width: min(420px, calc(100vw - 2rem));
+            padding: .7rem .85rem;
+            border-radius: .6rem;
+            border: 1px solid var(--border);
+            background: var(--bg-alt, #1b2128);
+            color: var(--text);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .22);
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: opacity .2s ease, transform .2s ease;
+            white-space: pre-line;
+            font-size: .9rem;
+        }
+
+        .gl-notify-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .gl-notify-toast.success {
+            border-color: rgba(46, 125, 50, .55);
+            background: rgba(46, 125, 50, .2);
+        }
+
+        .gl-notify-toast.error {
+            border-color: rgba(220, 53, 69, .55);
+            background: rgba(220, 53, 69, .2);
+        }
+
         @media (max-width: 920px) {
             .gl-donate-grid {
                 grid-template-columns: 1fr;
@@ -324,6 +366,36 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
         const GL_submitBtn = document.getElementById('glSubmitBtn');
         const GL_form = document.getElementById('glDonationForm');
 
+        function GL_notify(message, type = 'info') {
+            const text = String(message || '');
+
+            if (typeof show_popup === 'function') {
+                show_popup(text);
+                return;
+            }
+
+            let container = document.getElementById('glNotifyToastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'glNotifyToastContainer';
+                container.className = 'gl-notify-toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `gl-notify-toast ${type}`;
+            toast.textContent = text;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 220);
+            }, 3800);
+        }
+
+        window.GL_notify = GL_notify;
+
         function GL_formatLKR(v) {
             const n = Number(v || 0);
             return 'Rs. ' + n.toLocaleString('en-LK', {
@@ -393,7 +465,7 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
                 <?php endif; ?>
                 
                 if (!fundraiserId) {
-                    alert('Campaign information is missing');
+                    GL_notify('Campaign information is missing', 'error');
                     GL_submitBtn.disabled = false;
                     GL_submitBtn.textContent = 'Donate now';
                     return false;
@@ -406,7 +478,7 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
                 const remainingAmount = targetAmount - raisedAmount;
                 
                 if (remainingAmount <= 0) {
-                    alert('🎉 This campaign has already reached its target! No more donations needed.');
+                    GL_notify('This campaign has already reached its target. No more donations are needed.', 'info');
                     GL_submitBtn.disabled = false;
                     GL_submitBtn.textContent = 'Donate now';
                     return false;
@@ -417,7 +489,7 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
-                    alert(`⚠️ Your donation amount (${GL_formatLKR(amount)}) exceeds the remaining needed amount (${formattedRemaining}).\n\nPlease donate ${formattedRemaining} or less.`);
+                    GL_notify(`Your donation amount (${GL_formatLKR(amount)}) exceeds the remaining amount (${formattedRemaining}).\nPlease donate ${formattedRemaining} or less.`, 'error');
                     GL_submitBtn.disabled = false;
                     GL_submitBtn.textContent = 'Donate now';
                     return false;
@@ -445,12 +517,12 @@ if (!isset($GLOBALS['donation_modal_included'])): $GLOBALS['donation_modal_inclu
                     throw new Error(donateData.error || 'Failed to process donation');
                 }
 
-                alert('Thank you for your donation of ' + GL_formatLKR(amount) + '!');
+                GL_notify('Thank you for your donation of ' + GL_formatLKR(amount) + '!', 'success');
                 window.location.reload();
                 
             } catch (error) {
                 console.error('Payment error:', error);
-                alert('Payment failed: ' + error.message);
+                GL_notify('Payment failed: ' + error.message, 'error');
             } finally {
                 GL_submitBtn.disabled = false;
                 GL_submitBtn.textContent = 'Donate now';

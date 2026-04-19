@@ -59,8 +59,8 @@ class M_eventrequest{
         $this->db->bind(':add_to_calendar', isset($data['add_to_calendar']) ? (int)$data['add_to_calendar'] : 0);
         $this->db->bind(':president_name', $data['president_name'] ?? null);
         $this->db->bind(':approval_date', $data['approval_date'] ?? null);
-    $this->db->bind(':event_id', $data['event_id'] ?? null);
-    $this->db->bind(':post_id', $data['post_id'] ?? null);
+        $this->db->bind(':event_id', $data['event_id'] ?? null);
+        $this->db->bind(':post_id', $data['post_id'] ?? null);
         try{
             $this->db->execute();
             return (int)$this->db->lastInsertId();
