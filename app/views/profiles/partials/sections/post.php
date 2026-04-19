@@ -5,7 +5,7 @@
                     profile-img="<?php echo htmlspecialchars($p->profile_image ?? ''); ?>"
                     user-role="<?php echo htmlspecialchars($p->role ?? ''); ?>"
                     user-name="<?php echo htmlspecialchars($p->name ?? 'User'); ?>"
-                    tag="@user<?php echo $p->user_id ?? ''; ?>"
+                    tag="<?php echo htmlspecialchars($p->display_name ?? $p->name ?? 'User'); ?>"
                     post-time="<?php echo isset($p->created_at) ? date('M d', strtotime($p->created_at)) : ''; ?>"
                     post-content="<?php echo htmlspecialchars($p->content ?? ''); ?>"
                     post-img="<?php echo htmlspecialchars($p->image ?? ''); ?>"

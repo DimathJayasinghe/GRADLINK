@@ -235,13 +235,25 @@ class Profile extends Controller{
         header('Content-Type: application/json');
 
         $bio = trim($_POST['profileBioInput'] ?? '');
+        $display_name = trim((string)($_POST['profileTagInput'] ?? ''));
         $batch_no = trim($_POST['profileBatchNoInput'] ?? '');
         $country = trim((string)($_POST['profileCountryInput'] ?? ''));
+
+        // Normalize tag input (stored without @; rendered with @ in UI)
+        $display_name = ltrim($display_name, '@');
         
 
         // Validation
         if ($bio === '') {
             echo json_encode(['success' => false, 'error' => 'Bio cannot be empty']);
+            return;
+        }
+        if ($display_name === '') {
+            echo json_encode(['success' => false, 'error' => 'User tag cannot be empty']);
+            return;
+        }
+        if (strlen($display_name) > 100) {
+            echo json_encode(['success' => false, 'error' => 'User tag cannot exceed 100 characters']);
             return;
         }
         if ($batch_no === '') {
@@ -306,9 +318,10 @@ class Profile extends Controller{
         }
 
         // Update DB record via model
-        if($this->Model->updateProfileBioImage($_SESSION['user_id'], $profile_image, $bio, $batch_no, $country)) {
+        if($this->Model->updateProfileBioImage($_SESSION['user_id'], $profile_image, $bio, $batch_no, $country, $display_name)) {
             $current = $this->Model->getUserDetails($_SESSION['user_id']);
             $_SESSION['profile_image'] = $current->profile_image ?? null;
+            $_SESSION['display_name'] = $current->display_name ?? $display_name;
             // $_SESSION['bio'] = $current->bio ?? null;
             echo json_encode(['success' => true]);
         } else {

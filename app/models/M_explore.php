@@ -40,6 +40,7 @@ class M_explore {
         
         $sql = "SELECT p.*, 
                        u.name, 
+                       COALESCE(NULLIF(u.display_name, ''), u.name) AS display_name,
                        u.profile_image, 
                        u.role,
                        u.id as user_id,
@@ -49,7 +50,8 @@ class M_explore {
                 JOIN users u ON u.id = p.user_id 
                                 LEFT JOIN suspended_users su ON su.user_id = u.id AND su.status = 'active'
                                 WHERE (p.content LIKE :search 
-                                     OR u.name LIKE :search)
+                                      OR u.name LIKE :search
+                                      OR u.display_name LIKE :search)
                                     AND su.id IS NULL
                 ORDER BY p.created_at DESC 
                 LIMIT :limit OFFSET :offset";

@@ -220,6 +220,73 @@
     margin-top: 0.6rem;
 }
 
+#eventNotifyPopup.certificate-add-popup {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 21, 24, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1450;
+    padding: 1rem;
+}
+
+#eventNotifyPopup .certificate-add {
+    width: min(420px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-1);
+    position: relative;
+}
+
+#eventNotifyPopup .close-popup {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background-color: var(--surface-3, rgba(255, 255, 255, 0.06));
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#eventNotifyPopup .close-popup:hover {
+    background-color: var(--primary);
+    color: var(--text);
+}
+
+#eventNotifyPopup .form-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+    color: var(--text);
+}
+
+#eventNotifyPopup .event-notify-message {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.45;
+}
+
+#eventNotifyPopup .event-notify-actions {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+#eventNotifyPopup .event-notify-actions .btn {
+    min-width: 84px;
+}
+
 @media (max-width: 768px) {
     .details-info {
         grid-template-columns: 1fr;
@@ -285,8 +352,9 @@
                 style="background-color:<?php echo $isBookmarked ? '#ec2424ff' : '#4caf50'; ?>; margin:0;"
                 data-bookmarked="<?php echo $isBookmarked ? '1' : '0'; ?>"
                 data-event-id="<?php echo htmlspecialchars($request->event_id); ?>"
+                data-bookmark-endpoint="<?php echo URLROOT; ?>/bookmark/update"
             >
-                <span class="btn" style="color: ffffff;" id="bookmark-label"><?php echo $isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'; ?></span>
+                <span class="btn" style="color:#ffffff;" id="bookmark-label"><?php echo $isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'; ?></span>
             </button>
             <!-- <div class="details-info-item" style="padding: 0px;display: flex; align-items: center; justify-content: center;">
             </div> -->
@@ -304,29 +372,6 @@
                 </div>
             <?php endif; ?>
         </div>
-
-        <!-- Attendees list -->
-        <div class="event-info" style="margin-top:12px;">
-            <h3 style="margin-top:0;">Attendees</h3>
-            <?php
-                $attendees = isset($data['attendees']) ? $data['attendees'] : [];
-                if(!$attendees) {
-                    echo '<p class="no-events">No attendees yet.</p>';
-                } else {
-                    echo '<ul style="list-style:none;padding:0;margin:0;">';
-                    foreach($attendees as $a){
-                        $name = htmlspecialchars($a->name ?? ($a->email ?? 'User'));
-                        $guests = (int)($a->guests ?? 0);
-                        echo '<li style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03);">';
-                        echo '<strong>' . $name . '</strong>';
-                        if($guests > 0) echo ' <span style="color:var(--muted);">(' . $guests . ' guests)</span>';
-                        echo '</li>';
-                    }
-                    echo '</ul>';
-                }
-            ?>
-        </div>
-
 
         <div class="action-buttons">
             <a href="<?php echo URLROOT; ?>/calender/" class="btn btn-back">Back to All Event Requests</a>
@@ -375,6 +420,17 @@
                 </form>
             </div>
         </div>
+
+        <div id="eventNotifyPopup" class="certificate-add-popup" style="display:none;" aria-hidden="true">
+            <div class="certificate-add" role="alertdialog" aria-modal="true" aria-labelledby="eventNotifyTitle" aria-describedby="eventNotifyMessage">
+                <button type="button" class="close-popup" data-action="close" aria-label="Close">X</button>
+                <h3 id="eventNotifyTitle" class="form-title">Notification</h3>
+                <p id="eventNotifyMessage" class="event-notify-message"></p>
+                <div class="event-notify-actions">
+                    <button type="button" class="btn btn-primary" data-action="ok">OK</button>
+                </div>
+            </div>
+        </div>
         
     <?php else: ?>
         <p>Event request not found.</p>
@@ -389,17 +445,55 @@
 // Provide a small script to handle bookmark add/remove via AJAX
 $scripts = <<<'JS'
 document.addEventListener('DOMContentLoaded', function(){
+    var notifyPopup = document.getElementById('eventNotifyPopup');
+    var notifyMessage = document.getElementById('eventNotifyMessage');
+
+    function closeNotifyPopup(){
+        if(!notifyPopup){
+            return;
+        }
+        notifyPopup.style.display = 'none';
+        notifyPopup.setAttribute('aria-hidden', 'true');
+    }
+
+    function openNotifyPopup(message){
+        if(!notifyPopup){
+            return;
+        }
+        if(notifyMessage){
+            notifyMessage.textContent = String(message || '');
+        }
+        notifyPopup.style.display = 'flex';
+        notifyPopup.setAttribute('aria-hidden', 'false');
+    }
+
+    if(notifyPopup){
+        notifyPopup.querySelector('[data-action="close"]')?.addEventListener('click', closeNotifyPopup);
+        notifyPopup.querySelector('[data-action="ok"]')?.addEventListener('click', closeNotifyPopup);
+        notifyPopup.addEventListener('click', function(e){
+            if(e.target === notifyPopup){
+                closeNotifyPopup();
+            }
+        });
+        document.addEventListener('keydown', function(e){
+            if(e.key === 'Escape' && notifyPopup.style.display === 'flex'){
+                closeNotifyPopup();
+            }
+        });
+    }
+
     function notify(message){
         if(typeof show_popup === 'function'){
             show_popup(message);
             return;
         }
-        alert(message);
+        openNotifyPopup(message);
     }
 
     var btn = document.getElementById('bookmark-btn');
     var label = document.getElementById('bookmark-label');
     var eventId = btn ? btn.getAttribute('data-event-id') : null;
+    var bookmarkEndpoint = btn ? (btn.getAttribute('data-bookmark-endpoint') || '/bookmark/update') : '/bookmark/update';
 
     function postJson(path, body){
         return fetch(path, {
@@ -415,10 +509,15 @@ document.addEventListener('DOMContentLoaded', function(){
     if(btn && eventId){
         btn.addEventListener('click', function(e){
             e.preventDefault();
+            var parsedEventId = parseInt(eventId, 10);
+            if(!parsedEventId){
+                notify('Invalid event id for bookmark action');
+                return;
+            }
             var currently = String(btn.getAttribute('data-bookmarked') || '0') === '1';
-            postJson('/bookmark/update', {
+            postJson(bookmarkEndpoint, {
                 type: 'events',
-                reference_id: parseInt(eventId, 10),
+                reference_id: parsedEventId,
                 bookmarked: !currently
             })
                 .then(function(data){

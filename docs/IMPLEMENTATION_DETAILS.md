@@ -18,7 +18,7 @@ Expand the GRADLINK admin analytics dashboard to provide comprehensive platform 
 
 #### Enhanced Methods
 - `getEngagementMetrics()` - Now returns 25+ data points:
-  - Raw counts: posts, comments, reactions, messages, events, attendees, followers, etc.
+   - Raw counts: posts, comments, reactions, messages, events, bookmarks, followers, etc.
   - Calculated rates: avg posts/user, avg comments/post, engagement rate
   - Activity windows: DAU, WAU, MAU
   - Time-series arrays for trending
@@ -111,7 +111,6 @@ The dashboard now safely queries:
 - post_likes (for reaction counts)
 - messages (for messaging volume)
 - events (for event metrics and status)
-- event_attendees (for attendance tracking)
 - event_bookmarks (for bookmark counts)
 - followers (for follow relationship counts)
 - notifications (for notification metrics)

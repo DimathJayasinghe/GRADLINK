@@ -37,7 +37,7 @@ class alumni extends Controller{
                 'selected_req_id' => $selected_req_id,
             ];
             if (SessionManager::hasRole('admin')){
-                $this->view("/admin/verifications", $data);
+                $this->view("/admin/v_verifications", $data);
             }
             else if (SessionManager::isSpecialAlumni()){
                 $this->view("/alumni_approval/approval_dashboard", $data);
@@ -45,6 +45,69 @@ class alumni extends Controller{
         }else{
             $this->redirect("/mainfeed");
         }
+    }
+
+    public function requestDetails(){
+        header('Content-Type: application/json');
+
+        if (!(SessionManager::isSpecialAlumni() || SessionManager::hasRole('admin'))) {
+            http_response_code(403);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Unauthorized'
+            ]);
+            return;
+        }
+
+        $reqIdRaw = $this->getQueryParam('req_id', null);
+        $reqId = is_numeric($reqIdRaw) ? (int)$reqIdRaw : 0;
+        if ($reqId <= 0) {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Invalid request id'
+            ]);
+            return;
+        }
+
+        $request = $this->m->getRequestById($reqId);
+        if (!$request) {
+            http_response_code(404);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Request not found'
+            ]);
+            return;
+        }
+
+        $profile = trim((string)($request->profile ?? ''));
+        if ($profile === '') {
+            $profile = 'default.jpg';
+        }
+
+        if (preg_match('/^https?:\/\//i', $profile) || strpos($profile, URLROOT . '/') === 0) {
+            $profileUrl = $profile;
+        } else {
+            $profileUrl = URLROOT . '/media/profile/' . rawurlencode(ltrim($profile, '/'));
+        }
+
+        echo json_encode([
+            'success' => true,
+            'request' => [
+                'req_id' => $request->req_id ?? $reqId,
+                'name' => $request->Name ?? '',
+                'email' => $request->email ?? '',
+                'batch' => $request->Batch ?? '',
+                'nic' => $request->nic ?? '',
+                'student_no' => $request->student_no ?? '',
+                'display_name' => $request->display_name ?? '',
+                'bio' => $request->bio ?? '',
+                'explain_yourself' => $request->explain_yourself ?? '',
+                'status' => $request->status ?? 'Pending',
+                'profile' => $profile,
+                'profile_url' => $profileUrl,
+            ]
+        ]);
     }
 }
 

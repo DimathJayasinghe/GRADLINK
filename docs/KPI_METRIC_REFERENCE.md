@@ -22,7 +22,7 @@ SECTION 2: CONTENT ENGAGEMENT METRICS
 
 SECTION 3: COMMUNITY METRICS
 ┌────────────┬──────────────┬────────────┬──────────┬──────────────┬──────────────┐
-│   Events   │Event Attendee│Event Bookm │ Followers│ Pending Alum │Unread Notif  │
+│   Events   │Event Bookmark│ Followers  │ Pending  │Unread Notif  │              │
 │  (count)   │    (count)   │   (count)  │ (count)  │   (count)    │    (count)   │
 └────────────┴──────────────┴────────────┴──────────┴──────────────┴──────────────┘
 
@@ -176,15 +176,7 @@ SECTION 8: ENGAGEMENT ANALYSIS (3 Charts)
 - **Update**: Real-time
 - **Target**: Consistent monthly growth
 
-#### KPI 13: Event Attendees
-- **Display**: Large number
-- **Data Type**: Integer count
-- **Source**: COUNT(*) FROM event_attendees
-- **Trending**: Community engagement
-- **Update**: Real-time
-- **Target**: Growing faster than events
-
-#### KPI 14: Event Bookmarks
+#### KPI 13: Event Bookmarks
 - **Display**: Large number
 - **Data Type**: Integer count
 - **Source**: COUNT(*) FROM event_bookmarks
@@ -192,7 +184,7 @@ SECTION 8: ENGAGEMENT ANALYSIS (3 Charts)
 - **Update**: Real-time
 - **Target**: High save ratio
 
-#### KPI 15: Followers
+#### KPI 14: Followers
 - **Display**: Large number
 - **Data Type**: Integer count
 - **Source**: COUNT(*) FROM followers
@@ -200,7 +192,7 @@ SECTION 8: ENGAGEMENT ANALYSIS (3 Charts)
 - **Update**: Real-time
 - **Target**: Distributed follow graph
 
-#### KPI 16: Pending Alumni
+#### KPI 15: Pending Alumni
 - **Display**: Large number
 - **Data Type**: Integer count
 - **Source**: COUNT(*) FROM unregisted_alumni WHERE status='pending'
@@ -208,7 +200,7 @@ SECTION 8: ENGAGEMENT ANALYSIS (3 Charts)
 - **Update**: Real-time
 - **Target**: < 20 pending (< 1 week old)
 
-#### KPI 17: Unread Notifications
+#### KPI 16: Unread Notifications
 - **Display**: Large number
 - **Data Type**: Integer count
 - **Source**: COUNT(*) FROM notifications WHERE is_read=0

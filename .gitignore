@@ -2,6 +2,7 @@
 
 /storage/certificates/
 /storage/posts/
+/storage/profile_pic/
 
 
 # Environment files
@@ -23,3 +24,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+
+composer.lock

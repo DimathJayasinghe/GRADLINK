@@ -1087,7 +1087,7 @@
             $owner = trim((string)gl_env('ADMIN_UPDATES_REPO_OWNER', 'KaveenAmarasekara'));
             $repo = trim((string)gl_env('ADMIN_UPDATES_REPO_NAME', 'v0-student-nic-collection'));
             $branch = trim((string)gl_env('ADMIN_UPDATES_BRANCH', 'main'));
-            $token = trim((string)gl_env('GITHUB_TOKEN', gl_env('ADMIN_UPDATES_GITHUB_TOKEN', '')));
+            $token = trim((string)gl_env('GITHUB_TOKEN', ''));
 
             if ($owner === '' || $repo === '') {
                 return [
@@ -1340,7 +1340,6 @@
 
             $id = $_POST['id'] ?? null;
             $reply = trim($_POST['reply'] ?? '');
-            $adminId = (int)($_SESSION['user_id'] ?? 0);
 
             if (!$id || empty($reply)) {
                 SessionManager::setFlash('error', 'Ticket ID and reply are required.');
@@ -1356,11 +1355,17 @@
             }
 
             if ($this->adminModel->replySupportTicket($id, $reply)) {
-                $delivered = $this->sendSupportReplyAsMessage((int)$ticket->user_id, $reply, 'support ticket', (int)$id, $adminId);
+                $delivered = $this->sendSupportReplyEmail(
+                    (string)($ticket->user_email ?? ''),
+                    (string)($ticket->display_name ?? $ticket->user_name ?? ''),
+                    $reply,
+                    'support ticket',
+                    (int)$id
+                );
                 if ($delivered) {
-                    SessionManager::setFlash('success', 'Reply sent to ticket #' . $id . ' and delivered as a chat message.');
+                    SessionManager::setFlash('success', 'Reply sent to ticket #' . $id . ' and emailed to the user.');
                 } else {
-                    SessionManager::setFlash('warning', 'Reply saved for ticket #' . $id . ', but chat delivery failed.');
+                    SessionManager::setFlash('warning', 'Reply saved for ticket #' . $id . ', but email delivery failed.');
                 }
             } else {
                 SessionManager::setFlash('error', 'Failed to send reply.');
@@ -1406,7 +1411,6 @@
 
             $id = $_POST['id'] ?? null;
             $reply = trim($_POST['reply'] ?? '');
-            $adminId = (int)($_SESSION['user_id'] ?? 0);
 
             if (!$id || empty($reply)) {
                 SessionManager::setFlash('error', 'Report ID and reply are required.');
@@ -1422,11 +1426,17 @@
             }
 
             if ($this->adminModel->replyProblemReport($id, $reply)) {
-                $delivered = $this->sendSupportReplyAsMessage((int)$report->user_id, $reply, 'problem report', (int)$id, $adminId);
+                $delivered = $this->sendSupportReplyEmail(
+                    (string)($report->user_email ?? ''),
+                    (string)($report->display_name ?? $report->user_name ?? ''),
+                    $reply,
+                    'problem report',
+                    (int)$id
+                );
                 if ($delivered) {
-                    SessionManager::setFlash('success', 'Reply sent to report #' . $id . ' and delivered as a chat message.');
+                    SessionManager::setFlash('success', 'Reply sent to report #' . $id . ' and emailed to the user.');
                 } else {
-                    SessionManager::setFlash('warning', 'Reply saved for report #' . $id . ', but chat delivery failed.');
+                    SessionManager::setFlash('warning', 'Reply saved for report #' . $id . ', but email delivery failed.');
                 }
             } else {
                 SessionManager::setFlash('error', 'Failed to send reply.');
@@ -1434,41 +1444,41 @@
             $this->redirect('/admin/support');
         }
 
-        private function sendSupportReplyAsMessage(int $recipientId, string $reply, string $sourceType, int $sourceId, int $adminId): bool {
-            if ($recipientId <= 0 || $adminId <= 0 || $recipientId === $adminId) {
-                return false;
-            }
-
-            $messageModel = $this->model('M_message');
-            if (!$messageModel || !method_exists($messageModel, 'sendMessage')) {
-                return false;
-            }
-
-            $text = "Admin Support Reply (" . ucfirst($sourceType) . " #" . $sourceId . "):\n" . $reply;
-            $messageId = $messageModel->sendMessage($adminId, $recipientId, $text);
-            if (!$messageId) {
+        private function sendSupportReplyEmail(string $recipientEmail, string $recipientName, string $reply, string $sourceType, int $sourceId): bool {
+            $recipientEmail = trim($recipientEmail);
+            if ($recipientEmail === '') {
                 return false;
             }
 
             try {
-                if ($this->notificationModel && method_exists($this->notificationModel, 'hasUnreadMessageNotification')) {
-                    $hasUnread = $this->notificationModel->hasUnreadMessageNotification($recipientId, $adminId);
-                    if ($hasUnread && method_exists($this->notificationModel, 'updateMessageNotificationTime')) {
-                        $this->notificationModel->updateMessageNotificationTime($recipientId, $adminId);
-                    } else {
-                        $this->notify(
-                            $recipientId,
-                            'new_message',
-                            $adminId,
-                            ['text' => 'Admin support sent you a message']
-                        );
-                    }
-                }
-            } catch (Exception $e) {
-                error_log('Failed to create support reply notification: ' . $e->getMessage());
-            }
+                $displayName = trim($recipientName) !== '' ? trim($recipientName) : 'there';
+                $sourceLabel = ucwords(trim($sourceType));
+                $subject = 'Gradlink Admin Reply - ' . $sourceLabel . ' #' . $sourceId;
+                $settingsLink = URLROOT . '/settings/helpandsupport';
+                $safeReplyHtml = nl2br(htmlspecialchars($reply, ENT_QUOTES, 'UTF-8'));
 
-            return true;
+                $htmlBody = '<h2>Hello ' . htmlspecialchars($displayName, ENT_QUOTES, 'UTF-8') . ',</h2>'
+                    . '<p>Our admin team replied to your ' . htmlspecialchars(strtolower($sourceType), ENT_QUOTES, 'UTF-8') . ' #' . (int)$sourceId . '.</p>'
+                    . '<div style="padding:12px; border-left:4px solid #9ed4dc; background:#f7fbfc; margin:12px 0;">' . $safeReplyHtml . '</div>'
+                    . '<p>You can review it in your Help &amp; Support section.</p>'
+                    . '<p><a href="' . htmlspecialchars($settingsLink, ENT_QUOTES, 'UTF-8') . '">Open Help &amp; Support</a></p>';
+
+                $plainBody = "Hello " . $displayName . ",\n\n"
+                    . "Our admin team replied to your " . $sourceType . " #" . (int)$sourceId . ".\n\n"
+                    . $reply . "\n\n"
+                    . "Open Help & Support: " . $settingsLink;
+
+                return EmailHandler::send(
+                    $recipientEmail,
+                    $subject,
+                    $htmlBody,
+                    $displayName,
+                    $plainBody
+                );
+            } catch (Throwable $e) {
+                error_log('Failed to send support reply email: ' . $e->getMessage());
+                return false;
+            }
         }
 
         /**

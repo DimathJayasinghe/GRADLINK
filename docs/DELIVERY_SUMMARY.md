@@ -40,7 +40,6 @@ You requested: **"Role-based filtering for analytics metrics by user role (stude
 
 ✅ **Events**
 - Events created
-- Event attendees
 - Event bookmarks
 
 ✅ **Engagement Metrics**
@@ -60,7 +59,6 @@ You requested: **"Role-based filtering for analytics metrics by user role (stude
 - Reactions over time
 - Messages over time
 - Events over time
-- Event attendees over time
 
 ✅ **Charts**
 - Gender distribution
@@ -201,7 +199,6 @@ CREATE INDEX idx_comments_user_id ON comments(user_id);
 CREATE INDEX idx_post_likes_user_id ON post_likes(user_id);
 CREATE INDEX idx_messages_sender_id ON messages(sender_id);
 CREATE INDEX idx_events_organizer_id ON events(organizer_id);
-CREATE INDEX idx_event_attendees_user_id ON event_attendees(user_id);
 CREATE INDEX idx_followers_follower_id ON followers(follower_id);
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 ```

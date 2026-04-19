@@ -25,28 +25,29 @@
 <div class="admin-dashboard">
     <div class="admin-header analytics-header" >
         <div class="header-text">
-            <h1 style="border-bottom: 2px solid #3a3a3a; padding-bottom: 10px; text-align: left;">Analytics Dashboard</h1>
-            <p style="color: var(--muted); margin-top: 1.5rem; margin-bottom: 1rem;">Track user activity, engagement, and platform usage.</p>
+            <h1 class="analytics-title">Analytics Dashboard</h1>
+            <p class="analytics-subtitle">Track user activity, engagement, and platform usage.</p>
         </div>
         <div class="header-actions">
             <button id="export-analytics" class="btn">Export Summary</button>
-            <button id="export-users" class="btn btn-secondary">Export Users</button>
+            <!-- <button id="export-users" class="btn btn-secondary">Export Users</button>
             <button id="export-content" class="btn btn-secondary">Export Content</button>
-            <button id="export-events" class="btn btn-secondary">Export Events</button>
+            <button id="export-events" class="btn btn-secondary">Export Events</button> -->
         </div>
     </div>
 
     <section class="filters">
-        <h3 style="color: var(--muted); margin-bottom: .25rem;">Filter by User Role</h3>
+        <h3>Filter by User Role</h3>
         <div class="filters-form role-filter">
             <?php 
                 $roleFilter = $data['roleFilter'] ?? null;
                 $usersByRole = $data['usersByRole'] ?? ['all' => 0, 'admin' => 0, 'alumni' => 0, 'undergrad' => 0];
+                $contextTotalUsers = $roleFilter ? ($usersByRole[$roleFilter] ?? 0) : ($data['metrics']['total_users'] ?? 0);
                 $roles = [
-                    'all' => ['label' => 'All Users', 'color' => '#3a3a3a', 'icon' => '👥'],
-                    'admin' => ['label' => 'Admins', 'color' => '#ff6b6b', 'icon' => '🔐'],
-                    'alumni' => ['label' => 'Alumni', 'color' => '#4ecdc4', 'icon' => '🎓'],
-                    'undergrad' => ['label' => 'Students', 'color' => '#45b7d1', 'icon' => '📚'],
+                    'all' => ['label' => 'All Users', 'color' => '#3a3a3a', 'icon' => ''],
+                    'admin' => ['label' => 'Admins', 'color' => '#ff6b6b', 'icon' => ''],
+                    'alumni' => ['label' => 'Alumni', 'color' => '#4ecdc4', 'icon' => ''],
+                    'undergrad' => ['label' => 'Students', 'color' => '#45b7d1', 'icon' => ''],
                 ];
             ?>
             <?php foreach ($roles as $key => $role): ?>
@@ -58,7 +59,8 @@
                 ?>
                 <a href="<?php echo URLROOT; ?>/admin/engagement<?php echo $urlRole; ?>" 
                    class="role-filter-btn <?php echo $isActive ? 'active' : ''; ?>"
-                   style="<?php echo $isActive ? "background-color: {$role['color']}; color: white;" : ""; ?>">
+                   data-role-color="<?php echo htmlspecialchars($role['color']); ?>"
+                   <?php if ($isActive): ?>style="background-color: <?php echo htmlspecialchars($role['color']); ?>; color: #ffffff;"<?php endif; ?>>
                     <span class="filter-icon"><?php echo $role['icon']; ?></span>
                     <span class="filter-label"><?php echo $role['label']; ?></span>
                     <span class="filter-count"><?php echo number_format($count); ?></span>
@@ -66,18 +68,18 @@
             <?php endforeach; ?>
         </div>
         <?php if ($roleFilter): ?>
-            <p style="color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem;">
-                📊 Showing metrics for: <strong><?php echo ucfirst($roleFilter); ?></strong> users only
+            <p class="role-filter-summary">
+                Showing metrics for: <strong><?php echo ucfirst($roleFilter); ?></strong> users only
             </p>
         <?php endif; ?>
     </section>
 
-    <?php $e = $data['engagement'] ?? ['posts'=>0,'comments'=>0,'reactions'=>0,'messages'=>0,'events'=>0,'event_attendees'=>0,'event_bookmarks'=>0,'followers'=>0,'notifications'=>0,'notifications_unread'=>0,'pending_alumni'=>0,'active_30_days'=>0,'dau'=>0,'wau'=>0,'mau'=>0,'avg_posts_per_user'=>0,'avg_comments_per_post'=>0,'avg_reactions_per_post'=>0,'avg_messages_per_user'=>0,'engagement_rate'=>0,'active_over_time'=>[],'time_series'=>[],'event_pipeline'=>[],'profile_metrics'=>[]]; ?>
+    <?php $e = $data['engagement'] ?? ['posts'=>0,'comments'=>0,'reactions'=>0,'messages'=>0,'events'=>0,'event_bookmarks'=>0,'followers'=>0,'notifications'=>0,'notifications_unread'=>0,'pending_alumni'=>0,'active_30_days'=>0,'dau'=>0,'wau'=>0,'mau'=>0,'avg_posts_per_user'=>0,'avg_comments_per_post'=>0,'avg_reactions_per_post'=>0,'avg_messages_per_user'=>0,'engagement_rate'=>0,'active_over_time'=>[],'time_series'=>[],'event_pipeline'=>[],'profile_metrics'=>[]]; ?>
 
     <section class="kpis">
         <div class="kpi">
-            <span class="kpi-label">Total Users</span>
-            <span id="analytics-users" class="kpi-value"><?php echo number_format($data['metrics']['total_users'] ?? 0); ?></span>
+            <span class="kpi-label"><?php echo $roleFilter ? 'Filtered Users' : 'Total Users'; ?></span>
+            <span id="analytics-users" class="kpi-value"><?php echo number_format((int)$contextTotalUsers); ?></span>
         </div>
         <div class="kpi">
             <span class="kpi-label">Active Users (Last 30 Days)</span>
@@ -91,47 +93,38 @@
             <span class="kpi-label">Engagement Rate</span>
             <span id="metric-engagement-rate" class="kpi-value"><?php echo (float)($e['engagement_rate'] ?? 0); ?>%</span>
         </div>
-        <div class="kpi">
-            <span class="kpi-label">DAU / WAU / MAU</span>
-            <span id="metric-dau-wau" class="kpi-value"><?php echo (int)($e['dau'] ?? 0); ?> / <?php echo (int)($e['wau'] ?? 0); ?> / <?php echo (int)($e['mau'] ?? 0); ?></span>
-        </div>
     </section>
 
     <section class="charts">
         <div class="card">
             <h3>User Distribution by Graduation/Batch</h3>
-            <div class="chart-wrap-batch" style="height: 300px; width: 300px; display: flex; align-items: center; justify-content: center;"><canvas id="batchChart"></canvas></div>
+            <div class="chart-wrap chart-wrap-batch"><canvas id="batchChart"></canvas></div>
         </div>
         <div class="card">
             <h3>Distribution by Role</h3>
-            <div class="chart-wrap" style="height: 300px; width: 300px; display: flex; align-items: center; justify-content: center;"><canvas id="roleChart"></canvas></div>
+            <div class="chart-wrap"><canvas id="roleChart"></canvas></div>
         </div>
         <div class="card">
             <h3>Distribution by Gender</h3>
-            <div class="chart-wrap" style="height: 300px; width: 300px; display: flex; align-items: center; justify-content: center;"><canvas id="genderChart"></canvas></div>
+            <div class="chart-wrap"><canvas id="genderChart"></canvas></div>
         </div>
     </section>
 
     <section class="kpis">
         <div class="kpi"><span class="kpi-label">Total Posts</span><span id="metric-posts" class="kpi-value"><?php echo (int)$e['posts']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Total Comments</span><span id="metric-comments" class="kpi-value"><?php echo (int)$e['comments']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Total Reactions</span><span id="metric-reactions" class="kpi-value"><?php echo (int)$e['reactions']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Messages</span><span id="metric-messages" class="kpi-value"><?php echo (int)$e['messages']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Avg Posts/User</span><span id="metric-avg-posts" class="kpi-value"><?php echo (float)($e['avg_posts_per_user'] ?? 0); ?></span></div>
-        <div class="kpi"><span class="kpi-label">Avg Comments/Post</span><span id="metric-avg-comments" class="kpi-value"><?php echo (float)($e['avg_comments_per_post'] ?? 0); ?></span></div>
-    </section>
 
-    <section class="kpis">
         <div class="kpi"><span class="kpi-label">Events</span><span id="metric-events" class="kpi-value"><?php echo (int)$e['events']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Event Attendees</span><span id="metric-event-attendees" class="kpi-value"><?php echo (int)$e['event_attendees']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Event Bookmarks</span><span id="metric-event-bookmarks" class="kpi-value"><?php echo (int)$e['event_bookmarks']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Followers</span><span id="metric-followers" class="kpi-value"><?php echo (int)$e['followers']; ?></span></div>
+    
         <div class="kpi"><span class="kpi-label">Pending Alumni</span><span id="metric-pending-alumni" class="kpi-value"><?php echo (int)$e['pending_alumni']; ?></span></div>
-        <div class="kpi"><span class="kpi-label">Unread Notifications</span><span id="metric-unread-notifications" class="kpi-value"><?php echo (int)$e['notifications_unread']; ?></span></div>
+        <div class="kpi"><span class="kpi-label">Daily AU</span><span id="metric-dau" class="kpi-value"><?php echo (int)($e['dau'] ?? 0); ?></span></div>
+        <div class="kpi"><span class="kpi-label">Weekly AU</span><span id="metric-wau" class="kpi-value"><?php echo (int)($e['wau'] ?? 0); ?></span></div>
+        <div class="kpi"><span class="kpi-label">Monthly AU</span><span id="metric-mau" class="kpi-value"><?php echo    (int)($e['mau'] ?? 0); ?></span></div>
     </section>
 
     <?php $profile = $e['profile_metrics'] ?? ['completion_rate'=>0,'private_profiles'=>0,'completed'=>0,'total'=>0]; ?>
     <section class="kpis">
+        <div class="kpi"><span class="kpi-label">Avg Posts/User</span><span id="metric-avg-posts" class="kpi-value"><?php echo (float)($e['avg_posts_per_user'] ?? 0); ?></span></div>
+        <div class="kpi"><span class="kpi-label">Avg Comments/Post</span><span id="metric-avg-comments" class="kpi-value"><?php echo (float)($e['avg_comments_per_post'] ?? 0); ?></span></div>
         <div class="kpi"><span class="kpi-label">Profile Completion</span><span id="metric-profile-completion" class="kpi-value"><?php echo (float)($profile['completion_rate'] ?? 0); ?>%</span></div>
         <div class="kpi"><span class="kpi-label">Private Profiles</span><span id="metric-private-profiles" class="kpi-value"><?php echo (int)($profile['private_profiles'] ?? 0); ?></span></div>
         <div class="kpi"><span class="kpi-label">Completed Profiles</span><span id="metric-completed-profiles" class="kpi-value"><?php echo (int)($profile['completed'] ?? 0); ?></span></div>
@@ -142,8 +135,8 @@
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <h3 style="margin: 0;">User Locations</h3>
-                <button id="expandMapBtn" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
-                    🗺️ Expand Map
+                <button id="expandMapBtn" class="btn btn-secondary" style="background-color: #3d3d3d; padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                    Expand Map
                 </button>
             </div>
             <div id="smallMap" style="width: 100%; height: 300px; border-radius: 8px;"></div>
@@ -151,13 +144,13 @@
                 <?php 
                     $summary = $data['locationSummary'] ?? ['total_users_with_location' => 0, 'total_countries' => 0];
                 ?>
-                📍 <strong><?php echo number_format($summary['total_users_with_location'] ?? 0); ?></strong> users across 
+                <strong><?php echo number_format($summary['total_users_with_location'] ?? 0); ?></strong> users across 
                 <strong><?php echo ($summary['total_countries'] ?? 0); ?></strong> countries
             </div>
         </div>
         <div class="card">
             <h3>Active Users Over Time</h3>
-            <div class="chart-wrap" style="height: auto; width: 100%; display: flex; align-items: center; justify-content: center;">
+            <div class="chart-wrap chart-wrap-wide chart-wrap-timewide">
                 <canvas id="activeOverTime" height="100"></canvas>
             </div>
         </div>
@@ -181,7 +174,7 @@
     <section class="grid-3">
         <div class="card">
             <h3>Engagement Mix</h3>
-            <div class="chart-wrap" style="height: 260px; width: 260px; display: flex; align-items: center; justify-content: center;"><canvas id="engagementMix"></canvas></div>
+            <div class="chart-wrap"><canvas id="engagementMix"></canvas></div>
         </div>
         <div class="card">
             <h3>Event Pipeline</h3>
@@ -199,7 +192,7 @@
     <div class="map-modal-content">
         <div class="map-modal-header">
             <div>
-                <h2 style="margin: 0; font-size: 1.5rem;">🌍 Geographic Distribution</h2>
+                <h2 style="margin: 0; font-size: 1.5rem;">Geographic Distribution</h2>
                 <p style="color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0 0 0;">Interactive world map with country markers</p>
             </div>
             <button id="closeMapModal" class="close-modal-btn" title="Close">&times;</button>
@@ -232,9 +225,9 @@
                 <label>Role:</label>
                 <select id="filterRole" class="filter-select">
                     <option value="">All Roles</option>
-                    <option value="admin">🔐 Admins</option>
-                    <option value="alumni">🎓 Alumni</option>
-                    <option value="undergrad">📚 Students</option>
+                    <option value="admin">Admins</option>
+                    <option value="alumni">Alumni</option>
+                    <option value="undergrad">Students</option>
                 </select>
             </div>
             <button id="applyMapFilters" class="btn" style="padding: 0.5rem 1rem;">Apply Filters</button>
@@ -243,7 +236,7 @@
         
         <div style="position: relative;">
             <div id="expandedMap" style="width: 100%; height: calc(100vh - 280px); min-height: 500px;"></div>
-            <button id="toggleView" class="btn" style="position: absolute; top: 10px; right: 10px; z-index: 1000; padding: 0.5rem 1rem;">📊 Show Chart</button>
+            <button id="toggleView" class="btn" style="position: absolute; top: 10px; right: 10px; z-index: 1000; padding: 0.5rem 1rem;">Show Chart</button>
         </div>
         
         <div id="chartView" style="display: none; padding: 2rem; height: calc(100vh - 280px); overflow-y: auto;">
@@ -343,19 +336,13 @@
                 allLocations.forEach(location => {
                     const coords = countryCoordinates[location.country];
                     if (coords) {
-                        const color = getRoleColor(location.roles);
-                        const marker = L.circleMarker(coords, {
-                            radius: Math.min(Math.sqrt(location.user_count) * 2, 15),
-                            fillColor: color,
-                            color: '#fff',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.7
+                        const marker = L.marker(coords, {
+                            icon: buildLocationIcon(location, false)
                         }).addTo(smallMapInstance);
                         
                         marker.bindPopup(`
                             <div style="min-width: 180px;">
-                                <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">📍 ${location.country}</h4>
+                                <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">${location.country}</h4>
                                 <p style="margin: 0.25rem 0;"><strong>Users:</strong> ${location.user_count}</p>
                                 ${location.roles ? `<p style="margin: 0.25rem 0;"><strong>Roles:</strong> ${location.roles}</p>` : ''}
                                 ${location.batches ? `<p style="margin: 0.25rem 0;"><strong>Batches:</strong> ${location.batches}</p>` : ''}
@@ -374,6 +361,25 @@
         if (roles.includes('alumni')) return '#4ecdc4';
         if (roles.includes('undergrad')) return '#45b7d1';
         return '#60a5fa';
+    }
+
+    function buildLocationIcon(location, isExpanded = false) {
+        const count = Math.max(0, parseInt(location.user_count || 0));
+        const color = getRoleColor(location.roles);
+        const size = isExpanded ? 44 : 36;
+        const displayCount = count > 999 ? '999+' : String(count);
+
+        return L.divIcon({
+            className: 'location-pin-wrapper',
+            html: `
+                <div class="location-pin" style="--pin-color: ${color}; --pin-size: ${size}px;">
+                    <span class="location-pin-value">${displayCount}</span>
+                </div>
+            `,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+            popupAnchor: [0, -size / 2]
+        });
     }
 
     // Expanded Map Modal
@@ -423,13 +429,13 @@
         if (currentView === 'map') {
             mapView.style.display = 'none';
             chartView.style.display = 'block';
-            toggleBtn.textContent = '🗺️ Show Map';
+            toggleBtn.textContent = 'Show Map';
             modeLabel.textContent = 'Chart';
             currentView = 'chart';
         } else {
             mapView.style.display = 'block';
             chartView.style.display = 'none';
-            toggleBtn.textContent = '📊 Show Chart';
+            toggleBtn.textContent = 'Show Chart';
             modeLabel.textContent = 'Map';
             currentView = 'map';
             if (expandedMapInstance) {
@@ -452,17 +458,11 @@
         locations.forEach(location => {
             const coords = countryCoordinates[location.country];
             if (coords) {
-                const color = getRoleColor(location.roles);
-                const marker = L.circleMarker(coords, {
-                    radius: Math.min(Math.sqrt(location.user_count) * 3, 20),
-                    fillColor: color,
-                    color: '#ffffff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.7
+                const marker = L.marker(coords, {
+                    icon: buildLocationIcon(location, true)
                 }).bindPopup(`
                     <div style=\"min-width: 200px;\">
-                        <h4 style=\"margin: 0 0 0.5rem 0; color: #2563eb;\">📍 ${location.country}</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: #2563eb;">${location.country}</h4>
                         <p style=\"margin: 0.25rem 0;\"><strong>Users:</strong> ${location.user_count}</p>
                         ${location.roles ? `<p style=\"margin: 0.25rem 0;\"><strong>Roles:</strong> ${location.roles}</p>` : ''}
                         ${location.batches ? `<p style=\"margin: 0.25rem 0;\"><strong>Batches:</strong> ${location.batches}</p>` : ''}
@@ -501,7 +501,7 @@
         }
         
         expandedChart = new Chart(chartCtx.getContext('2d'), {
-            type: 'horizontalBar',
+            type: 'bar',
             data: {
                 labels: locations.map(loc => loc.country),
                 datasets: [{
@@ -566,7 +566,7 @@
         locations.forEach((loc, i) => {
             html += `
                 <tr style="border-bottom: 1px solid var(--border); ${i % 2 === 0 ? 'background: var(--surface-2);' : ''}">
-                    <td style="padding: 0.75rem;">🌍 ${loc.country}</td>
+                    <td style="padding: 0.75rem;">${loc.country}</td>
                     <td style="padding: 0.75rem; text-align: right; font-weight: 600;">${loc.user_count}</td>
                     <td style="padding: 0.75rem; font-size: 0.85rem;">${loc.roles || '-'}</td>
                     <td style="padding: 0.75rem; font-size: 0.85rem;">${loc.batches || '-'}</td>
@@ -644,9 +644,18 @@
     const eventStatusData = <?php echo json_encode($data['charts']['event_status'] ?? []); ?>;
     const eventRequestStatusData = <?php echo json_encode($data['charts']['event_request_status'] ?? []); ?>;
     const engagement = <?php echo json_encode($data['engagement'] ?? []); ?>;
+    const roleFilterValue = <?php echo json_encode($data['roleFilter'] ?? null); ?>;
+    const usersByRole = <?php echo json_encode($data['usersByRole'] ?? []); ?>;
+    const contextTotalUsers = <?php echo json_encode((int)$contextTotalUsers); ?>;
 
     // Populate simple metrics
     document.addEventListener('DOMContentLoaded', () => {
+        if (window.Chart) {
+            Chart.defaults.color = '#9caec3';
+            Chart.defaults.borderColor = 'rgba(148, 163, 184, 0.2)';
+            Chart.defaults.font.family = "'Poppins', 'Segoe UI', sans-serif";
+        }
+
         // Populate numeric metrics (already seeded server-side but keep JS-safe updates)
         const postsEl = document.getElementById('metric-posts');
         const commentsEl = document.getElementById('metric-comments');
@@ -658,13 +667,12 @@
         if(postsEl) postsEl.textContent = (engagement.posts ?? 0).toLocaleString();
         if(commentsEl) commentsEl.textContent = (engagement.comments ?? 0).toLocaleString();
         if(reactionsEl) reactionsEl.textContent = (engagement.reactions ?? 0).toLocaleString();
-        if(usersEl) usersEl.textContent = (<?php echo json_encode($data['metrics']['total_users'] ?? 0); ?>).toLocaleString();
+        if(usersEl) usersEl.textContent = (contextTotalUsers ?? 0).toLocaleString();
         if(activeEl) activeEl.textContent = (<?php echo json_encode($data['metrics']['active_30_days'] ?? 0); ?>).toLocaleString();
         if(growthEl) growthEl.textContent = ('+' + (<?php echo json_encode((int)($data['metrics']['growth_3_months_pct'] ?? 0)); ?>) + '%');
 
         const messagesEl = document.getElementById('metric-messages');
         const eventsEl = document.getElementById('metric-events');
-        const attendeesEl = document.getElementById('metric-event-attendees');
         const bookmarksEl = document.getElementById('metric-event-bookmarks');
         const followersEl = document.getElementById('metric-followers');
         const pendingAlumniEl = document.getElementById('metric-pending-alumni');
@@ -680,7 +688,6 @@
 
         if(messagesEl) messagesEl.textContent = (engagement.messages ?? 0).toLocaleString();
         if(eventsEl) eventsEl.textContent = (engagement.events ?? 0).toLocaleString();
-        if(attendeesEl) attendeesEl.textContent = (engagement.event_attendees ?? 0).toLocaleString();
         if(bookmarksEl) bookmarksEl.textContent = (engagement.event_bookmarks ?? 0).toLocaleString();
         if(followersEl) followersEl.textContent = (engagement.followers ?? 0).toLocaleString();
         if(pendingAlumniEl) pendingAlumniEl.textContent = (engagement.pending_alumni ?? 0).toLocaleString();
@@ -704,29 +711,66 @@
             URL.revokeObjectURL(url);
         }
 
-        document.getElementById('export-analytics').addEventListener('click', function(){
-            const rows = [
-                ['Metric','Value'],
-                ['Total Users', usersEl ? usersEl.textContent : '0'],
-                ['Active 30d', activeEl ? activeEl.textContent : '0'],
-                ['Growth 3mo', growthEl ? growthEl.textContent : '0'],
-                ['Posts', postsEl ? postsEl.textContent : '0'],
-                ['Comments', commentsEl ? commentsEl.textContent : '0'],
-                ['Reactions', reactionsEl ? reactionsEl.textContent : '0']
-            ];
-            downloadCSV('analytics_summary.csv', rows);
-        });
+        const exportAnalyticsBtn = document.getElementById('export-analytics');
+        if (exportAnalyticsBtn) {
+            exportAnalyticsBtn.addEventListener('click', function(){
+                const totalUsers = parseInt(contextTotalUsers || 0);
+                const adminCount = parseInt(usersByRole?.admin || 0);
+                const alumniCount = parseInt(usersByRole?.alumni || 0);
+                const undergradCount = parseInt(usersByRole?.undergrad || 0);
+                const otherUsers = Math.max(0, totalUsers - (adminCount + alumniCount + undergradCount));
 
-        const roleParam = new URLSearchParams(window.location.search).get('role');
-        const roleQuery = roleParam ? `?role=${encodeURIComponent(roleParam)}` : '';
+                const rows = [
+                    ['Report', 'Admin Analytics Summary'],
+                    ['Generated At', new Date().toISOString()],
+                    ['Role Filter', roleFilterValue ? String(roleFilterValue) : 'all'],
+                    [],
+                    ['Section', 'Users'],
+                    ['Total Users', totalUsers],
+                    ['Admins', adminCount],
+                    ['Alumni', alumniCount],
+                    ['Undergrad', undergradCount],
+                    ['Other/Unknown Roles', otherUsers],
+                    ['Active Users (30d)', parseInt(engagement.active_30_days ?? 0)],
+                    ['User Growth (3mo %)', parseInt(<?php echo json_encode((int)($data['metrics']['growth_3_months_pct'] ?? 0)); ?>)],
+                    [],
+                    ['Section', 'Content & Community'],
+                    ['Total Posts', parseInt(engagement.posts ?? 0)],
+                    ['Total Comments', parseInt(engagement.comments ?? 0)],
+                    ['Total Reactions', parseInt(engagement.reactions ?? 0)],
+                    ['Total Messages', parseInt(engagement.messages ?? 0)],
+                    ['Total Events', parseInt(engagement.events ?? 0)],
+                    ['Event Bookmarks', parseInt(engagement.event_bookmarks ?? 0)],
+                    ['Followers', parseInt(engagement.followers ?? 0)],
+                    ['Pending Alumni', parseInt(engagement.pending_alumni ?? 0)],
+                    ['Unread Notifications', parseInt(engagement.notifications_unread ?? 0)],
+                    [],
+                    ['Section', 'Engagement Indicators'],
+                    ['Engagement Rate (%)', Number(engagement.engagement_rate ?? 0)],
+                    ['DAU', parseInt(engagement.dau ?? 0)],
+                    ['WAU', parseInt(engagement.wau ?? 0)],
+                    ['MAU', parseInt(engagement.mau ?? 0)],
+                    ['Avg Posts Per User', Number(engagement.avg_posts_per_user ?? 0)],
+                    ['Avg Comments Per Post', Number(engagement.avg_comments_per_post ?? 0)]
+                ];
 
-        document.getElementById('export-users').addEventListener('click', function(){
-            window.location.href = `<?php echo URLROOT; ?>/admin/exportUsersCsv${roleQuery}`;
-        });
+                downloadCSV('analytics_summary.csv', rows);
+            });
+        }
 
-        document.getElementById('export-content').addEventListener('click', function(){
-            window.location.href = `<?php echo URLROOT; ?>/admin/exportContentCsv${roleQuery}`;
-        });
+        const exportUsersBtn = document.getElementById('export-users');
+        if (exportUsersBtn) {
+            exportUsersBtn.addEventListener('click', function(){
+                downloadCSV('users_export.csv', [['id','name','email','role','batch']]);
+            });
+        }
+
+        const exportContentBtn = document.getElementById('export-content');
+        if (exportContentBtn) {
+            exportContentBtn.addEventListener('click', function(){
+                downloadCSV('content_export.csv', [['id','title','type','status','date']]);
+            });
+        }
 
         const exportEventsBtn = document.getElementById('export-events');
         if(exportEventsBtn){
@@ -735,13 +779,6 @@
             });
         }
     });
-
-    function toLabelsCounts(arr, labelKey, valueKey){
-        const labels = [];
-        const values = [];
-        (arr || []).forEach(r => { labels.push(r[labelKey]); values.push(parseInt(r[valueKey] || 0)); });
-        return {labels, values};
-    }
 
     // Build charts from server-provided data (guard DOM presence)
     (function(){
@@ -758,35 +795,88 @@
             return {labels, values};
         }
 
+        function buildCommonOptions(extra = {}) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                ...extra,
+            };
+        }
+
         const roleDataObj = buildLabelsValues(roleArr, 'role', 'count');
         const roleCtx = document.getElementById('roleChart');
-        if(roleCtx && roleDataObj.labels.length){
-            new Chart(roleCtx.getContext('2d'), { type:'doughnut', data: { labels: roleDataObj.labels, datasets:[{ data: roleDataObj.values, backgroundColor: ['#60a5fa','#34d399','#fbbf24','#f87171','#a78bfa'] }] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+        if(roleCtx){
+            let labels = roleDataObj.labels;
+            let values = roleDataObj.values;
+            if(!labels.length && roleFilterValue){
+                labels = [roleFilterValue.charAt(0).toUpperCase() + roleFilterValue.slice(1)];
+                values = [parseInt(usersByRole[roleFilterValue] || 0)];
+            }
+            if(labels.length){
+                new Chart(roleCtx.getContext('2d'), {
+                    type:'doughnut',
+                    data: {
+                        labels,
+                        datasets:[{ data: values, backgroundColor: ['#60a5fa','#34d399','#fbbf24','#f87171','#a78bfa'] }]
+                    },
+                    options: buildCommonOptions({
+                        plugins:{legend:{position:'bottom', labels:{usePointStyle:true, boxWidth:10}}}
+                    })
+                });
+            }
         }
 
         const batchDataObj = buildLabelsValues(batchArr, 'batch', 'count');
         const batchCtx = document.getElementById('batchChart');
         if(batchCtx && batchDataObj.labels.length){
-            new Chart(batchCtx.getContext('2d'), { type:'bar', data:{ labels: batchDataObj.labels, datasets:[{ data: batchDataObj.values, backgroundColor:'#93c5fd' }] }, options:{responsive:true, scales:{y:{beginAtZero:true}}} });
+            new Chart(batchCtx.getContext('2d'), {
+                type:'bar',
+                data:{ labels: batchDataObj.labels, datasets:[{ label: 'Users', data: batchDataObj.values, backgroundColor:'#7fb3f0', borderRadius: 8, maxBarThickness: 38 }] },
+                options: buildCommonOptions({
+                    plugins: { legend: { display: false } },
+                    scales:{ y:{beginAtZero:true, ticks:{precision:0}}, x: { ticks: { maxRotation: 0, minRotation: 0 } } }
+                })
+            });
         }
 
         const genderDataObj = buildLabelsValues(genderArr, 'gender', 'count');
         const genderCtx = document.getElementById('genderChart');
         if(genderCtx && genderDataObj.labels.length){
-            new Chart(genderCtx.getContext('2d'), { type:'doughnut', data:{ labels: genderDataObj.labels.map(l => l || 'Unspecified'), datasets:[{ data: genderDataObj.values, backgroundColor:['#f472b6','#60a5fa','#a3a3a3'] }] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+            new Chart(genderCtx.getContext('2d'), {
+                type:'doughnut',
+                data:{ labels: genderDataObj.labels.map(l => l || 'Unspecified'), datasets:[{ data: genderDataObj.values, backgroundColor:['#f472b6','#60a5fa','#a3a3a3'] }] },
+                options: buildCommonOptions({
+                    plugins:{legend:{position:'bottom', labels:{usePointStyle:true, boxWidth:10}}}
+                })
+            });
         }
 
         const overCtx = document.getElementById('activeOverTime');
         if(overCtx && (overArr||[]).length){
             const labels = overArr.map(r=>r.ym);
             const values = overArr.map(r=>parseInt(r.c||0));
-            new Chart(overCtx.getContext('2d'), { type:'line', data:{ labels, datasets:[{ data: values, borderColor:'#4ade80', fill:false, tension:0.3 }] }, options:{responsive:true, scales:{y:{beginAtZero:true}}} });
+            new Chart(overCtx.getContext('2d'), {
+                type:'line',
+                data:{ labels, datasets:[{ label: 'Active Users', data: values, borderColor:'#4ade80', pointBackgroundColor:'#4ade80', fill:false, tension:0.35 }] },
+                options: buildCommonOptions({
+                    plugins: { legend: { display: false } },
+                    scales:{ y:{beginAtZero:true, ticks:{precision:0}} }
+                })
+            });
         }
 
         const signupsArr = timeSeries.signups || [];
         const signupsCtx = document.getElementById('signupsChart');
         if(signupsCtx && signupsArr.length){
-            new Chart(signupsCtx.getContext('2d'), { type:'line', data:{ labels: signupsArr.map(r=>r.ym), datasets:[{ data: signupsArr.map(r=>parseInt(r.c||0)), borderColor:'#60a5fa', fill:false, tension:0.3 }] }, options:{responsive:true, scales:{y:{beginAtZero:true}}} });
+            new Chart(signupsCtx.getContext('2d'), {
+                type:'line',
+                data:{ labels: signupsArr.map(r=>r.ym), datasets:[{ label:'Signups', data: signupsArr.map(r=>parseInt(r.c||0)), borderColor:'#60a5fa', pointBackgroundColor:'#60a5fa', fill:false, tension:0.35 }] },
+                options: buildCommonOptions({
+                    plugins: { legend: { display: false } },
+                    scales:{y:{beginAtZero:true, ticks:{precision:0}}}
+                })
+            });
         }
 
         const postsArr = timeSeries.posts || [];
@@ -798,24 +888,44 @@
             const toSeries = (arr) => labels.map(l => {
                 const row = arr.find(r=>r.ym===l); return parseInt(row?.c||0);
             });
-            new Chart(contentCtx.getContext('2d'), { type:'line', data:{ labels, datasets:[
-                { label:'Posts', data: toSeries(postsArr), borderColor:'#93c5fd', fill:false, tension:0.3 },
-                { label:'Comments', data: toSeries(commentsArr), borderColor:'#fbbf24', fill:false, tension:0.3 },
-                { label:'Reactions', data: toSeries(reactionsArr), borderColor:'#f87171', fill:false, tension:0.3 }
-            ] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}} });
+            new Chart(contentCtx.getContext('2d'), {
+                type:'line',
+                data:{ labels, datasets:[
+                    { label:'Posts', data: toSeries(postsArr), borderColor:'#93c5fd', pointBackgroundColor:'#93c5fd', fill:false, tension:0.35 },
+                    { label:'Comments', data: toSeries(commentsArr), borderColor:'#fbbf24', pointBackgroundColor:'#fbbf24', fill:false, tension:0.35 },
+                    { label:'Reactions', data: toSeries(reactionsArr), borderColor:'#f87171', pointBackgroundColor:'#f87171', fill:false, tension:0.35 }
+                ] },
+                options: buildCommonOptions({
+                    plugins:{legend:{position:'bottom', labels:{usePointStyle:true, boxWidth:10}}},
+                    scales:{y:{beginAtZero:true, ticks:{precision:0}}}
+                })
+            });
         }
 
         const messagesArr = timeSeries.messages || [];
         const messagesCtx = document.getElementById('messagesChart');
         if(messagesCtx && messagesArr.length){
-            new Chart(messagesCtx.getContext('2d'), { type:'bar', data:{ labels: messagesArr.map(r=>r.ym), datasets:[{ data: messagesArr.map(r=>parseInt(r.c||0)), backgroundColor:'#a78bfa' }] }, options:{responsive:true, scales:{y:{beginAtZero:true}}} });
+            new Chart(messagesCtx.getContext('2d'), {
+                type:'bar',
+                data:{ labels: messagesArr.map(r=>r.ym), datasets:[{ label:'Messages', data: messagesArr.map(r=>parseInt(r.c||0)), backgroundColor:'#a78bfa', borderRadius: 8, maxBarThickness: 42 }] },
+                options: buildCommonOptions({
+                    plugins: { legend: { display: false } },
+                    scales:{y:{beginAtZero:true, ticks:{precision:0}}}
+                })
+            });
         }
 
         const mixCtx = document.getElementById('engagementMix');
         if(mixCtx){
             const mixLabels = ['Posts','Comments','Reactions','Messages'];
             const mixValues = [engagement.posts||0, engagement.comments||0, engagement.reactions||0, engagement.messages||0];
-            new Chart(mixCtx.getContext('2d'), { type:'doughnut', data:{ labels: mixLabels, datasets:[{ data: mixValues, backgroundColor:['#60a5fa','#fbbf24','#f87171','#a78bfa'] }] }, options:{responsive:true, plugins:{legend:{position:'bottom'}}} });
+            new Chart(mixCtx.getContext('2d'), {
+                type:'doughnut',
+                data:{ labels: mixLabels, datasets:[{ data: mixValues, backgroundColor:['#60a5fa','#fbbf24','#f87171','#a78bfa'] }] },
+                options: buildCommonOptions({
+                    plugins:{legend:{position:'bottom', labels:{usePointStyle:true, boxWidth:10}}}
+                })
+            });
         }
 
         const pipelineCtx = document.getElementById('eventPipeline');
@@ -835,7 +945,14 @@
                 getCount(evArr, 'published'),
                 getCount(evArr, 'cancelled')
             ];
-            new Chart(pipelineCtx.getContext('2d'), { type:'bar', data:{ labels, datasets:[{ data: values, backgroundColor:'#34d399' }] }, options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}} });
+            new Chart(pipelineCtx.getContext('2d'), {
+                type:'bar',
+                data:{ labels, datasets:[{ label: 'Items', data: values, backgroundColor:'#34d399', borderRadius: 8, maxBarThickness: 34 }] },
+                options: buildCommonOptions({
+                    plugins:{legend:{display:false}},
+                    scales:{y:{beginAtZero:true, ticks:{precision:0}}, x:{ticks:{maxRotation:30, minRotation:30}}}
+                })
+            });
         }
 
         const skillsCtx = document.getElementById('skillsChart');
@@ -843,7 +960,14 @@
             const entries = Object.entries(skillData || {}).map(([k,v]) => ({ k, v: parseInt(v||0) }))
                 .sort((a,b)=>b.v-a.v).slice(0, 8);
             if(entries.length){
-                new Chart(skillsCtx.getContext('2d'), { type:'bar', data:{ labels: entries.map(e=>e.k), datasets:[{ data: entries.map(e=>e.v), backgroundColor:'#f59e0b' }] }, options:{responsive:true, scales:{y:{beginAtZero:true}}} });
+                new Chart(skillsCtx.getContext('2d'), {
+                    type:'bar',
+                    data:{ labels: entries.map(e=>e.k), datasets:[{ label:'Users', data: entries.map(e=>e.v), backgroundColor:'#f59e0b', borderRadius: 8, maxBarThickness: 34 }] },
+                    options: buildCommonOptions({
+                        plugins: { legend: { display: false } },
+                        scales:{y:{beginAtZero:true, ticks:{precision:0}}, x:{ticks:{maxRotation:40, minRotation:40}}}
+                    })
+                });
             }
         }
     })();

@@ -17,7 +17,7 @@ You requested comprehensive **role-based filtering** for the GRADLINK Analytics 
 **Filtered Metrics** (25+ total)
 - ✅ Content: Posts, Comments, Reactions
 - ✅ Communication: Messages, Followers
-- ✅ Events: Created, Attendees, Bookmarks
+- ✅ Events: Created, Bookmarks
 - ✅ Engagement: DAU/WAU/MAU, Rates, Averages
 - ✅ Profiles: Completion Rate, Visibility
 - ✅ Time-Series: All 7 activity trends
@@ -204,7 +204,6 @@ All existing analytics documentation now references role-based filtering:
 - ✅ comments table (user_id)
 - ✅ messages table (sender_id)
 - ✅ events table (organizer_id)
-- ✅ event_attendees table
 - ✅ All related tables
 
 ## Implementation Quality
@@ -289,7 +288,7 @@ View displays role-specific dashboard
 - View how active alumni are
 - Check alumni profile completion
 - Monitor alumni networking
-- Track alumni event attendance
+- Track alumni event activity
 
 ### Use Case 2: Student Growth Monitoring
 - Track student signups
@@ -320,7 +319,7 @@ View displays role-specific dashboard
 ### Student-Specific
 - Signup trends (acquisition)
 - Message volume (peer communication)
-- Event attendance (campus activity)
+- Event activity (campus activity)
 - Profile growth (onboarding)
 
 ### Admin-Specific

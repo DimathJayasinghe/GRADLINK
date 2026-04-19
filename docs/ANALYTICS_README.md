@@ -35,7 +35,7 @@ Click any export button to download CSV reports:
 - Content creation trends
 
 ### Community Health
-- Events created and attended
+- Events created and published
 - Follow relationships
 - Event bookmarks
 - Pending verifications
@@ -163,7 +163,7 @@ Filter by user segment:
 ### Events Export
 **Best for**: Event management
 - Event data with status
-- Attendance information
+- Event availability information
 - Capacity planning
 
 ## ⚡ Performance Tips

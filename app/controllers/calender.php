@@ -150,11 +150,8 @@ class calender extends Controller{
         // Ensure the event image helper/model is loaded so the view can call M_event_image::getUrl()
         // This avoids a fatal 'Class not found' if the view references the helper.
         $this->model('M_event_image');
-        // Fetch current attendee snapshot for this event so the view can render attendees
-        $attModel = $this->model('M_attendee');
-        $attendees = $attModel->getAttendees((int)$event->id);
 
-        $data = ['event' => $normalized, 'attendees' => $attendees];
+        $data = ['event' => $normalized];
         $this->view("/calender/v_vieweventdetails", $data);
     }
 
@@ -341,83 +338,5 @@ class calender extends Controller{
         return;
     }
 
-    // RSVP endpoint (POST { event_id, status, guests }) - returns attendee record id or false
-    public function rsvp(){
-        SessionManager::ensureStarted();
-        header('Content-Type: application/json; charset=utf-8');
-        $userId = SessionManager::getUserId();
-        if(!$userId){
-            echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
-            return;
-        }
-        $input = json_decode(file_get_contents('php://input'), true);
-        $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
-        $status = isset($input['status']) ? $input['status'] : 'attending';
-        $guests = isset($input['guests']) ? (int)$input['guests'] : 0;
-        if(!$eventId){
-            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
-            return;
-        }
-
-        $attModel = $this->model('M_attendee');
-        $attId = $attModel->rsvp($eventId, $userId, $status, $guests);
-        if($attId){
-            // return updated attendees snapshot and computed total (attendees + guests)
-            $rows = $attModel->getAttendees($eventId);
-            $total = 0;
-            foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['ok'=>true,'attendee_id'=>$attId,'attendees'=>$rows,'attendees_count'=>$total]);
-        } else {
-            echo json_encode(['ok'=>false,'error'=>'Could not RSVP']);
-        }
-        return;
-    }
-
-    // Cancel an RSVP for the current user (POST { event_id })
-    public function cancelRsvp(){
-        SessionManager::ensureStarted();
-        header('Content-Type: application/json; charset=utf-8');
-        $userId = SessionManager::getUserId();
-        if(!$userId){
-            echo json_encode(['ok'=>false,'error'=>'Not authenticated']);
-            return;
-        }
-        $input = json_decode(file_get_contents('php://input'), true);
-        $eventId = isset($input['event_id']) ? (int)$input['event_id'] : 0;
-        if(!$eventId){
-            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
-            return;
-        }
-        $attModel = $this->model('M_attendee');
-        $count = $attModel->cancel($eventId, $userId);
-        // return updated attendees list and count
-        $rows = $attModel->getAttendees($eventId);
-        $total = 0;
-        foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
-        echo json_encode(['ok'=>true,'removed' => (bool)$count,'attendees'=>$rows,'attendees_count'=>$total]);
-        return;
-    }
-
-    /**
-     * Return attendees for an event as JSON.
-     * GET parameter: event_id
-     */
-    public function attendees(){
-        header('Content-Type: application/json; charset=utf-8');
-        $eventId = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
-        if(!$eventId){
-            echo json_encode(['ok'=>false,'error'=>'Missing event_id']);
-            return;
-        }
-
-        $attModel = $this->model('M_attendee');
-        $rows = $attModel->getAttendees($eventId);
-        // compute total attending (status == attending) including guests
-        $total = 0;
-        foreach($rows as $r){ if(isset($r->status) && strtolower($r->status) === 'attending'){ $total += 1 + (int)($r->guests ?? 0); } }
-        echo json_encode(['ok'=>true,'attendees'=>$rows,'attendees_count'=>$total]);
-        return;
-    }
 }
 ?>

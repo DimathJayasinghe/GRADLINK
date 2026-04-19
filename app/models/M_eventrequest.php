@@ -12,6 +12,12 @@ class M_eventrequest{
         return $this->db->single();
     }
 
+    public function getByEventId(int $eventId){
+        $this->db->query('SELECT er.*, er.id AS req_id, u.name AS user_name FROM event_requests er LEFT JOIN users u ON u.id = er.user_id WHERE er.event_id = :event_id LIMIT 1');
+        $this->db->bind(':event_id', $eventId);
+        return $this->db->single();
+    }
+
     public function getAllForUser(int $userId){
         // Alias id as req_id for backward compatibility with views
         $this->db->query('SELECT er.*, er.id AS req_id FROM event_requests er WHERE er.user_id = :uid ORDER BY er.created_at DESC');

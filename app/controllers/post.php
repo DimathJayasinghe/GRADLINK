@@ -303,55 +303,31 @@ class Post extends Controller
 
 
     // --- ADMIN CONTENT MANAGEMENT ENDPOINTS ---
-    public function admin_list()
-    {
+
+    public function is_admin() {
         if (!SessionManager::hasRole('admin')) {
             http_response_code(403);
             header('Content-Type: application/json');
-            echo json_encode(['error' => 'Forbidden']);
+            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
             return;
         }
-        $status = $_GET['status'] ?? 'all';
+    }
+
+    public function admin_list()
+    {
+        $this->is_admin();
+
         $search = $_GET['search'] ?? '';
-        $posts = $this->m->adminGetPosts($status, $search);
+        $posts = $this->m->adminGetPosts($search);
+
         header('Content-Type: application/json');
         echo json_encode(['posts' => $posts]);
     }
 
-    public function admin_approve($id)
-    {
-        if (!SessionManager::hasRole('admin')) {
-            http_response_code(403);
-            header('Content-Type: application/json');
-            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
-            return;
-        }
-        $ok = $this->m->adminApprovePost($id);
-        header('Content-Type: application/json');
-        echo json_encode(['ok' => $ok]);
-    }
-
-    public function admin_reject($id)
-    {
-        if (!SessionManager::hasRole('admin')) {
-            http_response_code(403);
-            header('Content-Type: application/json');
-            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
-            return;
-        }
-        $ok = $this->m->adminRejectPost($id);
-        header('Content-Type: application/json');
-        echo json_encode(['ok' => $ok]);
-    }
-
     public function admin_delete($id)
     {
-        if (!SessionManager::hasRole('admin')) {
-            http_response_code(403);
-            header('Content-Type: application/json');
-            echo json_encode(['ok' => false, 'error' => 'Forbidden']);
-            return;
-        }
+        $this->is_admin();
+
         $ok = $this->m->adminDeletePost($id);
         header('Content-Type: application/json');
         echo json_encode(['ok' => $ok]);

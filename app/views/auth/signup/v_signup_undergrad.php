@@ -22,7 +22,7 @@ $countries = require APPROOT . '/data/countries_data.php';
 </style>
 
 <div class="signup-container">
-    <a href="<?php echo URLROOT; ?>" class="back-button" aria-label="Back to Gradlink home">
+    <a href="<?php echo URLROOT; ?>/auth" class="back-button" aria-label="Back to Gradlink home">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 18l-6-6 6-6" />
         </svg>
@@ -142,7 +142,7 @@ $countries = require APPROOT . '/data/countries_data.php';
                             <div class="arrow-icon">▼</div>
                         </div>
                         <div class="dropdown-menu batch-dropdown">
-                            <?php for ($i = 1; $i <= 22; $i++): ?>
+                            <?php for ($i = 24; $i > 0; $i--): ?>
                                 <div class="skill-option batch-option" data-value="<?php echo $i; ?>"><?php echo $i; ?></div>
                             <?php endfor; ?>
                         </div>
@@ -267,16 +267,9 @@ $countries = require APPROOT . '/data/countries_data.php';
                     body: formData
                 });
 
-                const responseText = await response.text();
-                console.log('Response:', responseText); // Debug log
-
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error('JSON Parse Error:', parseError);
-                    console.error('Raw response:', responseText);
-                    showOtpStatus('Server error. Check console for details.', 'error');
+                const data = await response.json().catch(() => null);
+                if (!data) {
+                    showOtpStatus('Unexpected server response. Please try again.', 'error');
                     sendOtpBtn.disabled = false;
                     sendOtpBtn.textContent = 'Send OTP';
                     return;
@@ -294,7 +287,6 @@ $countries = require APPROOT . '/data/countries_data.php';
                     sendOtpBtn.textContent = 'Send OTP';
                 }
             } catch (error) {
-                console.error('Fetch error:', error);
                 showOtpStatus('Network error. Please try again.', 'error');
                 sendOtpBtn.disabled = false;
                 sendOtpBtn.textContent = 'Send OTP';
@@ -334,7 +326,7 @@ $countries = require APPROOT . '/data/countries_data.php';
 
                 const data = await response.json();
 
-                if (data.success || 1) { // Temporary bypass for testing
+                if (data.success) { 
                     isEmailVerified = true;
                     emailVerifiedInput.value = '1';
                     otpSection.style.display = 'none';

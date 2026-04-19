@@ -166,7 +166,7 @@
                     <div class="form-check">
                         <input type="hidden" name="add_to_calendar" value="0">
                         <input type="checkbox" id="add_to_calendar" name="add_to_calendar" value="1" <?php echo $isEdit && !empty($data['event']->add_to_calendar) ? 'checked' : ''; ?>>
-                        <label for="add_to_calendar">Publish this event as a post</label>
+                        <label for="add_to_calendar">Publish this event as a post in feed.</label>
                     </div>
                 </div>
                 <div class="form-group">

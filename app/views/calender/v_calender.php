@@ -656,7 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
 
                 // then attach to DOM
-                eventItem.innerHTML = html;                
+                eventItem.innerHTML = html;
                 eventsList.appendChild(eventItem);
             });
         } else {
