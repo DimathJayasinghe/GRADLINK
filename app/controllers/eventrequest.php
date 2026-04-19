@@ -6,21 +6,7 @@ class eventrequest extends Controller{
         $this->model = $this->model('M_eventrequest');
     }
     public function index(){
-        $data = [
-            // 'clubs' => $this->model->getAllClubs()
-            'clubs' => [
-                (object)['id'=>1,'name'=>'IEEE CS Chapter'],
-                (object)['id'=>2,'name'=>'ACM Student Chapter'],
-                (object)['id'=>3,'name'=>'Robotics Club'],
-                (object)['id'=>4,'name'=>'Debating Society'],
-                (object)['id'=>5,'name'=>'Drama Club'],
-                (object)['id'=>6,'name'=>'Music Club'],
-                (object)['id'=>7,'name'=>'Art Society'],
-                (object)['id'=>8,'name'=>'Photography Club'],
-                (object)['id'=>9,'name'=>'Environmental Club'],
-                (object)['id'=>10,'name'=>'Literature Club']
-            ]
-            ];
+        $data = [];
         $this->view("/request_dashboards/eventreq/v_eventrequest",$data);
     }
     

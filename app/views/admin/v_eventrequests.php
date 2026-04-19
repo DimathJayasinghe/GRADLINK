@@ -161,8 +161,10 @@ document.addEventListener('DOMContentLoaded', function(){
                 <td>${escapeHtml(r.status||'')}</td>
                 <td>
                     <button class="admin-btn view-req" style="background-color: #525253ff; color: white; margin-bottom:8px;">View</button>
-                    <button class="admin-btn approve-req">Approve</button>
-                    <button class="admin-btn admin-btn-danger reject-req" style="width:140px;">Reject</button>
+                    ${escapeHtml(r.status) == 'Rejected' ? '<button class="admin-btn approve-req">Approve</button>' : ''}
+                    ${escapeHtml(r.status) == 'Pending' ? '<button class="admin-btn approve-req">Approve</button><button class="admin-btn admin-btn-danger reject-req" style="margin-left: 6px;">Reject</button>' : ''}
+                    ${escapeHtml(r.status) == 'Approved' ? '' : ''}
+                    
                 </td>
             `;
             reqTableBody.appendChild(tr);
