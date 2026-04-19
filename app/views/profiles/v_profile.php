@@ -110,11 +110,252 @@
 ?>
 <?php $rightsidebar = ob_get_clean(); ?>
 
-<script>window.URLROOT = "<?= URLROOT; ?>";</script>
-<script defer src="<?php echo URLROOT ?>/js/component/postCard.js"></script>
-
 <?php ob_start() ?>
     window.URLROOT = "<?php echo URLROOT; ?>";
+
+    (function ensurePostCardScriptLoaded() {
+        const source = `${window.URLROOT}/js/component/postCard.js`;
+        const alreadyLoaded = Array.from(document.scripts).some(script => script.src === source);
+        if (alreadyLoaded) return;
+
+        const script = document.createElement('script');
+        script.src = source;
+        script.defer = true;
+        script.setAttribute('data-profile-post-card', '1');
+        document.head.appendChild(script);
+    })();
+
+    function notifyUser(message) {
+        if (typeof show_popup === 'function') {
+            show_popup(message);
+            return;
+        }
+        alert(message);
+    }
+
+    function getTrimmedValue(input) {
+        if (!input || typeof input.value !== 'string') return '';
+        return input.value.trim();
+    }
+
+    function parseDateInput(value) {
+        if (!value) return null;
+        const parsed = new Date(`${value}T00:00:00`);
+        if (Number.isNaN(parsed.getTime())) return null;
+        return parsed;
+    }
+
+    function validateRequiredText(input, label, maxLength) {
+        if (!input) return true;
+
+        const value = getTrimmedValue(input);
+        if (!value) {
+            notifyUser(`${label} is required.`);
+            input.focus();
+            return false;
+        }
+
+        if (maxLength && value.length > maxLength) {
+            notifyUser(`${label} must be ${maxLength} characters or fewer.`);
+            input.focus();
+            return false;
+        }
+
+        input.value = value;
+        return true;
+    }
+
+    function syncProjectDateRange(startInput, endInput) {
+        if (!startInput || !endInput) return;
+
+        endInput.min = startInput.value || '';
+
+        const startDate = parseDateInput(startInput.value);
+        const endDate = parseDateInput(endInput.value);
+        if (startDate && endDate && endDate < startDate) {
+            endInput.value = '';
+        }
+    }
+
+    function bindProjectDateRange(startInput, endInput) {
+        if (!startInput || !endInput) return;
+
+        startInput.addEventListener('change', function() {
+            syncProjectDateRange(startInput, endInput);
+        });
+
+        endInput.addEventListener('change', function() {
+            syncProjectDateRange(startInput, endInput);
+        });
+
+        syncProjectDateRange(startInput, endInput);
+    }
+
+    function validateProjectForm(form) {
+        if (!form) return false;
+
+        const titleInput = form.querySelector('[name="project_title"]');
+        const descriptionInput = form.querySelector('[name="project_description"]');
+        const skillsInput = form.querySelector('[name="project_skills"]');
+        const startDateInput = form.querySelector('[name="project_start_date"]');
+        const endDateInput = form.querySelector('[name="project_end_date"]');
+
+        if (!validateRequiredText(titleInput, 'Project title', 120)) return false;
+        if (!validateRequiredText(descriptionInput, 'Project description', 2000)) return false;
+        if (!validateRequiredText(skillsInput, 'Project skills', 255)) return false;
+
+        if (!startDateInput || !startDateInput.value) {
+            notifyUser('Project start date is required.');
+            if (startDateInput) startDateInput.focus();
+            return false;
+        }
+
+        const startDate = parseDateInput(startDateInput.value);
+        if (!startDate) {
+            notifyUser('Please enter a valid project start date.');
+            startDateInput.focus();
+            return false;
+        }
+
+        if (endDateInput && endDateInput.value) {
+            const endDate = parseDateInput(endDateInput.value);
+            if (!endDate) {
+                notifyUser('Please enter a valid project end date.');
+                endDateInput.focus();
+                return false;
+            }
+
+            if (endDate < startDate) {
+                notifyUser('Project end date cannot be earlier than start date.');
+                endDateInput.focus();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function validateCertificateForm(form) {
+        if (!form) return false;
+
+        const certificateName = form.querySelector('[name="certificate_name"]');
+        const certificateIssuer = form.querySelector('[name="certificate_issuer"]');
+        const certificateDate = form.querySelector('[name="certificate_date"]');
+        const certificateFile = form.querySelector('[name="certificate_file"]');
+
+        if (!validateRequiredText(certificateName, 'Certificate name', 150)) return false;
+        if (!validateRequiredText(certificateIssuer, 'Issuing organization', 150)) return false;
+
+        if (!certificateDate || !certificateDate.value) {
+            notifyUser('Issue date is required.');
+            if (certificateDate) certificateDate.focus();
+            return false;
+        }
+
+        const selectedDate = parseDateInput(certificateDate.value);
+        if (!selectedDate) {
+            notifyUser('Please enter a valid issue date.');
+            certificateDate.focus();
+            return false;
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate > today) {
+            notifyUser('Issue date cannot be in the future.');
+            certificateDate.focus();
+            return false;
+        }
+
+        const selectedFile = certificateFile && certificateFile.files && certificateFile.files[0] ? certificateFile.files[0] : null;
+        if (selectedFile) {
+            const isPdf = selectedFile.type === 'application/pdf' || /\.pdf$/i.test(selectedFile.name);
+            if (!isPdf) {
+                notifyUser('Please upload a PDF file for the certificate.');
+                certificateFile.focus();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function validateWorkForm(form) {
+        if (!form) return false;
+
+        const positionInput = form.querySelector('[name="position"]');
+        const companyInput = form.querySelector('[name="company"]');
+        const periodInput = form.querySelector('[name="period"]');
+
+        if (!validateRequiredText(positionInput, 'Position', 120)) return false;
+        if (!validateRequiredText(companyInput, 'Company', 120)) return false;
+        if (!validateRequiredText(periodInput, 'Period', 100)) return false;
+
+        const periodValue = getTrimmedValue(periodInput);
+        if (!/(\d{4}|present)/i.test(periodValue)) {
+            notifyUser('Period should include a year (for example: 2021 - Present).');
+            periodInput.focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    function validateProfileForm(form) {
+        if (!form) return false;
+
+        const bioInput = form.querySelector('[name="profileBioInput"]');
+        const batchNoInput = form.querySelector('[name="profileBatchNoInput"]');
+        const tagInput = form.querySelector('[name="profileTagInput"]');
+        const countryInput = form.querySelector('[name="profileCountryInput"]');
+
+        if (bioInput) {
+            const bio = getTrimmedValue(bioInput);
+            if (bio.length > 500) {
+                notifyUser('Bio must be 500 characters or fewer.');
+                bioInput.focus();
+                return false;
+            }
+            bioInput.value = bio;
+        }
+
+        if (batchNoInput) {
+            const batch = getTrimmedValue(batchNoInput);
+            if (batch.length > 50) {
+                notifyUser('Batch number must be 50 characters or fewer.');
+                batchNoInput.focus();
+                return false;
+            }
+            batchNoInput.value = batch;
+        }
+
+        if (tagInput) {
+            const normalizedTag = getTrimmedValue(tagInput).replace(/^@+/, '');
+            if (normalizedTag.length > 100) {
+                notifyUser('User tag must be 100 characters or fewer.');
+                tagInput.focus();
+                return false;
+            }
+            tagInput.value = normalizedTag;
+        }
+
+        if (countryInput && !getTrimmedValue(countryInput)) {
+            notifyUser('Country is required.');
+            countryInput.focus();
+            return false;
+        }
+
+        return true;
+    }
+
+    const todayIsoDate = new Date().toISOString().slice(0, 10);
+    ['certificateDateAdd', 'certificateDateEdit'].forEach(function(id) {
+        const input = document.getElementById(id);
+        if (input) {
+            input.max = todayIsoDate;
+        }
+    });
+
     // Function to switch between posts and info tabs
     function showTab(tab) {
         // Get the sections
@@ -695,6 +936,9 @@
     if (addCertificateForm) {
         addCertificateForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            if (!validateCertificateForm(this)) {
+                return;
+            }
             const f = certificateFileAdd && certificateFileAdd.files ? certificateFileAdd.files[0] : null;
             if (f && f.size > CERT_MAX_SIZE) {
                 alert('Certificate file exceeds 5MB');
@@ -722,6 +966,9 @@
     if (editCertificateForm) {
         editCertificateForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            if (!validateCertificateForm(this)) {
+                return;
+            }
             const f = certificateFileEdit && certificateFileEdit.files ? certificateFileEdit.files[0] : null;
             if (f && f.size > CERT_MAX_SIZE) {
                 alert('Certificate file exceeds 5MB');
@@ -877,6 +1124,10 @@
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
+                if (!validateProfileForm(form)) {
+                    return;
+                }
+
                 if (saveBtn) {
                     saveBtn.disabled = true;
                     saveBtn.textContent = 'Saving...';
@@ -933,6 +1184,14 @@
         const deleteProjectPopup = document.getElementById('deleteProjectPopup');
         const confirmDeleteProjectBtn = document.getElementById('confirmDeleteProjectBtn');
         const cancelDeleteProjectBtn = document.getElementById('cancelDeleteProjectBtn');
+
+        const addProjectStartDateInput = document.getElementById('startDateAdd');
+        const addProjectEndDateInput = document.getElementById('endDateAdd');
+        const editProjectStartDateInput = document.getElementById('startDateEdit');
+        const editProjectEndDateInput = document.getElementById('endDateEdit');
+
+        bindProjectDateRange(addProjectStartDateInput, addProjectEndDateInput);
+        bindProjectDateRange(editProjectStartDateInput, editProjectEndDateInput);
 
         if (!workContainer || !projectsContainer) {
             return;
@@ -997,6 +1256,7 @@
         if (addProjectBtn && addProjectPopup && addProjectForm) {
             addProjectBtn.addEventListener('click', function() {
                 addProjectForm.reset();
+                syncProjectDateRange(addProjectStartDateInput, addProjectEndDateInput);
                 openPopup(addProjectPopup);
             });
         }
@@ -1020,6 +1280,9 @@
         if (addWorkForm) {
             addWorkForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (!validateWorkForm(addWorkForm)) {
+                    return;
+                }
                 try {
                     await postForm(addWorkForm);
                     window.location.reload();
@@ -1048,6 +1311,9 @@
         if (editWorkForm) {
             editWorkForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (!validateWorkForm(editWorkForm)) {
+                    return;
+                }
                 try {
                     await postForm(editWorkForm);
                     window.location.reload();
@@ -1087,6 +1353,9 @@
         if (addProjectForm) {
             addProjectForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (!validateProjectForm(addProjectForm)) {
+                    return;
+                }
                 try {
                     await postForm(addProjectForm);
                     window.location.reload();
@@ -1109,6 +1378,7 @@
                     document.getElementById('projectSkillsEdit').value = card.dataset.skills || '';
                     document.getElementById('startDateEdit').value = card.dataset.start_date || '';
                     document.getElementById('endDateEdit').value = card.dataset.end_date || '';
+                    syncProjectDateRange(editProjectStartDateInput, editProjectEndDateInput);
                     openPopup(editProjectPopup);
                     return;
                 }
@@ -1137,6 +1407,9 @@
         if (editProjectForm) {
             editProjectForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
+                if (!validateProjectForm(editProjectForm)) {
+                    return;
+                }
                 try {
                     await postForm(editProjectForm);
                     window.location.reload();
