@@ -323,7 +323,7 @@
             
             <div class="chart-container">
                 <div class="chart-placeholder" id="chart-views">
-                    <p>Views and engagement data visualization will be displayed here</p>
+                    <p style="margin: 1rem;"> Views and engagement data visualization will be displayed here </p>
                 </div>
             </div>
         </div>
@@ -335,29 +335,9 @@
             // Sample engagement data
             $engagements = [
                 [
-                    'user' => 'John D.',
+                    'user' => 'Hiruni K.',
                     'action' => 'marked as interested',
                     'time' => '2 hours ago'
-                ],
-                [
-                    'user' => 'Sarah M.',
-                    'action' => 'marked as going',
-                    'time' => '3 hours ago'
-                ],
-                [
-                    'user' => 'Arun K.',
-                    'action' => 'shared the event',
-                    'time' => '5 hours ago'
-                ],
-                [
-                    'user' => 'Maria L.',
-                    'action' => 'commented: "Looking forward to this!"',
-                    'time' => '1 day ago'
-                ],
-                [
-                    'user' => 'David T.',
-                    'action' => 'marked as going',
-                    'time' => '1 day ago'
                 ]
             ];
             
@@ -386,14 +366,13 @@
         
         tabs.forEach(tab => {
             tab.addEventListener('click', function() {
-                // Remove active class from all tabs
+
                 tabs.forEach(t => t.classList.remove('active'));
                 
-                // Add active class to clicked tab
+
                 this.classList.add('active');
                 
-                // Here you would typically update the chart based on the selected tab
-                // For now we'll just update the placeholder text
+
                 const tabName = this.dataset.tab;
                 document.getElementById('chart-views').innerHTML = `<p>${tabName.charAt(0).toUpperCase() + tabName.slice(1)} data visualization will be displayed here</p>`;
             });

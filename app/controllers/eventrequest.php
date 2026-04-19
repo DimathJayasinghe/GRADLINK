@@ -89,20 +89,20 @@ class eventrequest extends Controller{
 
         
         $data = [];
-    $data['title'] = $_POST['event_title'] ?? '';
-    $data['description'] = $_POST['description'] ?? null;
-    $data['club_name'] = $_POST['organizer'] ?? null;
-    $data['position'] = $_POST['requester_position'] ?? null;
-    $data['event_date'] = $_POST['event_date'] ?? null;
-    $data['event_time'] = $_POST['event_time'] ?? null;
-    $data['event_venue'] = $_POST['venue'] ?? null;
-    // additional optional fields
-    $data['short_tagline'] = $_POST['short_tagline'] ?? null;
-    $data['event_type'] = $_POST['event_type'] ?? null;
-    $data['post_caption'] = $_POST['post_caption'] ?? null;
-    $data['add_to_calendar'] = isset($_POST['add_to_calendar']) && $_POST['add_to_calendar'] == '1' ? 1 : 0;
-    $data['president_name'] = $_POST['president_name'] ?? null;
-    $data['approval_date'] = $_POST['approval_date'] ?? null;
+        $data['title'] = $_POST['event_title'] ?? '';
+        $data['description'] = $_POST['description'] ?? null;
+        $data['club_name'] = $_POST['organizer'] ?? null;
+        $data['position'] = $_POST['requester_position'] ?? null;
+        $data['event_date'] = $_POST['event_date'] ?? null;
+        $data['event_time'] = $_POST['event_time'] ?? null;
+        $data['event_venue'] = $_POST['venue'] ?? null;
+        // additional optional fields
+        $data['short_tagline'] = $_POST['short_tagline'] ?? null;
+        $data['event_type'] = $_POST['event_type'] ?? null;
+        $data['post_caption'] = $_POST['post_caption'] ?? null;
+        $data['add_to_calendar'] = isset($_POST['add_to_calendar']) && $_POST['add_to_calendar'] == '1' ? 1 : 0;
+        $data['president_name'] = $_POST['president_name'] ?? null;
+        $data['approval_date'] = $_POST['approval_date'] ?? null;
         $data['status'] = $row->status ?? 'Pending';
 
         // handle uploaded image (optional)
