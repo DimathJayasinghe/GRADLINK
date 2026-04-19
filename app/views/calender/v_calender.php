@@ -1,4 +1,4 @@
-<?php // vim: ft=php
+<?php
 ob_start(); ?>
 <style>
     /* Center column: event / request list */
@@ -476,19 +476,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ?>
     const events = <?php echo $events_json; ?> || {
-        '2025-10-20': [
-            { title: 'Alumni Networking Event', time: '14:00', description: 'Virtual networking session with industry professionals.' ,bookmarked: false,id:1},
-            { title: 'Resume Workshop', time: '16:30', description: 'Learn how to create an effective resume.' ,bookmarked: true,id:2}
+        "2026-05-15": [
+            { id: 1, title: "Mock Event 1", time: "14:00", description: "Description for mock event 1", bookmarked: false },
+            { id: 2, title: "Mock Event 2", time: "16:30", description: "Description for mock event 2", bookmarked: true }
         ],
-        '2025-10-25': [
-            {title: 'Career Fair', time: '10:00', description: 'Annual career fair with top employers.',bookmarked: false ,id:3}
-        ],
-        '2025-10-28': [
-            {title: 'Graduate Studies Info Session', time: '15:00', description: 'Information about graduate programs and opportunities.' ,bookmarked: true,id:4 }
-        ],
-        '2025-11-05': [
-            {title: 'Tech Industry Panel', time: '18:00', description: 'Panel discussion with alumni working in technology.' ,bookmarked: false,id: 5}
-        ]
     };
 
     // Initialize the calendar; renderCalendar is async now and fetches events for the month

@@ -30,9 +30,6 @@
         </div>
         <div class="header-actions">
             <button id="export-analytics" class="btn">Export Summary</button>
-            <!-- <button id="export-users" class="btn btn-secondary">Export Users</button>
-            <button id="export-content" class="btn btn-secondary">Export Content</button>
-            <button id="export-events" class="btn btn-secondary">Export Events</button> -->
         </div>
     </div>
 
@@ -272,7 +269,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <script>
-    // Country coordinates mapping (approximate center of each country)
+    // Country coordinates mapping
     const countryCoordinates = {
         'Sri Lanka': [7.8731, 80.7718],
         'United States': [37.0902, -95.7129],
@@ -755,27 +752,6 @@
                 ];
 
                 downloadCSV('analytics_summary.csv', rows);
-            });
-        }
-
-        const exportUsersBtn = document.getElementById('export-users');
-        if (exportUsersBtn) {
-            exportUsersBtn.addEventListener('click', function(){
-                downloadCSV('users_export.csv', [['id','name','email','role','batch']]);
-            });
-        }
-
-        const exportContentBtn = document.getElementById('export-content');
-        if (exportContentBtn) {
-            exportContentBtn.addEventListener('click', function(){
-                downloadCSV('content_export.csv', [['id','title','type','status','date']]);
-            });
-        }
-
-        const exportEventsBtn = document.getElementById('export-events');
-        if(exportEventsBtn){
-            exportEventsBtn.addEventListener('click', function(){
-                window.location.href = `<?php echo URLROOT; ?>/admin/exportEventsCsv${roleQuery}`;
             });
         }
     });

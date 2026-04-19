@@ -96,7 +96,7 @@
 
         <div class="admin-users-toolbar">
             <label for="user-search" class="sr-only">Search users</label>
-            <input id="user-search" type="search" placeholder="Search name or email..." aria-label="Search users">
+            <input id="user-search" style="color: white;" type="search" placeholder="Search name or email..." aria-label="Search users">
 
             <label for="role-filter" class="sr-only">Filter by role</label>
             <select id="role-filter" style="color: #736f68ff;" aria-label="Filter by role">
@@ -117,9 +117,9 @@
             $admins = [];
             foreach($allUsers as $u){
                 $r = strtolower(trim((string)($u->role ?? '')));
-                if($r === 'undergrad' || $r === 'student' || $r === 'undergraduate') $undergrads[] = $u;
-                else if($r === 'alumni' || $r === 'alumnus') $alumni[] = $u;
-                else if($r === 'admin' || $r === 'administrator') $admins[] = $u;
+                if($r === 'undergrad') $undergrads[] = $u;
+                else if($r === 'alumni') $alumni[] = $u;
+                else if($r === 'admin') $admins[] = $u;
                 else $undergrads[] = $u; // default bucket
             }
         ?>

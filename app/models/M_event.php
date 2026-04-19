@@ -113,9 +113,7 @@ class M_event {
         return $this->db->single();
     }
 
-    /** Find events within a date range or by filters
-     * $filters: ['start'=>..., 'end'=>..., 'limit'=>.., 'page'=>.., 'visibility'=>'public']
-     */
+
     public function findList(array $filters = []){
         $where = [];
         $params = [];

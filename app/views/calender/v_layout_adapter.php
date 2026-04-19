@@ -1,8 +1,6 @@
 <link rel="shortcut icon" href="<?php echo URLROOT ?>/img/favicon_white.png" type="image/x-icon">
 <?php
-// This is a template adapter for request dashboards to use threeColumnMiniLayout
-// It helps maintain the original sidebar structure while integrating with the three-column layout
-// Start capturing leftsidebar content for standard sidebar
+
 ob_start();
 ?>
 <?php
@@ -23,7 +21,7 @@ ob_start();
         ]
     ];
 
-    // Define which sidebar item should be active based on current page
+
     $is_fundraiser = strpos($_SERVER['REQUEST_URI'], 'fundraiser') !== false;
     $is_eventrequest = strpos($_SERVER['REQUEST_URI'], 'eventrequest') !== false;
 
@@ -33,14 +31,11 @@ ob_start();
         ['icon' => 'bell', 'label' => 'Notifications', 'onclick' => "NotificationModal()", 'require' => APPROOT . '/views/inc/commponents/notification_pop_up.php', 'notifications' => $notifications],
         ['icon' => 'envelope', 'label' => 'Messages', 'onclick' => "window.location.href='" . URLROOT . "/messages'"],
         ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=".$_SESSION['user_id'] . "'"],
-        // icon for fundraiser
+        
         ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
-        //icon for event requests
-        // ['icon' => 'clipboard-list', 'label' => 'event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'", 'active' => $is_eventrequest],
         ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
         ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'",'active' => true],
     ];
-    //  new portal to approve new alumnis only available for special alumnis
     if ($_SESSION['special_alumni']){
         $leftside_buttons[] = [
             'icon'=>'user-check','label'=>'Approve Alumni','onclick'=>"window.location.href='".URLROOT."/alumni/approve'"
@@ -51,15 +46,14 @@ ob_start();
     
 ?>
 <?php
-// Save leftsidebar content
+
 $leftsidebar = ob_get_clean();
 
-// Start capturing center content for dashboard navigation options
+
 ob_start();
 ?>
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/dashboard_layout.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/adapter_layout.css">
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/css/req_dashboard/fundraise_form_fixes.css">
 
 <style>
     /* Style the dashboard navigation similar to settings categories */
@@ -129,20 +123,17 @@ ob_start();
 </div>
 <?php
 $center_topic = "Events";
-// Save center content
+
 $center_content = ob_get_clean();
 
-// If no scripts are defined, create empty scripts
+
 if (!isset($scripts)) {
     $scripts = '';
 }
 
-// The $content variable from dashboard views becomes the $rightsidebar in three-column layout
 $rightsidebar = $content;
-// Expose current user id for client-side checks
-\SessionManager::ensureStarted();
+SessionManager::ensureStarted();
 echo "<script>window.GL_CURRENT_USER_ID = " . (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 'null') . ";</script>\n";
 
-// Include the three-column layout template
 require APPROOT . '/views/layouts/threeColumnMiniLayout.php';
 ?>

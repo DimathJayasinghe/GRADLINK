@@ -7,7 +7,7 @@ class M_admin {
     }
 
     public function getOverviewMetrics(): array {
-        // Total users
+        
         $totalUsers = 0;
         $active30 = 0;
         $growthPct = 0;
@@ -16,11 +16,11 @@ class M_admin {
             $this->db->query('SELECT COUNT(*) AS c FROM users');
             $totalUsers = $this->db->single()->c ?? 0;
 
-            // Active users last 30 days (approx by login_time if stored; fallback to created_at)
+            // Active users last 30 days
             $this->db->query('SELECT COUNT(*) AS c FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)');
             $active30 = $this->db->single()->c ?? 0;
 
-            // User growth last 3 months (new signups vs previous 3 months)
+            // User growth last 3 months
             $this->db->query('SELECT 
                     SUM(created_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH)) AS recent,
                     SUM(created_at < DATE_SUB(NOW(), INTERVAL 3 MONTH) AND created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)) AS previous
@@ -30,7 +30,7 @@ class M_admin {
             $previous = (int)($growthRow->previous ?? 0);
             $growthPct = $previous > 0 ? round((($recent - $previous) / $previous) * 100) : ($recent > 0 ? 100 : 0);
         } catch (Exception $e) {
-            // Users table might not exist, return default values
+            
             $totalUsers = 0;
             $active30 = 0;
             $growthPct = 0;
@@ -1379,9 +1379,6 @@ class M_admin {
         return ['roles' => [], 'batches' => [], 'skills' => [], 'genders' => [], 'event_status' => [], 'event_request_status' => []];
     }
 
-    /**
-     * Authenticate admin user
-     */
     public function authenticateAdmin(string $email, string $password): ?object {
         // Query for admin user with role 'admin'
         $this->db->query('SELECT * FROM users WHERE email = :email AND role = "admin" LIMIT 1');
@@ -1399,9 +1396,6 @@ class M_admin {
         return null;
     }
 
-    /**
-     * Get admin user by ID
-     */
     public function getAdminById(int $id): ?object {
         $this->db->query('SELECT * FROM users WHERE id = :id AND role = "admin" LIMIT 1');
         $this->db->bind(':id', $id);
@@ -1466,13 +1460,7 @@ class M_admin {
         }
     }
 
-    /**
-     * Get user locations (countries) for map visualization
-     * @param string|null $role - Filter by role (admin, alumni, undergrad)
-     * @param string|null $batch - Filter by batch number
-     * @param string|null $country - Filter by country
-     * @return array - Array of location data with user counts
-     */
+
     public function getUserLocations(?string $role = null, ?string $batch = null, ?string $country = null): array {
         try {
             // Build dynamic query
