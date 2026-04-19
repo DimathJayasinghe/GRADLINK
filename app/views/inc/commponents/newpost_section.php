@@ -5,13 +5,28 @@
         color: rgba(255, 236, 236, 0.4);
         margin-left: 8px;
     }
+
+    .compose-input textarea {
+        background: transparent;
+        border: none;
+        color: var(--text);
+        font-size: 18px;
+        width: 100%;
+        outline: none;
+        resize: vertical;
+        min-height: 90px;
+        line-height: 1.45;
+        font-family: inherit;
+        font-size: 16px;
+    }
+
     /* Hidden by default; shown when image > 2MB */
     #not-allowed{ display:none; }
 </style>
 <form class="compose-post" method="post" action="<?php echo URLROOT; ?>/post/create" enctype="multipart/form-data">
     <div class="compose-input">
         <img src="<?php echo URLROOT; ?>/media/profile/<?php echo $_SESSION['profile_image'] ?? 'default.jpg'; ?>" alt="Profile" class="profile-photo">
-        <input name="content" required maxlength="500" placeholder="What's happening?" />
+        <textarea name="content" required maxlength="500" rows="1" placeholder="What's happening?"></textarea>
         <div>
             
             <input type="file" name="image" accept="image/*" style="display:none" id="postImageInput" />

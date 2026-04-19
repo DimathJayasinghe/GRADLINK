@@ -13,7 +13,7 @@
                 <img src="<?php echo URLROOT; ?>/media/profile/<?php echo $_SESSION['profile_image'] ?? 'default.jpg'; ?>" alt="Profile" class="profile-photo">
                 
                 <div class="post-input-container" style="flex:1;">
-                    <input name="content" required maxlength="500" placeholder="What's happening?" style="width:100%;min-height:80px;background:transparent;border:none;color:var(--text);font-size:18px;resize:none;font-family:'Poppins',sans-serif;outline:none;"/>
+                    <textarea name="content" required maxlength="500" rows="4" placeholder="What's happening?" style="width:100%;min-height:80px;background:transparent;border:none;color:var(--text);font-size:18px;resize:vertical;font-family:'Poppins',sans-serif;outline:none;"></textarea>
                     <div class="divider"></div>
                     
                     <div class="post-modal-actions" style="display:flex;justify-content:space-between;align-items:center;">
@@ -81,24 +81,26 @@
         const postButton = document.querySelector('.post-button');
         const postModal = document.getElementById('postModal');
         const postModalCloseBtn = document.querySelector('#postModal .modal-close-btn');
-        const modalPostBtn = document.querySelector('.modal-post-btn');
+        const postModalForm = postModal ? postModal.querySelector('form.post-modal-body') : null;
+        const modalContentField = postModal ? postModal.querySelector('[name="content"]') : null;
 
         if (postButton) {
             postButton.addEventListener('click', () => {
                 postModal.style.display = 'flex';
-                postModal.querySelector('textarea').focus();
+                modalContentField?.focus();
             });
         }
         if (postModalCloseBtn) postModalCloseBtn.addEventListener('click', () => postModal.style.display = 'none');
         window.addEventListener('click', e => {
             if (e.target === postModal) postModal.style.display = 'none';
         });
-        if (modalPostBtn) {
-            modalPostBtn.addEventListener('click', () => {
-                const txt = postModal.querySelector('textarea').value.trim();
-                if (!txt) return;
-                postModal.querySelector('textarea').value = '';
-                postModal.style.display = 'none';
+        if (postModalForm) {
+            postModalForm.addEventListener('submit', e => {
+                const txt = modalContentField ? modalContentField.value.trim() : '';
+                if (!txt) {
+                    e.preventDefault();
+                    modalContentField?.focus();
+                }
             });
         }
 </script>
