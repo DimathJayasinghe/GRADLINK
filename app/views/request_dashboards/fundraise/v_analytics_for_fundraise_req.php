@@ -632,11 +632,18 @@ document.addEventListener('DOMContentLoaded', function() {
     var reportEndpoint = reportOpenBtn.getAttribute('data-report-endpoint') || '/report/submitReport/fundraiser';
 
     function notify(message) {
+        if (typeof window.GL_notify === 'function') {
+            window.GL_notify(message);
+            return;
+        }
+
         if (typeof show_popup === 'function') {
             show_popup(message);
             return;
         }
-        alert(message);
+
+        // Final non-alert fallback to keep UX non-blocking.
+        console.log(message);
     }
 
     function closeReportModal() {
