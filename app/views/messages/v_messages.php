@@ -5,22 +5,7 @@
 
 <!-- Leftside bar section -->
 <?php
-    $notifications = [
-        (object)[
-            'type' => 'like',
-            'user' => 'Alice',
-            'content' => ' liked your post.',
-            'time' => '2h ago',
-            'userImg' => URLROOT . '/media/profile/alice.jpg'
-        ],
-        (object)[
-            'type' => 'follow',
-            'user' => 'Bob',
-            'content' => ' started following you.',
-            'time' => '3h ago',
-            'userImg' => URLROOT . '/media/profile/bob.jpg'
-        ]
-    ];
+    $notifications = [];
 ?>
 
 <?php ob_start();
@@ -33,7 +18,6 @@
         ['icon' => 'user', 'label' => 'Profile' , 'onclick' => "window.location.href='" . URLROOT . "/profile?userid=".$_SESSION['user_id'] . "'"],
         // icon for fundraiser
         ['icon' => 'hand-holding-heart', 'label' => 'Fundraisers', 'onclick' => "window.location.href='" . URLROOT . "/fundraiser'"],
-        // ['icon' => 'clipboard-list', 'label' => 'Post Requests', 'onclick' => "window.location.href='" . URLROOT . "/postrequest/'"],
         ['icon' => 'clipboard-list', 'label' => 'Event Requests', 'onclick' => "window.location.href='" . URLROOT . "/eventrequest/'"],
         ['icon' => 'calendar-alt', 'label' => 'Calender', 'onclick' => "window.location.href='" . URLROOT . "/calender'"],
     ];

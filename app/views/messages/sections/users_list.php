@@ -24,13 +24,19 @@
                     }
                 });
             } else {
-                usersList.innerHTML = '<div class="no-users">No available users found.</div>';
+                usersList.innerHTML = `
+                    <div class="no-users">
+                        <i class="fas fa-user-plus no-users-icon" aria-hidden="true"></i>
+                        <p class="no-users-title">No users available to message yet.</p>
+                        <p class="no-users-help">Follow users first to start messaging.</p>
+                    </div>
+                `;
             }
         } catch (error) {
             console.error('Error loading users:', error);
             usersList.innerHTML = `
                 <div class="error">
-                    Failed to load users from database.<br>
+                    Failed to load users.<br>
                     Error: ${error.message}<br>
                     Check console for details.
                 </div>

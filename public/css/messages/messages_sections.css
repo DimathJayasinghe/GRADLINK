@@ -319,12 +319,43 @@
 
 .loading_users,
 .loading,
-.no-users,
 .error,
 .chat_error {
     color: var(--muted, #cbb8a3);
     font-size: 14px;
     padding: 12px;
+}
+
+.no-users {
+    margin: 12px;
+    padding: 16px 14px;
+    border: 1px dashed var(--border, #3a3a3a);
+    border-radius: 12px;
+    background: var(--surface-1, #151b1f);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    color: var(--muted, #cbb8a3);
+}
+
+.no-users-icon {
+    font-size: 18px;
+    color: var(--primary, #9ed4dc);
+}
+
+.no-users-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text, #e8eef2);
+}
+
+.no-users-help {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 /* --------------------------------------- */
