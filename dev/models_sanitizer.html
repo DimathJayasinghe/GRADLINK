@@ -1,0 +1,1154 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>HTML</title>
+    </head>
+    <body>
+        <h1>IWT Short note</h1>
+        <cite>-Dimath Jayasinghe</cite>
+
+        <div id="Content">
+            <h1>Content</h1>
+            <ol>
+                <li><a href="#abbr">Abbr Tag</a></li>
+                <li><a href="#bdo">BDO Tag</a></li>
+                <li><a href="#blockquote">BlockQuote</a></li>
+                <li><a href="#inlineQuote">Inline Quote</a></li>
+                <li><a href="#supSub">Superscript and Subscript</a></li>
+                <li><a href="#descriptionList">Description List</a></li>
+                <li><a href="#tables">Tables</a></li>
+                <li><a href="#anchorTag">Anchor Tag</a></li>
+                <li><a href="#name_attr">Name Attribute</a></li>
+                <li><a href="#imgTag">IMG Tag</a></li>
+                <li><a href="#imgMap">Image Mapping</a></li>
+                <li><a href="#forms">Froms</a></li>
+
+            </ol>
+        </div>
+        <!-- Abbar tag -->
+        <fieldset id="abbr">
+            <legend><h2>Abbr tag</h2></legend>
+            <p>The "abbr" tag shows the full form of an abbreviation as a tooltip on hover
+            <br>Syntax:
+            &lt;abbr title="University of Colombo"&gt;UOC&lt;/abbr&gt;
+            <br>Ex:</p>
+            <p>This a garbage text generated to demostrate the use of <abbr title="This tag shows the full form of an abbreviation as a tool tip on hover">abbr</abbr> tag
+            <br>
+            let say we need talk about <abbr title="world health organization">WHO</abbr> this will be used.</p>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- BDO tag -->
+        <fieldset id="bdo">
+            <legend><h2>BDO Tag</h2></legend>
+            <p>The &lt;bdo&gt; tag in HTML is used to override the default text direction. It stands for Bi-Directional Override and is helpful when you need to change the direction of text (e.g., left-to-right or right-to-left).
+            <br>
+            Directions:
+            <br>
+            ltr: left to right
+            <br>
+            rtl: right to left
+            <br>
+            Syntax:
+            &lt;bdo dir="rtl"&gt;This is a text&lt;/bdo&gt;
+
+            <br>Ex: <br>
+            This is a normal text, But <bdo dir ="rtl">This is not</bdo>
+            </p>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- Blockquote -->
+        <fieldset id="blockquote">
+            <legend><h2>BlockQuote</h2></legend>
+            <p>The &lt;blockquote&gt; tag in HTML is used to define a section of text that is quoted from another source. It typically indents the text to visually distinguish it as a block of quotation.The cite attribute in a &lt;blockquote&gt; tag is not visible to the user by default. It is primarily used as metadata for search engines and assistive technologies (like screen readers), helping them understand the source of the content.
+            <br>
+            Syntax: <br>
+            &lt;blockquote cite="URL"&gt;Quoted text&lt;/blockquote&gt;
+            <br>
+            <p>Ex:</p>
+            <br>
+            <blockquote cite="www.example.com">"The greatest glory in living lies not in never falling, but in rising every time we fall"</blockquote>
+            </p>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- Inline Quote -->
+        <fieldset id="inlineQuote">
+            <legend><h2>Inline Quote</h2></legend>
+            <p>The &lt;q&gt; tag in HTML is used to define a short inline quotation. It is typically rendered with quotation marks around the text by browsers.
+            <br>
+            Syntax: &lt;q&gt;Quoted text&lt;/q&gt;
+            <br>
+            Ex:
+            <br>
+            Nelson Mandela once said, <q>The greatest glory in living lies not in never falling, but in rising every time we fall.</q>
+            </p>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- SuperScript & subscript -->
+        <fieldset id="supSub">
+            <legend><h2>Superscript and Subscript</h2></legend>
+            <p>The &lt;sub&gt; tag in HTML is used to define subscript text. It is typically rendered with a smaller font size and aligned below the baseline of the surrounding text.
+            <br>
+            Syntax for subscript: &lt;sub&gt;___&lt;/sub&gt;
+            <br>
+            Ex: <br>
+            HTML: Chemical formula for water is H&lt;sub&gt;2&lt;/sub&gt;O.
+            <br>
+            Display: Chemical formula for water is H<sub>2</sub>O.
+            </p>
+            <p>The &lt;sup&gt; tag in HTML is used to define superscript text. It is typically rendered with a smaller font size and aligned above the baseline of the surrounding text.
+            <br>
+            Syntax for superscript: &lt;sup&gt;___&lt;/sup&gt;
+            <br>
+            Ex: <br>
+            HTML: 2&lt;sup&gt;3&lt;/sup&gt; equals 8.
+            <br>
+            Display: 2<sup>3</sup> equals 8.
+            </p>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- description list -->
+        <fieldset id="descriptionList">
+            <legend><h2>Description List</h2></legend>
+            <p>In HTML, the &lt;dl&gt; tag is used to define a description list. This list consists of terms and their descriptions. It is typically used for glossaries or any scenario where you need to list terms and their corresponding explanations.
+            <br>
+            Here’s how it works:
+            <ul>
+                <li>&lt;dl&gt;: Defines the entire description list.</li>
+                <li>&lt;dt&gt;: Defines a term (or name) in the list.</li>
+                <li>&lt;dd&gt;: Provides the description of the term.</li>
+            </ul>
+            </p>
+            <p>
+                Ex: 
+                <br>
+                <b>in HTML : </b>
+                <br>
+                &lt;dl&gt;
+                <br>
+                &lt;dt&gt;HTML&lt;/dt&gt;
+                <br>
+                &lt;dd&gt;HyperText Markup Language used for creating web pages.&lt;/dd&gt;
+                <br>
+                &lt;dt&gt;CSS&lt;/dt&gt;
+                <br>
+                &lt;dd&gt;Cascading Style Sheets used to style web pages.&lt;/dd&gt;
+                <br>
+                &lt;/dl&gt;
+                <br>
+                <br>
+                <b>Display : </b>
+                <dl>
+                    <dt>HTML</dt>
+                    <dd>HyperText Markup Language used for creating web pages.</dd>
+                    
+                    <dt>CSS</dt>
+                    <dd>Cascading Style Sheets used to style web pages.</dd>
+                </dl>
+            </p>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- tables -->
+        <fieldset id="tables">
+            <legend><h2>Tables</h2></legend>
+            <p>In HTML, the &lt;table&gt; tag is used to create tables. Tables are used to display data in rows and columns. The &lt;tr&gt; tag is used to define a row in a table, and the &lt;td&gt; tag is used to define a cell in a row. The &lt;th&gt; tag is used to define a header cell in a table.
+            <br>
+            Here’s how it works:
+            <ul>
+                <li>&lt;table&gt;: Defines the entire table.</li>
+                <li>&lt;tr&gt;: Defines a row in the table.</li>
+                <li>&lt;td&gt;: Defines a cell in a row.</li>
+                <li>&lt;th&gt;: Defines a header cell in a table.</li>
+            </ul>
+            </p>
+            <p>
+                Ex: 
+                <br>
+                <b>in HTML : </b>
+                <pre>
+                    &lt;table&gt;
+                        &lt;tr&gt;
+                            &lt;th&gt;Header 1&lt;/th&gt;
+                            &lt;th&gt;Header 2&lt;/th&gt;
+                        &lt;/tr&gt;
+                        &lt;tr&gt;
+                            &lt;td&gt;Row 1, Cell 1&lt;/td&gt;
+                            &lt;td&gt;Row 1, Cell 2&lt;/td&gt;
+                        &lt;/tr&gt;
+                    &lt;/table&gt;
+                </pre>
+                <b>Display : </b>
+                <table border="1">
+                    <tr>
+                        <th>Header 1</th>
+                        <th>Header 2</th>
+                    </tr>
+                    <tr>
+                        <td>Row 1, Cell 1</td>
+                        <td>Row 1, Cell 2</td>
+                    </tr>
+                </table>
+            </p>
+            <!-- Tables and Table Attributes -->
+        <h2>Tables and Table Attributes</h2>
+            <p><b>Syntax for table :</b> &lt;table&gt;___&lt;/table&gt;</p>
+            <p>Ex: <br>
+                HTML : <code>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Row 1, Cell 1&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</code>
+                <br>
+                Display : <table><tr><td>Row 1, Cell 1</td></tr></table>
+            </p>
+    
+            <p><b>Syntax for adding a border to a table:</b> &lt;table border="1"&gt;</p>
+            <p>Ex: <br>
+                HTML : <code>&lt;table border="1"&gt;&lt;tr&gt;&lt;td&gt;Row 1, Cell 1&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</code>
+                <br>
+                Display : <table border="1"><tr><td>Row 1, Cell 1</td></tr></table>
+            </p>
+    
+            <p><b>Syntax for thead, tbody, and tfoot:</b></p>
+            <ul>
+                <li><code>&lt;thead&gt;</code> is used to group the header content in a table.</li>
+                <li><code>&lt;tbody&gt;</code> is used to group the body content in a table.</li>
+                <li><code>&lt;tfoot&gt;</code> is used to group the footer content in a table.</li>
+            </ul>
+    
+            <p>Ex: <br>
+                HTML: <br>
+                <pre>
+                    &lt;table border="1">
+                        &lt;thead&gt;
+                            &lt;tr&gt;
+                                &lt;th&gt;Header 1&lt;/th&gt;
+                                &lt;th&lt;Header 2&lt;/th&gt;
+                            &lt;/tr&gt;
+                        &lt;/thead&gt;
+                        &lt;tbody&gt;
+                            &lt;tr&gt;
+                                &lt;td&gt;Row 1, Cell 1&lt;/td&gt;
+                                &lt;td&gt;Row 1, Cell 2&lt;/td&gt;
+                            &lt;/tr&gt;
+                        &lt;/tbody&gt;
+                        &lt;tfoot&gt;
+                            &lt;tr&gt;
+                                &lt;td&gt;Footer 1&lt;/td&gt;
+                                &lt;td&lt;Footer 2&lt;/td&gt;
+                            &lt;/tr&gt;
+                        &lt;/tfoot&gt;
+                    &lt;/table>
+                </pre>
+                <br>
+                Display:
+                <table border="1">
+                    <thead><tr><th>Header 1</th><th>Header 2</th></tr></thead>
+                    <tbody><tr><td>Row 1, Cell 1</td><td>Row 1, Cell 2</td></tr></tbody>
+                    <tfoot><tr><td>Footer 1</td><td>Footer 2</td></tr></tfoot>
+                </table>
+            </p>
+    
+            <p><b>When to use the table header, body, and footer:</b></p>
+            <ul>
+                <li><code>&lt;thead&gt;</code>: Used for table headers, usually for titles or column names.</li>
+                <li><code>&lt;tbody&gt;</code>: Contains the main content or data in the table.</li>
+                <li><code>&lt;tfoot&gt;</code>: Contains footer rows, typically used for summary information or total values.</li>
+            </ul>
+    
+            <!-- colspan and rowspan -->
+            <h3>colspan and rowspan</h3>
+            <p><b>Syntax for colspan :</b> &lt;td colspan="n"&gt;___&lt;/td&gt;</p>
+            <p>Ex: <br>
+                HTML: <code>&lt;td colspan="2"&gt;This cell spans across two columns&lt;/td&gt;</code>
+                <br>
+                Display: <table border="1"><tr><td colspan="2">This cell spans across two columns</td></tr></table>
+            </p>
+    
+            <p><b>Syntax for rowspan :</b> &lt;td rowspan="n"&gt;___&lt;/td&gt;</p>
+            <p>Ex: <br>
+                HTML: <code>&lt;td rowspan="3"&gt;This cell spans across three rows&lt;/td&gt;</code>
+                <br>
+                Display: <table border="1"><tr><td rowspan="3">This cell spans across three rows</td><td>Row 1, Cell 2</td></tr><tr><td>Row 2, Cell 2</td></tr><tr><td>Row 3, Cell 2</td></tr></table>
+            </p>
+    
+            <p><b>When to use colspan:</b></p>
+            <ul>
+                <li><code>colspan="n"</code>: Used to make a cell span across multiple columns in a table. The value of n determines the number of columns the cell will span.</li>
+            </ul>
+    
+            <p><b>When to use rowspan:</b></p>
+            <ul>
+                <li><code>rowspan="n"</code>: Used to make a cell span across multiple rows in a table. The value of n determines the number of rows the cell will span.</li>
+            </ul>
+            <fieldset>
+                
+                <legend><h3>Example : </h3></legend>
+                <br>
+                <pre>
+                    &lt;table border="1" style="border-collapse: collapse;padding:10px;"&gt;
+                                &lt;tfoot&gt;
+                                    &lt;!-- Table footer --&gt;
+                                    &lt;!-- Bulling other universities --&gt;
+                                    &lt;tr&gt;
+                                        &lt;td colspan="3" style="text-align:center;"&gt;Universities that we dgaf&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;!-- University of Moratuwa --&gt;
+                                    &lt;tr&gt;
+                                        &lt;td rowspan="4"&gt;University Of Moratuwa&lt;/td&gt;
+                                        &lt;td&gt;Faculty of medicine&lt;/td&gt;
+                                        &lt;td rowspan="4"&gt;5&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Agri science&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Science&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Art&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                &lt;/tfoot&gt;
+                    
+                                &lt;thead&gt;
+                                    &lt;!-- Headings --&gt;
+                                    &lt;tr&gt;
+                                        &lt;th&gt;University&lt;/th&gt;
+                                        &lt;th&gt;Faculties&lt;/th&gt;
+                                        &lt;th&gt;Uni. Rank&lt;/th&gt;
+                                    &lt;/tr&gt;
+                                &lt;/thead&gt;
+                                &lt;tbody&gt;
+                                    &lt;!-- Contents --&gt;
+                                    &lt;!-- UOC --&gt;
+                                    &lt;tr&gt;
+                                        &lt;td rowspan="5"&gt;University Of Colombo&lt;/td&gt;
+                                        &lt;td&gt;UCSC&lt;/td&gt;
+                                        &lt;td rowspan="5"&gt;1&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;UCFM&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Science&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Art&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Managment&lt;/td&gt;
+                                    &lt;/tr&gt;
+                        
+                                    &lt;!-- University of Pera --&gt;
+                                    &lt;tr&gt;
+                                        &lt;td rowspan="4"&gt;University Of Peradeniya&lt;/td&gt;
+                                        &lt;td&gt;Faculty of medicine&lt;/td&gt;
+                                        &lt;td rowspan="4"&gt;2&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Agri science&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Science&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                    &lt;tr&gt;
+                                        &lt;td&gt;Faculty of Art&lt;/td&gt;
+                                    &lt;/tr&gt;
+                                &lt;/tbody&gt;
+                                
+                             &lt;/table&gt;
+                    </pre>
+                    
+                <br>
+                <table border="1" style="border-collapse: collapse;padding:10px;">
+                    <tfoot>
+                        <!-- Table footer -->
+                        <!-- Bulling other universities -->
+                        <tr>
+                            <td colspan="3" style="text-align:center;";">Universities that we dgaf</td>
+                        </tr>
+                        <!-- University of Moratuwa -->
+                        <tr>
+                            <td rowspan="4">University Of Moratuwa</td>
+                            <td>Faculty of medicine</td>
+                            <td rowspan="4">5</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Agri science</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Science</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Art</td>
+                        </tr>
+                    </tfoot>
+        
+                    <thead>
+                        <!-- Headings -->
+                        <tr>
+                            <th>University</th>
+                            <th>Faculties</th>
+                            <th>Uni. Rank</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Contents -->
+                        <!-- UOC -->
+                        <tr>
+                            <td rowspan="5">University Of Colombo</td>
+                            <td>UCSC</td>
+                            <td rowspan="5">1</td>
+                        </tr>
+                        <tr>
+                            <td>UCFM</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Science</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Art</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Managment</td>
+                        </tr>
+            
+                        <!-- University of Pera -->
+                        <tr>
+                            <td rowspan="4">University Of Peradeniya</td>
+                            <td>Faculty of medicine</td>
+                            <td rowspan="4">2</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Agri science</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Science</td>
+                        </tr>
+                        <tr>
+                            <td>Faculty of Art</td>
+                        </tr>
+                    </tbody>
+                    
+                    
+                 </table>
+            </fieldset>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- Anchor tag -->
+        <fieldset id="anchorTag">
+            <legend><h2>Anchor Tag (&lt;a&gt;)</h2></legend>
+            <p><b>Syntax for anchor tag :</b> &lt;a href="URL"&gt;Link Text&lt;/a&gt;</p>
+            <p>Ex: <br>
+                HTML: <code>&lt;a href="https://www.example.com"&gt;Click here to visit Example&lt;/a&gt;</code>
+                <br>
+                Display: <a href="https://www.example.com" target="_blank">Click here to visit Example</a>
+            </p>
+
+            <p><b>Attributes of anchor tag:</b></p>
+            <ul>
+                <li><b>href</b>: Specifies the URL of the page the link goes to.</li>
+                <li><b>target="_blank"</b>: Opens the link in a new tab (optional).</li>
+                <li><b>title</b>: Adds extra information when the user hovers over the link.</li>
+            </ul>
+
+            <p><b>When to use anchor tag:</b></p>
+            <ul>
+                <li>To create hyperlinks for navigation within or between webpages.</li>
+                <li>To link to external websites, internal page sections, or download files.</li>
+                <li>As a bookmark(internal Linking)</li>
+            </ul>
+            
+            <h3>Example Demonstration:</h3>
+            <p>Click the link below to visit a website:</p>
+            <pre>
+                &lt;a href="https://www.example.com" target="_blank"&gt;Visit Example Website&lt;/a&gt;
+            </pre>
+            <a href="https://www.example.com" target="_blank">Visit Example Website</a>
+
+            <fieldset>
+                <legend><h3>HREF attribute</h3></legend>
+                <p>The href attribute in the &lt;a&gt; tag is used to specify the URL of the page the link goes to. It can be an absolute URL (e.g., https://www.example.com) or a relative URL (e.g., index.html).</p>
+                <h4>Absolute path</h4>
+                <p>
+                    An absolute path specifies the full URL of a webpage or resource, starting from the root domain (e.g., https://www.example.com/page.html). It is commonly used for linking to external 
+                    <pre>
+                        Syntax: &lt;a href="https://www.example.com/page.html"&gt;Link Text&lt;/a&gt;
+                    </pre>
+                    <ul>
+                        <li>file:///C:/Users/Username/Documents/a/c/ccc.html</li>
+                        <li>C:/a/c/ccc.html</li>
+                        <li>In Linux, an absolute path starts from the root directory (/) and provides the full path to a file or directory.
+                            <br>/home/username/Documents/a/c/ccc.html</li>
+                        <li><b>~</b> is a shortcut for the user's home directory, which starts from /home/username/ (in most distributions).
+                            <br>~/Documents/a/c/ccc.html
+
+                        </li>
+                    </ul>
+                </p>
+                <h4>Relative Path</h4>
+                <p>
+                    A relative path specifies the URL of a webpage or resource relative to the current page's location. It is commonly used for linking to internal pages or resources within the same website.
+                    <pre>
+                        Syntax: &lt;a href="page.html"&gt;Link Text&lt;/a&gt;
+                    </pre>
+                    <p>Ex:</p>
+                    <ul>
+                        <li>./a/c/ccc.html</li>
+                        <li>../a/c/ccc.html</li>
+                        <li>ccc.html</li>
+                    </ul>
+            </fieldset>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- Name Attribute -->
+        <fieldset id="name_attr">
+            <legend><h2>NAME Attribute</h2></legend>
+            <p><b>Definition:</b></p>
+            <p>The <code>name</code> attribute is used to identify elements for form data submission or linking within a document. It is commonly applied to form controls like:</p>
+            <ul>
+                <li><code>&lt;input&gt;</code></li>
+                <li><code>&lt;textarea&gt;</code></li>
+                <li><code>&lt;button&gt;</code></li>
+                <li><code>&lt;select&gt;</code></li>
+            </ul>
+            <p><b>Usage:</b> The <code>name</code> attribute specifies a name for the element, which is used during form submission to associate data with the corresponding element.</p>
+            <p><b>Difference from ID:</b></p>
+            <ul>
+                <li><code>id</code>: Uniquely identifies an element on a page and is primarily used for JavaScript or CSS.</li>
+                <li><code>name</code>: Used for form data submission and can have multiple elements with the same value.</li>
+            </ul>
+        
+            <p><b>Examples:</b></p>
+            <p><b>1. Form control:</b></p>
+            <p>
+                HTML:
+                <br>
+                <code>
+                &lt;form method="post"&gt; <br>
+                &nbsp;&nbsp;&lt;label&gt;Name: &lt;/label&gt;<br>
+                &nbsp;&nbsp;&lt;input type="text" name="username"&gt; <br>
+                &lt;/form&gt;
+                </code>
+                <br>
+                <b>Explanation:</b> The name <code>"username"</code> associates the input data with the key <code>"username"</code> when the form is submitted.
+            </p>
+        
+            <p><b>2. Internal linking:</b></p>
+            <p>
+                HTML:
+                <br>
+                <code>
+                &lt;a name="section1"&gt;&lt;/a&gt;<br>
+                &lt;a href="#section1"&gt;Go to Section 1&lt;/a&gt;
+                </code>
+                <br>
+                <b>Explanation:</b> The <code>name</code> attribute creates a target that can be referenced by hyperlinks with <code>href</code>.
+            </p>
+        
+            <p><b>Note:</b> The <code>name</code> attribute for the <code>&lt;a&gt;</code> tag is considered obsolete in modern HTML. Use <code>id</code> instead for creating link targets.</p>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- IMG TAG -->
+        <fieldset id="imgTag">
+            <legend><h2>IMG TAG</h2></legend>
+            <p>
+                The &lt;img&gt; tag in HTML is used to embed images in a webpage. It is a self-closing tag, meaning it does not require a closing tag. The src attribute specifies the URL of the image file, and the alt attribute provides alternative text for screen readers or when the image fails to load. width and height attributes can be used to set the dimensions of the image.
+                <br>
+                Syntax: &lt;img src="image.jpg" alt="Description width="100px" height="100px"&gt;
+                <br>
+            </p>
+            <pre>
+                Ex: 
+                &lt;img src="./cat.jpg" alt="Example Image" width="100px" height="100px"&gt;
+            </pre>
+            <img src="./cat.jpg" alt="Example Image" width="100px" height="100px">
+            <fieldset>
+                <legend>align attribute</legend>
+                <p>
+                    The align attribute in the &lt;img&gt; tag is used to specify the alignment of an image. It is not supported in HTML5, but you can use CSS to achieve similar results.
+                    <pre> 
+Syntax: &lt;img src="image.jpg" alt="Description" align="left"&gt;
+    values for align attribute:
+        left: Aligns the image to the left.
+        right: Aligns the image to the right.
+        top: Aligns the image to the top.
+        bottom: Aligns the image to the bottom.
+        middle: Aligns the image to the middle.
+                    </pre>
+                    
+                    <br>
+                </p>
+            </fieldset>
+            <fieldset>
+                <legend>Figure tag and figure caption</legend>
+                <p>
+                    The &lt;figure&gt; tag in HTML is used to group self-contained content, such as images, charts, illustrations, code snippets, or other media, along with a caption provided by the &lt;figcaption&gt; element.
+                    <br>
+                    Syntax: 
+                    <pre>
+                        &lt;figure&gt;
+                            &lt;img src="image.jpg" alt="Figure" width="200px"&gt;
+                            &lt;figcaption&gt;Caption for the image&lt;/figcaption&gt;
+                        &lt;/figure&gt;
+                    </pre>
+                    <br>
+                </p>
+                <p>Ex : </p>
+                <figure>
+                    <img src="./cat.jpg" alt="figure" width="100px">
+                    <figcaption>This is a figcaption</figcaption>
+                </figure>
+            </fieldset>
+            <a href="#Content">Back to Content</a>
+        </fieldset>
+        <!-- Image mapping -->
+         <fieldset id="imgMap">
+            <legend><h2>Image Mapping</h2></legend>
+            <p>Image mapping is a technique in HTML that allows you to create clickable areas on an image that link to different webpages or resources. It involves defining shapes (rectangles, circles, or polygons) on an image and associating them with hyperlinks using the &lt;map&gt; and &lt;area&gt; tags. </p>
+            <p>Here's how it works:</p>
+            <ul>
+                <li>&lt;img&gt;: Embeds the image in the webpage.</li>
+                <li>&lt;map&gt;: Defines the image map and its areas.</li>
+                <li>&lt;area&gt;: Specifies the clickable areas on the image.</li>
+                <pre>
+                    Syntax:
+                    &lt;img src="image.jpg" alt="Image" usemap="#mapname"&gt;
+                    &lt;map name="mapname"&gt;
+                        &lt;area shape="rect" coords="x1,y1,x2,y2" href="page1.html" alt="Area 1"&gt;
+                        &lt;area shape="circle" coords="x,y,r" href="page2.html" alt="Area 2"&gt;
+                        &lt;area shape="poly" coords="x1,y1,x2,y2,x3,y3" href="page3.html" alt="Area 3"&gt;
+                    &lt;/map&gt;
+                </pre>
+                <p>
+                    <ul>
+                        <li>
+                            <b>shape:</b> Specifies the shape of the clickable area (rect, circle, poly).
+                        </li>
+                        <li>
+                            <b>coords:</b> Defines the coordinates of the shape (e.g., x1,y1,x2,y2 for a rectangle).
+                            <ul>
+                                <li>for a rectangle
+                                    <ul>
+                                        <li>x1: The x-coordinate of the upper-left corner.</li>
+                                        <li>y1: The y-coordinate of the upper-left corner.</li>
+                                        <li>x2: The x-coordinate of the lower-right corner.</li>
+                                        <li>y2: The y-coordinate of the lower-right corner.</li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    for a circle
+                                    <ul>
+                                        <li>x: The x-coordinate of the center.</li>
+                                        <li>y: The y-coordinate of the center.</li>
+                                        <li>r: The radius of the circle.</li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    for a polygon
+                                    <ul>
+                                        <li>x1, y1, x2, y2, x3, y3, ...: The coordinates of the polygon's vertices.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>
+                            <b>href:</b> Specifies the URL of the linked page or resource.
+                        </li>
+                        <li>
+                            <b>alt:</b> Provides alternative text for the clickable area.
+                        </li>
+                        <li>
+                            <b>usemap:</b> Associates the image with the map by referencing the map's name.
+                        </li>
+                        <li>
+                            <b>name:</b> Defines the name of the map for reference.
+                        </li>
+                        <li>
+                            <b>alt:</b> Provides alternative text for the image map.
+                        </li>
+                    </ul>
+                </p>
+                <p>Ex:</p>
+                <pre>
+                    &lt;img src="cat.jpg" alt="cute cat" usemap="#CAT"&gt;
+                    &lt;map name="#CAT"&gt;
+                        &lt;area shape="poly" coords="288,174,295,152,318,152,321,175,304,179," href="#" alt="Polygonal" title="Eye"&gt;
+                        &lt;area shape="rect" coords="249,190,279,212" href="#" alt="Clickable Nose" title="Nose"&gt;
+                        &lt;area shape="circle" coords="265,355,20" href="#" alt="tummy" title="Tummy"&gt;
+                    &lt;/map&gt;
+                </pre>
+                <img src="./cat.jpg" alt="cute cat" usemap="#CAT">
+                <map name="#CAT">
+                    <area shape="poly" coords="288,174,295,152,318,152,321,175,304,179," href="#" alt="Polygonal" title="Eye">
+                    <area shape="rect" coords="249,190,279,212" href="#" alt="Clickable Nose" title="Nose">
+                    <area shape="circle" coords="265,355,20" href="#" alt="tummy" title="Tummy">
+                </map>
+
+            <br>
+            <a href="#Content">Back to Content</a>
+         </fieldset>
+         <!-- Forms -->
+          <fieldset id="forms">
+            <legend><h2>HTML FORMS</h2></legend>
+            <p>
+                HTML forms are used to collect user input on a webpage. They allow users to enter data, make selections, and submit the information to a server for processing. Forms are created using the &lt;form&gt; tag, which contains various form elements like text fields, checkboxes, radio buttons, and buttons.
+                <br>
+                Here's how it works:
+                <ul>
+                    <li>&lt;form&gt;: Defines the entire form and its elements.</li>
+                    <li>&lt;input&gt;: Creates input fields for text, checkboxes, radio buttons, etc.</li>
+                    <li>&lt;textarea&gt;: Defines a multi-line text input field.</li>
+                    <li>&lt;select&gt;: Creates a dropdown list for selecting options.</li>
+                    <li>&lt;button&gt;: Generates a clickable button within the form.</li>
+                    <li>
+                        &lt;label&gt;: Provides a label for form elements, improving accessibility and usability.
+                        <ul>
+                            <li>The for attribute in the &lt;label&gt; tag is used to associate the label with a form element by matching the element's id attribute.</li>
+                        </ul>
+                    </li>
+                </ul>
+                <br>
+                
+            </p>
+            <p>
+                <ul>
+                    <li>
+                        <h4>Button</h4>
+                        <p>
+                            &lt;button type="submit"&gt;Submit&lt;/button&gt;<br>
+                            &lt;button type="reset"&gt;Reset&lt;/button&gt;<br>
+                        </p>
+                        Button types:
+                            <ul>
+                                <li>
+                                    <code>submit</code>: Submits the form data to the server.
+                                </li>
+                                <li>
+                                    <code>reset</code>: Resets the form fields to their default values.
+                                </li>
+                                <li>
+                                    <code>button</code>: A generic button that can be used for custom JavaScript actions.
+                                </li>
+                            </ul>
+                        </p>
+                    </li>
+                    <li>
+                        <h4> Checkbox</h4>
+                            <p>
+                                Checkbox will allow the user to select multiple options from a list of options.
+                            </p>
+                            <p>
+                                &lt;input type="checkbox" name="vehicle" value="Bike"&gt; I have a bike<br>
+                                &lt;input type="checkbox" name="vehicle" value="Car"&gt; I have a car<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="checkbox" name="vehicle" value="Bike"> I have a bike
+                                <input type="checkbox" name="vehicle" value="Car"> I have a car
+                            </p>
+                        
+                    </li>
+                    <li>
+                        <h4>Radio button</h4>
+                        <h5></h5>
+                            <p>
+                                Radio buttons allow the user to select only one option from a list of options.
+                            </p>
+                        </p>
+                            <p>
+                                &lt;input type="radio>Hello
+                                <br>
+                            Output:
+                            <input type="radio">Hello
+                    </li>
+                    <li>
+                        <h4>Dropdown List</h4>
+                            <p>
+                                Dropdown lists allow the user to select one option from a list of options.
+                                </p>
+                            <p>
+                                &lt;select name="cars"&gt;<br>
+                                    &lt;option value="volvo"&gt;Volvo&lt;/option&gt;<br>
+                                    &lt;option value="saab"&gt;Saab&lt;/option&gt;<br>
+                                    &lt;option value="fiat"&gt;Fiat&lt;/option&gt;<br>
+                                    &lt;option value="audi"&gt;Audi&lt;/option&gt;<br>
+                                &lt;/select&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <select name="cars">
+                                    <option value="volvo">Volvo</option>
+                                    <option value="saab">Saab</option>
+                                    <option value="fiat">Fiat</option>
+                                    <option value="audi">Audi</option>
+                                </select>
+                            </p>
+                        
+                    </li>
+                    <h4>
+                    <h4>Dropdown with multi-line</h4>
+                        <p>
+                            &lt;select name="" id="" multiple="1" size="2"&gt;<br>
+                                &lt;option value=""&gt;Computer Science&lt;/option&gt;<br>
+                                &lt;option value=""&gt;Information Systems&lt;/option&gt;<br>
+                                &lt;option value=""&gt;Information Technology&lt;/option&gt;<br>
+                                &lt;option value=""&gt;Physical Science&lt;/option&gt;<br>
+                            &lt;/select&gt;<br>
+                        </p>
+                        Output:
+                        <p>
+                            <select name="" id="" multiple="1" size="2">
+                                <option value="">Computer Science</option>
+                                <option value="">Information Systems</option>
+                                <option value="">Information Technology</option>
+                                <option value="">Physical Science</option>
+                            </select>
+                    </li>
+                    <li>
+                        Text Area: <p>
+                            <p>
+                                &lt;textarea name="message" rows="4" cols="50"&gt;Enter text here...&lt;/textarea&gt;<br>
+                            </p>
+                            <p>
+                                <b>Output:</b><br>
+                                <textarea name="message" rows="4" cols="50">Enter text here...</textarea>
+                            </p>
+                        
+                    </li>
+                    <li>
+                        <h4>Text</h4>
+                        <p>
+                                &lt;input type="text" id="username" name="username"&gt;<br>
+                        </p>
+                        Output:
+                        <input type="text" id="username" name="username">
+                    </li>
+                    <li>
+                        <h4>Number Input</h4>
+                            <p>
+                                &lt;input type="number" name="quantity" min="1" max="5"&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="number" name="quantity" min="1" max="5">
+                            </p>
+                        
+                    </li>
+                    <li>
+                        <h4>Data input:</h4>
+                            <p>
+                                &lt;input type="date" name="bday"&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="date" name="bday">
+                            </p>
+                        
+                    </li>
+                    <li>
+                            <h4>Email Input</h4>
+                            <p>
+                                &lt;input type="email" name="email"&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="email" name="email">
+                            </p>
+                        
+                    </li>
+                    <li>
+                        <h4>Password Input</h4>
+                            <p>
+                                &lt;input type="password" name="pwd"&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="password" name="pwd">
+                            </p>
+                        
+                    </li>
+                    <li>
+                            <h4>File Input</h4>
+                            <p>
+                                &lt;input type="file" name="pic"&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="file" name="pic">
+                            </p>
+                        
+                    </li>
+                    <li>
+                            <h4>Range Input</h4>
+                            <p>
+                                &lt;input type="range" name="points" min="0" max="10"&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="range" name="points" min="0" max="10">
+                            </p>
+                        
+                    </li>
+                    <li>
+                        <h4>Submit button</h4>
+                        <p>
+                            Submit the form data to the server.
+                        </p>
+                            <p>
+                                &lt;input type="submit" value="Submit"&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="submit" value="Submit">
+                            </p>
+                        
+                    </li>
+                    <li>
+                        <h4>Reset Button:</h4>
+                        <p>
+                            Reset the fomr fields to their default values.
+                        </p>
+                            <p>
+                                &lt;input type="reset" value="Reset"&gt;<br>
+                            </p>
+                            <p>
+                                Output:
+                                <input type="reset" value="Reset">
+                            </p>
+                        
+                    </li>
+                    <li>
+                        <h4>Labal</h4>
+                        <p>
+                            A label tag is used to define a label for an input element. The for attribute of the label tag should be equal to the id attribute of the input element to bind them together.
+                        </p>
+                        <p>
+                            &lt;label for="username"&gt;Username:&lt;/label&gt;<br>
+                            &lt;input type="text" id="username" name="username"&gt;<br>
+                        </p>
+                        <p>
+                            <label for="username">Username:</label>
+                            <input type="text" id="username" name="username">
+                    </li>
+                    <li>
+                        <h4>
+
+                            PlaceHoleder attribute
+                        </h4>
+                        <p>
+                            &lt;input type="text" name="username" placeholder="Enter your username"&gt;<br>
+                        </p>
+                            <input type="text" name="username" placeholder="Enter your username">
+                    </li>
+                    <li>
+                        <h4>
+
+                            Action attribite 
+                        </h4>
+                        <p>
+                            The action attribute specifies the URL of the file that will process the form data when submitted. It can be a relative or absolute URL.
+                        </p>
+                        <p>
+                            &lt;form action="process.php" method="post"&gt;<br>
+                            &lt;!-- Form elements --&gt;<br>
+                            &lt;/form&gt;<br>
+                        </p>
+                    </li>
+                    <li>
+                        <h4>
+
+                            Method attribute
+                        </h4>
+                        <p>
+                            The method attribute specifies the HTTP method used to send form data to the server. The two most common methods are GET and POST.
+                        </p>
+                        <p>
+                            &lt;form action="process.php" method="post"&gt;<br>
+                            &lt;!-- Form elements --&gt;<br>
+                            &lt;/form&gt;<br>
+                        </p>
+                    </li>
+
+                    <li>
+                        <h4>
+
+                            Fieldset and Legend
+                        </h4>
+                        <p>
+                            The fieldset tag is used to group related form elements within a form. It can contain one or more form elements, including input fields, checkboxes, radio buttons, and buttons. The legend tag provides a caption for the fieldset.
+                        </p>
+                        <p>
+                            &lt;fieldset&gt;<br>
+                                &lt;legend&gt;Registration Form&lt;/legend&gt;<br>
+                                &lt;!-- Form elements --&gt;<br>
+                            &lt;/fieldset&gt;<br>
+                        </p>
+                        <fieldset>
+                            <legend>Registration Form</legend>
+                            <!-- Form elements -->
+                             <label for="uName">Username</label>
+                             <input type="text" id="uName">
+                        </fieldset>
+                    </li>
+                </ul>
+            </p>
+            <hr>
+            <p>Ex:</p>
+            <pre>
+        &lt;form action="testPhp.php" method="post"&gt;
+        &lt;table border="1" style="border-collapse: collapse;"&gt;
+            &lt;tr&gt;
+                &lt;th colspan="2"&gt;Registration Form&lt;/th&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Name&lt;/td&gt;
+                &lt;td&gt;&lt;input type="text"&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Password&lt;/td&gt;
+                &lt;td&gt;&lt;input type="password"&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Date Of Birth&lt;/td&gt;
+                &lt;td&gt;&lt;input type="date"&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Gender&lt;/td&gt;
+                &lt;td&gt;
+                    &lt;input type="radio" name="gender"&gt;Male
+                    &lt;input type="radio" name="gender"&gt;Female
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;University&lt;/td&gt;
+                &lt;td&gt;&lt;select name="dropdown" id=""&gt;
+                    &lt;option value=""&gt;UOC&lt;/option&gt;
+                    &lt;option value=""&gt;UOK&lt;/option&gt;
+                    &lt;option value=""&gt;UOR&lt;/option&gt;
+                    &lt;option value=""&gt;UOP&lt;/option&gt;
+                &lt;/select&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Degree&lt;/td&gt;
+                &lt;td&gt;
+                    &lt;select name="" id="" multiple="1" size="2"&gt;
+                        &lt;option value=""&gt;Computer Science&lt;/option&gt;
+                        &lt;option value=""&gt;Information Systems&lt;/option&gt;
+                        &lt;option value=""&gt;Information Technology&lt;/option&gt;
+                        &lt;option value=""&gt;Physical Science&lt;/option&gt;
+                    &lt;/select&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;No. Of Degrees&lt;/td&gt;
+                &lt;td&gt;
+                    &lt;input type="checkbox" name="no_degree" id=""&gt;One
+                    &lt;input type="checkbox" name="no_degree" id=""&gt;Two
+                    &lt;input type="checkbox" name="no_degree" id=""&gt;Three
+                    &lt;input type="checkbox" name="no_degree" id=""&gt;Four
+                &lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Feedback&lt;/td&gt;
+                &lt;td&gt;&lt;textarea name="" id="" rows="5"&gt;&lt;/textarea&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td&gt;Enter random number : &lt;/td&gt;
+                &lt;td&gt;&lt;input type="number" name="" id="" max="100" min="0"&gt;&lt;/td&gt;
+            &lt;/tr&gt;
+            &lt;tr&gt;
+                &lt;td colspan="2"&gt;
+                    &lt;button type="submit"&gt;Submit&lt;/button&gt;
+                    &lt;button type="reset"&gt;Reset&lt;/button&gt;
+                &lt;/td&gt;
+            &lt;/tr&gt;
+        &lt;/table&gt;
+        &lt;br&gt;&lt;br&gt;
+        &lt;fieldset&gt;
+            &lt;legend&gt;Personal&lt;/legend&gt;
+            &lt;p&gt;Do you Breath ? &lt;/p&gt;
+            &lt;input type="radio" name="Bearth" value="yes"&gt;Yes
+            &lt;input type="radio" name="Breath" value="no"&gt;No
+        &lt;/fieldset&gt;
+    &lt;/form&gt;
+
+            </pre>
+            <fieldset>
+                <form action="testPhp.php" method="post">
+                    <table border="1" style="border-collapse: collapse;">
+                        <tr>
+                            <th colspan="2">Registration Form</th>
+                        </tr>
+                        <tr>
+                            <td>Name</td>
+                            <td><input type="text"></td>
+                        </tr>
+                        <tr>
+                            <td>Password</td>
+                            <td><input type="password"></td>
+                        </tr>
+                        <tr>
+                            <td>Date Of Birth</td>
+                            <td><input type="date"></td>
+                        </tr>
+                        <tr>
+                            <td>Gender</td>
+                            <td>
+                                <input type="radio" name="gender">Male
+                                <input type="radio" name="gender">Female
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>University</td>
+                            <td><select name="dropdown" id="">
+                                <option value="">UOC</option>
+                                <option value="">UOK</option>
+                                <option value="">UOR</option>
+                                <option value="">UOP</option>
+                            </select></td>
+                        </tr>
+                        <tr>
+                            <td>Degree</td>
+                            <td>
+                                <select name="" id="" multiple="1" size="2">
+                                    <option value="">Computer Science</option>
+                                    <option value="">Information Systems</option>
+                                    <option value="">Information Technology</option>
+                                    <option value="">Physical Science</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>No. Of Degrees</td>
+                            <td>
+                                <input type="checkbox" name="no_degree" id="">One
+                                <input type="checkbox" name="no_degree" id="">Two
+                                <input type="checkbox" name="no_degree" id="">Three
+                                <input type="checkbox" name="no_degree" id="">Four
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Feedback</td>
+                            <td><textarea name="" id="" rows="5"></textarea></td>
+                        </tr>
+                        <tr>
+                            <td>Enter random number : </td>
+                            <td><input type="number" name="" id="" max="100" min="0"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <button type="submit">Submit</button>
+                                <button type="reset">Reset</button>
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <fieldset>
+                        <legend>Personal</legend>
+                        <p>Do you Breath ? </p>
+                        <input type="radio" name="Bearth" value="yes">Yes
+                        <input type="radio" name="Breath" value="no">No
+                    </fieldset>
+                </form>
+            </fieldset>
+            <a href="#Content">Back to Content</a>
+          </fieldset>
+        </body>
+
+</html>
