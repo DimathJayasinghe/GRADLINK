@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function(){
 			.then(r => r.json())
 			.then(res => {
 				if (res.success) {
-					alert(editId ? 'Support ticket updated successfully!' : ('Support ticket submitted successfully! Ticket #' + res.ticket_id));
+					//alert(editId ? 'Support ticket updated successfully!' : ('Support ticket submitted successfully! Ticket #' + res.ticket_id));
 					supportForm.reset();
 					resetSupportEditMode();
 					closeModal(supportModal);
@@ -355,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function(){
 			.then(r => r.json())
 			.then(res => {
 				if (res.success) {
-					alert(editId ? 'Problem report updated successfully!' : ('Problem report submitted successfully! Report #' + res.report_id));
+					//alert(editId ? 'Problem report updated successfully!' : ('Problem report submitted successfully! Report #' + res.report_id));
 					reportForm.reset();
 					resetReportEditMode();
 					closeModal(reportModal);
