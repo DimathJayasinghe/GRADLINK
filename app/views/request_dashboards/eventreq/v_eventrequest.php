@@ -130,7 +130,7 @@
                 </div>
                 <div class="form-group">
                     <label for="event_date" class="form-label">Date of Event:</label>
-                    <input type="date" id="event_date" name="event_date" class="form-control" required value="<?php echo $isEdit ? htmlspecialchars($data['event']->event_date ?? '', ENT_QUOTES) : ''; ?>">
+                    <input type="date" id="event_date" name="event_date" class="form-control" required min="<?php echo date('Y-m-d'); ?>" value="<?php echo $isEdit ? htmlspecialchars($data['event']->event_date ?? '', ENT_QUOTES) : ''; ?>">
                 </div>
                 <div class="form-group">
                     <label for="event_time" class="form-label">Time of Event:</label>

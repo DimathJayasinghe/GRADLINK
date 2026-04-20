@@ -6,21 +6,7 @@ class eventrequest extends Controller{
         $this->model = $this->model('M_eventrequest');
     }
     public function index(){
-        $data = [
-            // 'clubs' => $this->model->getAllClubs()
-            'clubs' => [
-                (object)['id'=>1,'name'=>'IEEE CS Chapter'],
-                (object)['id'=>2,'name'=>'ACM Student Chapter'],
-                (object)['id'=>3,'name'=>'Robotics Club'],
-                (object)['id'=>4,'name'=>'Debating Society'],
-                (object)['id'=>5,'name'=>'Drama Club'],
-                (object)['id'=>6,'name'=>'Music Club'],
-                (object)['id'=>7,'name'=>'Art Society'],
-                (object)['id'=>8,'name'=>'Photography Club'],
-                (object)['id'=>9,'name'=>'Environmental Club'],
-                (object)['id'=>10,'name'=>'Literature Club']
-            ]
-            ];
+        $data = [];
         $this->view("/request_dashboards/eventreq/v_eventrequest",$data);
     }
     
@@ -95,6 +81,15 @@ class eventrequest extends Controller{
         $data['position'] = $_POST['requester_position'] ?? null;
         $data['event_date'] = $_POST['event_date'] ?? null;
         $data['event_time'] = $_POST['event_time'] ?? null;
+
+        $eventDateTime = $_POST['event_date'] . ' ' . $_POST['event_time'] . ':00';
+        $eventTs = strtotime($eventDateTime);
+        $nowTs   = time();
+
+        if ($eventTs < $nowTs) {
+            die("Event date and time cannot be in the past.");
+        }
+
         $data['event_venue'] = $_POST['venue'] ?? null;
         // additional optional fields
         $data['short_tagline'] = $_POST['short_tagline'] ?? null;

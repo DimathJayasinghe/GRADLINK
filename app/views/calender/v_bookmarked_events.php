@@ -1,5 +1,4 @@
 <?php ob_start(); ?>
-<!-- Additional styles for the dashboard layout -->
 <style>
     .cards-container {
         display: grid;
@@ -148,7 +147,7 @@
 ?>
 
 <?php ob_start(); ?>
-<!-- Main content goes here -->
+<!-- Main content -->
 <div>
     <h2>Bookmarked Events</h2>
     <?php if(!empty($data['bookmarked_events'])): ?>
@@ -169,7 +168,7 @@
                         </p>
                         <p class="event-venue">Venue: <?php echo htmlspecialchars($request->event_venue); ?></p>
                     </div>
-                    <!-- Action buttons Final -->
+                    
                     <div style="display: flex; gap: 10px; margin-top: 15px;">
                         <a href="<?php echo URLROOT; ?>/calender/show/<?php echo $request->event_id; ?>" style="flex: 1;">View Details</a>
                         <div class="gl-remove-bookmark" style="flex: 1; background: #ec2424ff; align-items: center; display: flex; justify-content: center; border-radius: 3px;" data-event-id="<?php echo $request->event_id; ?>">
@@ -215,7 +214,7 @@ document.addEventListener('click', function(e){
             // remove containing card
             var card = btn.closest('.card');
             if(card) card.remove();
-            // if no cards left, reload the page to show empty state
+            // if no cards left show empty state
             if(!document.querySelector('.cards-container .card')){
                 window.location.reload();
             }

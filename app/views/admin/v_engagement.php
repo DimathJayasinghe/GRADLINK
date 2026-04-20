@@ -356,7 +356,7 @@
         if (!roles) return '#60a5fa';
         if (roles.includes('admin')) return '#ff6b6b';
         if (roles.includes('alumni')) return '#4ecdc4';
-        if (roles.includes('undergrad')) return '#45b7d1';
+        if (roles.includes('undergrad')) return '#00a40b';
         return '#60a5fa';
     }
 
@@ -653,52 +653,7 @@
             Chart.defaults.font.family = "'Poppins', 'Segoe UI', sans-serif";
         }
 
-        // Populate numeric metrics (already seeded server-side but keep JS-safe updates)
-        const postsEl = document.getElementById('metric-posts');
-        const commentsEl = document.getElementById('metric-comments');
-        const reactionsEl = document.getElementById('metric-reactions');
-        const usersEl = document.getElementById('analytics-users');
-        const activeEl = document.getElementById('analytics-active');
-        const growthEl = document.getElementById('analytics-growth');
-
-        if(postsEl) postsEl.textContent = (engagement.posts ?? 0).toLocaleString();
-        if(commentsEl) commentsEl.textContent = (engagement.comments ?? 0).toLocaleString();
-        if(reactionsEl) reactionsEl.textContent = (engagement.reactions ?? 0).toLocaleString();
-        if(usersEl) usersEl.textContent = (contextTotalUsers ?? 0).toLocaleString();
-        if(activeEl) activeEl.textContent = (<?php echo json_encode($data['metrics']['active_30_days'] ?? 0); ?>).toLocaleString();
-        if(growthEl) growthEl.textContent = ('+' + (<?php echo json_encode((int)($data['metrics']['growth_3_months_pct'] ?? 0)); ?>) + '%');
-
-        const messagesEl = document.getElementById('metric-messages');
-        const eventsEl = document.getElementById('metric-events');
-        const bookmarksEl = document.getElementById('metric-event-bookmarks');
-        const followersEl = document.getElementById('metric-followers');
-        const pendingAlumniEl = document.getElementById('metric-pending-alumni');
-        const unreadNotiEl = document.getElementById('metric-unread-notifications');
-        const engagementRateEl = document.getElementById('metric-engagement-rate');
-        const dauWauEl = document.getElementById('metric-dau-wau');
-        const avgPostsEl = document.getElementById('metric-avg-posts');
-        const avgCommentsEl = document.getElementById('metric-avg-comments');
-        const completionEl = document.getElementById('metric-profile-completion');
-        const privateProfilesEl = document.getElementById('metric-private-profiles');
-        const completedProfilesEl = document.getElementById('metric-completed-profiles');
-        const totalProfilesEl = document.getElementById('metric-total-profiles');
-
-        if(messagesEl) messagesEl.textContent = (engagement.messages ?? 0).toLocaleString();
-        if(eventsEl) eventsEl.textContent = (engagement.events ?? 0).toLocaleString();
-        if(bookmarksEl) bookmarksEl.textContent = (engagement.event_bookmarks ?? 0).toLocaleString();
-        if(followersEl) followersEl.textContent = (engagement.followers ?? 0).toLocaleString();
-        if(pendingAlumniEl) pendingAlumniEl.textContent = (engagement.pending_alumni ?? 0).toLocaleString();
-        if(unreadNotiEl) unreadNotiEl.textContent = (engagement.notifications_unread ?? 0).toLocaleString();
-        if(engagementRateEl) engagementRateEl.textContent = ((engagement.engagement_rate ?? 0) + '%');
-        if(dauWauEl) dauWauEl.textContent = `${(engagement.dau ?? 0)} / ${(engagement.wau ?? 0)} / ${(engagement.mau ?? 0)}`;
-        if(avgPostsEl) avgPostsEl.textContent = (engagement.avg_posts_per_user ?? 0);
-        if(avgCommentsEl) avgCommentsEl.textContent = (engagement.avg_comments_per_post ?? 0);
-        if(completionEl) completionEl.textContent = ((engagement.profile_metrics?.completion_rate ?? 0) + '%');
-        if(privateProfilesEl) privateProfilesEl.textContent = (engagement.profile_metrics?.private_profiles ?? 0);
-        if(completedProfilesEl) completedProfilesEl.textContent = (engagement.profile_metrics?.completed ?? 0);
-        if(totalProfilesEl) totalProfilesEl.textContent = (engagement.profile_metrics?.total ?? 0);
-
-        // Export helpers (simple CSV export of current charts/metrics)
+        // simple CSV export
         function downloadCSV(filename, rows){
             const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
             const blob = new Blob([csv], { type: 'text/csv' });
