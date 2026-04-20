@@ -81,6 +81,15 @@ class eventrequest extends Controller{
         $data['position'] = $_POST['requester_position'] ?? null;
         $data['event_date'] = $_POST['event_date'] ?? null;
         $data['event_time'] = $_POST['event_time'] ?? null;
+
+        $eventDateTime = $_POST['event_date'] . ' ' . $_POST['event_time'] . ':00';
+        $eventTs = strtotime($eventDateTime);
+        $nowTs   = time();
+
+        if ($eventTs < $nowTs) {
+            die("Event date and time cannot be in the past.");
+        }
+
         $data['event_venue'] = $_POST['venue'] ?? null;
         // additional optional fields
         $data['short_tagline'] = $_POST['short_tagline'] ?? null;
