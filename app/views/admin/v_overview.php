@@ -339,7 +339,7 @@
     <div class="stat-card reports-card">
         <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
         <div class="stat-info">
-            <h3><?php echo number_format($data['reports']['pending'] ?? 7); ?></h3>
+            <h3><?php echo number_format(count($data['reports']) ?? 7); ?></h3>
             <p>Content Reports</p>
         </div>
     </div>

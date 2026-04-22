@@ -1,8 +1,8 @@
-<?php // vim: ft=php
+<?php
 ob_start(); ?>
 <style>
     /* Center column: event / request list */
-    .event-card { /* new event-friendly class */
+    .event-card { 
         display: flex;
         align-items: center;
         gap: 12px;
@@ -73,7 +73,7 @@ ob_start(); ?>
     .event-list {
         flex: 1 1 auto;
         overflow-y: auto;
-        min-height: 0; /* allow flex item to shrink for overflow */
+        min-height: 0; 
     }
 
     /* Right column: detail panel (event / request details) */
@@ -176,7 +176,7 @@ ob_start(); ?>
         color: var(--text);
     }
 
-    /* Calendar Styles */
+    
     .calendar-container {
         background-color: rgba(255, 255, 255, 0.03);
         border-radius: var(--radius-md);
@@ -273,8 +273,7 @@ ob_start(); ?>
         background-color: var(--accent);
     }
 
-    /* If a day has events, give it a subtle background so it's easy to spot
-       Avoid overriding the styles for the currently selected day or today */
+    
     .calendar-day.has-event:not(.selected):not(.today) {
         background-color: rgba(179, 124, 29, 0.49);
     }
@@ -355,7 +354,7 @@ ob_start(); ?>
         background-color: #4caf50;
     }
 
-    /* Event actions for items in the details panel */
+    
     .event-actions {
         display: flex;
         gap: 8px;
@@ -405,25 +404,25 @@ ob_start(); ?>
         <!-- Month navigation -->
         <div class="calendar-header">
             <button class="calendar-nav" id="prevMonth" style="background: rgba(255, 255, 255, 0.08);
-        border: none;
-        color: var(--text);
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-weight: bold;padding:2px">&lt;</button>
+            border: none;
+            color: var(--text);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;padding:2px">&lt;</button>
             <h3 id="currentMonthDisplay">October 2025</h3>
             <button class="calendar-nav" id="nextMonth" style="background: rgba(255, 255, 255, 0.08);
-        border: none;
-        color: var(--text);
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-weight: bold;padding:2px">&gt;</button>
+            border: none;
+            color: var(--text);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;padding:2px">&gt;</button>
         </div>
         
-        <!-- Days of week header -->
+        
         <div class="calendar-weekdays">
             <div>Sun</div>
             <div>Mon</div>
@@ -434,17 +433,17 @@ ob_start(); ?>
             <div>Sat</div>
         </div>
         
-        <!-- Calendar grid (will be filled by JavaScript) -->
+        <!-- Calendar grid -->
         <div class="calendar-days" id="calendarDays">
-            <!-- Days will be added dynamically -->
+            
         </div>
     </div>
 
-    <!-- Event details section (appears when a date with events is clicked) -->
+    
     <div class="event-details-panel" id="eventDetailsPanel">
         <h3 class="selected-date">No date selected</h3>
         <div id="eventsList" class="events-list">
-            <!-- Event details will appear here when a date is clicked -->
+            <!-- Event details will appear when a date is clicked -->
         </div>
     </div>
 </div>
@@ -467,35 +466,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDate = new Date();
     let selectedDate = null;
 
-    // Events payload: prefer server-provided events_payload injected by controller (PHP), otherwise fall back to a small local sample
     <?php
-        // Prepare a safe JSON representation of the events payload
         $events_json = '{}';
         if(!empty($data['events_payload']) && is_array($data['events_payload'])){
             $events_json = json_encode($data['events_payload'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
         }
     ?>
     const events = <?php echo $events_json; ?> || {
-        '2025-10-20': [
-            { title: 'Alumni Networking Event', time: '14:00', description: 'Virtual networking session with industry professionals.' ,bookmarked: false,id:1},
-            { title: 'Resume Workshop', time: '16:30', description: 'Learn how to create an effective resume.' ,bookmarked: true,id:2}
+        "2026-05-15": [
+            { id: 1, title: "Mock Event 1", time: "14:00", description: "Description for mock event 1", bookmarked: false },
+            { id: 2, title: "Mock Event 2", time: "16:30", description: "Description for mock event 2", bookmarked: true }
         ],
-        '2025-10-25': [
-            {title: 'Career Fair', time: '10:00', description: 'Annual career fair with top employers.',bookmarked: false ,id:3}
-        ],
-        '2025-10-28': [
-            {title: 'Graduate Studies Info Session', time: '15:00', description: 'Information about graduate programs and opportunities.' ,bookmarked: true,id:4 }
-        ],
-        '2025-11-05': [
-            {title: 'Tech Industry Panel', time: '18:00', description: 'Panel discussion with alumni working in technology.' ,bookmarked: false,id: 5}
-        ]
     };
 
-    // Initialize the calendar; renderCalendar is async now and fetches events for the month
     async function initCalendar() {
         await renderCalendar(currentDate);
 
-        // Set up event listeners
         prevMonthBtn.addEventListener('click', async () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
             await renderCalendar(currentDate);
@@ -520,26 +506,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear the calendar
         calendarDays.innerHTML = '';
 
-        // Fetch events for this month from server (start..end)
+        
         try {
             const start = `${year}-${String(month+1).padStart(2,'0')}-01`;
             const end = `${year}-${String(month+1).padStart(2,'0')}-${String(new Date(year, month+1, 0).getDate()).padStart(2,'0')}`;
             const resp = await fetch(`<?php echo URLROOT; ?>/calender/events?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`, { credentials: 'same-origin' });
             if(resp.ok){
                 const json = await resp.json();
-                // replace events payload with server data (fallback preserved)
                 if(json && Object.keys(json).length){
-                    // assign new object to events variable
                     for(const k in events) { if(Object.prototype.hasOwnProperty.call(events,k)) delete events[k]; }
                     Object.assign(events, json);
                 }
             }
         } catch(err) {
-            // network or server error — leave embedded events as fallback
             console.warn('Could not fetch events for month, using embedded payload', err);
         }
         
-        // Get the first day of the month and the number of days in the month
         const firstDayOfMonth = new Date(year, month, 1);
         const lastDayOfMonth = new Date(year, month + 1, 0);
         

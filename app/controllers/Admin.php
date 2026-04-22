@@ -1,6 +1,7 @@
 <?php
     class Admin extends Controller {
         protected $adminModel;
+        protected $reportModel;
 
             public function __construct() {
         // Check if user is logged in and has admin role
@@ -11,6 +12,7 @@
         }
         parent::__construct();
         $this->adminModel = $this->model('M_admin');
+        $this->reportModel = $this->model('M_report');
     }
 
     public function dashboard() {
@@ -30,6 +32,8 @@
             $onlineUsers = $onlineData['users'] ?? [];
             $onlineCount = (int)($onlineData['online_count'] ?? count($onlineUsers));
             $systemUpdatesData = $this->getRecentSystemUpdates(20);
+
+            $reports = $this->reportModel->getAllReports();
             
             $data = [
                 'metrics' => $metrics,
@@ -42,6 +46,7 @@
                 'system_updates' => $systemUpdatesData['updates'],
                 'system_updates_ref' => $systemUpdatesData['source_ref'],
                 'system_updates_error' => $systemUpdatesData['error'],
+                'reports' => $reports,
             ];
             $this->view('admin/v_overview', $data);
         }
@@ -124,77 +129,6 @@
                     'heatmapData' => $heatmapData,
                 ];
             $this->view('admin/v_engagement', $data);
-        }
-
-        public function exportUsersCsv() {
-            $roleFilter = $this->resolveExportRoleFilter();
-            $rows = $this->adminModel->getUsersExportRows($roleFilter);
-
-            $csvRows = [];
-            foreach ($rows as $row) {
-                $csvRows[] = [
-                    (int)($row->id ?? 0),
-                    (string)($row->name ?? ''),
-                    (string)($row->email ?? ''),
-                    (string)($row->role ?? ''),
-                    (string)($row->batch ?? ''),
-                    (string)($row->gender ?? ''),
-                    !empty($row->special_alumni) ? 'yes' : 'no',
-                    (string)($row->created_at ?? ''),
-                ];
-            }
-
-            $suffix = $roleFilter ?: 'all';
-            $filename = 'users_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
-            $this->streamCsvDownload($filename, ['id', 'name', 'email', 'role', 'batch', 'gender', 'special_alumni', 'created_at'], $csvRows);
-        }
-
-        public function exportContentCsv() {
-            $roleFilter = $this->resolveExportRoleFilter();
-            $rows = $this->adminModel->getContentExportRows($roleFilter);
-
-            $csvRows = [];
-            foreach ($rows as $row) {
-                $csvRows[] = [
-                    (int)($row->content_id ?? 0),
-                    (string)($row->content_type ?? 'post'),
-                    (string)($row->title ?? ''),
-                    (string)($row->status ?? ''),
-                    (string)($row->author_name ?? ''),
-                    (string)($row->author_email ?? ''),
-                    (string)($row->author_role ?? ''),
-                    (string)($row->created_at ?? ''),
-                    (string)($row->body ?? ''),
-                ];
-            }
-
-            $suffix = $roleFilter ?: 'all';
-            $filename = 'content_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
-            $this->streamCsvDownload($filename, ['content_id', 'type', 'title', 'status', 'author_name', 'author_email', 'author_role', 'created_at', 'body'], $csvRows);
-        }
-
-        public function exportEventsCsv() {
-            $roleFilter = $this->resolveExportRoleFilter();
-            $rows = $this->adminModel->getEventsExportRows($roleFilter);
-
-            $csvRows = [];
-            foreach ($rows as $row) {
-                $csvRows[] = [
-                    (int)($row->event_id ?? 0),
-                    (string)($row->title ?? ''),
-                    (string)($row->status ?? ''),
-                    (string)($row->start_at ?? ''),
-                    (string)($row->venue ?? ''),
-                    (string)($row->organizer_name ?? ''),
-                    (string)($row->organizer_email ?? ''),
-                    (string)($row->organizer_role ?? ''),
-                    (string)($row->created_at ?? ''),
-                ];
-            }
-
-            $suffix = $roleFilter ?: 'all';
-            $filename = 'events_export_' . $suffix . '_' . date('Ymd_His') . '.csv';
-            $this->streamCsvDownload($filename, ['event_id', 'title', 'status', 'start_at', 'venue', 'organizer_name', 'organizer_email', 'organizer_role', 'created_at'], $csvRows);
         }
 
         public function reports() {
@@ -436,10 +370,6 @@
             $email = strtolower(trim((string)($targetUser->email ?? '')));
             $isProtected = (
                 $role === 'admin' ||
-                $role === 'administrator' ||
-                $role === 'system_admin' ||
-                $role === 'system-administrator' ||
-                $role === 'super_admin' ||
                 strpos($role, 'admin') !== false ||
                 $name === 'system administrator' ||
                 $email === 'admin@gradlink.com'
@@ -1069,16 +999,10 @@
                 return $apiResult;
             }
 
-            // Keep a safe fallback path to avoid breaking the dashboard if API config is missing.
-            $fallbackResult = $this->getRecentSystemUpdatesFromLocalGit($safeLimit);
-            if (!empty($fallbackResult['updates'])) {
-                return $fallbackResult;
-            }
-
             return [
                 'updates' => [],
                 'source_ref' => $apiResult['source_ref'] ?? null,
-                'error' => $apiResult['error'] ?? ($fallbackResult['error'] ?? 'Unable to load system updates.'),
+                'error' => $apiResult['error'] ?? 'Unable to load system updates.',
             ];
         }
 
@@ -1199,88 +1123,6 @@
             ];
         }
 
-        private function getRecentSystemUpdatesFromLocalGit(int $limit): array {
-            $result = [
-                'updates' => [],
-                'source_ref' => null,
-                'error' => null,
-            ];
-
-            $repoRoot = realpath(APPROOT . '/..');
-            if ($repoRoot === false) {
-                $result['error'] = 'Repository path could not be resolved.';
-                return $result;
-            }
-
-            if (!is_dir($repoRoot . DIRECTORY_SEPARATOR . '.git')) {
-                $result['error'] = 'Git metadata (.git) was not found in deployment path.';
-                return $result;
-            }
-
-            if (!function_exists('shell_exec')) {
-                $result['error'] = 'Local git fallback is unavailable because shell execution is disabled.';
-                return $result;
-            }
-
-            $configuredBranch = trim((string)gl_env('ADMIN_UPDATES_BRANCH', 'dev'));
-            $refsToTry = array_values(array_unique(array_filter([
-                $configuredBranch,
-                'origin/' . $configuredBranch,
-                'HEAD',
-                'main',
-                'origin/main',
-            ])));
-
-            $selectedRef = null;
-            foreach ($refsToTry as $ref) {
-                $verifyCmd = 'git -C ' . escapeshellarg($repoRoot) . ' rev-parse --verify --quiet ' . escapeshellarg($ref) . ' 2>&1';
-                $verifyOutput = trim((string)@shell_exec($verifyCmd));
-                if ($verifyOutput !== '') {
-                    $selectedRef = $ref;
-                    break;
-                }
-            }
-
-            if ($selectedRef === null) {
-                $result['error'] = 'No usable local git ref found.';
-                return $result;
-            }
-
-            $logCmd = 'git -C ' . escapeshellarg($repoRoot)
-                . ' log ' . escapeshellarg($selectedRef)
-                . ' --date=short --pretty=format:%h%x09%ad%x09%an%x09%s -n ' . $limit
-                . ' 2>&1';
-
-            $rawOutput = (string)@shell_exec($logCmd);
-            if (trim($rawOutput) === '') {
-                $result['source_ref'] = 'local:' . $selectedRef;
-                $result['error'] = 'No commits could be read from local ref ' . $selectedRef . '.';
-                return $result;
-            }
-
-            $updates = [];
-            $lines = preg_split('/\r\n|\r|\n/', trim($rawOutput)) ?: [];
-            foreach ($lines as $line) {
-                $parts = explode("\t", $line, 4);
-                if (count($parts) < 4) {
-                    continue;
-                }
-                $updates[] = [
-                    'hash' => $parts[0],
-                    'date' => $parts[1],
-                    'author' => $parts[2],
-                    'message' => $parts[3],
-                ];
-            }
-
-            $result['updates'] = $updates;
-            $result['source_ref'] = 'local:' . $selectedRef;
-            if (empty($updates)) {
-                $result['error'] = 'Commit output could not be parsed for local ref ' . $selectedRef . '.';
-            }
-
-            return $result;
-        }
          // ==================== HELP & SUPPORT ====================
 
         /**

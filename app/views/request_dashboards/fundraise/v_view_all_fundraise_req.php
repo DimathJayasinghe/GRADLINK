@@ -348,8 +348,8 @@ $sidebar_left = [
 
                 $searchBlob = strtolower(trim(
                     ($req->title ?? '') . ' ' .
-                    ($req->club_name ?? '') . ' ' .
-                    ($req->headline ?? '')
+                        ($req->club_name ?? '') . ' ' .
+                        ($req->headline ?? '')
                 ));
 
                 $statusClass = $expired ? 'status-expired' : 'status-' . strtolower((string)$req->status);
@@ -392,13 +392,15 @@ $sidebar_left = [
                         </p>
 
                         <div style="display:flex; gap:0.45rem;">
-                            <a class="view-btn" style="flex:1;" href="<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>">View Details</a>
+                            <button class="view-btn" style="flex:1;border-radius: 5px;height: fit-content; background-color: var(--text);"
+                                onclick="window.location.href='<?php echo URLROOT; ?>/fundraiser/show/<?php echo $req->req_id; ?>'">
+                                View
+                            </button>
                             <button
                                 type="button"
                                 class="view-btn report-btn report-fundraiser-btn"
                                 style="flex:1;"
-                                data-fundraiser-id="<?php echo (int)$req->req_id; ?>"
-                            >Report</button>
+                                data-fundraiser-id="<?php echo (int)$req->req_id; ?>">Report</button>
                         </div>
                     </div>
                 </article>
@@ -452,182 +454,182 @@ $sidebar_left = [
 
 <?php ob_start(); ?>
 (() => {
-    const grid = document.getElementById('campaignCards');
-    if (!grid) return;
+const grid = document.getElementById('campaignCards');
+if (!grid) return;
 
-    const cards = Array.from(grid.querySelectorAll('.card'));
-    const searchInput = document.getElementById('campaignSearch');
-    const stateFilter = document.getElementById('campaignStateFilter');
-    const progressFilter = document.getElementById('campaignProgressFilter');
-    const sortSelect = document.getElementById('campaignSort');
-    const resultCount = document.getElementById('campaignResultCount');
-    const noResults = document.getElementById('campaignNoResults');
+const cards = Array.from(grid.querySelectorAll('.card'));
+const searchInput = document.getElementById('campaignSearch');
+const stateFilter = document.getElementById('campaignStateFilter');
+const progressFilter = document.getElementById('campaignProgressFilter');
+const sortSelect = document.getElementById('campaignSort');
+const resultCount = document.getElementById('campaignResultCount');
+const noResults = document.getElementById('campaignNoResults');
 
-    const toNumber = (value) => {
-        const n = Number(value);
-        return Number.isFinite(n) ? n : 0;
-    };
+const toNumber = (value) => {
+const n = Number(value);
+return Number.isFinite(n) ? n : 0;
+};
 
-    const matchesProgress = (progress, filter) => {
-        if (filter === 'low') return progress < 25;
-        if (filter === 'mid') return progress >= 25 && progress < 75;
-        if (filter === 'high') return progress >= 75;
+const matchesProgress = (progress, filter) => {
+if (filter === 'low') return progress < 25;
+    if (filter==='mid' ) return progress>= 25 && progress < 75;
+        if (filter==='high' ) return progress>= 75;
         return true;
-    };
+        };
 
-    const applyFilters = () => {
+        const applyFilters = () => {
         const query = (searchInput?.value || '').trim().toLowerCase();
         const state = stateFilter?.value || 'all';
         const progressRange = progressFilter?.value || 'all';
         const sortBy = sortSelect?.value || 'newest';
 
         const visible = cards.filter((card) => {
-            const searchBlob = (card.dataset.search || '').toLowerCase();
-            const expired = card.dataset.expired === '1';
-            const progress = toNumber(card.dataset.progress);
+        const searchBlob = (card.dataset.search || '').toLowerCase();
+        const expired = card.dataset.expired === '1';
+        const progress = toNumber(card.dataset.progress);
 
-            if (query && !searchBlob.includes(query)) return false;
-            if (state === 'active' && expired) return false;
-            if (state === 'expired' && !expired) return false;
-            if (!matchesProgress(progress, progressRange)) return false;
-            return true;
+        if (query && !searchBlob.includes(query)) return false;
+        if (state === 'active' && expired) return false;
+        if (state === 'expired' && !expired) return false;
+        if (!matchesProgress(progress, progressRange)) return false;
+        return true;
         });
 
         visible.sort((a, b) => {
-            if (sortBy === 'progress') {
-                return toNumber(b.dataset.progress) - toNumber(a.dataset.progress);
-            }
+        if (sortBy === 'progress') {
+        return toNumber(b.dataset.progress) - toNumber(a.dataset.progress);
+        }
 
-            if (sortBy === 'deadline') {
-                const aExpired = a.dataset.expired === '1';
-                const bExpired = b.dataset.expired === '1';
-                if (aExpired !== bExpired) return aExpired ? 1 : -1;
-                return toNumber(a.dataset.deadline) - toNumber(b.dataset.deadline);
-            }
+        if (sortBy === 'deadline') {
+        const aExpired = a.dataset.expired === '1';
+        const bExpired = b.dataset.expired === '1';
+        if (aExpired !== bExpired) return aExpired ? 1 : -1;
+        return toNumber(a.dataset.deadline) - toNumber(b.dataset.deadline);
+        }
 
-            return toNumber(b.dataset.created) - toNumber(a.dataset.created);
+        return toNumber(b.dataset.created) - toNumber(a.dataset.created);
         });
 
         cards.forEach((card) => card.classList.add('is-hidden'));
         visible.forEach((card) => {
-            card.classList.remove('is-hidden');
-            grid.appendChild(card);
+        card.classList.remove('is-hidden');
+        grid.appendChild(card);
         });
 
         if (resultCount) {
-            resultCount.textContent = `Showing ${visible.length} of ${cards.length} campaigns`;
+        resultCount.textContent = `Showing ${visible.length} of ${cards.length} campaigns`;
         }
 
         if (noResults) {
-            noResults.classList.toggle('is-hidden', visible.length > 0);
+        noResults.classList.toggle('is-hidden', visible.length > 0);
         }
-    };
+        };
 
-    searchInput?.addEventListener('input', applyFilters);
-    stateFilter?.addEventListener('change', applyFilters);
-    progressFilter?.addEventListener('change', applyFilters);
-    sortSelect?.addEventListener('change', applyFilters);
+        searchInput?.addEventListener('input', applyFilters);
+        stateFilter?.addEventListener('change', applyFilters);
+        progressFilter?.addEventListener('change', applyFilters);
+        sortSelect?.addEventListener('change', applyFilters);
 
-    applyFilters();
-})();
+        applyFilters();
+        })();
 
-(() => {
-    const reportButtons = document.querySelectorAll('.report-fundraiser-btn');
-    const reportModal = document.getElementById('fundraiserReportModal');
-    const reportForm = document.getElementById('fundraiser-report-form');
-    const reportId = document.getElementById('fundraiserReportId');
-    const reportCategory = document.getElementById('fundraiserReportCategory');
-    const reportDetails = document.getElementById('fundraiserReportDetails');
-    const reportLink = document.getElementById('fundraiserReportLink');
-    const reportEndpoint = '<?php echo URLROOT; ?>/report/submitReport/fundraiser';
+        (() => {
+        const reportButtons = document.querySelectorAll('.report-fundraiser-btn');
+        const reportModal = document.getElementById('fundraiserReportModal');
+        const reportForm = document.getElementById('fundraiser-report-form');
+        const reportId = document.getElementById('fundraiserReportId');
+        const reportCategory = document.getElementById('fundraiserReportCategory');
+        const reportDetails = document.getElementById('fundraiserReportDetails');
+        const reportLink = document.getElementById('fundraiserReportLink');
+        const reportEndpoint = '<?php echo URLROOT; ?>/report/submitReport/fundraiser';
 
-    if (!reportButtons.length || !reportModal || !reportForm || !reportId) {
+        if (!reportButtons.length || !reportModal || !reportForm || !reportId) {
         return;
-    }
+        }
 
-    const notify = (message) => {
+        const notify = (message) => {
         if (typeof show_popup === 'function') {
-            show_popup(message);
-            return;
+        show_popup(message);
+        return;
         }
         alert(message);
-    };
+        };
 
-    const closeReportModal = () => {
+        const closeReportModal = () => {
         reportModal.style.display = 'none';
-    };
+        };
 
-    reportButtons.forEach((btn) => {
+        reportButtons.forEach((btn) => {
         btn.addEventListener('click', () => {
-            reportId.value = String(Number(btn.dataset.fundraiserId || 0));
-            reportModal.style.display = 'flex';
+        reportId.value = String(Number(btn.dataset.fundraiserId || 0));
+        reportModal.style.display = 'flex';
         });
-    });
+        });
 
-    reportModal.querySelector('[data-action="close"]')?.addEventListener('click', closeReportModal);
-    reportModal.querySelector('[data-action="cancel"]')?.addEventListener('click', closeReportModal);
-    reportModal.addEventListener('click', (e) => {
+        reportModal.querySelector('[data-action="close"]')?.addEventListener('click', closeReportModal);
+        reportModal.querySelector('[data-action="cancel"]')?.addEventListener('click', closeReportModal);
+        reportModal.addEventListener('click', (e) => {
         if (e.target === reportModal) {
-            closeReportModal();
+        closeReportModal();
         }
-    });
+        });
 
-    reportForm.addEventListener('submit', async (e) => {
+        reportForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const fundraiserId = Number(reportId.value || 0);
         if (!fundraiserId) {
-            notify('Invalid fundraiser id for report');
-            return;
+        notify('Invalid fundraiser id for report');
+        return;
         }
 
         const category = reportCategory ? reportCategory.value : '';
         if (!category) {
-            notify('Please select a report category');
-            return;
+        notify('Please select a report category');
+        return;
         }
 
         const submitBtn = reportForm.querySelector('button[type="submit"]');
         const previousText = submitBtn ? submitBtn.textContent : 'Submit Report';
         if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
         }
 
         try {
-            const fd = new FormData();
-            fd.append('fundraiser_id', String(fundraiserId));
-            fd.append('category', category);
-            fd.append('details', reportDetails ? reportDetails.value.trim() : '');
-            const linkValue = reportLink ? reportLink.value.trim() : '';
-            if (linkValue) {
-                fd.append('link', linkValue);
-            }
-
-            const response = await fetch(reportEndpoint, {
-                method: 'POST',
-                body: fd
-            });
-
-            const json = await response.json().catch(() => null);
-            if (!response.ok || !json || (json.success !== true && json.status !== 'success')) {
-                throw new Error((json && json.message) ? json.message : 'Failed to submit campaign report');
-            }
-
-            notify('Thanks for your report. Our team will review this campaign.');
-            reportForm.reset();
-            closeReportModal();
-        } catch (err) {
-            console.error('Fundraiser report submission failed', err);
-            notify(err && err.message ? err.message : 'Failed to submit campaign report');
-        } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = previousText;
-            }
+        const fd = new FormData();
+        fd.append('fundraiser_id', String(fundraiserId));
+        fd.append('category', category);
+        fd.append('details', reportDetails ? reportDetails.value.trim() : '');
+        const linkValue = reportLink ? reportLink.value.trim() : '';
+        if (linkValue) {
+        fd.append('link', linkValue);
         }
-    });
-})();
-<?php $scripts = ob_get_clean(); ?>
 
-<?php require APPROOT . '/views/request_dashboards/request_dashboard_layout_adapter.php'; ?>
+        const response = await fetch(reportEndpoint, {
+        method: 'POST',
+        body: fd
+        });
+
+        const json = await response.json().catch(() => null);
+        if (!response.ok || !json || (json.success !== true && json.status !== 'success')) {
+        throw new Error((json && json.message) ? json.message : 'Failed to submit campaign report');
+        }
+
+        notify('Thanks for your report. Our team will review this campaign.');
+        reportForm.reset();
+        closeReportModal();
+        } catch (err) {
+        console.error('Fundraiser report submission failed', err);
+        notify(err && err.message ? err.message : 'Failed to submit campaign report');
+        } finally {
+        if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = previousText;
+        }
+        }
+        });
+        })();
+        <?php $scripts = ob_get_clean(); ?>
+
+        <?php require APPROOT . '/views/request_dashboards/request_dashboard_layout_adapter.php'; ?>

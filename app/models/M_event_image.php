@@ -44,13 +44,7 @@ class M_event_image {
         }
     }
 
-    /**
-     * Return a public URL for an event image.
-     * Preference order:
-     *  - if $file is already a full URL, return as-is
-     *  - if a file exists under APPROOT/storage/posts/<basename>, return URLROOT/storage/posts/<basename>
-     *  - otherwise fall back to URLROOT/Media/event/<basename>
-     */
+//Return a public URL for an event image.
     public static function getUrl(?string $file){
         if(!$file) return '';
         // If absolute URL, return as-is
