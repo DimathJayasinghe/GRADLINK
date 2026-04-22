@@ -5,6 +5,8 @@ UCSC Alumni-Student Connect Platform – GRADLINK is a university project done b
 
 A role-based digital platform designed to strengthen connections between UCSC alumni and current students. GRADLINK enables verified alumni and students to collaborate, network, form groups, and engage in academic and industry-level projects.
 
+Drive: https://drive.google.com/drive/folders/1PDdmDRLac5_xTXm038eB93AvF7ZqrlT8?usp=drive_link
+
 ---
 
 ## 📌 Project Overview
