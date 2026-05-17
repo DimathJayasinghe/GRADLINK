@@ -58,25 +58,6 @@ It aims to:
 | Hosting    | XAMPP / WAMP (for local dev) |
 | DevOps     | Git, GitHub            |
 
----
-
-## 📁 Project Structure
-(*tentative)
-
-/gradlink
-│
-├── /auth # Login and registration
-├── /students # Student dashboards and features
-├── /alumni # Alumni dashboards and features
-├── /admin # Admin panel and analytics
-├── /groups # Group creation, membership, and chat
-├── /projects # Project listing and team handling
-├── /chat # Messaging system
-├── /assets # CSS, JS, images
-├── /includes # Reusable PHP (DB conn, header, footer)
-├── /sql # ERD and database scripts
-├── index.php # Landing page
-└── README.md
 
 
 ---
@@ -112,14 +93,14 @@ It aims to:
 ## 📄 License
   This project is part of UCSC academic coursework and is not licensed for commercial use.
   
-  (Currently Licensed under MIT LICENSE)
+
 
 ## 🤝 Contribution Guidelines
   This project is currently not open for public contributions.
   UCSC staff and supervisors may provide feedback via Issues or Discussions.
 
 ## 🧠 Acknowledgements
-  Special thanks to: (need editing)
+  Special thanks to:
 
     Dr. Ajantha Athukorale (Supervisor)
     Mrs. Yohan Wanigasuriya (Co-supervisor)
